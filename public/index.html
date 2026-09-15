@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" /><meta name="map-id" content="{{MAP_ID}}" /><meta name="map-assets" content="{{MAP_ASSETS}}" /><meta name="time-zone" content="{{TIME_ZONE}}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pi Rain Radar · {{LOCATION}}</title>
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+    <script type="module" src="/settings.js"></script>
+    <script type="module" src="/overview.js"></script>
+    <script type="module" src="/minutecast.js"></script>
+  </head>
+  <body>
+    <main aria-label="Rain radar centred on {{LOCATION}}">
+      <div class="map">
+        <svg
+          viewBox="0 0 1280 720"
+          preserveAspectRatio="xMidYMid slice"
+          role="img"
+          aria-label="Regional map and observed precipitation around {{LOCATION}}"
+        >
+          <image
+            class="basemap-light"
+            href="/basemap.svg"
+            width="1280"
+            height="720"
+          />
+          <image
+            class="basemap-dark"
+            href="/basemap-dark.svg"
+            width="1280"
+            height="720"
+          />
+          <image id="radar" width="1280" height="720" opacity="0.8" />
+          <g id="places"></g>
+          <g class="centre">
+            <circle cx="640" cy="360" r="17" />
+            <circle cx="640" cy="360" r="5" />
+            <text x="640" y="402" text-anchor="middle">{{LOCATION}}</text>
+          </g>
+        </svg>
+      </div>
+      <svg id="map-scale" class="map-scale" viewBox="20 600 {{SCALE_WIDTH}} 32" data-width="{{SCALE_WIDTH}}" aria-label="Map distance scale" role="img">
+        <path d="{{SCALE_PATH}}" />
+        <text x="{{SCALE_X}}" y="625">{{SCALE_LABEL}}</text>
+      </svg>
+      <header>
+        <button id="weather-dock" type="button" aria-expanded="true" aria-controls="weather-details" aria-label="Collapse weather readings">
+          <svg class="weather-shape" viewBox="0 0 540 62" preserveAspectRatio="none" aria-hidden="true"><path id="weather-outline" d="M0 0H540Q532 0 526 6L498 34Q488 44 476 44H308Q303 44 299 48L291 56Q285 62 279 62H261Q255 62 249 56L241 48Q237 44 232 44H64Q52 44 42 34L14 6Q8 0 0 0Z"/></svg>
+          <span id="weather-details" class="weather-details">
+            <span class="weather-details-inner">
+              <span class="weather-readings">
+                <span class="weather-reading" aria-label="Temperature unavailable">
+                  <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M11 16V6a3 3 0 0 1 6 0v10a5 5 0 1 1-6 0Z"/><path d="M14 10v10m6-12h3m-3 5h3"/><circle cx="14" cy="21" r="1.5" fill="currentColor" stroke="none"/></svg>
+                  <span id="weather-temperature">—</span>
+                </span>
+                <span class="weather-reading" aria-label="Feels like unavailable">
+                  <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="6" r="3"/><path d="M4 22v-4a7 7 0 0 1 14 0v4m3-18c-3 3 3 4 0 7m3 2c-3 3 3 4 0 7"/></svg>
+                  <span id="weather-feels">—</span>
+                </span>
+                <span class="weather-reading" aria-label="Wind unavailable">
+                  <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 9h14a3 3 0 1 0-3-3M3 14h20a3 3 0 1 0-3-3M3 19h12a3 3 0 1 1-3 3"/></svg>
+                  <span><span id="weather-wind">—</span><small>mph</small></span>
+                </span>
+                <span class="weather-reading" aria-label="Wind gusts unavailable" title="Wind gusts">
+                  <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h15a3 3 0 1 0-3-3M3 14h22M3 20h12a3 3 0 1 1-3 3M20 10l5 4-5 4"/></svg>
+                  <span><span id="weather-gust">—</span><small>mph</small></span>
+                </span>
+              </span>
+            </span>
+          </span>
+          <span class="weather-grip" aria-hidden="true"></span>
+        </button>
+        <div class="map-controls">
+          <button id="clock-toggle" class="live-clock" type="button" aria-expanded="true" aria-controls="current-time" aria-label="Hide current {{TIME_ZONE}} time" title="Current time · {{TIME_ZONE}} time">
+            <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="clock-reveal"><time id="current-time" aria-label="Current {{TIME_ZONE}} time">—</time></span>
+          </button>
+        <button
+          id="theme-toggle"
+          type="button"
+          aria-label="Switch to dark theme"
+        >
+          ☾
+        </button>
+        <button id="overview-toggle" type="button" aria-label="Show map overview" aria-pressed="false" aria-controls="overview">
+          <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="minutecast-toggle" type="button" aria-label="Show MinuteCast" aria-pressed="false" aria-controls="minutecast">
+          <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M5 11a4 4 0 0 1 1-7 5 5 0 0 1 9 1 3 3 0 0 1 3 6H5M5 17v3m5-6v6m5-4v4m5-6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div id="history-toggle" class="live-clock" role="group" aria-label="Radar history" data-expanded="false"><svg id="history-countdown" class="history-ring" aria-hidden="true" hidden><path id="history-track" class="history-ring-track" pathLength="100"/><path id="history-progress" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg><button id="history-action" type="button" aria-label="Open radar history"><svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M3 9a9 9 0 1 1 0 6M3 3v6h6m3-3v6l4 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="clock-reveal"><button id="history-range" type="button" aria-label="Choose radar history" aria-haspopup="dialog" inert><time id="history-selection">—</time></button></span></div>
+        </div>
+      </header>
+      <dialog id="archive-dialog" aria-labelledby="archive-title">
+        <div class="archive-heading"><h2 id="archive-title">Radar history</h2><button id="archive-close" type="button" aria-label="Close history">×</button></div>
+        <div class="archive-fields"><label>Date <select id="archive-day"></select></label>
+        <label>Time <select id="archive-time"></select></label></div>
+        <p id="archive-feedback" role="status"></p>
+        <div class="archive-actions"><button id="archive-show" type="button">Show</button></div>
+      </dialog>
+      <dialog id="settings-dialog" aria-labelledby="settings-title">
+        <div class="settings-heading">
+          <h2 id="settings-title">Settings</h2>
+          <button id="settings-close" type="button" aria-label="Close settings">×</button>
+        </div>
+        <div id="pin-panel" class="settings-content">
+          <p id="pin-message" role="status">Enter your settings PIN</p>
+          <div id="pin-dots" aria-label="0 of 6 digits entered">○ ○ ○ ○ ○ ○</div>
+          <div id="pin-keypad" aria-label="PIN keypad">
+            <button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button>
+            <button type="button" data-digit="4">4</button><button type="button" data-digit="5">5</button><button type="button" data-digit="6">6</button>
+            <button type="button" data-digit="7">7</button><button type="button" data-digit="8">8</button><button type="button" data-digit="9">9</button>
+            <button type="button" id="pin-clear" aria-label="Clear PIN">C</button><button type="button" data-digit="0">0</button><button type="button" id="pin-delete" aria-label="Delete last digit">⌫</button>
+          </div>
+        </div>
+        <div id="settings-fields" hidden>
+          <div class="settings-tabs" role="tablist" aria-label="Settings categories">
+            <button id="settings-tab-map" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-map">Map</button>
+            <button id="settings-tab-buttons" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-buttons" tabindex="-1">Buttons</button>
+            <button id="settings-tab-api" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-api" tabindex="-1">API Keys</button>
+            <button id="settings-tab-misc" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-misc" tabindex="-1">Misc</button>
+            <button id="settings-tab-pin" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-pin" tabindex="-1">PIN</button>
+            <button id="settings-tab-about" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-about" tabindex="-1">About</button>
+          </div>
+          <section id="settings-panel-api" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-api" tabindex="0" hidden>
+            <label for="settings-api-key">OpenWeather One Call 3.0 key</label>
+            <input id="settings-api-key" type="password" placeholder="Enter OpenWeather key" autocomplete="off" spellcheck="false" maxlength="32" aria-describedby="settings-api-note" />
+            <div class="weather-key-actions"><button id="weather-key-save" type="button">Save key</button><button id="weather-key-remove" type="button">Remove key</button></div>
+            <p id="settings-api-note" role="status"></p>
+            <p id="settings-api-status" role="status">Awaiting connection status.</p>
+          </section>
+          <section id="settings-panel-buttons" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-buttons" tabindex="0" hidden>
+            <ol id="control-list" aria-label="Dashboard button order"></ol>
+            <p id="control-feedback" role="status"></p>
+          </section>
+          <section id="settings-panel-map" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-map" tabindex="0">
+            <form id="map-form">
+              <label for="map-name">Location name</label><input id="map-name" maxlength="60" autocomplete="off" />
+              <div class="map-fields">
+                <label>Latitude<input id="map-lat" type="number" min="-80" max="80" step="any" required /></label>
+                <label>Longitude<input id="map-lon" type="number" min="-180" max="180" step="any" required /></label>
+                <label>Main map zoom<input id="map-zoom" type="number" min="6" max="10" step="any" required /></label>
+                <label>Overview zoom<input id="map-overviewZoom" type="number" min="2" max="7" step="any" required /></label>
+              </div>
+              <label class="map-time-zone" for="map-timeZone">Time zone</label>
+              <input id="map-timeZone" list="time-zone-options" required maxlength="80" autocomplete="off" spellcheck="false" />
+              <datalist id="time-zone-options">{{TIME_ZONE_OPTIONS}}</datalist>
+              <div class="weather-key-actions"><button id="map-preview" type="button">Preview</button><button id="map-apply" type="submit">Apply</button></div>
+              <p id="map-note" role="status"></p>
+            </form>
+          </section>
+          <section id="settings-panel-misc" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-misc" tabindex="0" hidden>
+            <label class="misc-option" for="show-map-scale">Show map scale<input id="show-map-scale" class="control-switch" type="checkbox" role="switch" checked /></label>
+            <label class="misc-option" for="auto-hide-weather">Auto-hide header dock<input id="auto-hide-weather" class="control-switch" type="checkbox" role="switch" /></label>
+            <label class="misc-option" for="auto-hide-footer">Auto-hide footer dock<input id="auto-hide-footer" class="control-switch" type="checkbox" role="switch" /></label>
+            <label class="misc-option" for="gust-cache-minutes">Cache wind gust (min)<input id="gust-cache-minutes" class="misc-number" type="number" inputmode="numeric" min="1" max="1440" step="1" value="60" required /></label>
+          </section>
+          <section id="settings-panel-pin" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-pin" tabindex="0" hidden>
+            <form id="settings-pin-form">
+              <label class="misc-option" for="settings-pin-enabled">Enable PIN protection<input id="settings-pin-enabled" class="control-switch" type="checkbox" role="switch" /></label>
+              <div id="settings-pin-inputs" hidden>
+                <fieldset class="pin-entry-field">
+                  <legend>New PIN<span>6 digits</span></legend>
+                  <div id="settings-new-pin" class="pin-entry-boxes">
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="New PIN, digit 1 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="New PIN, digit 2 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="New PIN, digit 3 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="New PIN, digit 4 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="New PIN, digit 5 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="New PIN, digit 6 of 6" />
+                  </div>
+                </fieldset>
+                <fieldset class="pin-entry-field">
+                  <legend>Confirm PIN<span>6 digits</span></legend>
+                  <div id="settings-confirm-pin" class="pin-entry-boxes">
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="Confirm PIN, digit 1 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="Confirm PIN, digit 2 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="Confirm PIN, digit 3 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="Confirm PIN, digit 4 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="Confirm PIN, digit 5 of 6" />
+                    <input type="password" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" aria-label="Confirm PIN, digit 6 of 6" />
+                  </div>
+                </fieldset>
+              </div>
+              <div class="weather-key-actions"><button id="settings-pin-save" type="submit">Save</button></div>
+              <p id="settings-pin-note" role="status"></p>
+            </form>
+          </section>
+          <section id="settings-panel-about" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-about" tabindex="0" hidden>
+            <h3 class="about-title">Pi Rain Radar</h3>
+            <p>Version: {{APP_VERSION}}<br>Created by Alex Soul.<br>Built with OpenAI Codex.</p>
+            <div class="about-links">
+              <a class="about-coffee" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/quick-start.md" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v15M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z"/></svg>
+                <span>Quick Start guide</span><span class="coffee-arrow" aria-hidden="true">↗</span>
+              </a>
+              <a class="about-coffee" href="https://github.com/alex-soul/pi-rain-radar" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M14 4l-4 16"/></svg>
+                <span>View on GitHub</span><span class="coffee-arrow" aria-hidden="true">↗</span>
+              </a>
+            </div>
+            <a class="about-coffee" href="https://buymeacoffee.com/alexsoul" target="_blank" rel="noopener noreferrer" aria-label="Buy Alex Soul a coffee (opens in a new tab)">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h12v7a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5V8Zm12 1h2a3 3 0 0 1 0 6h-2M3 22h17M8 2v3m4-3v3m4-3v3"/></svg>
+              <span>Buy me a coffee</span><span class="coffee-arrow" aria-hidden="true">↗</span>
+            </a>
+          </section>
+        </div>
+      </dialog>
+      <dialog id="map-preview-dialog" aria-labelledby="map-preview-title">
+        <div class="settings-heading"><h2 id="map-preview-title">Map preview</h2><button id="map-preview-close" type="button" aria-label="Close map preview">×</button></div>
+        <div class="map-preview-content">
+          <div class="map-preview-images">
+            <figure><figcaption>Main map</figcaption><img id="map-preview-main" alt="Proposed main map" width="1280" height="720" /></figure>
+            <figure><figcaption>Overview</figcaption><img id="map-preview-overview" alt="Proposed overview map" width="390" height="280" /></figure>
+          </div>
+          <div class="weather-key-actions"><button id="map-preview-back" type="button">Back</button><button id="map-preview-apply" type="button">Apply</button></div>
+        </div>
+      </dialog>
+      <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="overview" aria-label="Overview map and observed precipitation" hidden>
+        <svg class="overview-map" viewBox="0 0 390 280" role="img" aria-label="Rain overview centred on {{LOCATION}}, with local map extent outlined">
+          <image class="basemap-light" href="/overview.svg" width="390" height="280" />
+          <image class="basemap-dark" href="/overview-dark.svg" width="390" height="280" />
+          <image id="overview-radar" width="390" height="280" opacity="0.8" />
+          <g id="overview-markers" fill="none" stroke="currentColor"><rect x="118.29162456946717" y="96.85153882032529" width="153.41675086106565" height="86.29692235934944" stroke-opacity="0.5" stroke-dasharray="3 3"/><circle cx="195" cy="140" r="4" fill="currentColor" stroke-width="2"/></g>
+        </svg>
+        <button id="overview-resize" type="button" aria-label="Resize map overview. Drag or use arrow keys." title="Resize map overview">◢</button>
+      </aside>
+      <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="minutecast" aria-label="Current minute precipitation forecast" hidden>
+        <div class="minute-content">
+          <svg id="minute-chart" viewBox="0 0 360 100" preserveAspectRatio="none" role="img" aria-label="Forecast unavailable">
+            <path d="M0 25H360M0 55H360M0 85H360" class="minute-grid"/>
+            <g id="minute-bars"></g>
+          </svg>
+          <span id="minute-message" role="status">Forecast unavailable</span>
+          <div class="minute-axis"><span>NOW</span><span>+15 min</span><span>+30 min</span><span>+45 min</span><span>+60 min</span></div>
+        </div>
+        <button id="minutecast-resize" type="button" aria-label="Resize MinuteCast. Drag or use arrow keys." title="Resize MinuteCast">◢</button>
+      </aside>
+      <div id="empty" role="status">
+        <span class="empty-icon">↻</span>
+        <h2>Fetching the latest radar</h2>
+        <p>The map is ready. Rain data will appear shortly.</p>
+      </div>
+
+      <footer>
+        <button id="footer-toggle" type="button" aria-label="Radar controls" aria-expanded="true" aria-controls="radar-status playback-row" data-health="warning">
+          <svg class="footer-shape" viewBox="0 0 76 18" preserveAspectRatio="none" aria-hidden="true"><path d="M76 0Q71 0 67 4L59 12Q53 18 47 18H29Q23 18 17 12L9 4Q5 0 0 0"/></svg>
+          <span class="footer-grip" aria-hidden="true"></span>
+        </button>
+        <div id="radar-status"><span id="age">Waiting for radar data</span><span id="next-update" hidden></span></div>
+        <button id="settings-toggle" class="settings-button" type="button" aria-label="Open settings" aria-haspopup="dialog" aria-controls="settings-dialog" hidden>
+          <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="m9 3-.5 2.4-2 .9-2.2-.8-2 3.4 1.7 1.6v3L2.3 15l2 3.5 2.2-.8 2 .9L9 21h4l.5-2.4 2-.9 2.2.8 2-3.5-1.7-1.5v-3l1.7-1.6-2-3.4-2.2.8-2-.9L13 3z"/><circle cx="11" cy="12" r="3.5"/></svg>
+        </button>
+        <div class="observation" title="Displayed radar frame time · {{TIME_ZONE}} time">
+          <div><strong id="time">—</strong><span id="date"></span></div>
+        </div>
+        <div id="playback-row" class="playback">
+          <button
+            id="play"
+            type="button"
+            aria-label="Pause radar animation"
+            disabled
+          >
+            <svg class="pause-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor"/></svg>
+            <span class="play-icon" aria-hidden="true">▶</span>
+          </button>
+          <span id="history-start">—</span>
+          <input
+            id="timeline"
+            type="range"
+            min="0"
+            max="0"
+            value="0"
+            step="1"
+            aria-label="Radar history"
+            disabled
+          />
+          <span id="history-end">—</span>
+          <span id="frame-count"><span id="frame-position">0</span><span class="frame-divider"> / </span><span id="frame-total" class="incomplete">0</span></span>
+        </div>
+        <div class="source">
+          <p class="mini-legend">
+            <span>LIGHTER</span><i></i><span>HEAVIER RAIN</span>
+          </p>
+          <p>Radar by <a href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a> · Map by <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeather</a></span></p>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>

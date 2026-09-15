@@ -1,0 +1,23 @@
+name: pi-rain-radar
+services:
+  radar:
+    build: .
+    ports:
+      - "127.0.0.1:3080:3000"
+    volumes:
+      - radar-data:/data
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+volumes:
+  radar-data:

@@ -1,0 +1,20 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Runtime data and generated output
+/data/
+/cache/
+/logs/
+*.log
+node_modules/
+dist/
+coverage/
+
+# Editor and operating-system files
+.idea/
+.DS_Store
+Thumbs.db
+/public/ready.json

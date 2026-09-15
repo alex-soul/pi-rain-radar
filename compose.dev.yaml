@@ -1,0 +1,6 @@
+services:
+  radar:
+    command: ["node", "--watch", "src/server.js"]
+    volumes:
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
