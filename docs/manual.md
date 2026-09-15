@@ -82,7 +82,7 @@ The key stays on the computer running the app and is not displayed again. **Remo
 
 ![Example radar display in dark mode](images/radar-preview.png)
 
-*Example radar view; the current version has additional controls described below.*
+*Recorded v0.1.2 display, 15 September 2026, with Overview and MinuteCast open. Historical example, not live conditions.*
 
 | Control | What it does |
 | --- | --- |
