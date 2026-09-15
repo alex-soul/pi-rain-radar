@@ -3,7 +3,7 @@ services:
   radar:
     build: .
     ports:
-      - "127.0.0.1:3080:3000"
+      - "${RADAR_BIND_ADDRESS:-0.0.0.0}:3080:3000"
     volumes:
       - radar-data:/data
     restart: unless-stopped

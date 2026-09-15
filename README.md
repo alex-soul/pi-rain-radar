@@ -8,7 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-**v0.1.0 is a pre-release.** The app has been tested in Linux containers on a Windows laptop. Raspberry Pi deployment, sustained performance and automatic kiosk startup are still being validated. A complete beginner hardware guide will follow that validation.
+**v0.1.1 is a pre-release.** A manual Raspberry Pi walkthrough has confirmed Docker deployment, landscape touch controls, automatic kiosk startup after reboot and access from another computer on the home network. Sustained performance and recovery testing remain in progress. A complete beginner hardware guide is being prepared from that walkthrough.
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
 
@@ -17,19 +17,20 @@ Pi Rain Radar focuses on rain: recent radar playback, a small overview map, opti
 Install Docker with the Compose plugin, then:
 
 ```sh
-git clone --branch v0.1.0 --depth 1 https://github.com/alex-soul/pi-rain-radar.git
+git clone --branch v0.1.1 --depth 1 https://github.com/alex-soul/pi-rain-radar.git
 cd pi-rain-radar
 docker compose up -d --build
 ```
 
 Open **[localhost:3080](http://localhost:3080)** on the same machine. Allow roughly 2–3 minutes for the first radar history to download, longer if the provider or connection is slow. Docker builds the app locally; no registry image is published.
 
-For installation without Git, use the [Quick Start guide](docs/quick-start.md).
+For installation without Git, use the [Quick Start guide](docs/quick-start.md). To open the app and configure API keys from another device on your home network, follow [LAN access](docs/quick-start.md#enable-lan-access-on-v010).
 
 ## What you get
 
 - Up to two hours of animated radar, refreshed automatically, with pause and a timeline.
 - A seven-day local archive that builds while the app runs.
+- One Pi, multiple screens: each browser remembers its own buttons, widget layout and theme while sharing the same location and data. Radar and weather acquisition are shared between screens. See [LAN setup](docs/quick-start.md#enable-lan-access-on-v010).
 - Last-good cached playback through outages; incomplete timestamps do not block newer complete frames.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/quick-start.md#pin-recovery).

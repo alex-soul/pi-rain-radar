@@ -50,7 +50,7 @@ export function paintWeather(state, now = Date.now()) {
     : state.fetching && !state.fetchedAt ? ['neutral', 'Checking OpenWeather…']
     : entries.length && usable ? ['ready', `OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`]
     : state.fetchedAt ? ['stale', 'Weather data missing or expired; awaiting refresh.']
-    : ['neutral', 'Awaiting first OpenWeather response.'];
+    : ['neutral', 'Awaiting first OpenWeather response — allow 10–15 min.'];
   $('weather-dock').setAttribute('data-health', state?.configured === false ? 'unconfigured' : health[0] === 'ready' ? 'ready' : 'warning');
   $('weather-dock').title = `${description}. ${health[1]}`;
   $('settings-api-status').textContent = health[1];

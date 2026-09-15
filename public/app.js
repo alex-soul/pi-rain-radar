@@ -162,7 +162,7 @@ function showFrame() {
   if (!displayed) return;
   $("radar").setAttribute("href", displayed.url);
   $("overview-radar").setAttribute("href", displayed.overviewUrl);
-  $("empty").hidden = true;
+  $("empty").hidden = !mapUpdateVisible;
   paintStatus();
 }
 function adopt(next) {
@@ -220,6 +220,29 @@ async function decodeFrames(offered) {
         }),
       );
 }
+let mapUpdateVisible = false;
+let dismissedMapError = null;
+function paintMapUpdate(update) {
+  const error = update?.error;
+  mapUpdateVisible = !!update?.applying || !!(error && error !== dismissedMapError);
+  $('map-update-dismiss').hidden = !mapUpdateVisible || !!update?.applying;
+  if (!mapUpdateVisible) { $('empty').hidden = !!displayed; return; }
+  $('empty').hidden = false;
+  $('empty').querySelector('h2').textContent = update.applying
+    ? (update.progress ? 'Preparing radar history' : 'Preparing map') : 'Map update unavailable';
+  $('empty').querySelector('p').textContent = update.applying
+    ? (update.progress ? `Caching complete frames · ${update.progress.completed} of ${update.progress.total}`
+      : 'Your new view is being prepared. It will appear automatically when ready.') : error;
+}
+$('map-update-dismiss').addEventListener('click', () => {
+  dismissedMapError = status.mapUpdate?.error;
+  paintMapUpdate(status.mapUpdate);
+});
+window.addEventListener('map-update-started', () => {
+  dismissedMapError = null;
+  paintMapUpdate({applying:true});
+  void poll();
+});
 let pollRunning = false;
 async function poll() {
   if (pollRunning) return;
@@ -232,6 +255,7 @@ async function poll() {
     if (!response.ok) throw new Error("Status unavailable");
     status = await response.json();
     if (status.mapId && status.mapId !== mapIdentity) { location.reload(); return; }
+    paintMapUpdate(status.mapUpdate);
     if (status.mapUpdate?.busy || status.mapUpdate?.error) {
       $('map-note').textContent=status.mapUpdate.busy?'Preparing map…':status.mapUpdate.error;
       $('map-apply').disabled=!!status.mapUpdate.busy;
@@ -249,7 +273,7 @@ async function poll() {
       else pending = next;
     }
     if (returningLive && offered.length && !historyWindow && !historyLoading && epoch === generation) { returningLive = false; paintHistory(); }
-    if (!displayed) {
+    if (!displayed && !mapUpdateVisible) {
       $("empty").querySelector("h2").textContent = status.error
         ? "No radar data available"
         : "Preparing radar history";
@@ -259,7 +283,9 @@ async function poll() {
     }
   } catch {
     serverReachable = false;
-    if (!displayed) {
+    if (mapUpdateVisible) {
+      $('empty').querySelector('p').textContent = 'Connection interrupted. Checking map progress again automatically.';
+    } else if (!displayed) {
       $("empty").querySelector("h2").textContent = "Waiting for the local app";
       $("empty").querySelector("p").textContent =
         "The connection will be retried automatically.";

@@ -21,7 +21,7 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
     await writeFile(`${settingsFile}.tmp`,JSON.stringify(settings),{mode:0o600});
     await rename(`${settingsFile}.tmp`,settingsFile);
   }
-  let busy=false,error=null;
+  let busy=false,error=null,applying=false,candidateRadar=null;
   const previewDirectory=join(directory,'map-preview');
   let previewAsset=null;
   const makeRadar = value => {
@@ -45,6 +45,7 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
       const sameViews=hash(makeViews(value))===hash(makeViews(settings));
       const candidate=sameViews?radar:await makeRadar(value);
       if(!sameViews) {
+        candidateRadar=candidate;
         await candidate.refresh();
         if(!candidate.status().frames.length) throw new Error('No complete radar frames for the new view. Existing map kept; try again later.');
       }
@@ -54,11 +55,11 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
       published=true;
       await onChange(value);
     } catch(e) { error=published?'Map applied; weather update is unavailable.':e.message.startsWith('No complete radar')?e.message:'Map preparation failed. Existing map kept; try again.'; }
-    finally { busy=false; }
+    finally { busy=false;applying=false;candidateRadar=null; }
   }
   return {
     current:()=>({settings,radar,id:mapId(settings)}),
-    status:()=>({busy,error}),
+    status:()=>({busy,error,applying,progress:applying?candidateRadar?.status().progress??null:null}),
     async preview(input) {
       if(busy) return {status:409,error:'A map update or preview is already running.'};
       let value;
@@ -84,7 +85,7 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
       let value;
       try { value=validateMapSettings(input); } catch(e) { return {status:400,error:e.message}; }
       if(mapId(value)===mapId(settings)) { error=null; return {status:200,message:'Map already up to date.'}; }
-      busy=true;error=null;void apply(value);
+      busy=true;error=null;applying=true;void apply(value);
       return {status:202,message:'Preparing map…'};
     },
   };

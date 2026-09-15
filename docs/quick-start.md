@@ -14,7 +14,7 @@ The app has been exercised on a laptop. A tested Raspberry Pi installation and a
 
 ## 2. Download and start
 
-1. Open the [v0.1.0 pre-release](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.1.0), download **Source code (zip)** under Assets, then extract it into a folder you want to keep.
+1. Open the [v0.1.1 pre-release](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.1.1), download **Source code (zip)** under Assets, then extract it into a folder you want to keep.
 2. Open the extracted folder containing **compose.yaml** and **README.md**. Do not run commands inside the ZIP or its parent folder.
 3. Open a terminal in that folder. On Windows, click File Explorer's address bar, type `powershell`, then press Enter. On macOS/Linux, open Terminal, type `cd ` (including the space), drag the extracted folder into the terminal, then press Enter.
 4. Copy this command, paste it into the terminal and press Enter:
@@ -27,7 +27,19 @@ The first run downloads and builds what it needs; it may take several minutes. O
 
 The map appears before the rain does. Allow roughly 2–3 minutes for the first radar sequence, potentially longer on a slow connection. No RainViewer account or API key is needed for radar. Current temperature and the minute forecast are optional and need a separate key, explained below.
 
-`localhost` means “this computer”. The supplied setup accepts local connections only; entering that address on your phone will not open the app running on your laptop.
+`localhost` means “this computer”. On another device connected to the same home network, open `http://<host-name>.local:3080` or `http://<host-IP>:3080`, replacing the placeholder with the computer running the app. For example, a Pi named `pi-weather` is available at `http://pi-weather.local:3080`. If its name does not resolve, use its IP address instead.
+
+### Enable LAN access on v0.1.0
+
+The v0.1.0 download accepts local connections only. In its `compose.yaml`, replace `127.0.0.1:3080:3000` with `0.0.0.0:3080:3000`, then run `docker compose up -d` from the installation folder (use `sudo` on the Pi if required). This recreates the container with LAN access and retains its data. Version 0.1.1 and later default to LAN access; set `RADAR_BIND_ADDRESS=127.0.0.1` in a `.env` file beside Compose if you prefer local-only access.
+
+### Configure from your laptop or phone
+
+Open the host address above, then **Settings → API Keys** to enter your OpenWeather key with a normal keyboard. No SSH tunnel is needed. Location, map zoom, time zone, API keys and PIN configuration are shared with the kiosk. Each browser remembers its own widget positions/sizes, expanded panels, button arrangement, theme and Misc preferences. Changes to your laptop layout do not rearrange the kiosk.
+
+Use the same address each time: the host name, IP address and an old SSH-tunnel address each have separate browser preferences. A new address starts with the default layout.
+
+LAN access is intended for a trusted home network. HTTP does not encrypt the PIN or API-key entry, and the optional PIN only protects settings. Do not forward port 3080 through your router to the Internet.
 
 ## 3. Open settings
 
@@ -218,3 +230,7 @@ This prints only whether protection is enabled or disabled. `--help` lists the c
 All changes persist across restarts and require no container restart. Set/reset/enable invalidates old unlocked sessions; close and reopen browser settings after recovery. A delay caused by failed PIN guesses can remain for up to five minutes after setting a replacement; wait before retrying. Disable allows access immediately.
 
 The map configuration, OpenWeather key and radar archive are preserved. Do not delete the Docker volume to recover a PIN. If Docker reports that the service is stopped, run `docker compose up -d` first. If the command reports that recovery is unavailable, check the data volume and filesystem permissions; do not erase the volume.
+
+### Progress after changing the map
+
+Once Apply is accepted, Settings closes and the same progress popup used at first startup appears. It first shows map preparation, then the completed radar-frame count. The current map stays underneath until the replacement is ready; connected browsers switch automatically. Preview does not apply a change or trigger this popup. If preparation fails, the popup explains the failure and lets you continue with the current map.

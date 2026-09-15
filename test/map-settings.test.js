@@ -37,7 +37,7 @@ test('blank location names hide only the centre label and preserve geography',as
 
 test('map apply is atomic, persistent, bounded to one job and keeps the previous view on failure',async t=>{
   const directory=await fixture(t);let release,fail=false;const changes=[];
-  const options={prepare:async()=>{},radarFactory:async(_d,_p,{views})=>({refresh:async()=>{await new Promise(r=>release=r);},status:()=>({frames:fail?[]:[{time:123}],view:views.view})}),onChange:async v=>changes.push(v)};
+  const options={prepare:async()=>{},radarFactory:async(_d,_p,{views})=>({refresh:async()=>{await new Promise(r=>release=r);},status:()=>({frames:fail?[]:[{time:123}],view:views.view,progress:{completed:2,total:13}})}),onChange:async v=>changes.push(v)};
   const maps=await createMapSettings(directory,options);
   assert.deepEqual(maps.current().settings,defaultSettings);
   const next={...defaultSettings,name:'Paris',lat:48.8566,lon:2.3522,zoom:7.5};
@@ -45,11 +45,15 @@ test('map apply is atomic, persistent, bounded to one job and keeps the previous
   assert.equal(maps.configure(next).status,409);
   await new Promise(r=>setImmediate(r));
   assert.equal(maps.current().settings.name,'Coventry');
+  assert.equal(maps.status().applying,true);
+  assert.deepEqual(maps.status().progress,{completed:2,total:13});
   release();await idle(maps);
+  assert.equal(maps.status().applying,false);assert.equal(maps.status().progress,null);
   assert.deepEqual(maps.current().settings,next);assert.equal(changes.length,1);
   assert.deepEqual(JSON.parse(await readFile(join(directory,'settings','map.json'))),next);
   assert.deepEqual((await createMapSettings(directory,options)).current().settings,next);
   fail=true;maps.configure(defaultSettings);await new Promise(r=>setImmediate(r));release();await idle(maps);
+  assert.equal(maps.status().applying,false);assert.equal(maps.status().progress,null);
   assert.equal(maps.current().settings.name,'Paris');assert.match(maps.status().error,/Existing map kept/);
 });
 test('offline geometry renders another country and dynamic HTML escapes labels and aligns annotations',async t=>{

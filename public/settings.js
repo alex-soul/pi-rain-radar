@@ -221,6 +221,10 @@ async function applyMap(value) {
     const result=await response.json();
     $('map-note').textContent=result.error||result.message;
     $('map-apply').disabled=response.status===202;
+    if(response.status===202) {
+      window.dispatchEvent(new Event('map-update-started'));
+      dialog.close();
+    }
   } catch {
     if(epoch===generation) { $('map-note').textContent='Could not confirm map update. Reopen settings to check.'; $('map-apply').disabled=false; }
   }
