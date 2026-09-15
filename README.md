@@ -8,7 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-**v0.1.2 is a pre-release.** A manual Raspberry Pi walkthrough has confirmed Docker deployment, landscape touch controls, automatic kiosk startup after reboot and access from another computer on the home network. Sustained performance and recovery testing remain in progress. A complete beginner hardware guide is being prepared from that walkthrough.
+**v0.1.2 is a pre-release.** A manual Raspberry Pi walkthrough has confirmed Docker deployment, landscape touch controls, automatic kiosk startup after reboot and access from another computer on the home network. Sustained performance and recovery testing remain in progress. Image upgrades, map-change progress and the return to the default location have also been confirmed on the Pi.
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
 
@@ -42,10 +42,10 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 
 - Up to two hours of animated radar, refreshed automatically, with pause and a timeline.
 - A seven-day local archive that builds while the app runs.
-- One Pi, multiple screens: each browser remembers its own buttons, widget layout and theme while sharing the same location and data. Radar and weather acquisition are shared between screens. See [LAN setup](docs/quick-start.md#enable-lan-access-on-v010).
+- One Pi, multiple screens: each browser remembers its own buttons, widget layout and theme while sharing the same location and data. Radar and weather acquisition are shared between screens. See [LAN setup](docs/quick-start.md#3-open-it-from-your-laptop).
 - Last-good cached playback through outages; incomplete timestamps do not block newer complete frames.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
-- Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/quick-start.md#pin-recovery).
+- Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 3.0 key.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
@@ -53,13 +53,18 @@ No PIN or API key is needed to start viewing radar. Overview and MinuteCast star
 
 ## Documentation
 
-- [Quick Start — installation, settings, controls and troubleshooting](docs/quick-start.md)
+- [Quick Start — install and configure from another computer](docs/quick-start.md)
+- [Raspberry Pi build — unpacking to automatic kiosk, without an attached keyboard](docs/raspberry-pi.md)
+- [User manual — every setting, control and status colour](docs/manual.md)
+- [Upgrades — routine updates, migration and rollback](docs/upgrading.md)
+- [Troubleshooting and PIN recovery](docs/troubleshooting.md)
 - [Development — local workflow and tests](docs/development.md)
 - [Design — architecture, behaviour and known limitations](docs/design.md)
+- [Validation — tested baseline and next checks](docs/validation.md)
 - [Contributing](CONTRIBUTING.md)
 - [Third-party data and licences](THIRD_PARTY_NOTICES.md)
 
-Node.js 24, Sharp and plain browser JavaScript. The backend prepares image pairs; the browser plays them over locally bundled maps. Settings and acquired data persist in a Docker volume. The supplied configuration binds to this machine's loopback address only.
+Node.js 24, Sharp and plain browser JavaScript. The backend prepares image pairs; the browser plays them over locally bundled maps. Settings and acquired data persist in a Docker volume. The supplied configuration serves port 3080 on the home LAN; an optional bind-address setting restricts it to loopback.
 
 ## Licence and data
 

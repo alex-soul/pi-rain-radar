@@ -2,10 +2,6 @@
 
 Requires Docker with Linux container support and Docker Compose: Docker Desktop on Windows/macOS, or Docker Engine with Compose on Linux. No host Node installation is needed to run the app. Commands below assume a terminal in the repository root. Pi/ARM64 installation and kiosk operation have been user-confirmed.
 
-```powershell
-docker compose -f compose.yaml -f compose.dev.yaml up -d --build
-```
-
 Open [localhost:3080](http://localhost:3080). Current Compose source publishes port 3080 on all host IPv4 interfaces for home-LAN access. Set RADAR_BIND_ADDRESS=127.0.0.1 in .env for loopback-only development. The v0.1.0 tag remains loopback-only. Initial radar acquisition needs Internet access; a cold two-hour history takes roughly 2–3 minutes to acquire at the bounded request pace. The bundled map appears immediately; any previous complete paired cache stays visible during acquisition. The container runs as the unprivileged Node user.
 
 For development with mounted source and public assets:
@@ -36,7 +32,7 @@ npm test
 Or use the development container's installed dependencies:
 
 ```powershell
-docker compose run --rm --no-deps -v "${PWD}/test:/app/test:ro" radar node --test
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps -v "${PWD}/test:/app/test:ro" radar node --test
 ```
 
 Tests use synthetic tiles, never the external provider. They cover projection, paired-frame publication/recovery, settling and archive boundaries, PIN authorization, weather acquisition/expiry, retained gusts, one-poll fallback and recovery, map preview/apply, time zones and display preferences. External provider requests are mocked.
@@ -92,10 +88,28 @@ For a visual failure test, inject synthetic responses into `createWeather` with 
 
 ## Optional PIN validation
 
-New data volumes allow all settings without a PIN. Settings → PIN enables, changes or disables protection. Existing pin.json hashes stay enabled; no migration or credential reset is needed. Browser settings tests should cover unrestricted Map/Preview/API/Buttons/Misc, enable and confirm, close/reopen, PIN change, disable and restart. Use disposable data; keep the deployed PIN/key untouched. The terminal setup command remains available for host recovery, not required onboarding. Its no-argument form and --set/--reset/--enable choose a PIN interactively; --disable removes the hash and --status reports protection. Follow the [recovery guide](quick-start.md#pin-recovery). Tests exercise recovery against disposable data, including invalid records, without reading deployed credentials.
+New data volumes allow all settings without a PIN. Settings → PIN enables, changes or disables protection. Existing pin.json hashes stay enabled; no migration or credential reset is needed. Browser settings tests should cover unrestricted Map/Preview/API/Buttons/Misc, enable and confirm, close/reopen, PIN change, disable and restart. Use disposable data; keep the deployed PIN/key untouched. The terminal setup command remains available for host recovery, not required onboarding. Its no-argument form and --set/--reset/--enable choose a PIN interactively; --disable removes the hash and --status reports protection. Follow the [recovery guide](troubleshooting.md#pin-recovery). Tests exercise recovery against disposable data, including invalid records, without reading deployed credentials.
 
 PIN-entry tests cover digit-only keyboard/input handling, multi-digit paste, leading zeroes, automatic focus movement, correction and disabled fields. `public/pin-entry.js` is a locally served module; include it when adding or updating an isolated UI fixture. Validate the two aligned six-box rows in both themes and compact layouts.
 
 ## Image releases
 
 Publishing a GitHub release runs .github/workflows/release-image.yml. The workflow checks that its tag matches package.json, runs tests, builds ARM64 and AMD64 images, verifies fresh offline startup and data persistence on both architectures, then promotes the versioned image to latest. latest includes published pre-releases while the product remains pre-release. Fixed v-prefixed image tags support explicit version selection. Publish releases in ascending version order; rerunning an older release also moves latest. GHCR package visibility must be public for anonymous pulls. The source label links images to this repository. Registry publishing uses the workflow GITHUB_TOKEN, with no personal publishing secret.
+
+## Source map and handover
+
+| Location | Responsibility |
+| --- | --- |
+| `src/server.js` | HTTP routes, provider scheduling, active map and version status |
+| `src/radar.js`, `src/archive.js`, `src/provider.js` | Acquisition, paired frames, history and provider boundaries |
+| `src/map*.js` | Projection, offline assets, preview, atomic map configuration and HTML |
+| `src/weather.js` | Shared OpenWeather response, request budgets and retained readings |
+| `src/settings-auth.js`, `src/setup-pin.js` | Optional PIN, settings routes and host recovery |
+| `public/` | Browser playback, settings, controls and per-browser preferences |
+| `test/` | Synthetic provider and browser-logic regression coverage |
+| `.github/workflows/release-image.yml` | Multi-platform release tests/build/publish |
+| `docs/` | Public installation, manual, upgrades and technical reference |
+
+The runnable app is authoritative when prose drifts. Keep personal machine details and credentials out of this public repository. Do not change saved installation defaults as a side effect of changing fresh defaults. Changes to public release behaviour need a package version bump so browser update detection can work; docs-only changes need no image release.
+
+See [validation and remaining work](validation.md) before describing a behaviour as tested on hardware. Full browser visual checks remain separate from VM-based logic tests. The older private development repository is not an active development target.

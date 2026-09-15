@@ -2,7 +2,13 @@
 
 ## Routine upgrades
 
-In the folder containing your Compose file:
+First read the [release notes](https://github.com/alex-soul/pi-rain-radar/releases). On your laptop, open PowerShell/Terminal and connect to the Pi just as during setup:
+
+```sh
+ssh YOUR_USERNAME@pi-weather.local
+```
+
+Use your actual username and hostname. If SSH is already connected, do not open another connection. Run the following in that **Pi SSH terminal**, in the folder containing `compose.yaml`:
 
 ```sh
 cd ~/apps/pi-rain-radar
@@ -11,7 +17,18 @@ sudo docker compose up -d
 sudo docker compose ps
 ```
 
-On Windows/macOS, omit `sudo`. The image is built for both Linux ARM64 and AMD64; Docker chooses automatically. Keep the same Compose project name (`pi-rain-radar`) and volume (`radar-data`). Do not use `down --volumes`: that deletes your settings and history.
+| Command | What it does |
+| --- | --- |
+| `cd ...` | Selects the permanent app folder; it does not change the app. |
+| `pull` | Downloads the new image while the existing app keeps running. Wait for it to finish successfully. |
+| `up -d` | Replaces the container if needed and starts it in the background, using the same saved data. A brief interruption is normal. |
+| `ps` | Shows whether the new container is starting or healthy. |
+
+If `pull` fails, stop there: check the network/error and retry later. Do not delete the running container or volume. If `up` fails or the container remains unhealthy, run `sudo docker compose logs --tail 50 radar` and use [Troubleshooting](troubleshooting.md). The health URL is `http://localhost:3080/healthz` when checked from the Pi; `hasFrame:false` briefly can be normal at startup.
+
+You do not need to download Compose again for an ordinary image update. If release notes require a configuration change, preserve your old file and follow those specific instructions. There is no need to reboot just for an app update once your browser is running v0.1.2 or later. Raspberry Pi OS updates are separate and can still need a reboot.
+
+If the app itself runs on Windows/macOS, omit `sudo`. The image is built for both Linux ARM64 and AMD64; Docker chooses automatically. Keep the same Compose project name (`pi-rain-radar`) and volume (`radar-data`). Do not use `down --volumes`: that deletes your settings and history.
 
 The default `latest` tag follows the most recently published image, including pre-releases during this early stage. It does not update itself: run the commands when you want to upgrade. Read release notes first; future releases may require an explicit Compose or data migration.
 
@@ -45,3 +62,7 @@ Keep a backup of your data before upgrades that change stored formats. Selecting
 ## Validation boundary
 
 The release workflow tests fresh startup and persistent data across container restart for both architectures, without provider network access. ARM64 is exercised under emulation in CI. This does not replace real-Pi testing of touch, Chromium, kiosk startup, network recovery or long-running performance. Existing data can be retained while validating those on the appliance; reflashing is not necessary.
+
+## Tested on the reference Pi
+
+Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed by the user. Automatic reload across a subsequent version change is covered by browser-logic tests; a later real-Pi version-to-version check is still pending.

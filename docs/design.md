@@ -25,12 +25,12 @@ RainViewer is the selected provider for ongoing personal appliance use, beyond t
 
 ## Current gaps
 
-- Hardware deployment and on-device map preparation performance remain to be validated.
+- Hardware deployment and interactive map changes are confirmed on the reference Pi; quantitative map-preparation performance remains unmeasured.
 - RainViewer coverage/no-data masks are not yet shown. An uncoloured region must not be interpreted as a verified absence of rain.
-- The current view uses zoom 8. Animation pace and usability still need evaluation; Natural Earth remains generalized cartography.
+- The default view uses zoom 8. Core UI and animation are accepted on the reference Pi; Natural Earth remains generalized cartography.
 - Sequence publication, partial-failure recovery, and offline cache restoration have tests. Extended offline operation, power interruption, and Pi/ARM64 performance remain to be validated.
 - Docker runtime is pinned to a Node 24 Bookworm multi-platform image digest supporting amd64 and arm64. Update the digest deliberately and rerun validation.
-- The initial public release is MIT-licensed and marked as a pre-release. No published container image is supplied; Compose builds from source. On-device validation remains pending.
+- The initial public release is MIT-licensed and marked as a pre-release. Published ARM64/AMD64 images are supplied from v0.1.2; normal Compose installs pull them. See [validation](validation.md) for confirmed on-device behaviour and remaining checks.
 
 ## Future enhancements
 
@@ -214,3 +214,7 @@ Optional future enhancement, after baseline playback and memory use have been me
 Reuse already acquired frames from the matching map archive; availability remains best effort, with no provider backfill or extra polling implied. A four-hour window at ten-minute spacing has 25 expected slots instead of 13; slider positions, gap markers, counters and History window labels must follow the selected duration. Decide whether the setting applies to both live and History playback when designing the feature. Preserve paired main/Overview timestamps.
 
 Longer windows can increase browser image decoding, memory and transfer from local storage even though acquisition is unchanged. Measure 2/3/4-hour windows and timing choices on the Pi 4 / 2 GB before implementation is accepted; use bounded frame loading if needed, without introducing continuous interpolation or GPU effects. No implementation is scheduled yet.
+
+## Installation and update boundary
+
+Default Compose uses the published GHCR image, with latest or an explicit RADAR_VERSION. The development override builds local source. The named data volume persists independently of container replacement. HTTP status includes appVersion; HTML embeds its version so browsers can reload after a version change, waiting while Settings is open. Existing browser preferences remain origin-scoped. Runtime application changes need a version bump. See [upgrading](upgrading.md) for migration and compatibility limits.
