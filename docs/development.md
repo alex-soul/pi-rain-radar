@@ -113,3 +113,16 @@ Publishing a GitHub release runs .github/workflows/release-image.yml. The workfl
 The runnable app is authoritative when prose drifts. Keep personal machine details and credentials out of this public repository. Do not change saved installation defaults as a side effect of changing fresh defaults. Changes to public release behaviour need a package version bump so browser update detection can work; docs-only changes need no image release.
 
 See [validation and remaining work](validation.md) before describing a behaviour as tested on hardware. Full browser visual checks remain separate from VM-based logic tests. The older private development repository is not an active development target.
+## Development-to-release workflow
+
+Use one simple development stream:
+
+1. Implement product changes in this repository, with appropriate tests and documentation. Commit and push reviewable checkpoints to `main`; a push does not publish an image. Temporary branches are optional for isolated work, not a required release process.
+2. Build the candidate source and validate it on a test device when hardware or visual behaviour needs checking. Record the exact commit and distinguish development builds from published images. `main` can contain changes that have not yet passed device validation; source builders can opt into testing them using the development Compose override.
+3. Once the candidate is accepted, set the release version, commit it and create an annotated tag such as `v0.1.3`. Do not move existing release tags.
+4. Publish a GitHub Release for that tag, with changes, validation and any migration instructions. The existing workflow builds/tests the images and promotes the successful release to Docker `latest`.
+5. Upgrade test devices back to the published image, remove temporary development overrides and verify their version and retained settings.
+
+Tags identify exact source; Releases provide the notes and trigger image publication. Together they form one release checkpoint. Images are published less frequently than source changes. Normal users choose when to pull a published image; developers can build newer `main` themselves. Do not push an unvalidated development image to `latest`.
+
+Development builds should use identifiable local tags (for example `dev-<commit>`) and an explicit override. Repeated builds with the same application version do not trigger browser version reload; refresh browsers manually during those iterations. Preserve the installation's data volume, and back it up before testing changes to stored formats. A code rollback does not roll back data migrations.
