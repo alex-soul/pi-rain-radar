@@ -14,16 +14,25 @@ The app has been exercised on a laptop. A tested Raspberry Pi installation and a
 
 ## 2. Download and start
 
-1. Open the [v0.1.1 pre-release](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.1.1), download **Source code (zip)** under Assets, then extract it into a folder you want to keep.
-2. Open the extracted folder containing **compose.yaml** and **README.md**. Do not run commands inside the ZIP or its parent folder.
-3. Open a terminal in that folder. On Windows, click File Explorer's address bar, type `powershell`, then press Enter. On macOS/Linux, open Terminal, type `cd ` (including the space), drag the extracted folder into the terminal, then press Enter.
-4. Copy this command, paste it into the terminal and press Enter:
+Create a permanent folder for the app, such as `~/apps/pi-rain-radar` on your Pi. You only need one file: [compose.yaml](https://raw.githubusercontent.com/alex-soul/pi-rain-radar/v0.1.2/compose.yaml). Save it in that folder, keeping the exact filename (not compose.yaml.txt).
+
+On a Pi, paste these commands into your SSH terminal:
 
 ```sh
-docker compose up -d --build
+mkdir -p ~/apps/pi-rain-radar
+cd ~/apps/pi-rain-radar
+curl -fL https://raw.githubusercontent.com/alex-soul/pi-rain-radar/v0.1.2/compose.yaml -o compose.yaml
+sudo docker compose pull
+sudo docker compose up -d
 ```
 
-The first run downloads and builds what it needs; it may take several minutes. Once the command finishes, open **[http://localhost:3080](http://localhost:3080)** in a browser on the same computer. You can close the terminal; keep Docker running.
+For an existing installation, follow [the migration instructions](upgrading.md) instead of overwriting its Compose file.
+
+On Windows/macOS, save the linked file in your chosen folder, open a terminal in that folder, then run `docker compose pull` followed by `docker compose up -d` (without sudo). Docker Desktop must be running.
+
+Docker downloads the ready-built image for your computer. No source ZIP, Git or compiler is needed. Open **http://localhost:3080** in a browser on that computer. You can close the terminal; keep Docker running.
+
+For a touchscreen Pi, use your laptop browser on the same network to configure Map, OpenWeather and optional PIN using the host address below. The Pi needs no attached keyboard or mouse; use touch to arrange its widgets afterward.
 
 The map appears before the rain does. Allow roughly 2–3 minutes for the first radar sequence, potentially longer on a slow connection. No RainViewer account or API key is needed for radar. Current temperature and the minute forecast are optional and need a separate key, explained below.
 
@@ -166,7 +175,7 @@ Run these commands from the extracted app folder, just as during installation.
 | Restart the running app | `docker compose restart radar` |
 | Show recent diagnostic messages | `docker compose logs --tail 50 radar` |
 
-For an update, stop the app, download and extract a fresh ZIP from the repository, then run `docker compose up -d --build` from that new folder. Use the supplied Compose configuration unchanged: its fixed application name keeps the same saved data on the same Docker installation. Refresh the browser afterward. Check the README for any release-specific instructions before updating.
+For an update, run `docker compose pull` then `docker compose up -d` in the existing installation folder. Settings and history remain in the same data volume. See [upgrades and migration](upgrading.md), including the one-time migration for older source installations.
 
 Settings, the PIN, key and radar archive are stored separately in Docker's persistent storage. Ordinary stops, restarts and rebuilds preserve them. **Do not delete the app's Docker volume or use `docker compose down -v`** unless you intend to erase them. Browser layout preferences are separate and can be lost if browser site data is cleared.
 
@@ -234,3 +243,7 @@ The map configuration, OpenWeather key and radar archive are preserved. Do not d
 ### Progress after changing the map
 
 Once Apply is accepted, Settings closes and the same progress popup used at first startup appears. It first shows map preparation, then the completed radar-frame count. The current map stays underneath until the replacement is ready; connected browsers switch automatically. Preview does not apply a change or trigger this popup. If preparation fails, the popup explains the failure and lets you continue with the current map.
+
+## Updating the app
+
+See [upgrades, source-install migration and rollback](upgrading.md). Normal upgrades use only docker compose pull and docker compose up -d; preserve the data volume.

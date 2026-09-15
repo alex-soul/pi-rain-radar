@@ -1,5 +1,7 @@
 services:
   radar:
+    image: pi-rain-radar:development
+    build: .
     command: ["node", "--watch", "src/server.js"]
     volumes:
       - ./src:/app/src:ro

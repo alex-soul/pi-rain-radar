@@ -5,6 +5,7 @@ import { createWeather } from './weather.js';
 import { createMapSettings } from './map-settings.js';
 import { mapPage } from './map-page.js';
 import { assetNames } from './map-assets.js';
+import packageInfo from '../package.json' with {type:'json'};
 
 import { createSettingsAuth, settingsRoutes } from "./settings-auth.js";
 
@@ -68,7 +69,7 @@ const server = createServer(async (req, res) => {
         JSON.stringify(
           path === "/healthz"
             ? { ok: true, hasFrame: !!radar.status().frame }
-            : { ...radar.status(), weather: weather.status(), mapId:active.id, mapUpdate:maps.status() },
+            : { ...radar.status(), appVersion:packageInfo.version, weather: weather.status(), mapId:active.id, mapUpdate:maps.status() },
         ),
       );
     }

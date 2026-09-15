@@ -4,6 +4,7 @@ const $ = (id) => document.getElementById(id);
 const timeZone = document.querySelector('meta[name="time-zone"]').content;
 const assetIdentity = document.querySelector('meta[name="map-assets"]').content;
 const mapIdentity = document.querySelector('meta[name="map-id"]').content;
+const appVersion = document.querySelector('meta[name="app-version"]').content;
 function paintThemeToggle() {
   const dark = document.documentElement.dataset.theme === "dark";
   $("theme-toggle").textContent = dark ? "☀" : "☾";
@@ -254,6 +255,10 @@ async function poll() {
     });
     if (!response.ok) throw new Error("Status unavailable");
     status = await response.json();
+    if (status.appVersion && status.appVersion !== appVersion) {
+      if (!$('settings-dialog').open) location.reload();
+      return;
+    }
     if (status.mapId && status.mapId !== mapIdentity) { location.reload(); return; }
     paintMapUpdate(status.mapUpdate);
     if (status.mapUpdate?.busy || status.mapUpdate?.error) {

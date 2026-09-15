@@ -1,9 +1,9 @@
 # Run and develop
 
-Requires Docker with Linux container support and Docker Compose: Docker Desktop on Windows/macOS, or Docker Engine with Compose on Linux. No host Node installation is needed to run the app. Commands below assume a terminal in the repository root. Pi/ARM64 operation remains unverified.
+Requires Docker with Linux container support and Docker Compose: Docker Desktop on Windows/macOS, or Docker Engine with Compose on Linux. No host Node installation is needed to run the app. Commands below assume a terminal in the repository root. Pi/ARM64 installation and kiosk operation have been user-confirmed.
 
 ```powershell
-docker compose up -d --build
+docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
 
 Open [localhost:3080](http://localhost:3080). Current Compose source publishes port 3080 on all host IPv4 interfaces for home-LAN access. Set RADAR_BIND_ADDRESS=127.0.0.1 in .env for loopback-only development. The v0.1.0 tag remains loopback-only. Initial radar acquisition needs Internet access; a cold two-hour history takes roughly 2–3 minutes to acquire at the bounded request pace. The bundled map appears immediately; any previous complete paired cache stays visible during acquisition. The container runs as the unprivileged Node user.
@@ -95,3 +95,7 @@ For a visual failure test, inject synthetic responses into `createWeather` with 
 New data volumes allow all settings without a PIN. Settings → PIN enables, changes or disables protection. Existing pin.json hashes stay enabled; no migration or credential reset is needed. Browser settings tests should cover unrestricted Map/Preview/API/Buttons/Misc, enable and confirm, close/reopen, PIN change, disable and restart. Use disposable data; keep the deployed PIN/key untouched. The terminal setup command remains available for host recovery, not required onboarding. Its no-argument form and --set/--reset/--enable choose a PIN interactively; --disable removes the hash and --status reports protection. Follow the [recovery guide](quick-start.md#pin-recovery). Tests exercise recovery against disposable data, including invalid records, without reading deployed credentials.
 
 PIN-entry tests cover digit-only keyboard/input handling, multi-digit paste, leading zeroes, automatic focus movement, correction and disabled fields. `public/pin-entry.js` is a locally served module; include it when adding or updating an isolated UI fixture. Validate the two aligned six-box rows in both themes and compact layouts.
+
+## Image releases
+
+Publishing a GitHub release runs .github/workflows/release-image.yml. The workflow checks that its tag matches package.json, runs tests, builds ARM64 and AMD64 images, verifies fresh offline startup and data persistence on both architectures, then promotes the versioned image to latest. latest includes published pre-releases while the product remains pre-release. Fixed v-prefixed image tags support explicit version selection. Publish releases in ascending version order; rerunning an older release also moves latest. GHCR package visibility must be public for anonymous pulls. The source label links images to this repository. Registry publishing uses the workflow GITHUB_TOKEN, with no personal publishing secret.

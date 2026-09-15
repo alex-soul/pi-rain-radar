@@ -11,7 +11,7 @@ export function mapPage(html,{settings,id}) {
       .replaceAll(' around {{LOCATION}}','')
       .replace(/<text[^>]*>{{LOCATION}}<\/text>/,'');
   }
-  html=html.replaceAll('{{LOCATION}}',escapeHtml(settings.name)).replace('{{MAP_ID}}',id).replace('{{APP_VERSION}}',escapeHtml(packageInfo.version));
+  html=html.replaceAll('{{LOCATION}}',escapeHtml(settings.name)).replace('{{MAP_ID}}',id).replaceAll('{{APP_VERSION}}',escapeHtml(packageInfo.version));
   const assets=mapAssetId(settings);
   html=html.replace('{{MAP_ASSETS}}',assets).replaceAll('{{TIME_ZONE}}',escapeHtml(settings.timeZone||'Europe/London')).replace('{{TIME_ZONE_OPTIONS}}',timeZones.map(zone=>`<option value="${escapeHtml(zone)}"></option>`).join(''));
   for(const name of assetNames) html=html.replaceAll(`/${name}`,`/maps/${assets}/${name}`);

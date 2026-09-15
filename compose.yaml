@@ -1,7 +1,7 @@
 name: pi-rain-radar
 services:
   radar:
-    build: .
+    image: ghcr.io/alex-soul/pi-rain-radar:${RADAR_VERSION:-latest}
     ports:
       - "${RADAR_BIND_ADDRESS:-0.0.0.0}:3080:3000"
     volumes:
