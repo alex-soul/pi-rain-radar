@@ -32,14 +32,6 @@ RainViewer is the selected provider for ongoing personal appliance use, beyond t
 - Docker runtime is pinned to a Node 24 Bookworm multi-platform image digest supporting amd64 and arm64. Update the digest deliberately and rerun validation.
 - The initial public release is MIT-licensed and marked as a pre-release. Published ARM64/AMD64 images are supplied from v0.1.2; normal Compose installs pull them. See [validation](validation.md) for confirmed on-device behaviour and remaining checks.
 
-## Future enhancements
-
-- [Playback window and timing settings](#deferred-playback-window-and-timing-settings) are deferred until Pi baseline tests: retain two hours by default, optionally three/four hours, with adjustable frame speed and final hold.
-
-- Historical current-weather/forecast snapshots are deferred. Both weather widgets remain current during radar history; any future archive must distinguish issued forecasts from observations and retain location and timestamps. No weather archive or -1h chart is implemented.
-
-- **Configurable render resolution — nice to have, deferred; no implementation planned.** Consider tested size presets in Map settings, retaining 1280 × 720 as the default. Render size should remain independent of screen resolution. Any implementation must derive marker/label positions, scale, SVG viewport and overview extent from the chosen dimensions, and preserve geometry-specific cache/history isolation. Keep rendering on the backend and the browser image-based. Bound larger sizes and measure preparation time, playback memory, tile requests and archive storage on the target Pi before enabling them; more pixels do not increase the provider's source detail.
-
 ## Appearance
 
 The main render size is fixed at 1280 × 720, the recommended landscape display resolution. Browser scaling supports other screen sizes; `xMidYMid slice` crops the map at different aspect ratios rather than stretching it. Responsive controls remain independent of render resolution.
@@ -206,14 +198,6 @@ Dark-mode MinuteCast also shares the dark dock background (#071410ad), applying 
 The timeline has 13 fixed ten-minute slots across two hours, ending at the live sequence's newest frame or the selected history end. Missing slots are muted amber only ahead of playback; an opaque progress layer covers them behind the thumb. Frame playback still iterates only available images, and the x/y counter counts those images. Scrubbing snaps to the nearest available timestamp (earlier on ties); keyboard navigation skips gaps in both modes. A cached per-sequence slot model prepares the gap gradient, reused on each tick. Native range semantics remain with CSS tracks/thumbs for Chromium and Firefox. No extra assets, requests, timers or backend processing.
 
 Current weather includes optional wind gusts in mph, immediately right of wind speed. The backend retains one last valid gust (mph and provider observation timestamp) in the existing weather.json cache, exposed as weather.gust. Missing/invalid samples and provider failures preserve it; repeated/older timestamps do not renew its age. Startup adopts a previous-format current gust at its original observation time. Coordinate changes and key removal clear it. Misc stores gustCacheMinutes under the browser-local radar-display preferences (60 default, whole numbers 1–1440), applied immediately on change. The renderer expires gusts by their own timestamp independently of other current readings, with a timestamp tooltip. Only the gust number receives a theme-specific muted amber tint when carried over rather than supplied by fresh current data, including provider-error fallback; the icon and units remain unchanged. Fresh readings and unavailable dashes use normal colours; absent/expired gusts are dashes and do not make otherwise valid weather unhealthy. A single retained record and the existing weather paint cadence require no archive, new endpoint or timer. The same shared OpenWeather response supplies all four readings; polling is unchanged.
-
-## Deferred: playback window and timing settings
-
-Optional future enhancement, after baseline playback and memory use have been measured on the target Raspberry Pi. Keep the current two-hour window and playback timings as defaults. Consider settings for a longer window (for example three or four hours), time per frame/playback speed, and the hold on the final frame before looping. This is a playback-window choice, separate from seven-day archive retention and the ten-minute History auto-return.
-
-Reuse already acquired frames from the matching map archive; availability remains best effort, with no provider backfill or extra polling implied. A four-hour window at ten-minute spacing has 25 expected slots instead of 13; slider positions, gap markers, counters and History window labels must follow the selected duration. Decide whether the setting applies to both live and History playback when designing the feature. Preserve paired main/Overview timestamps.
-
-Longer windows can increase browser image decoding, memory and transfer from local storage even though acquisition is unchanged. Measure 2/3/4-hour windows and timing choices on the Pi 4 / 2 GB before implementation is accepted; use bounded frame loading if needed, without introducing continuous interpolation or GPU effects. No implementation is scheduled yet.
 
 ## Installation and update boundary
 

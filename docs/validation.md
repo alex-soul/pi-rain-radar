@@ -27,6 +27,6 @@ The complete flash-to-kiosk route was rehearsed manually; the later published-im
 
 ## Scope for the next iteration
 
-Keep rain as the focus. Optional future ideas live in [design](design.md#future-enhancements); they are not commitments for this baseline. Private host preferences, power-saving experiments and other personal stack integrations belong outside the public product repo. The beginner baseline keeps the screen on continuously.
+Keep rain as the focus. This repository documents implemented behaviour and known validation gaps; speculative enhancements are not a public release commitment. Private host preferences, power-saving experiments and other personal stack integrations belong outside the public product repo. The beginner baseline keeps the screen on continuously.
 
 Docs-only edits do not need an image release. App releases should bump the package version, pass the release workflow and update this evidence when new hardware results are available.
