@@ -4,7 +4,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ![Historical rain radar centred on Coventry](docs/images/radar-preview.gif)
 
-*Recorded on 15 September 2026: 13 cached radar frames over Coventry, with Overview and MinuteCast open. Historical demonstration, not live conditions; weather readings and MinuteCast reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/), basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/radar-preview.png).*
+*Recorded on 16 September 2026 in v0.3.0: 13 radar frames over Coventry, spanning 19:30–21:30 BST, with Overview and MinuteCast open. Historical demonstration, not live conditions; weather readings and MinuteCast reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/), basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/radar-preview.png).*
 
 ## Status
 
