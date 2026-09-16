@@ -16,9 +16,13 @@ This is the public handover point for the working appliance baseline. Runtime so
 | OpenWeather | Key setup from laptop and readings after location-change cooldown confirmed; waiting hint visible | Requires each user's own eligible key and local provider coverage |
 | Upgrade | Source build migrated to published ARM64 v0.1.2; reboot and retained configuration confirmed | Future version-to-version browser auto-reload is logic-tested, not yet checked through a later Pi release |
 
-## Next validation
+## v0.2.0 release validation
 
 Development candidate (16 September 2026): One Call 4.0-only integration has 72 passing Windows/Linux tests, including independent endpoint failures, legacy normalized-cache migration, request budgets, stale in-flight responses and safe errors. Isolated browser checks passed at 1280 × 720 in both themes and at 390 × 844 with synthetic current/forecast data and the application CSP. A saved key with a 4.0 subscription returned HTTP 200 for both live endpoints (one current record and 60 minute records). All 72 tests also passed natively on ARM64 with networking disabled. The candidate application completed its scheduled 4.0 refresh on a Pi 4 2 GB: both endpoints succeeded, 60 forecast minutes rendered, and saved key/PIN/map configuration and radar history were retained. The device owner confirmed the visible changes and working OpenWeather integration on 16 September. The final release also removes the API settings subtitle at their request. Published-image CI and installation checks are recorded separately below.
+
+Published v0.2.0 at source 8b2bdee passed [release CI](https://github.com/alex-soul/pi-rain-radar/actions/runs/35093528794), including tests and fresh startup/data persistence checks on AMD64 and ARM64, then promoted to latest. The Pi was returned to the published ARM64 image with its development override removed. Verified version 0.2.0, healthy process, 13 radar frames, retained current/minute data and unchanged saved key/PIN/map files. Served HTML includes the new version and omits the removed subtitle. Physical screen review of the final image remains with the device owner.
+
+## Next validation
 
 - Observe sustained playback CPU/memory, temperatures and storage growth, including a retained seven-day archive.
 - Exercise browser exit/relaunch and controlled network loss/recovery on the Pi.
