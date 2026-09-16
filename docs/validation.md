@@ -28,7 +28,7 @@ All 97 tests passed on Windows and natively on ARM64. The native candidate passe
 
 On the reference Pi 4 / 2 GB, a 20-second sample during that playback showed 7–13% aggregate CPU use, about 876 MiB available RAM, no swap-in/out, 53.5°C and no throttling. Chromium proportional resident memory was about 515 MiB; backend processes about 156 MiB. The container was healthy with zero restarts/OOM events and successful scheduled radar/weather updates. Existing key/PIN/map files were unchanged, and the archive supplied complete 13/25/37-frame windows.
 
-These are short observations, not a completed multi-hour soak or proof of leak-free operation. The host kernel does not enforce Docker memory limits; resource assessment uses host/process measurements. Final v0.3.0 image publication, multi-architecture CI and published-image handover remain pending.
+These are short observations, not a completed multi-hour soak or proof of leak-free operation. The host kernel does not enforce Docker memory limits; resource assessment uses host/process measurements. [Release CI 35146632588](https://github.com/alex-soul/pi-rain-radar/actions/runs/35146632588) passed both architecture builds and startup/restart checks, then promoted v0.3.0 to latest. The reference Pi returned to that published image using base Compose only; key/PIN/map/radar settings and history were retained. The owner confirmed About shows 0.3.0 after handover.
 
 ## Next validation
 

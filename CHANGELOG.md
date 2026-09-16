@@ -29,4 +29,4 @@ All provider credit links remain active during UI lock, with a kiosk navigation 
 
 ### Validation
 
-97 tests passed on Windows and native ARM64; candidate fresh-start/restart smoke checks passed. The owner accepted six-hour, full-speed playback on a Pi 4 / 2 GB. A short resource sample found no swap activity, throttling or backend errors. Sustained soak/recovery testing remains open; final image CI and published-image verification are pending. See [validation](docs/validation.md).
+97 tests passed on Windows and native ARM64; candidate fresh-start/restart smoke checks passed. The owner accepted six-hour, full-speed playback on a Pi 4 / 2 GB. A short resource sample found no swap activity, throttling or backend errors. Sustained soak/recovery testing remains open; release CI passed both architectures and startup/restart checks. The reference Pi is healthy on the published image, with settings/history preserved and its About version confirmed by the owner. See [validation](docs/validation.md).
