@@ -17,8 +17,8 @@ sudo docker compose logs --tail 50 radar
 | Browser cannot open the page | Check Docker is running, run `sudo docker compose up -d`, and open the Pi hostname/IP on your laptop. localhost only works on the computer running the app. Check both devices are on the same network; guest Wi-Fi may isolate devices. |
 | Old radar after sleep or a network outage | Confirm Docker and Internet access have recovered. Allow time for the next check and downloads. If it stays stuck, refresh the page, then check recent logs or restart the app. Sleep pauses acquisition; it does not build history in the background. |
 | Amber radar / fewer than 13 frames | Let acquisition retry. The provider may have missing frames or be unavailable. Playing cached data is expected. |
-| No temperature or minute forecast | Save a One Call 3.0-enabled key, then read the connection message in API Keys. A radar-only setup works without it. |
-| OpenWeather reports HTTP 401/403 | Check the key, activation and One Call access in your provider account. |
+| No temperature or minute forecast | Save a One Call 4.0-enabled key, then read the connection message in API Keys. A radar-only setup works without it. |
+| OpenWeather reports HTTP 401/403 | Check the key, activation and separate One Call 4.0 subscription in your provider account. A 3.0 or standard Weather API subscription is insufficient. |
 | OpenWeather reports HTTP 429 | Check your account request limit and other apps using the account. The app retries automatically; repeated saves will not fix a provider limit. |
 | A toolbar button disappeared | Open **Settings → Buttons** and enable it again. Tap the screen to reveal the settings cog. |
 | Forgot the PIN | Follow [PIN recovery](#pin-recovery). There is no need to delete saved data. |

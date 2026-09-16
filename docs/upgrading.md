@@ -1,5 +1,14 @@
 # Upgrades and migration
 
+## v0.2.0 (unreleased): OpenWeather subscription change
+
+**Breaking change:** optional weather readings and MinuteCast now require **One Call API 4.0**. One Call 3.0 is no longer supported; there is no version selector or automatic fallback. Radar and its history still work without OpenWeather.
+
+Before upgrading, activate a separate One Call 4.0 subscription in your existing OpenWeather account. An existing API key may then work unchanged; the subscription entitlement matters. Saved keys, PIN, map settings, radar history and browser preferences are preserved. If a 401/403 persists after provider activation, check the subscription and re-save the key in Settings to request another check. Never post your key in an issue.
+
+OpenWeather retains its pay-per-use model: as checked on 16 September 2026, the first **1,000 calls/day** are free, with charges above that. Its default **2,000-call daily limit is not a free allowance**. Set your account limit to 1,000 to remain within the free allowance. Normal app operation is approximately 288 calls/day per installation, plus manual key checks; allow for other applications using the same subscription. See [current provider terms](https://openweathermap.org/api/one-call-4).
+
+Back up the data volume before testing an upgrade. The normalized weather cache remains readable across this change; rolling back code does not restore subscription access. A v0.1.2 rollback still needs One Call 3.0 entitlement for weather.
 ## Routine upgrades
 
 First read the [release notes](https://github.com/alex-soul/pi-rain-radar/releases). On your laptop, open PowerShell/Terminal and connect to the Pi just as during setup:

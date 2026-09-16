@@ -10,7 +10,7 @@ const fetchedStamp = time => {
   return `${part({day:'numeric'})} ${part({month:'short'}).slice(0,3)} ${stamp(time/1000)}`;
 };
 export function paintWeather(state, now = Date.now()) {
-  const nextSignature = JSON.stringify([state?.fetchedAt,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust?.time,state?.gust?.mph,gustCacheMinutes()]);
+  const nextSignature = JSON.stringify([state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust?.time,state?.gust?.mph,gustCacheMinutes()]);
   if (signature === nextSignature) return;
   signature = nextSignature;
   $('weather-credit').hidden = !state?.configured;
@@ -44,10 +44,13 @@ export function paintWeather(state, now = Date.now()) {
 
   const minuteNow = Math.floor(now / 60000) * 60;
   const entries = (data?.minutely || []).filter(item => item.time >= minuteNow && item.time < minuteNow + 3600);
+  const forecastError = state?.forecastError;
+  const forecastFetchedAt = state?.forecastFetchedAt ?? state?.fetchedAt;
   const health = !state ? ['error', 'Cannot reach weather server.']
     : !state.configured ? ['neutral', 'No OpenWeather key configured.']
     : state.error || failures > 0 ? ['error', state.error || 'Weather refresh failed; awaiting recovery.']
-    : state.fetching && !state.fetchedAt ? ['neutral', 'Checking OpenWeather…']
+    : forecastError ? ['error', `MinuteCast: ${forecastError}`]
+    : state.fetching && !state.fetchedAt && !forecastFetchedAt ? ['neutral', 'Checking OpenWeather…']
     : entries.length && usable ? ['ready', `OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`]
     : state.fetchedAt ? ['stale', 'Weather data missing or expired; awaiting refresh.']
     : ['neutral', 'Awaiting first OpenWeather response — allow 10–15 min.'];
@@ -55,13 +58,13 @@ export function paintWeather(state, now = Date.now()) {
   $('weather-dock').title = `${description}. ${health[1]}`;
   $('settings-api-status').textContent = health[1];
   const available = new Map(entries.map(item => [Math.round((item.time - minuteNow) / 60), item.precipitation]));
-  const message = !state?.configured ? 'Configure OpenWeather in Settings' : entries.length ? '' : state?.error || 'Forecast unavailable';
+  const message = !state?.configured ? 'Configure OpenWeather in Settings' : entries.length ? '' : forecastError || 'Forecast unavailable';
   $('minute-message').textContent = message;
   $('minute-message').hidden = !message;
   $('minute-chart').style.visibility = message ? 'hidden' : 'visible';
   $('minute-chart').setAttribute('viewBox', '0 0 360 85');
-  $('minute-chart').setAttribute('aria-label', entries.length ? `Current precipitation forecast, fetched at ${stamp(state.fetchedAt/1000)}. ${entries.length} available minute samples. Precipitation in millimetres per hour.` : message);
-  $('minutecast').title = state?.error || (state?.fetchedAt ? `Current forecast · updated ${stamp(state.fetchedAt/1000)} · OpenWeather` : message);
+  $('minute-chart').setAttribute('aria-label', entries.length ? `Current precipitation forecast, fetched at ${stamp(forecastFetchedAt/1000)}. ${entries.length} available minute samples. Precipitation in millimetres per hour.` : message);
+  $('minutecast').title = forecastError || (forecastFetchedAt ? `Current forecast · updated ${stamp(forecastFetchedAt/1000)} · OpenWeather` : message);
   const scale = Math.max(1, ...entries.map(item => item.precipitation));
   const bars = [];
   for (let minute=0; minute<60; minute++) {

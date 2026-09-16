@@ -18,6 +18,8 @@ This is the public handover point for the working appliance baseline. Runtime so
 
 ## Next validation
 
+Development candidate (16 September 2026): One Call 4.0-only integration has 72 passing Windows/Linux tests, including independent endpoint failures, legacy normalized-cache migration, request budgets, stale in-flight responses and safe errors. Isolated browser checks passed at 1280 × 720 in both themes and at 390 × 844 with synthetic current/forecast data and the application CSP. A saved key with a 4.0 subscription returned HTTP 200 for both live endpoints (one current record and 60 minute records). Candidate application validation on ARM64 hardware and release acceptance are still pending; these checks do not constitute a published release.
+
 - Observe sustained playback CPU/memory, temperatures and storage growth, including a retained seven-day archive.
 - Exercise browser exit/relaunch and controlled network loss/recovery on the Pi.
 - Check automatic browser refresh during the next version upgrade while preserving display preferences.

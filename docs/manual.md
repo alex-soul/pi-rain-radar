@@ -60,7 +60,7 @@ The two dock handles remain available for API status; screen interaction reveals
 
 ### API Keys: add current weather and MinuteCast (optional)
 
-The app uses **OpenWeather One Call 3.0** for both features. An API key is a private access code from your OpenWeather account. It must have access to this specific service; another OpenWeather subscription may not include it. Check the [provider's current access and pricing information](https://openweathermap.org/api/one-call-3) and your account's request limit before enabling it.
+The app uses **OpenWeather One Call 4.0** for both features. An API key is a private access code from your OpenWeather account. It must have access to this specific service; another OpenWeather subscription may not include it. Check the [provider's current access and pricing information](https://openweathermap.org/api/one-call-4) and your account's request limit before enabling it. One Call 4.0 requires its own subscription, including for existing 3.0 users. As checked on 16 September 2026, the first 1,000 calls/day are free; the default 2,000-call daily limit allows chargeable usage. Set the limit to 1,000 to stay within the free allowance. Normal operation uses approximately 288 calls/day per installation (two requests every ten minutes), plus explicit key checks. Other applications and installations sharing the subscription also consume its allowance.
 
 Paste the key into **Settings → API Keys**, then tap **Save key**. The status underneath reports connection errors or **Last fetched at…** after success. Newly created keys may need activation time; do not repeatedly resave them. The app retries automatically.
 

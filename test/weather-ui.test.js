@@ -18,6 +18,15 @@ test('weather rendering distinguishes zero from missing data, expires readings a
   assert.equal(nodes.get('settings-api-status').textContent,'OpenWeather connected. Last fetched at 14 Sep 12:00.');
   assert.equal(nodes.get('weather-gust').textContent,'—');
   const before=writes;context.paintWeather(state,now+1000);assert.equal(writes,before);
+  context.paintWeather({...state,forecastError:'HTTP 503: Forecast unavailable',forecastFetchedAt:now-600000},now);
+  assert.equal(nodes.get('weather-temperature').textContent,'14°');
+  assert.equal(nodes.get('weather-temperature').attributes['data-cached'],'false');
+  assert.equal(nodes.get('minute-bars').children.length,2);
+  assert.match(nodes.get('settings-api-status').textContent,/MinuteCast.*503/);
+  assert.match(nodes.get('minute-chart').attributes['aria-label'],/11:50/);
+  context.paintWeather({...state,error:'HTTP 503: Current unavailable',failures:2,forecastFetchedAt:now},now);
+  assert.equal(nodes.get('weather-temperature').textContent,'—');
+  assert.equal(nodes.get('minute-bars').children.length,2);
   const gustState={...state,fetchedAt:now+1,data:{...state.data,current:{...state.data.current,gustMph:22.4}}};
   context.paintWeather(gustState,now);
   assert.equal(nodes.get('weather-gust').textContent,'22');

@@ -46,7 +46,7 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Last-good cached playback through outages; incomplete timestamps do not block newer complete frames.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
-- Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 3.0 key.
+- Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
 No PIN or API key is needed to start viewing radar. Overview and MinuteCast start closed. The app runs independently of Home Assistant.
