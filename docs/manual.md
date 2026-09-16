@@ -115,7 +115,7 @@ The top dock sizes to the selected readings, wrapping on narrow screens. Hiding 
 
 ## Using the screen
 
-![Example radar display in dark mode](images/radar-preview.png)
+![Example radar display in dark mode](images/radar-preview-20260916-2147.png)
 
 *Recorded v0.3.0 display, 16 September 2026, with Overview and MinuteCast open. Historical example, not live conditions.*
 
