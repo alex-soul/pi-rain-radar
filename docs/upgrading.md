@@ -2,7 +2,7 @@
 
 ## v0.3.0: display preferences and longer playback
 
-The accepted candidate preserves the existing key, PIN, map and radar archive. No Compose change or additional service is needed. Keep the same browser profile and address to retain layout preferences. New defaults are Celsius/mph, the original four readings, 1× playback, a two-hour window and UI lock off; existing saved preferences take precedence. Radar settling remains on by default and is shared by all screens.
+This release preserves the existing key, PIN, map and radar archive. No Compose change or additional service is needed. Keep the same browser profile and address to retain layout preferences. New defaults are Celsius/mph, the original four readings, 1× playback, a two-hour window and UI lock off; existing saved preferences take precedence. Radar settling remains on by default and is shared by all screens.
 
 Settings moves to Map, Interface, System and About. API configuration is under System → API; units and gust lifetime are under Interface → Weather. See the [manual](manual.md) for the complete menu.
 
@@ -72,9 +72,11 @@ The image line printed by `config --images` should be `ghcr.io/alex-soul/pi-rain
 
 ## Pinning a version and rollback
 
-The supplied Compose file accepts `RADAR_VERSION=v0.1.2` in a `.env` file beside it. Preserve any other entries in that file. Run pull and up again to use that fixed version. To follow the moving channel, remove that entry or set it to `latest`.
+Choose an exact published tag from the [release list](https://github.com/alex-soul/pi-rain-radar/releases), then set `RADAR_VERSION=<chosen-tag>` in a `.env` file beside Compose, replacing `<chosen-tag>` with that tag, including its `v` prefix. Preserve any other entries in that file. Run pull and up again to use that fixed version. To follow the moving channel, remove that entry or set it to `latest`.
 
-For a migrated file with a literal image tag, replace `:latest` on its image line with the desired published tag, for example `:v0.1.2`. Published images start at v0.1.2; older versions were source-only builds.
+For a reproducible fresh install, also download `compose.yaml` from that tag: open the release, browse its tagged source and select the raw Compose file. Its URL has the form `https://raw.githubusercontent.com/alex-soul/pi-rain-radar/<chosen-tag>/compose.yaml`. Set `RADAR_VERSION` too: downloading a tagged Compose file alone does not pin the image. Preserve existing installations' configuration and follow release-specific migration instructions.
+
+For a migrated file with a literal image tag, replace `:latest` on its image line with the desired published tag. Published images start at v0.1.2; older versions were source-only builds.
 
 Keep a backup of your data before upgrades that change stored formats. Selecting an older image does not restore older data. During the first migration, the saved Compose file and locally built image provide a rollback path: restore the Compose backup and run `sudo docker compose up -d --no-build` while those local assets still exist.
 
@@ -84,4 +86,4 @@ The release workflow tests fresh startup and persistent data across container re
 
 ## Tested on the reference Pi
 
-Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed on my Pi. Automatic reload across a subsequent version change is covered by browser-logic tests; a later real-Pi version-to-version check is still pending.
+Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed on my Pi. Later published-image handovers and on-screen version confirmation are recorded in [validation](validation.md). Automatic reload is covered by browser-logic tests; controlled verification of every reload path, including Settings-open deferral, remains separate.

@@ -100,6 +100,14 @@ PIN-entry tests cover digit-only keyboard/input handling, multi-digit paste, lea
 
 ## Image releases
 
+### Documentation maintenance
+
+Quick Start owns the installation walkthrough; the Pi guide links to it and the README keeps a short entry point. Fresh-install downloads use the maintained `main/compose.yaml`, whose default image follows the successfully published `latest` channel, including pre-releases. Keep this file compatible with the currently published image: stage incompatible future Compose changes separately until release and document explicit migrations. Never silently replace customised installation files during upgrades.
+
+During release review, check README, Quick Start, the manual and troubleshooting against the actual menu, defaults and upgrade behaviour. Installation commands and pinning examples should not require a version-number edit on every release. Keep dated versions in changelog/validation evidence and genuine migration boundaries; those are historical facts. Update the README status when the release status changes. Documentation-only fixes need no image release.
+
+### Publication
+
 Publishing a GitHub release runs .github/workflows/release-image.yml. The workflow checks that its tag matches package.json, runs tests, builds ARM64 and AMD64 images, verifies fresh offline startup and data persistence on both architectures, then promotes the versioned image to latest. latest includes published pre-releases while the product remains pre-release. Fixed v-prefixed image tags support explicit version selection. Publish releases in ascending version order; rerunning an older release also moves latest. GHCR package visibility must be public for anonymous pulls. The source label links images to this repository. Registry publishing uses the workflow GITHUB_TOKEN, with no personal publishing secret.
 
 ## Source map and handover
@@ -125,7 +133,7 @@ Use one simple development stream:
 
 1. Implement product changes in this repository, with appropriate tests and documentation. Commit and push reviewable checkpoints to `main`; a push does not publish an image. Temporary branches are optional for isolated work, not a required release process.
 2. Build the candidate source and validate it on a test device when hardware or visual behaviour needs checking. Record the exact commit and distinguish development builds from published images. `main` can contain changes that have not yet passed device validation; source builders can opt into testing them using the development Compose override.
-3. Once the candidate is accepted, set the release version, commit it and create an annotated tag such as `v0.1.3`. Do not move existing release tags.
+3. Once the candidate is accepted, set the release version, commit it and create an annotated tag matching `v` plus the package version. Do not move existing release tags.
 4. Publish a GitHub Release for that tag, with changes, validation and any migration instructions. The existing workflow builds/tests the images and promotes the successful release to Docker `latest`.
 5. Upgrade test devices back to the published image, remove temporary development overrides and verify their version and retained settings.
 

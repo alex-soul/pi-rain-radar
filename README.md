@@ -14,17 +14,19 @@ Pi Rain Radar focuses on rain: recent radar playback, a small overview map, opti
 
 ## Run with Docker
 
-Install Docker with the Compose plugin. On Linux or a Pi:
+Install Docker with the Compose plugin. For a new installation on Linux or a Pi (existing installations should use [Upgrade](#upgrade)):
 
 ```sh
 mkdir -p ~/apps/pi-rain-radar
 cd ~/apps/pi-rain-radar
-curl -fL https://raw.githubusercontent.com/alex-soul/pi-rain-radar/v0.1.2/compose.yaml -o compose.yaml
+curl -fL https://raw.githubusercontent.com/alex-soul/pi-rain-radar/main/compose.yaml -o compose.yaml
 docker compose pull
 docker compose up -d
 ```
 
 Use `sudo docker` if your Linux user needs it. Open [localhost:3080](http://localhost:3080) on the host, or `http://<host-name>.local:3080` from another device on your home network. Allow roughly 2–3 minutes for initial radar acquisition.
+
+The configuration download follows `main`; Docker runs the latest published image, including pre-releases. It does not build unreleased application source. For a fixed release and matching configuration, see [version pinning](docs/upgrading.md#pinning-a-version-and-rollback).
 
 Ready-built images support Linux ARM64 (64-bit Raspberry Pi OS) and AMD64. No Git, Node installation or local build is needed. For Windows/macOS and remote setup of Map, OpenWeather and optional PIN, see [Quick Start](docs/quick-start.md).
 

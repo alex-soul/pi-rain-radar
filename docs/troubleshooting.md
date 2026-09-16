@@ -20,7 +20,7 @@ sudo docker compose logs --tail 50 radar
 | No temperature or minute forecast | Save a One Call 4.0-enabled key, then read the connection message in System → API. A radar-only setup works without it. |
 | OpenWeather reports HTTP 401/403 | Check the key, activation and separate One Call 4.0 subscription in your provider account. A 3.0 or standard Weather API subscription is insufficient. |
 | OpenWeather reports HTTP 429 | Check your account request limit and other apps using the account. The app retries automatically; repeated saves will not fix a provider limit. |
-| A toolbar button disappeared | Open **Settings → Buttons** and enable it again. Tap the screen to reveal the settings cog. |
+| A toolbar button disappeared | Open **Settings → Interface → Buttons** and enable it again. Tap the screen to reveal the settings cog. |
 | Forgot the PIN | Follow [PIN recovery](#pin-recovery). There is no need to delete saved data. |
 
 For technical details, see [Run and develop](development.md). For project status, see the [README](../README.md).

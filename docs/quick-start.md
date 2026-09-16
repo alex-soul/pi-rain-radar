@@ -16,6 +16,8 @@ Images support Linux ARM64 and AMD64. The Pi walkthrough used 64-bit Raspberry P
 
 ## 2. Install the app
 
+The maintained Compose file uses the `latest` published image by default, including pre-releases. The configuration download follows `main`; it does not build unreleased application source. Updates are manual. For a fixed release and matching configuration, see [version pinning](upgrading.md#pinning-a-version-and-rollback).
+
 ### Raspberry Pi / Linux
 
 Run these in your **Pi SSH terminal**, one block at a time. On other Linux machines, use their terminal. These are first-install commands: if this folder already contains an installation, use [Upgrading](upgrading.md) instead.
@@ -31,7 +33,7 @@ Download the one configuration file Docker needs. This command refuses to overwr
 if [ -e compose.yaml ]; then
   echo 'compose.yaml already exists. Follow the upgrade guide instead.'
 else
-  curl -fL https://raw.githubusercontent.com/alex-soul/pi-rain-radar/v0.1.2/compose.yaml -o compose.yaml
+  curl -fL https://raw.githubusercontent.com/alex-soul/pi-rain-radar/main/compose.yaml -o compose.yaml
 fi
 ```
 
@@ -48,7 +50,7 @@ Docker downloads the ready-built image and starts it. No source archive or compi
 ### Windows / macOS
 
 1. Create a folder named `pi-rain-radar` somewhere you want to keep it.
-2. Save [compose.yaml](https://raw.githubusercontent.com/alex-soul/pi-rain-radar/v0.1.2/compose.yaml) in that folder. Keep the exact filename, not `compose.yaml.txt`.
+2. Save [compose.yaml](https://raw.githubusercontent.com/alex-soul/pi-rain-radar/main/compose.yaml) in that folder. Keep the exact filename, not `compose.yaml.txt`.
 3. Open a terminal there. On Windows, click File Explorer's address bar, type `powershell`, and press Enter. On macOS, open Terminal, type `cd `, drag the folder into the window, and press Enter.
 4. Run:
 
@@ -76,13 +78,13 @@ Move the pointer or tap the page to reveal the settings cog at the bottom right.
 
 1. **Map:** choose a label, latitude/longitude and time zone. Typing a place name does not find its coordinates. Preview if you want, then Apply. The progress popup stays visible while the new view is prepared. All connected screens adopt the change. Coventry is ready to use if you prefer to try it first.
 2. **System → API, optional:** paste your [OpenWeather One Call 4.0](https://openweathermap.org/api/one-call-4) key and Save key. This adds current readings and MinuteCast. Activate the separate 4.0 subscription first, even if you already use 3.0. Check the provider's access/pricing and set the daily limit to 1,000 to stay within its currently advertised free allowance; the default 2,000 limit permits charges. After moving the map, allow 10–15 minutes for the next weather request. Radar works without a key.
-3. **PIN, optional:** enable protection and enter your chosen six-digit PIN twice, then Save. Leave protection disabled if you do not want it. There are no setup nags. [Forgotten PIN recovery](troubleshooting.md#pin-recovery) uses SSH and does not erase data.
+3. **System → PIN, optional:** enable protection and enter your chosen six-digit PIN twice, then Save. Leave protection disabled if you do not want it. There are no setup nags. [Forgotten PIN recovery](troubleshooting.md#pin-recovery) uses SSH and does not erase data.
 
 Use the laptop for typing; you do not need a keyboard attached to the Pi. See the [manual](manual.md) for every setting and status colour.
 
 ## 5. Arrange each screen
 
-On the Pi touchscreen, open the widgets you want, drag them into position and resize them with their corner handles. In Settings → Buttons, show/hide and reorder the controls. These display preferences belong to that browser; arranging your laptop does not rearrange the Pi.
+On the Pi touchscreen, open the widgets you want, drag them into position and resize them with their corner handles. In Settings → Interface → Buttons, show/hide and reorder the controls. These display preferences belong to that browser; arranging your laptop does not rearrange the Pi.
 
 One Pi can serve multiple screens, sharing location and downloaded data while each browser keeps its own layout. Use the same address and browser profile each time. Switching from hostname to IP, or clearing browser site data, starts a separate layout.
 
