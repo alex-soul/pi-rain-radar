@@ -2,17 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
-const source = await readFile(new URL('../public/display.js', import.meta.url), 'utf8');
+const formatSource = (await readFile(new URL('../public/weather-format.js', import.meta.url), 'utf8')).replaceAll('export ', '');
+const source = formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
 test('display preferences suspend idle hiding during interaction and dialogs, and recover on tap', () => {
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
   let timer, open = false, observer, editable = true, saved;
   const dispatched = [];
-  const node = id => nodes[id] ??= {checked:false, hidden:true, setAttribute(k,v){this[k]=v;}, attributes:new Set(), toggleAttribute(k,v){v?this.attributes.add(k):this.attributes.delete(k);}, style:{}, dataset:{width:214}, handlers:{}, addEventListener(k, fn){this.handlers[k]=fn;}};
+  const node = id => nodes[id] ??= {checked:false, hidden:true, classList:{toggle(){}}, closest(){return this;}, setAttribute(k,v){this[k]=v;}, attributes:new Set(), toggleAttribute(k,v){v?this.attributes.add(k):this.attributes.delete(k);}, style:{}, dataset:{width:214}, handlers:{}, addEventListener(k, fn){this.handlers[k]=fn;}};
   const footer = {offsetHeight:76, querySelectorAll:()=>content};
   vm.runInNewContext(source.replaceAll('export function', 'function')+'\nsetupDisplaySettings(canEdit);', {
     canEdit:()=>editable,
-    document:{hidden:false, body:{style:{setProperty(){}},classList:{toggle(k,v){v?classes.add(k):classes.delete(k);}}},
-      getElementById:node, querySelector:q=>q==='footer'?footer:open?{}:null, querySelectorAll:()=>[{}], addEventListener:(k,fn)=>events[k]=fn},
+    document:{hidden:false, body:{style:{setProperty(){}},classList:{contains:k=>classes.has(k),toggle(k,v){v?classes.add(k):classes.delete(k);}}},
+      getElementById:node, querySelector:q=>q==='footer'?footer:open?{}:null, querySelectorAll:q=>q==='[data-reading-choice]'?[]:[{}], addEventListener:(k,fn)=>events[k]=fn},
     window:{addEventListener:(k,fn)=>events[k]=fn,dispatchEvent(e){dispatched.push(e);}}, Event, CustomEvent, innerWidth:1280,innerHeight:720,
     localStorage:{getItem:()=>null,setItem:(k,v)=>saved=JSON.parse(v)},
     setTimeout:(fn,ms)=>{assert.equal(ms,15000);timer=fn;return 1;},clearTimeout:()=>timer=null,
@@ -50,6 +51,22 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   events.click({target:{closest:selector=>selector==='#weather-dock'}});
   assert.equal(dispatched.at(-1).detail,false);
   events.click();assert.equal(dispatched.at(-1).detail,true);
+  // Lock still permits automatic dock reveal, without enabling their controls.
+  node('auto-hide-footer').checked=true;node('auto-hide-footer').handlers.change();
+  classes.add('screen-locked');timer();
+  assert.ok(classes.has('footer-hidden'));assert.equal(dispatched.at(-1).detail,false);
+  events['radar-settings-wake']({target:{}});
+  assert.ok(!classes.has('footer-hidden'));assert.equal(dispatched.at(-1).detail,true);
+  assert.ok(content.every(x=>x.inert));
+  timer();assert.ok(classes.has('footer-hidden'));assert.equal(dispatched.at(-1).detail,false);
+  // With auto-hide off, opening Settings/enabling lock cannot undo manual collapse.
+  classes.delete('screen-locked');
+  node('auto-hide-footer').checked=false;node('auto-hide-footer').handlers.change();
+  node('auto-hide-weather').checked=false;node('auto-hide-weather').handlers.change();
+  node('footer-toggle').handlers.click();
+  classes.add('screen-locked');const count=dispatched.length;
+  events['radar-screen-lock']();events['radar-settings-wake']({target:{}});
+  assert.ok(classes.has('footer-hidden'));assert.equal(dispatched.length,count);
 });
 
 for (const widget of ['overview', 'minutecast']) {
@@ -127,4 +144,44 @@ test('gust display lifetime restores valid preferences and defaults invalid valu
     vm.runInContext(source.replaceAll('export function','function'),context);
     assert.equal(context.gustCacheMinutes(),expected);
   }
+});
+
+test('display choices restore independently and reject unsupported units and playback speeds', () => {
+  function screen(saved) {
+    const context=vm.createContext({localStorage:{getItem:()=>JSON.stringify(saved)}});
+    vm.runInContext(source.replaceAll('export function','function'),context);
+    return context;
+  }
+  const selected=screen({temperatureUnit:'F',windUnit:'kn',readings:[],playbackSpeed:2,playbackHours:6});
+  assert.equal(selected.playbackHours(),6);
+  assert.equal(screen({playbackHours:4}).playbackHours(),4);
+  for(const playbackHours of [0,3,8,'6',null]) assert.equal(screen({playbackHours}).playbackHours(),2);
+  assert.equal(selected.weatherPreferences().temperatureUnit,'F');
+  assert.equal(selected.weatherPreferences().readings.length,0);
+  assert.equal(selected.playbackSpeed(),2);
+  const defaults=screen({temperatureUnit:'K',windUnit:'invalid',readings:['dew','invalid','dew'],playbackSpeed:50});
+  assert.equal(defaults.weatherPreferences().temperatureUnit,'C');
+  assert.equal(defaults.weatherPreferences().windUnit,'mph');
+  assert.deepEqual(Array.from(defaults.weatherPreferences().readings),['dew']);
+  assert.equal(defaults.playbackSpeed(),1);
+});
+
+test('reading editor saves reorder, preserves hidden readings, and cancels interrupted drags', () => {
+  const ids=['temperature','feels','wind','gust','humidity','dew','direction'];
+  let children=[], saved, writes=0, editable=true;
+  const list={get children(){return children;},append(row){children=children.filter(x=>x!==row);children.push(row);},insertBefore(row,before){children=children.filter(x=>x!==row);children.splice(children.indexOf(before),0,row);}};
+  const rows=ids.map(id=>{
+    const handle={handlers:{},addEventListener(name,fn){this.handlers[name]=fn;},setPointerCapture(){},focus(){}};
+    const row={dataset:{readingRow:id},handle,classList:{add(){},remove(){}},querySelector:()=>handle,getBoundingClientRect:()=>({top:children.indexOf(row)*60,bottom:children.indexOf(row)*60+54})};return row;
+  });
+  children=[...rows];
+  const c=vm.createContext({document:{getElementById:id=>id==='reading-list'?list:{}},window:{dispatchEvent(){}},Event:class{},localStorage:{getItem:()=>null,setItem:(_,value)=>{saved=JSON.parse(value);writes++;}}});
+  vm.runInContext(source.replaceAll('export function','function'),c);
+  const cancel=c.setupReadingEditor(()=>editable), handle=rows[0].handle;
+  handle.handlers.pointerdown({button:0,isPrimary:true,pointerId:1});handle.handlers.pointermove({pointerId:1,clientY:90});
+  assert.equal(children[1],rows[0]);cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
+  handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
+  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction']);
+  assert.deepEqual(saved.readings,['temperature','feels','wind','gust']);
+  editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
 });

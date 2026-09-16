@@ -1,4 +1,5 @@
-import { gustCacheMinutes } from './display.js';
+import { gustCacheMinutes, weatherPreferences } from './display.js';
+import { temperatureText, windText, directionText, readingNames } from './weather-format.js';
 import { formatTime } from './time.js';
 const timeZone = document.querySelector('meta[name="time-zone"]').content;
 const $ = id => document.getElementById(id);
@@ -10,7 +11,8 @@ const fetchedStamp = time => {
   return `${part({day:'numeric'})} ${part({month:'short'}).slice(0,3)} ${stamp(time/1000)}`;
 };
 export function paintWeather(state, now = Date.now()) {
-  const nextSignature = JSON.stringify([state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust?.time,state?.gust?.mph,gustCacheMinutes()]);
+  const prefs = weatherPreferences();
+  const nextSignature = JSON.stringify([prefs,state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust?.time,state?.gust?.mph,gustCacheMinutes()]);
   if (signature === nextSignature) return;
   signature = nextSignature;
   $('weather-credit').hidden = !state?.configured;
@@ -23,18 +25,37 @@ export function paintWeather(state, now = Date.now()) {
   const cached = usable && (failures > 0 || !!state?.error);
   for (const [i, id] of ['weather-temperature','weather-feels','weather-wind'].entries()) {
     $(id).setAttribute('data-cached', String(cached));
-    $(id).textContent = usable ? `${Math.round(values[i])}${i < 2 ? '°' : ''}` : '—';
-    $(id).closest('.weather-reading').setAttribute('aria-label', usable ? `${cached ? 'Cached ' : ''}${['Temperature','Feels like','Wind'][i]} ${Math.round(values[i])} ${i < 2 ? 'degrees Celsius' : 'miles per hour'}` : `${['Temperature','Feels like','Wind'][i]} unavailable`);
+    $(id).textContent = usable ? (i < 2 ? temperatureText(values[i], prefs.temperatureUnit) : windText(values[i], prefs.windUnit)) : '—';
+    $(id).closest('.weather-reading').setAttribute('aria-label', usable ? `${cached ? 'Cached ' : ''}${['Temperature','Feels like','Wind'][i]} ${$(id).textContent} ${i < 2 ? prefs.temperatureUnit === 'F' ? 'Fahrenheit' : 'Celsius' : prefs.windUnit}` : `${['Temperature','Feels like','Wind'][i]} unavailable`);
   }
-  description = usable ? `${cached ? 'Cached' : 'Current'} weather at ${stamp(current.time)}: ${Math.round(values[0])} degrees, feels like ${Math.round(values[1])}, wind ${Math.round(values[2])} miles per hour` : 'Current weather unavailable';
+  description = usable ? `${cached ? 'Cached' : 'Current'} weather at ${stamp(current.time)}: ${temperatureText(values[0], prefs.temperatureUnit)}${prefs.temperatureUnit}, feels like ${temperatureText(values[1], prefs.temperatureUnit)}${prefs.temperatureUnit}, wind ${windText(values[2], prefs.windUnit)} ${prefs.windUnit}` : 'Current weather unavailable';
+  for (const unit of document.querySelectorAll('.wind-unit-label')) unit.textContent = prefs.windUnit;
+  for (const [id, value, text] of [['humidity',current?.humidity,`${Math.round(current?.humidity)}%`], ['dew',current?.dewPoint,temperatureText(current?.dewPoint, prefs.temperatureUnit)], ['direction',current?.windDirection,directionText(current?.windDirection)]]) {
+    const available = usable && Number.isFinite(value);
+    $(`weather-${id}`).textContent = available ? text : '—';
+    $(`weather-${id}`).setAttribute('data-cached', String(available && cached));
+    const label = `${readingNames[id]} ${available ? text + (id === 'dew' ? prefs.temperatureUnit : '') : 'unavailable'}`;
+    $(`weather-${id}`).closest('.weather-reading').setAttribute('aria-label', label);
+    $(`weather-${id}`).closest('.weather-reading').title = label;
+    if (id === 'direction') {
+      // Eight bearings; the arrow points towards the source of the wind.
+      const angle = available ? (Math.round(value / 45) % 8) * 45 : 0;
+      $('weather-direction-arrow').setAttribute('transform', `rotate(${angle} 14 14)`);
+      $('weather-direction-arrow').setAttribute('visibility', available ? 'visible' : 'hidden');
+      const row = $(`weather-${id}`).closest('.weather-reading');
+      row.setAttribute('data-cached', String(available && cached));
+      row.title = available ? `Wind from ${text} · Arrow shows the nearest of eight compass directions` : label;
+      row.setAttribute('aria-label', available ? `${cached ? 'Cached wind' : 'Wind'} from ${text}` : label);
+    }
+  }
   // Old cache payloads still work until the backend's next scheduled response.
   const gust = state?.gust ?? {mph:current?.gustMph,time:current?.time};
   const gustUsable = !!state?.configured && Number.isFinite(gust.mph) && Number.isFinite(gust.time)
     && gust.time * 1000 > now - gustCacheMinutes() * 60000 && gust.time * 1000 <= now + 300000;
   const gustCached = gustUsable && (!fresh || failures > 0 || !!state?.error || current?.gustMph !== gust.mph || current?.time !== gust.time);
   $('weather-gust').setAttribute('data-cached', String(gustCached));
-  const gustDescription = gustUsable ? `${gustCached ? 'Cached' : 'Last reported'} wind gusts ${Math.round(gust.mph)} miles per hour at ${fetchedStamp(gust.time * 1000)}` : 'Wind gusts unavailable';
-  $('weather-gust').textContent = gustUsable ? String(Math.round(gust.mph)) : '—';
+  const gustDescription = gustUsable ? `${gustCached ? 'Cached' : 'Last reported'} wind gusts ${windText(gust.mph, prefs.windUnit)} ${prefs.windUnit} at ${fetchedStamp(gust.time * 1000)}` : 'Wind gusts unavailable';
+  $('weather-gust').textContent = gustUsable ? windText(gust.mph, prefs.windUnit) : '—';
   $('weather-gust').closest('.weather-reading').setAttribute('aria-label', gustDescription);
   $('weather-gust').closest('.weather-reading').title = gustDescription;
   if (gustUsable) description += `; ${gustDescription}`;
@@ -58,10 +79,20 @@ export function paintWeather(state, now = Date.now()) {
   $('weather-dock').title = `${description}. ${health[1]}`;
   $('settings-api-status').textContent = health[1];
   const available = new Map(entries.map(item => [Math.round((item.time - minuteNow) / 60), item.precipitation]));
-  const message = !state?.configured ? 'Configure OpenWeather in Settings' : entries.length ? '' : forecastError || 'Forecast unavailable';
+  const contiguous = entries.length > 0 && entries.every((item, index) => item.time === minuteNow + index * 60 && Number.isFinite(item.precipitation));
+  const forecastFresh = Number.isFinite(forecastFetchedAt) && forecastFetchedAt <= now + 300000 && forecastFetchedAt > now - 1800000;
+  const dry = contiguous && forecastFresh && !forecastError && entries.every(item => item.precipitation === 0);
+  const retry = 'Will retry automatically.';
+  const message = !state ? `Cannot reach the appliance. ${retry}`
+    : !state.configured ? 'Configure OpenWeather in Settings'
+    : /HTTP (401|403)/.test(forecastError || '') ? 'Check OpenWeather access in Settings.'
+    : !entries.length ? `No forecast data received. ${retry}`
+    : forecastError ? `Showing the last available forecast. ${retry}`
+    : dry ? `${entries.length >= 60 ? 'No rain expected in the next hour.' : 'No rain expected in the available forecast.'}\nLast checked at ${fetchedStamp(forecastFetchedAt)}`
+    : '';
   $('minute-message').textContent = message;
   $('minute-message').hidden = !message;
-  $('minute-chart').style.visibility = message ? 'hidden' : 'visible';
+  $('minute-chart').style.visibility = entries.length ? 'visible' : 'hidden';
   $('minute-chart').setAttribute('viewBox', '0 0 360 85');
   $('minute-chart').setAttribute('aria-label', entries.length ? `Current precipitation forecast, fetched at ${stamp(forecastFetchedAt/1000)}. ${entries.length} available minute samples. Precipitation in millimetres per hour.` : message);
   $('minutecast').title = forecastError || (forecastFetchedAt ? `Current forecast · updated ${stamp(forecastFetchedAt/1000)} · OpenWeather` : message);

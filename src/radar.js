@@ -16,7 +16,7 @@ import { getHistory, getTile } from "./provider.js";
 export async function createRadar(
   directory,
   provider = { getHistory, getTile },
-  { now = Date.now, settleMs = 300000, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '' } = {},
+  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '' } = {},
 ) {
   const {view, viewKey, overviewView, overviewKey} = views;
   const historyFile = storageKey ? `history-${storageKey}.json` : 'history.json';
@@ -130,9 +130,14 @@ export async function createRadar(
       Number.isFinite(entry[1]) && entry[1] >= 0 && entry[1] <= now()
     ).slice(-13));
   } catch { /* Missing or invalid state safely starts a fresh waiting period. */ }
+  let connectionStarted = false, connectionReady = false, lastFailed = false;
   async function refresh(startedAt = now()) {
     if (busy) return;
+    // Snapshot before any await: a settings change affects the next acquisition only.
+    const delay = waitForSettle() ? settleMs : 0;
+    if (!connectionStarted) { onEvent('radar-start'); connectionStarted = true; }
     busy = true;
+    let incomplete = false;
     let previous = [];
     try {
       const available = await provider.getHistory();
@@ -160,7 +165,7 @@ export async function createRadar(
       }
       await writeFile(join(directory, `${settlingFile}.tmp`), JSON.stringify([...firstSeen]));
       await rename(join(directory, `${settlingFile}.tmp`), join(directory, settlingFile));
-      const eligible = available.filter(frame => known.has(frame.time) || observedAt - firstSeen.get(frame.time) >= settleMs);
+      const eligible = available.filter(frame => known.has(frame.time) || observedAt - firstSeen.get(frame.time) >= delay);
       const currentLatest = frames.at(-1)?.time ?? 0;
       if (!eligible.some(frame => !known.has(frame.time) && frame.time >= currentLatest - 7200)) {
         error = null;
@@ -181,6 +186,7 @@ export async function createRadar(
           archive.add(local);
           next.push(local);
         } catch (e) {
+          incomplete = true;
           // A missing main/overview pair must not block later complete timestamps.
           console.error(JSON.stringify({ event: "frame-unavailable", time: frame.time, message: e.message }));
         }
@@ -213,6 +219,11 @@ export async function createRadar(
         JSON.stringify({ event: "refresh-failed", message: e.message }),
       );
     } finally {
+      if (error || incomplete) onEvent('radar-error');
+      else if (lastFailed) onEvent('radar-recovered');
+      else if (!connectionReady) onEvent('radar-ready');
+      lastFailed = !!error || incomplete;
+      if (!lastFailed) connectionReady = true;
       try {
         // Bound partial progress even during repeated failures, retaining last-good history.
         const all = await readdir(directory);
@@ -246,7 +257,7 @@ export async function createRadar(
     if (busy && progress) return { state: "fetching" };
     const pending = [...firstSeen].filter(([time]) => time > (frames.at(-1)?.time ?? 0));
     if (!pending.length || error) return null;
-    const eligibleAt = Math.min(...pending.map(([, seen]) => seen + settleMs));
+    const eligibleAt = Math.min(...pending.map(([, seen]) => seen + (waitForSettle() ? settleMs : 0)));
     const pollAt = nextRefreshAt();
     const expectedAt = pollAt + Math.max(0, Math.ceil((eligibleAt - pollAt) / 300000)) * 300000;
     return { state: "waiting", expectedAt };

@@ -60,3 +60,17 @@ test('cleanup retains the extra hour and removes expired images even when provid
     await access(buffer);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('rolling archive windows are bounded to 13/25/37 slots with partial history and no new storage',async t=>{
+  const directory=await mkdtemp(join(tmpdir(),'radar-durations-'));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const end=2000000,archive=await createArchive(directory,main,overview,()=>end*1000);
+  for(let i=0;i<50;i++) archive.add({time:end-i*600});
+  for(const hours of [2,4,6]) {
+    const window=archive.window(end,hours);
+    assert.equal(window.frames.length,hours*6+1);assert.equal(window.start,end-hours*3600);assert.equal(window.complete,true);
+  }
+  for(const hours of [0,3,8,'6',NaN]) assert.equal(archive.window(end,hours),null);
+  const revision=archive.revision();archive.add({time:end});assert.equal(archive.revision(),revision);
+  const partial=archive.window(end-42*600,6);assert.equal(partial.complete,false);assert.equal(partial.frames.length,8);
+});

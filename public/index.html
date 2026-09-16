@@ -7,6 +7,7 @@
     <title>Pi Rain Radar · {{LOCATION}}</title>
     <script src="/theme.js"></script>
     <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/screen-lock.js"></script>
     <script type="module" src="/app.js"></script>
     <script type="module" src="/settings.js"></script>
     <script type="module" src="/overview.js"></script>
@@ -62,12 +63,15 @@
                 </span>
                 <span class="weather-reading" aria-label="Wind unavailable">
                   <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 9h14a3 3 0 1 0-3-3M3 14h20a3 3 0 1 0-3-3M3 19h12a3 3 0 1 1-3 3"/></svg>
-                  <span><span id="weather-wind">—</span><small>mph</small></span>
+                  <span><span id="weather-wind">—</span><small class="wind-unit-label">mph</small></span>
                 </span>
                 <span class="weather-reading" aria-label="Wind gusts unavailable" title="Wind gusts">
                   <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h15a3 3 0 1 0-3-3M3 14h22M3 20h12a3 3 0 1 1-3 3M20 10l5 4-5 4"/></svg>
-                  <span><span id="weather-gust">—</span><small>mph</small></span>
+                  <span><span id="weather-gust">—</span><small class="wind-unit-label">mph</small></span>
                 </span>
+<span class="weather-reading" aria-label="Humidity unavailable" title="Humidity" hidden><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M14 3C10 9 6 13 6 18a8 8 0 0 0 16 0c0-5-4-9-8-15Z"/></svg><span id="weather-humidity">—</span></span>
+<span class="weather-reading" aria-label="Dew point unavailable" title="Dew point" hidden><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 4v13a4 4 0 1 0 6 0V4a3 3 0 0 0-6 0ZM22 10c-3 4-4 5-4 7a4 4 0 0 0 8 0c0-2-1-3-4-7Z"/></svg><span id="weather-dew">—</span></span>
+<span class="weather-reading wind-direction" aria-label="Wind direction unavailable" title="Wind direction" hidden><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path id="weather-direction-arrow" visibility="hidden" d="m14 3 8 21-8-5-8 5 8-21Z"/></svg><span><small id="weather-direction">—</small></span></span>
               </span>
             </span>
           </span>
@@ -104,6 +108,12 @@
       <dialog id="settings-dialog" aria-labelledby="settings-title">
         <div class="settings-heading">
           <h2 id="settings-title">Settings</h2>
+          <select id="settings-section" aria-label="Settings section" hidden>
+            <option value="map">Map</option>
+            <option value="dashboard">Interface</option>
+            <option value="system">System</option>
+            <option value="about">About</option>
+          </select>
           <button id="settings-close" type="button" aria-label="Close settings">×</button>
         </div>
         <div id="pin-panel" class="settings-content">
@@ -117,26 +127,9 @@
           </div>
         </div>
         <div id="settings-fields" hidden>
-          <div class="settings-tabs" role="tablist" aria-label="Settings categories">
-            <button id="settings-tab-map" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-map">Map</button>
-            <button id="settings-tab-buttons" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-buttons" tabindex="-1">Buttons</button>
-            <button id="settings-tab-api" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-api" tabindex="-1">API Keys</button>
-            <button id="settings-tab-misc" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-misc" tabindex="-1">Misc</button>
-            <button id="settings-tab-pin" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-pin" tabindex="-1">PIN</button>
-            <button id="settings-tab-about" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-about" tabindex="-1">About</button>
-          </div>
-          <section id="settings-panel-api" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-api" tabindex="0" hidden>
-            <label for="settings-api-key">OpenWeather One Call 4.0 key</label>
-            <input id="settings-api-key" type="password" placeholder="Enter OpenWeather key" autocomplete="off" spellcheck="false" maxlength="32" aria-describedby="settings-api-note" />
-            <div class="weather-key-actions"><button id="weather-key-save" type="button">Save key</button><button id="weather-key-remove" type="button">Remove key</button></div>
-            <p id="settings-api-note" role="status"></p>
-            <p id="settings-api-status" role="status">Awaiting connection status.</p>
-          </section>
-          <section id="settings-panel-buttons" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-buttons" tabindex="0" hidden>
-            <ol id="control-list" aria-label="Dashboard button order"></ol>
-            <p id="control-feedback" role="status"></p>
-          </section>
-          <section id="settings-panel-map" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-map" tabindex="0">
+          <section id="settings-panel-map" class="settings-content settings-tab-panel" role="region" aria-label="Map" tabindex="0">
+            <p id="map-settings-intro" class="settings-intro"></p>
+
             <form id="map-form">
               <label for="map-name">Location name</label><input id="map-name" maxlength="60" autocomplete="off" />
               <div class="map-fields">
@@ -151,14 +144,71 @@
               <div class="weather-key-actions"><button id="map-preview" type="button">Preview</button><button id="map-apply" type="submit">Apply</button></div>
               <p id="map-note" role="status"></p>
             </form>
+                    </section>
+          <section id="settings-panel-dashboard" class="settings-parent settings-tab-panel" role="region" aria-label="Interface" tabindex="0" hidden>
+          <div class="settings-tabs settings-subtabs" role="tablist" aria-label="Interface categories" data-preference-key="radar-menu-Dashboard categories">
+            <button id="settings-tab-display" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-display" tabindex="0">Display</button>
+            <button id="settings-tab-buttons" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-buttons" tabindex="-1">Buttons</button>
+            <button id="settings-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-weather" tabindex="-1">Weather</button>
+            <button id="settings-tab-readings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-readings" tabindex="-1">Readings</button>
+          </div>
+          <section id="settings-panel-weather" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-weather" tabindex="0" hidden>
+
+            <div class="units-grid">
+              <div><label for="temperature-unit">Temperature units</label><select id="temperature-unit"><option value="C">Celsius (°C)</option><option value="F">Fahrenheit (°F)</option></select></div>
+              <div><label for="wind-unit">Wind units</label><select id="wind-unit"><option value="mph">mph</option><option value="km/h">km/h</option><option value="m/s">m/s</option><option value="kn">knots</option></select></div>
+            </div>
+
+            <label class="misc-option" for="gust-cache-minutes">Cache wind gust (min)<input id="gust-cache-minutes" class="misc-number" type="number" inputmode="numeric" min="1" max="1440" step="1" value="60" required /></label>
           </section>
-          <section id="settings-panel-misc" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-misc" tabindex="0" hidden>
+          <section id="settings-panel-readings" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-readings" tabindex="0" hidden>
+            <fieldset id="weather-choices" aria-label="Weather readings"><ol id="reading-list" class="ordered-settings" aria-label="Weather reading order">
+<li data-reading-row="temperature"><button class="control-handle" type="button" aria-label="Move Temperature reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-temperature">Temperature</label><input id="reading-temperature" data-reading-choice="temperature" class="control-switch" type="checkbox" role="switch" aria-label="Show Temperature reading" /></li>
+<li data-reading-row="feels"><button class="control-handle" type="button" aria-label="Move Feels like reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-feels">Feels like</label><input id="reading-feels" data-reading-choice="feels" class="control-switch" type="checkbox" role="switch" aria-label="Show Feels like reading" /></li>
+<li data-reading-row="wind"><button class="control-handle" type="button" aria-label="Move Wind reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-wind">Wind</label><input id="reading-wind" data-reading-choice="wind" class="control-switch" type="checkbox" role="switch" aria-label="Show Wind reading" /></li>
+<li data-reading-row="gust"><button class="control-handle" type="button" aria-label="Move Wind gusts reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-gust">Wind gusts</label><input id="reading-gust" data-reading-choice="gust" class="control-switch" type="checkbox" role="switch" aria-label="Show Wind gusts reading" /></li>
+<li data-reading-row="humidity"><button class="control-handle" type="button" aria-label="Move Humidity reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-humidity">Humidity</label><input id="reading-humidity" data-reading-choice="humidity" class="control-switch" type="checkbox" role="switch" aria-label="Show Humidity reading" /></li>
+<li data-reading-row="dew"><button class="control-handle" type="button" aria-label="Move Dew point reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-dew">Dew point</label><input id="reading-dew" data-reading-choice="dew" class="control-switch" type="checkbox" role="switch" aria-label="Show Dew point reading" /></li>
+<li data-reading-row="direction"><button class="control-handle" type="button" aria-label="Move Wind direction reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-direction">Wind direction</label><input id="reading-direction" data-reading-choice="direction" class="control-switch" type="checkbox" role="switch" aria-label="Show Wind direction reading" /></li>
+</ol><p id="reading-feedback" role="status"></p></fieldset>
+          </section>
+          <section id="settings-panel-display" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-display" tabindex="0">
+            <label for="playback-speed">Playback speed <output id="playback-speed-value">1×</output></label>
+            <input id="playback-speed" type="range" min="0" max="4" step="1" value="2" list="speed-stops" />
+            <datalist id="speed-stops"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option></datalist>
+            <div class="speed-labels" aria-hidden="true"><span>0.5×</span><span>0.75×</span><span>1×</span><span>1.5×</span><span>2×</span></div>
+            <label class="misc-option" for="playback-hours">Playback window<select id="playback-hours"><option value="2">2 hours</option><option value="4">4 hours</option><option value="6">6 hours</option></select></label>
+            <p id="playback-window-note" role="status"></p>
+
             <label class="misc-option" for="show-map-scale">Show map scale<input id="show-map-scale" class="control-switch" type="checkbox" role="switch" checked /></label>
             <label class="misc-option" for="auto-hide-weather">Auto-hide header dock<input id="auto-hide-weather" class="control-switch" type="checkbox" role="switch" /></label>
             <label class="misc-option" for="auto-hide-footer">Auto-hide footer dock<input id="auto-hide-footer" class="control-switch" type="checkbox" role="switch" /></label>
-            <label class="misc-option" for="gust-cache-minutes">Cache wind gust (min)<input id="gust-cache-minutes" class="misc-number" type="number" inputmode="numeric" min="1" max="1440" step="1" value="60" required /></label>
+            <label class="misc-option" for="screen-lock">Lock screen controls<input id="screen-lock" class="control-switch" type="checkbox" role="switch" /></label>
+                    </section>
+          <section id="settings-panel-buttons" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-buttons" tabindex="0" hidden>
+
+            <ol id="control-list" aria-label="Dashboard button order"></ol>
+            <p id="control-feedback" role="status"></p>
+                    </section>
           </section>
+          <section id="settings-panel-system" class="settings-parent settings-tab-panel" role="region" aria-label="System" tabindex="0" hidden>
+          <div class="settings-tabs settings-subtabs" role="tablist" aria-label="System categories">
+            <button id="settings-tab-api" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-api" tabindex="0">API</button>
+            <button id="settings-tab-pin" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-pin" tabindex="-1">PIN</button>
+            <button id="settings-tab-diagnostics" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-diagnostics" tabindex="-1">Status</button>
+            <button id="settings-tab-log" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-log" tabindex="-1">Log</button>
+          </div>
+          <section id="settings-panel-api" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-api" tabindex="0">
+
+            <label for="settings-api-key">OpenWeather One Call 4.0 key</label>
+            <input id="settings-api-key" type="password" placeholder="Enter OpenWeather key" autocomplete="off" spellcheck="false" maxlength="32" aria-describedby="settings-api-note" />
+            <div class="weather-key-actions"><button id="weather-key-save" type="button">Save key</button><button id="weather-key-remove" type="button">Remove key</button></div>
+            <p id="settings-api-note" role="status"></p>
+            <label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
+            <p id="radar-settling-note" role="status"></p>
+                    </section>
           <section id="settings-panel-pin" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-pin" tabindex="0" hidden>
+
             <form id="settings-pin-form">
               <label class="misc-option" for="settings-pin-enabled">Enable PIN protection<input id="settings-pin-enabled" class="control-switch" type="checkbox" role="switch" /></label>
               <div id="settings-pin-inputs" hidden>
@@ -188,8 +238,23 @@
               <div class="weather-key-actions"><button id="settings-pin-save" type="submit">Save</button></div>
               <p id="settings-pin-note" role="status"></p>
             </form>
+                    </section>
+          <section id="settings-panel-diagnostics" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-diagnostics" tabindex="0" hidden>
+            <h3 class="settings-group-title">OpenWeather</h3>
+            <p id="settings-api-status" role="status">Awaiting connection status.</p>
+            <h3 id="provider-status-title" class="settings-group-title provider-status-title">Provider status</h3>
+            <div class="provider-links"><a href="https://status.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer <small>Official status</small></a><a href="https://probecast.io/status/openweathermap-api" target="_blank" rel="noopener noreferrer">OpenWeather <small>Independent monitor · Probecast</small></a></div>
           </section>
-          <section id="settings-panel-about" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-about" tabindex="0" hidden>
+          <section id="settings-panel-log" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-log" tabindex="0" hidden>
+            <div class="diagnostic-console">
+              <div class="diagnostic-heading"><h3 id="diagnostic-title">Live events</h3><span class="diagnostic-live">LIVE</span></div>
+              <div id="diagnostic-events" class="diagnostic-events" role="region" aria-label="Recent appliance events" tabindex="0"></div>
+              <p id="diagnostic-note" role="status">Loading events…</p>
+            </div>
+          </section>
+          </section>
+          <section id="settings-panel-about" class="settings-content settings-tab-panel" role="region" aria-label="About" tabindex="0" hidden>
+
             <h3 class="about-title">Pi Rain Radar</h3>
             <p>Version: {{APP_VERSION}}<br>Created by Alex Soul.<br>Built with OpenAI Codex.</p>
             <div class="about-links">
@@ -206,8 +271,11 @@
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h12v7a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5V8Zm12 1h2a3 3 0 0 1 0 6h-2M3 22h17M8 2v3m4-3v3m4-3v3"/></svg>
               <span>Buy me a coffee</span><span class="coffee-arrow" aria-hidden="true">↗</span>
             </a>
-          </section>
+                    </section>
         </div>
+      </dialog>
+      <dialog id="external-dialog" aria-labelledby="external-title">
+        <div class="settings-content"><h2 id="external-title">Open external page?</h2><p>In kiosk mode, you may lose this screen.</p><p id="external-destination"></p><div class="external-actions"><button id="external-cancel" type="button">Cancel</button><a id="external-open" target="_blank" rel="noopener noreferrer">Open</a></div></div>
       </dialog>
       <dialog id="map-preview-dialog" aria-labelledby="map-preview-title">
         <div class="settings-heading"><h2 id="map-preview-title">Map preview</h2><button id="map-preview-close" type="button" aria-label="Close map preview">×</button></div>
@@ -286,7 +354,7 @@
           <p class="mini-legend">
             <span>LIGHTER</span><i></i><span>HEAVIER RAIN</span>
           </p>
-          <p>Radar by <a href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a> · Map by <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeather</a></span></p>
+          <p>Radar by <a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span></p>
         </div>
       </footer>
     </main>

@@ -22,6 +22,14 @@ Development candidate (16 September 2026): One Call 4.0-only integration has 72 
 
 Published v0.2.0 at source 8b2bdee passed [release CI](https://github.com/alex-soul/pi-rain-radar/actions/runs/35093528794), including tests and fresh startup/data persistence checks on AMD64 and ARM64, then promoted to latest. The Pi was returned to the published ARM64 image with its development override removed. Verified version 0.2.0, healthy process, 13 radar frames, retained current/minute data and unchanged saved key/PIN/map files. Served HTML includes the new version and omits the removed subtitle. Physical screen review of the final image remains with the device owner.
 
+## v0.3.0 candidate validation — 16 September 2026
+
+All 97 tests passed on Windows and natively on ARM64. The native candidate passed isolated fresh-start and restart/persistence smoke checks. Synthetic browser review covered settings, both themes, compact layouts, UI lock, diagnostics, and missing-frame playback. The device owner accepted the RC after running six hours at full speed with no noticeable performance penalty.
+
+On the reference Pi 4 / 2 GB, a 20-second sample during that playback showed 7–13% aggregate CPU use, about 876 MiB available RAM, no swap-in/out, 53.5°C and no throttling. Chromium proportional resident memory was about 515 MiB; backend processes about 156 MiB. The container was healthy with zero restarts/OOM events and successful scheduled radar/weather updates. Existing key/PIN/map files were unchanged, and the archive supplied complete 13/25/37-frame windows.
+
+These are short observations, not a completed multi-hour soak or proof of leak-free operation. The host kernel does not enforce Docker memory limits; resource assessment uses host/process measurements. Final v0.3.0 image publication, multi-architecture CI and published-image handover remain pending.
+
 ## Next validation
 
 - Observe sustained playback CPU/memory, temperatures and storage growth, including a retained seven-day archive.

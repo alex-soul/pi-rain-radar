@@ -7,7 +7,7 @@ test('browser reloads after an app upgrade, waits for Settings to close and igno
   const app=(await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replaceAll('\r\n','\n');
   let reloads=0,fail=false;
   const dialog={open:true};
-  const context=vm.createContext({appVersion:'0.1.1',mapIdentity:'map',AbortSignal,
+  const context=vm.createContext({historyWindow:null,historyLoading:false,appVersion:'0.1.1',mapIdentity:'map',AbortSignal,
     $:()=>dialog,location:{reload(){reloads++;}},paintStatus(){},paintMapUpdate(){},
     fetch:async()=>{if(fail)throw Error('restarting');return {ok:true,json:async()=>({appVersion:'0.1.2',mapId:'map'})};}
   });

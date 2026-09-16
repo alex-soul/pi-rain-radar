@@ -11,17 +11,32 @@ async function harness() {
     if (!nodes.has(id)) nodes.set(id, {value: '2000000', handlers: {}, addEventListener(event, fn) {this.handlers[event] = fn;}, attributes: {}, setAttribute(name, value) {this.attributes[name] = value;}, showModal() {this.open=true;}, close() {this.open=false;}, toggleAttribute(name,value) {this.attributes[name]=value;}, replaceChildren() {}});
     return nodes.get(id);
   };
-  let now = 0, polls = 0, adopted;
+  let now = 0, polls = 0, adopted, hours = 2;
+  const requests=[];
   const events = {};
   const context = vm.createContext({$, Date: class extends Date { static now() { return now; } }, setTimeout: () => 1, clearTimeout() {},
     document: {addEventListener: (event, fn) => events[event] = fn}, window: {addEventListener: (event, fn) => events[event] = fn},
-    fetch: async () => ({ok:true, json: async () => ({start:1992800,end:2000000,complete:true,times:[2000000],frames:[{time:2000000}]})}),
+    playbackHours:()=>hours,
+    fetch: async url => {requests.push(url);return {ok:true, json: async () => ({start:2000000-hours*3600,end:2000000,complete:true,times:[2000000],frames:[{time:2000000}]})};},
     ResizeObserver: class { observe() {} }, mapIdentity: "test-map", AbortSignal, encodeURIComponent, format: () => '', clock: () => '10:30', Option: class {},
-    decodeFrames: async frames => frames, adopt: frames => adopted = frames, poll: async () => {polls++;}
+    frameLoader:{cancel(){}}, liveRequestKey:'', decodeFrames: async frames => frames, adopt: frames => adopted = frames, poll: async () => {polls++;}
   });
-  vm.runInContext(`let historyWindow = null, historyLoading = false, returningLive = false, generation = 0, historyTimer, pending = [1], playing = false;\n${app.slice(app.indexOf('function historyLabel('))}\nglobalThis.inspect = () => ({historyWindow, historyLoading, returningLive, pending}); globalThis.goNow = returnToNow;`, context);
-  return {context, $, events, setNow: value => now=value, polls: () => polls, adopted: () => adopted};
+  vm.runInContext(`let historyWindow = null, historyLoading = false, returningLive = false, generation = 0, historyTimer, pending = [1], playing = false;\n${app.slice(app.indexOf('function historyLabel('))}\nglobalThis.inspect = () => ({historyWindow, historyLoading, returningLive, pending, playing}); globalThis.pause = () => playing=false; globalThis.goNow = returnToNow;`, context);
+  return {context, $, events, requests, setHours:value=>hours=value, setNow: value => now=value, polls: () => polls, adopted: () => adopted};
 }
+
+test('History uses the preferred duration and resizing preserves its endpoint, pause and return deadline',async()=>{
+  const h=await harness();h.setHours(6);
+  await h.$('archive-show').handlers.click();
+  assert.match(h.requests.at(-1),/hours=6$/);assert.equal(h.adopted().windowHours,6);
+  assert.equal(h.context.inspect().historyWindow.start,2000000-21600);
+  h.context.pause();h.setNow(100000);h.setHours(4);
+  await h.context.loadHistory(2000000,true);
+  assert.match(h.requests.at(-1),/end=2000000&hours=4$/);
+  assert.equal(h.context.inspect().historyWindow.start,2000000-14400);
+  assert.equal(h.context.inspect().historyWindow.deadline,600000);
+  assert.equal(h.context.inspect().playing,false);
+});
 test('historical window expires after ten minutes, including a resume after suspended timers', async () => {
   const h = await harness();
   await h.$('archive-show').handlers.click();
@@ -49,7 +64,7 @@ test('Now invalidates a historical image load still in flight', async () => {
 });
 test('live status polling does not decode or replace images during historical playback', async () => {
   let decoded = 0, adopted = 0;
-  const context = vm.createContext({mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, mapUpdateVisible:false});
+  const context = vm.createContext({playbackHours:()=>6,mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, mapUpdateVisible:false});
   const pollCode = app.slice(app.indexOf('let pollRunning = false;'), app.indexOf('try {\n  const response = await fetch(`/maps/'));
   vm.runInContext(`let generation=1, historyWindow={end:2000000}, historyLoading=false, sequence=[{time:2000000,url:'/old',overviewUrl:'/old-overview'}], pending=null, status=null, serverReachable=false, displayed=sequence[0], returningLive=false;\n${pollCode}\nglobalThis.runPoll=poll; globalThis.readStatus=()=>status;`,context);
   await context.runPoll();

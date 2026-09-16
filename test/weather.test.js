@@ -11,6 +11,23 @@ const sample = () => ({current:{dt:time/1000,temp:14,feels_like:12,wind_speed:4}
 const idle = async weather => { for(let i=0;i<100 && weather.status().fetching;i++) await new Promise(resolve=>setTimeout(resolve,5)); assert.equal(weather.status().fetching,false); };
 async function fixture(t) {const dir=await mkdtemp(join(tmpdir(),'weather-test-'));t.after(()=>rm(dir,{recursive:true,force:true}));return dir;}
 
+test('diagnostics distinguish provider access and rate limits, group repeatable events and report recovery safely',async t=>{
+  const dir=await fixture(t);let now=time,status=401,calls=0;const events=[];
+  const weather=await createWeather(dir,{now:()=>now,onEvent:code=>events.push(code),request:async url=>{
+    calls++;
+    if(status!==200) return new Response('secret provider body appid=private',{status});
+    const input=sample();input.current.dt=now/1000;input.minutely=input.minutely.map(x=>({...x,dt:x.dt+(now-time)/1000}));
+    return response(input,url);
+  }});
+  await weather.configure('a'.repeat(32));await idle(weather);
+  assert.deepEqual(events,['weather-key','weather-start','weather-auth']);
+  now+=WEATHER_INTERVAL;status=429;await weather.refresh();assert.equal(events.at(-1),'weather-limit');
+  now+=WEATHER_INTERVAL;await weather.refresh();assert.equal(events.at(-1),'weather-limit');
+  now+=WEATHER_INTERVAL;status=200;await weather.refresh();assert.equal(events.at(-1),'weather-recovered');
+  const count=events.length;now+=WEATHER_INTERVAL;await weather.refresh();assert.equal(events.length,count);
+  assert.equal(calls,10);assert.ok(!JSON.stringify(events).includes('private'));
+});
+
 test('4.0 normalization rejects old payloads and preserves zero, gaps and provider timestamps', () => {
   assert.throws(()=>normalizeCurrent(sample(),time));
   assert.throws(()=>normalizeMinutely(sample(),time));

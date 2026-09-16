@@ -6,7 +6,7 @@ import {renderMapPreview} from './map-preview.js';
 import {createRadar} from './radar.js';
 
 export const mapId = settings => !settings.timeZone || settings.timeZone===defaultSettings.timeZone ? mapAssetId(settings) : hash({version:1,settings});
-export async function createMapSettings(directory,{prepare=prepareMapAssets,radarFactory=createRadar,nextRefreshAt,onChange=async()=>{}}={}) {
+export async function createMapSettings(directory,{prepare=prepareMapAssets,radarFactory=createRadar,nextRefreshAt,waitForSettle,onEvent,onChange=async()=>{}}={}) {
   const settingsFile=join(directory,'settings','map.json');
   await mkdir(join(directory,'settings'),{recursive:true,mode:0o700});
   let settings=defaultSettings;
@@ -28,7 +28,7 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
     const views=makeViews(value);
     const original=makeViews(legacyDefaultSettings);
     const storageKey=hash(views)===hash(original)?'':hash(views);
-    return radarFactory(directory,undefined,{views,storageKey,nextRefreshAt});
+    return radarFactory(directory,undefined,{views,storageKey,nextRefreshAt,waitForSettle,onEvent});
   };
   await prepare(settings,join(directory,'maps',mapAssetId(settings)));
   let radar=await makeRadar(settings);

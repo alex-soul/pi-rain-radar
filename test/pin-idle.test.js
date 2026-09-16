@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const source = (await readFile(new URL('../public/pin-idle.js', import.meta.url),'utf8')).replace('export ', '');
+test('PIN idle expiry resets only on input, clears on close and never closes authenticated settings', () => {
+  const listeners = {}, tasks = new Map(); let sequence=0, closes=0;
+  const panel={hidden:false};
+  const dialog={open:true, addEventListener:(name,fn)=>listeners[name]=fn, close(){closes++;this.open=false;listeners.close();}};
+  const ctx=vm.createContext({dialog,panel,setTimeout(fn,ms){assert.equal(ms,30000);tasks.set(++sequence,fn);return sequence;},clearTimeout:id=>tasks.delete(id)});
+  vm.runInContext(source+'\nvar idle=setupPinIdle(dialog,panel); idle.arm();',ctx);
+  assert.equal(tasks.size,1);
+  listeners.keydown(); listeners.pointerdown(); listeners.input();
+  assert.equal(tasks.size,1); assert.equal(sequence,4); assert.equal(listeners.pointermove,undefined);
+  [...tasks.values()][0](); assert.equal(closes,1); assert.equal(tasks.size,0);
+  dialog.open=true;panel.hidden=true;listeners.keydown();assert.equal(tasks.size,0);
+  panel.hidden=false;vm.runInContext('idle.arm()',ctx);panel.hidden=true;
+  [...tasks.values()][0]();assert.equal(closes,1);
+  vm.runInContext('idle.clear()',ctx);assert.equal(tasks.size,0);
+});

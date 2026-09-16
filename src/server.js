@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createWeather } from './weather.js';
+import { createDiagnostics } from './diagnostics.js';
+import { createRadarSettings } from './radar-settings.js';
 import { createMapSettings } from './map-settings.js';
 import { mapPage } from './map-page.js';
 import { assetNames } from './map-assets.js';
@@ -12,16 +14,25 @@ import { createSettingsAuth, settingsRoutes } from "./settings-auth.js";
 const directory = process.env.DATA_DIR || "/data";
 let nextRefreshAt = Date.now() + 300000;
 let weather;
-const maps = await createMapSettings(directory,{nextRefreshAt:()=>nextRefreshAt,onChange:settings=>weather.setLocation(settings)});
-weather = await createWeather(directory,{location:maps.current().settings});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps);
+const diagnostics = createDiagnostics();
+diagnostics.record('startup');
+const radarSettings = await createRadarSettings(directory, { onEvent: diagnostics.record });
+const maps = await createMapSettings(directory,{nextRefreshAt:()=>nextRefreshAt,waitForSettle:radarSettings.waitForSettle,onEvent:diagnostics.record,onChange:settings=>weather.setLocation(settings)});
+weather = await createWeather(directory,{location:maps.current().settings,onEvent:diagnostics.record});
+const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings });
 const staticFiles = new Map([
   ["/", ["index.html", "text/html"]],
     ["/control-layout.js", ["control-layout.js", "text/javascript"]],
     ["/display.js", ["display.js", "text/javascript"]],
   ["/settings.js", ["settings.js", "text/javascript"]],
+  ["/diagnostics.js", ["diagnostics.js", "text/javascript"]],
+  ["/frame-loader.js", ["frame-loader.js", "text/javascript"]],
   ["/pin-entry.js", ["pin-entry.js", "text/javascript"]],
   ["/weather.js", ["weather.js", "text/javascript"]],
+  ["/weather-format.js", ["weather-format.js", "text/javascript"]],
+  ["/screen-lock.js", ["screen-lock.js", "text/javascript"]],
+  ["/pin-idle.js", ["pin-idle.js", "text/javascript"]],
+  ["/settings-help.js", ["settings-help.js", "text/javascript"]],
   ["/time.js", ["time.js", "text/javascript"]],
   ["/app.js", ["app.js", "text/javascript"]],
   ["/theme.js", ["theme.js", "text/javascript"]],
@@ -56,7 +67,8 @@ const server = createServer(async (req, res) => {
       const params = new URL(req.url, "http://localhost").searchParams;
       if (params.get('map') && params.get('map') !== active.id) { res.writeHead(409); return res.end(); }
       const end = params.get('end');
-      const result = end === null ? radar.archive.available() : /^\d+$/.test(end) ? radar.archive.window(Number(end)) : null;
+      const hours = params.get('hours') ?? '2';
+      const result = !['2','4','6'].includes(hours) ? null : end === null ? radar.archive.available() : /^\d+$/.test(end) ? radar.archive.window(Number(end), Number(hours)) : null;
       res.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       return res.end(req.method === 'HEAD' ? undefined : JSON.stringify(result || { error: 'That history is unavailable' }));
     }
@@ -69,7 +81,7 @@ const server = createServer(async (req, res) => {
         JSON.stringify(
           path === "/healthz"
             ? { ok: true, hasFrame: !!radar.status().frame }
-            : { ...radar.status(), appVersion:packageInfo.version, weather: weather.status(), mapId:active.id, mapUpdate:maps.status() },
+            : { ...radar.status(), archiveRevision:radar.archive.revision(), appVersion:packageInfo.version, weather: weather.status(), mapId:active.id, mapUpdate:maps.status() },
         ),
       );
     }

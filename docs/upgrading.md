@@ -1,5 +1,15 @@
 # Upgrades and migration
 
+## v0.3.0: display preferences and longer playback
+
+The accepted candidate preserves the existing key, PIN, map and radar archive. No Compose change or additional service is needed. Keep the same browser profile and address to retain layout preferences. New defaults are Celsius/mph, the original four readings, 1× playback, a two-hour window and UI lock off; existing saved preferences take precedence. Radar settling remains on by default and is shared by all screens.
+
+Settings moves to Map, Interface, System and About. API configuration is under System → API; units and gust lifetime are under Interface → Weather. See the [manual](manual.md) for the complete menu.
+
+Four/six-hour windows use already collected local history and more browser memory, without extra provider requests or retention. Older history is not downloaded on demand. UI lock deliberately keeps all provider links active, with an external-page warning. Diagnostics retains only 25 safe events in memory and clears on restart.
+
+Before upgrading, back up the existing volume and browser profile consistently with their writers stopped. Retain the previous image identity for rollback. New preferences/settings are additive; downgrading does not expose new controls and does not restore older data. Never delete the volume as a rollback step. The reference device's 0.3.0-rc.1 upgrade preserved key/PIN/map files byte-for-byte; final published-image checks remain pending.
+
 ## v0.2.0: OpenWeather subscription change
 
 **Breaking change:** optional weather readings and MinuteCast now require **One Call API 4.0**. One Call 3.0 is no longer supported; there is no version selector or automatic fallback. Radar and its history still work without OpenWeather.

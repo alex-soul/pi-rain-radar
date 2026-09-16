@@ -56,6 +56,18 @@ test('map apply is atomic, persistent, bounded to one job and keeps the previous
   assert.equal(maps.status().applying,false);assert.equal(maps.status().progress,null);
   assert.equal(maps.current().settings.name,'Paris');assert.match(maps.status().error,/Existing map kept/);
 });
+test('map replacements retain the shared dynamic radar policy and event sink',async t=>{
+  const directory=await fixture(t);let wait=true;const policies=[],events=[];
+  const waitForSettle=()=>wait,onEvent=code=>events.push(code);
+  const maps=await createMapSettings(directory,{prepare:async()=>{},waitForSettle,onEvent,
+    radarFactory:async(_d,_p,options)=>{policies.push(options);return {refresh:async()=>{},status:()=>({frames:[{time:123}]})};}});
+  wait=false;
+  maps.configure({...defaultSettings,lat:48.8566,lon:2.3522});await idle(maps);
+  assert.equal(policies.length,2);
+  for(const policy of policies) {assert.equal(policy.waitForSettle(),false);assert.equal(policy.onEvent,onEvent);}
+  wait=true;assert.equal(policies[1].waitForSettle(),true);
+});
+
 test('offline geometry renders another country and dynamic HTML escapes labels and aligns annotations',async t=>{
   const directory=await fixture(t);
   const settings={...defaultSettings,name:'Paris <script>"',lat:48.8566,lon:2.3522,zoom:8.5,overviewZoom:5.5};

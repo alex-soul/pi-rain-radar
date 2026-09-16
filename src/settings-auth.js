@@ -92,7 +92,7 @@ export function createSettingsAuth(directory, now = Date.now) {
   };
 }
 
-export function settingsRoutes(auth, weather = null, maps = null) {
+export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings } = {}) {
   return async (req, res, path) => {
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -120,10 +120,11 @@ export function settingsRoutes(auth, weather = null, maps = null) {
           return send(result.status, result);
         }
       }
-      if ((path === '/api/settings/openweather' || path === '/api/settings/map' || path === '/api/settings/map/preview') && req.method === 'POST') {
+      if ((path === '/api/settings/openweather' || path === '/api/settings/map' || path === '/api/settings/map/preview' || path === '/api/settings/radar') && req.method === 'POST') {
         if (!await auth.authorized(token)) return send(401, {});
         const mapRequest = path.startsWith('/api/settings/map');
-        if (mapRequest ? !maps : !weather) return send(503, {});
+        const radarRequest = path === '/api/settings/radar';
+        if (radarRequest ? !radarSettings : mapRequest ? !maps : !weather) return send(503, {});
         let body = '';
         for await (const chunk of req) {
           body += chunk;
@@ -131,13 +132,17 @@ export function settingsRoutes(auth, weather = null, maps = null) {
         }
         let input;
         try { input = JSON.parse(body); } catch { return send(400, {}); }
-        const result = mapRequest ? (path.endsWith('/preview') ? await maps.preview(input) : maps.configure(input)) : await weather.configure(input.apiKey);
+        const result = radarRequest ? await radarSettings.configure(input) : mapRequest ? (path.endsWith('/preview') ? await maps.preview(input) : maps.configure(input)) : await weather.configure(input.apiKey);
         if (result.retryAfter) res.setHeader('Retry-After', String(result.retryAfter));
         return send(result.status, result);
       }
+      if (path === '/api/settings/diagnostics' && req.method === 'GET') {
+        if (!await auth.authorized(token)) return send(401, {});
+        return diagnostics ? send(200, diagnostics.snapshot()) : send(503, {});
+      }
       if (path === '/api/settings' && req.method === 'GET') {
         if (!await auth.authorized(token)) return send(401, {});
-        return send(200, { pinConfigured: await auth.configured(), apiKeyConfigured: weather?.configured() || false, ...(maps ? {map:maps.current().settings,mapUpdate:maps.status()} : {}) });
+        return send(200, { pinConfigured: await auth.configured(), apiKeyConfigured: weather?.configured() || false, ...(radarSettings ? { radar: radarSettings.current() } : {}), ...(maps ? {map:maps.current().settings,mapUpdate:maps.status()} : {}) });
       }
       return send(405, {});
     } catch { return send(503, { error: 'Settings unavailable' }); }

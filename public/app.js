@@ -1,5 +1,8 @@
 import { formatTime } from './time.js';
 import { paintWeather, weatherDescription } from './weather.js';
+import { playbackSpeed, playbackHours } from './display.js';
+import { createFrameLoader } from './frame-loader.js';
+import { dockOutline } from './weather-format.js';
 const $ = (id) => document.getElementById(id);
 const timeZone = document.querySelector('meta[name="time-zone"]').content;
 const assetIdentity = document.querySelector('meta[name="map-assets"]').content;
@@ -26,12 +29,13 @@ $("theme-toggle").addEventListener("click", () => {
 });
 paintThemeToggle();
 const weatherDock = $("weather-dock");
+function paintWeatherOutline() {
+  const {width, height} = weatherDock.getBoundingClientRect();
+  weatherDock.querySelector('.weather-shape').setAttribute('viewBox', `0 0 ${width} ${height}`);
+  $('weather-outline').setAttribute('d', dockOutline(width, height));
+}
+new ResizeObserver(paintWeatherOutline).observe(weatherDock);
 function setWeatherExpanded(expanded) {
-  const shape = weatherDock.querySelector('.weather-shape');
-  shape.setAttribute('viewBox', expanded ? '0 0 540 62' : '0 0 76 18');
-  $('weather-outline').setAttribute('d', expanded
-    ? 'M0 0H540Q532 0 526 6L498 34Q488 44 476 44H308Q303 44 299 48L291 56Q285 62 279 62H261Q255 62 249 56L241 48Q237 44 232 44H64Q52 44 42 34L14 6Q8 0 0 0Z'
-    : 'M0 0H76Q71 0 67 4L59 12Q53 18 47 18H29Q23 18 17 12L9 4Q5 0 0 0Z');
   weatherDock.setAttribute("aria-expanded", String(expanded));
   weatherDock.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} weather readings${expanded ? `: ${weatherDescription()}` : ""}`);
   $("weather-details").setAttribute("aria-hidden", String(!expanded));
@@ -53,6 +57,8 @@ let sequence = [],
   pending = null,
   index = 0,
   playing = true;
+let sequenceHours = 2, sequenceEnd = null, liveRequestKey = '';
+const frameLoader = createFrameLoader();
 const format = (time, options) => formatTime(time, options, timeZone);
 const clock = (time) => format(time, { hour: "2-digit", minute: "2-digit" });
 function paintCurrentTime() {
@@ -80,37 +86,38 @@ paintCurrentTime();
 setInterval(paintCurrentTime, 1000);
 document.addEventListener("visibilitychange", paintCurrentTime);
 // Fixed ten-minute slots; frame arrays still contain only available images.
-function timelineWindow(frames, end = frames.at(-1)?.time) {
-  const start = end - 7200;
+function timelineWindow(frames, end = frames.at(-1)?.time, hours = 2) {
+  const steps = hours * 6, start = end - hours * 3600;
   const occupied = new Set(frames.map(frame => Math.round((frame.time - start) / 600)));
-  const missing = Array.from({ length: 13 }, (_, slot) => slot).filter(slot => !occupied.has(slot));
+  const missing = Array.from({ length: steps + 1 }, (_, slot) => slot).filter(slot => !occupied.has(slot));
   const stops = ['transparent 0%'];
   for (const slot of missing) {
-    const left = Math.max(0, (slot - 0.5) / 12 * 100), right = Math.min(100, (slot + 0.5) / 12 * 100);
+    const left = Math.max(0, (slot - 0.5) / steps * 100), right = Math.min(100, (slot + 0.5) / steps * 100);
     stops.push(`transparent ${left}%`, `var(--timeline-gap) ${left}%`, `var(--timeline-gap) ${right}%`, `transparent ${right}%`);
   }
   stops.push('transparent 100%');
-  return { start, end, missing, gradient: `linear-gradient(to right, ${stops.join(', ')})` };
+  return { start, end, steps, missing, gradient: `linear-gradient(to right, ${stops.join(', ')})` };
 }
 function nearestTimelineFrame(frames, start, slot) {
   const time = start + slot * 600;
   return frames.reduce((nearest, frame, i) => Math.abs(frame.time - time) < Math.abs(frames[nearest].time - time) ? i : nearest, 0);
 }
-let timelineFrames, timelineEnd, timelineModel;
+let timelineFrames, timelineEnd, timelineHours, timelineModel;
 function paintTimeline() {
-  const end = historyWindow?.end ?? sequence.at(-1).time;
-  if (timelineFrames !== sequence || timelineEnd !== end) {
-    timelineFrames = sequence; timelineEnd = end;
-    timelineModel = timelineWindow(sequence, end);
+  const end = historyWindow?.end ?? sequenceEnd ?? sequence.at(-1).time;
+  const hours = sequenceHours;
+  if (timelineFrames !== sequence || timelineEnd !== end || timelineHours !== hours) {
+    timelineFrames = sequence; timelineEnd = end; timelineHours = hours;
+    timelineModel = timelineWindow(sequence, end, hours);
     $('timeline').style.setProperty('--timeline-gaps', timelineModel.gradient);
   }
-  const slot = Math.max(0, Math.min(12, Math.round((displayed.time - timelineModel.start) / 600)));
+  const slot = Math.max(0, Math.min(timelineModel.steps, Math.round((displayed.time - timelineModel.start) / 600)));
   $('history-start').textContent = clock(timelineModel.start);
   $('history-end').textContent = clock(end);
-  $('timeline').max = 12;
+  $('timeline').max = timelineModel.steps;
   $('timeline').value = slot;
-  $('timeline').style.setProperty('--timeline-progress', `${slot / 12 * 100}%`);
-  $('timeline').title = timelineModel.missing.length ? `Missing: ${timelineModel.missing.map(slot => clock(timelineModel.start + slot * 600)).join(', ')}` : 'Complete two-hour window';
+  $('timeline').style.setProperty('--timeline-progress', `${slot / timelineModel.steps * 100}%`);
+  $('timeline').title = timelineModel.missing.length ? `Missing: ${timelineModel.missing.map(slot => clock(timelineModel.start + slot * 600)).join(', ')}` : `Complete ${hours}-hour window`;
 }
 function paintRadarHandle(health, ready = false) {
   const handle = $('footer-toggle');
@@ -155,8 +162,9 @@ function paintStatus() {
   );
   $("frame-position").textContent = String(index + 1);
   $("frame-total").textContent = String(sequence.length);
-  $("frame-total").classList.toggle("incomplete", sequence.length < 13);
-  $("frame-count").setAttribute("aria-label", `Frame ${index + 1} of ${sequence.length}. Expected 13 frames in a complete two-hour window.`);
+  const expected = sequenceHours * 6 + 1;
+  $("frame-total").classList.toggle("incomplete", sequence.length < expected);
+  $("frame-count").setAttribute("aria-label", `Frame ${index + 1} of ${sequence.length}. Expected ${expected} frames in a complete ${sequenceHours}-hour window.`);
 }
 function showFrame() {
   displayed = sequence[index];
@@ -166,11 +174,20 @@ function showFrame() {
   $("empty").hidden = !mapUpdateVisible;
   paintStatus();
 }
-function adopt(next) {
+function adopt(next, preservePosition = false) {
+  const previousTime = displayed?.time;
   sequence = next;
-  index = 0;
+  sequenceHours = next.windowHours ?? 2;
+  sequenceEnd = next.windowEnd ?? next.at(-1)?.time;
+  index = preservePosition && previousTime ? nearestTimelineFrame(next, previousTime, 0) : 0;
   showFrame();
 }
+let playbackTimer;
+function schedulePlayback() {
+  clearTimeout(playbackTimer);
+  playbackTimer = setTimeout(tick, (index === sequence.length - 1 ? 1600 : 650) / playbackSpeed());
+}
+window.addEventListener('radar-playback-speed', schedulePlayback);
 function tick() {
   if (playing && sequence.length) {
     if (index === sequence.length - 1 && pending) {
@@ -181,7 +198,7 @@ function tick() {
       showFrame();
     }
   }
-  setTimeout(tick, index === sequence.length - 1 ? 1600 : 650);
+  schedulePlayback();
 }
 $("play").addEventListener("click", () => {
   playing = !playing;
@@ -195,7 +212,7 @@ $("timeline").addEventListener("input", (event) => {
   playing = false;
   const value = Number(event.target.value);
   if (!sequence.length) return;
-  index = nearestTimelineFrame(sequence, (historyWindow?.end ?? sequence.at(-1).time) - 7200, value);
+  index = nearestTimelineFrame(sequence, timelineModel.start, value);
   showFrame();
 });
 // Keyboard navigation skips unavailable timestamps instead of getting stuck in a gap.
@@ -206,20 +223,8 @@ $('timeline').addEventListener('keydown', event => {
   index = event.key === 'Home' ? 0 : event.key === 'End' ? sequence.length - 1 : Math.max(0, Math.min(sequence.length - 1, index + (['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1)));
   showFrame();
 });
-async function decodeFrames(offered) {
-  return await Promise.all(
-        offered.map(async (frame) => {
-          const existing = sequence.find((old) => old.url === frame.url && old.overviewUrl === frame.overviewUrl);
-          if (existing) return existing;
-          const image = new Image();
-          image.src = frame.url;
-          await image.decode();
-          const overviewImage = new Image();
-          overviewImage.src = frame.overviewUrl;
-          await overviewImage.decode();
-          return { ...frame, image, overviewImage };
-        }),
-      );
+async function decodeFrames(offered, epoch = generation) {
+  return frameLoader.load(offered, [...sequence, ...(pending || [])], () => epoch === generation);
 }
 let mapUpdateVisible = false;
 let dismissedMapError = null;
@@ -244,6 +249,15 @@ window.addEventListener('map-update-started', () => {
   paintMapUpdate({applying:true});
   void poll();
 });
+window.addEventListener('radar-playback-window', () => {
+  if (historyWindow || historyLoading) {
+    void loadHistory(historyLoading ? historyTargetEnd : historyWindow.end, !!historyWindow);
+    return;
+  }
+  generation++; frameLoader.cancel(); pending = null; liveRequestKey = '';
+  $('playback-window-note').textContent = `Loading ${playbackHours()} hours…`;
+  void poll();
+});
 let pollRunning = false;
 async function poll() {
   if (pollRunning) return;
@@ -266,15 +280,31 @@ async function poll() {
       $('map-apply').disabled=!!status.mapUpdate.busy;
     }
     serverReachable = true;
-    const offered = status.frames || (status.frame ? [status.frame] : []);
+    let offered = status.frames || (status.frame ? [status.frame] : []);
     const signature = (frames) => frames.map((frame) => `${frame.url}:${frame.overviewUrl}`).join("|");
+    const hours = playbackHours(), end = offered.at(-1)?.time;
+    const requestKey = `${mapIdentity}:${hours}:${status.archiveRevision}:${signature(offered)}`;
     if (
       !historyWindow && !historyLoading && epoch === generation && offered.length &&
-      signature(offered) !== signature(pending || sequence)
+      (returningLive || requestKey !== liveRequestKey)
     ) {
-      const next = await decodeFrames(offered);
+      $('playback-window-note').textContent = `Loading ${hours} hours…`;
+      if (hours !== 2) {
+        const archive = await fetch(`/api/archive?map=${mapIdentity}&end=${end}&hours=${hours}`, {signal:AbortSignal.timeout(10000)});
+        if (!archive.ok) throw new Error('Stored radar unavailable');
+        const result = await archive.json();
+        if (epoch !== generation || historyWindow || historyLoading) return;
+        offered = result.frames;
+      }
+      const next = await decodeFrames(offered, epoch);
       if (epoch !== generation || historyWindow || historyLoading) return;
-      if (returningLive || !sequence.length || sequence.length === 1) { adopt(next); returningLive = false; paintHistory(); }
+      if (!next?.length) throw new Error('No readable radar frames');
+      next.windowHours = hours; next.windowEnd = end;
+      liveRequestKey = next.length === offered.length ? requestKey : '';
+      $('playback-window-note').textContent = '';
+      if (returningLive || !sequence.length || sequence.length === 1 || sequenceHours !== hours || !playing) {
+        adopt(next, !returningLive && !!sequence.length); pending = null; returningLive = false; paintHistory();
+      }
       else pending = next;
     }
     if (returningLive && offered.length && !historyWindow && !historyLoading && epoch === generation) { returningLive = false; paintHistory(); }
@@ -287,7 +317,9 @@ async function poll() {
         : "The map is ready. We will retry automatically.";
     }
   } catch {
+    if (epoch !== generation) return;
     serverReachable = false;
+    if (epoch === generation && !historyWindow && !historyLoading) $('playback-window-note').textContent = 'Could not load the selected window. Keeping available radar; retrying shortly.';
     if (mapUpdateVisible) {
       $('empty').querySelector('p').textContent = 'Connection interrupted. Checking map progress again automatically.';
     } else if (!displayed) {
@@ -298,6 +330,7 @@ async function poll() {
   } finally {
     pollRunning = false;
     paintStatus();
+    if (epoch !== generation && !historyWindow && !historyLoading) void poll();
   }
 }
 try {
@@ -322,7 +355,7 @@ try {
 }
 void poll();
 setInterval(() => void poll(), 15000);
-setTimeout(tick, 650);
+schedulePlayback();
 setInterval(paintStatus, 10000);
 
 function historyLabel(start, end) {
@@ -356,6 +389,7 @@ function paintHistory() {
 }
 async function returnToNow() {
   generation++;
+  frameLoader.cancel(); liveRequestKey = '';
   historyWindow = null;
   historyLoading = false;
   pending = null;
@@ -374,6 +408,7 @@ $('history-action').addEventListener('click', () => historyWindow || returningLi
 $('history-range').addEventListener('click', () => openHistoryPicker());
 const historyDialog = $('archive-dialog');
 let archiveTimes = [];
+let historyTargetEnd = null;
 const dayKey = time => format(time, { year: 'numeric', month: '2-digit', day: '2-digit' });
 function populateTimes() {
   const selected = archiveTimes.filter(time => dayKey(time) === $('archive-day').value);
@@ -400,31 +435,48 @@ async function openHistoryPicker() {
   } catch { $('archive-feedback').textContent = 'History unavailable. Please try again.'; }
 }
 $('archive-close').addEventListener('click', () => historyDialog.close());
-$('archive-show').addEventListener('click', async () => {
+$('archive-show').addEventListener('click', () => loadHistory($('archive-time').value));
+async function loadHistory(end, preserve = false) {
   const epoch = ++generation;
+  const hours = playbackHours();
+  const deadline = preserve ? historyWindow.deadline : null;
+  historyTargetEnd = end;
+  frameLoader.cancel();
   historyLoading = true;
   pending = null;
   $('archive-show').disabled = true;
   $('archive-feedback').textContent = 'Loading the selected window…';
+  $('playback-window-note').textContent = `Loading ${hours} hours…`;
   try {
-    const response = await fetch(`/api/archive?map=${mapIdentity}&end=${encodeURIComponent($('archive-time').value)}`, { signal: AbortSignal.timeout(10000) });
+    const response = await fetch(`/api/archive?map=${mapIdentity}&end=${encodeURIComponent(end)}&hours=${hours}`, { signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error();
     const window = await response.json();
-    const next = await decodeFrames(window.frames);
+    const next = await decodeFrames(window.frames, epoch);
     if (epoch !== generation) return;
-    historyWindow = { start: window.start, end: window.end, complete: window.complete, deadline: Date.now() + 600000 };
+    if (!next?.length) throw new Error('No readable history');
+    next.windowHours = hours; next.windowEnd = window.end;
+    historyWindow = { start: window.start, end: window.end, complete: window.complete, deadline: deadline ?? Date.now() + 600000 };
     returningLive = false;
-    playing = true;
-    adopt(next);
+    if (!preserve) playing = true;
+    adopt(next, preserve);
     clearTimeout(historyTimer);
-    historyTimer = setTimeout(checkHistoryDeadline, 600000);
+    historyTimer = setTimeout(checkHistoryDeadline, Math.max(0, historyWindow.deadline - Date.now()));
     paintHistory();
+    historyLoading = false;
+    $('playback-window-note').textContent = '';
     historyDialog.close();
-  } catch { if (epoch === generation) $('archive-feedback').textContent = 'Could not load that window. Your current map is unchanged.'; }
-  finally { if (epoch === generation) historyLoading = false; $('archive-show').disabled = !archiveTimes.length; }
-});
+  } catch {
+    if (epoch === generation) {
+      const message = 'Could not load that window. Your current map is unchanged.';
+      $('archive-feedback').textContent = message;
+      $('playback-window-note').textContent = message;
+    }
+  } finally {
+    if (epoch === generation) { historyLoading = false; $('archive-show').disabled = !archiveTimes.length; }
+  }
+}
 historyDialog.addEventListener('close', () => {
-  if (historyLoading) { generation++; historyLoading = false; }
+  if (historyLoading) { generation++; frameLoader.cancel(); historyLoading = false; }
 });
 
 // Follow the whole pill, including date widths and responsive font changes.
@@ -438,3 +490,4 @@ new ResizeObserver(() => {
 }).observe($('history-toggle'));
 
 window.addEventListener("radar-gust-cache-change", () => paintWeather(serverReachable ? status?.weather : null));
+window.addEventListener('radar-weather-preferences', () => paintWeather(serverReachable ? status?.weather : null));

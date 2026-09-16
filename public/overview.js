@@ -97,3 +97,11 @@ resizeHandle.addEventListener("keydown", event => {
   save();
 });
 paint();
+
+window.addEventListener("radar-screen-lock", () => {
+  finish(); finishResize();
+  for (const element of [handle, resizeHandle]) {
+    // Lost capture clears gesture state before any subsequent movement.
+    element.dispatchEvent(new Event("lostpointercapture"));
+  }
+});

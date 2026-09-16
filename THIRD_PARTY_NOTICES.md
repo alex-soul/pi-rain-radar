@@ -14,7 +14,7 @@ Bundled geography is derived from Natural Earth's public-domain datasets. See [N
 
 ## OpenWeather
 
-Optional current conditions and minute precipitation forecasts come from [OpenWeather](https://openweathermap.org/). Users supply their own One Call 3.0 key. Subscription, attribution, usage limits and data terms apply separately: see [OpenWeather terms](https://openweathermap.org/terms). The app displays linked credit when this integration is configured.
+Optional current conditions and minute precipitation forecasts come from [OpenWeather](https://openweathermap.org/). Users supply their own One Call 4.0 key. Subscription, attribution, usage limits and data terms apply separately: see [OpenWeather terms](https://openweathermap.org/terms). The app displays linked credit when this integration is configured.
 
 ## Runtime dependencies
 
@@ -23,3 +23,7 @@ Optional current conditions and minute precipitation forecasts come from [OpenWe
 - The container includes Debian and additional packages under their respective licences; installed package notices are available under `/usr/share/doc`.
 
 `package-lock.json` pins JavaScript dependencies and records package licence metadata. Third-party notices distributed with dependencies remain applicable.
+
+## On-screen credits and UI lock
+
+RainViewer, Natural Earth and configured OpenWeather credits remain visible when the dock is hidden, and their links remain usable during UI lock through an external-page warning. No RainViewer exception to disable its link has been obtained or is relied upon. The app uses “Weather by OpenWeatherMap” as its weather credit.

@@ -1,35 +1,65 @@
-import { setupControlEditor } from "./control-layout.js";
-import { setupDisplaySettings } from "./display.js";
+import { setupScreenLock } from './screen-lock.js';
+import { setupDiagnostics } from './diagnostics.js';
+import { setupPinIdle } from './pin-idle.js';
+import { setupControlEditor, setupResponsiveControls } from "./control-layout.js";
+import { setupDisplaySettings, setupReadingEditor } from "./display.js";
 import { setupPinEntry } from "./pin-entry.js";
+import { setupSettingsHelp } from './settings-help.js';
 const $ = (id) => document.getElementById(id);
 const dialog = $('settings-dialog');
+setupSettingsHelp(dialog);
+const pinIdle = setupPinIdle(dialog, $('pin-panel'));
 const confirmPinEntry = setupPinEntry($('settings-confirm-pin'), () => $('settings-pin-save').focus());
 const newPinEntry = setupPinEntry($('settings-new-pin'), () => confirmPinEntry.focus());
 let pin = '', token = null, generation = 0, busy = false, configured = false;
 let expiryTimer, retryTimer, unlockedUntil = 0;
 function canEdit() { return (!configured || (!!token && Date.now() < unlockedUntil)) && dialog.open && !$('settings-fields').hidden; }
-const resetControlEditor = setupControlEditor(canEdit);
+const resetButtons = setupControlEditor(canEdit);
+const resetReadings = setupReadingEditor(canEdit);
+const resetControlEditor = () => { resetButtons(); resetReadings(); };
+setupScreenLock(canEdit);
 setupDisplaySettings(canEdit);
-const tabs = [...document.querySelectorAll('.settings-tabs [role="tab"]')];
-function selectTab(selected) {
+setupResponsiveControls();
+const sectionSelector = $('settings-section');
+sectionSelector.addEventListener('change', () => {
   resetControlEditor();
-  for (const tab of tabs) {
-    const active = tab === selected;
-    tab.setAttribute('aria-selected', String(active));
-    tab.tabIndex = active ? 0 : -1;
-    $(tab.getAttribute('aria-controls')).hidden = !active;
+  for (const option of sectionSelector.options) {
+    $(`settings-panel-${option.value}`).hidden = option.value !== sectionSelector.value;
   }
-}
-for (const tab of tabs) {
-  tab.addEventListener('click', () => selectTab(tab));
-  tab.addEventListener('keydown', event => {
-    const index = tabs.indexOf(tab);
-    const target = event.key === 'ArrowRight' ? (index + 1) % tabs.length
-      : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length
-      : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
-    if (target === null) return;
-    event.preventDefault(); selectTab(tabs[target]); tabs[target].focus();
-  });
+  dialog.scrollTop = 0;
+  dialog.dispatchEvent(new Event('settings-tab-change'));
+});
+// Each tab row owns only its immediate panels; parent changes preserve the child selection.
+for (const tablist of dialog.querySelectorAll('[role="tablist"]')) {
+  const tabs = [...tablist.querySelectorAll('[role="tab"]')];
+  const storageKey = tablist.dataset.preferenceKey || `radar-menu-${tablist.getAttribute('aria-label')}`;
+  function selectTab(selected, remember = true) {
+    resetControlEditor();
+    for (const tab of tabs) {
+      const active = tab === selected;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      $(tab.getAttribute('aria-controls')).hidden = !active;
+    }
+    dialog.scrollTop = 0;
+    dialog.dispatchEvent(new Event('settings-tab-change'));
+    if (remember && storageKey) try { localStorage.setItem(storageKey, selected.id); } catch { /* Session-only fallback. */ }
+  }
+  if (storageKey) try {
+    const selected = tabs.find(tab => tab.id === localStorage.getItem(storageKey));
+    if (selected) selectTab(selected, false);
+  } catch { /* Defaults work without storage. */ }
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', event => {
+      const index = tabs.indexOf(tab);
+      const target = event.key === 'ArrowRight' ? (index + 1) % tabs.length
+        : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length
+        : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
+      if (target === null) return;
+      event.preventDefault(); selectTab(tabs[target]); tabs[target].focus();
+    });
+  }
 }
 function dots() {
   $('pin-dots').textContent = Array.from({ length: 6 }, (_, i) => i < pin.length ? '●' : '○').join(' ');
@@ -47,7 +77,28 @@ async function request(path, data, bearer = token) {
   });
 }
 function discard(bearer) { if (bearer) void request('/lock', {}, bearer).catch(() => {}); }
+const syncDiagnostics = setupDiagnostics(dialog, request, canEdit);
+let savingRadar = false;
+$('radar-settling').addEventListener('change', async () => {
+  if (!canEdit() || savingRadar) return;
+  const field = $('radar-settling'), value = field.checked, epoch = generation;
+  savingRadar = true; field.disabled = true;
+  $('radar-settling-note').textContent = 'Saving…';
+  try {
+    const response = await request('/radar', { waitForSettle: value });
+    if (epoch !== generation) return;
+    if (response.status === 401) { dialog.close(); return; }
+    if (!response.ok) throw new Error();
+    $('radar-settling-note').textContent = 'Saved. Applies to the next radar acquisition.';
+  } catch {
+    if (epoch === generation) {
+      field.checked = !value;
+      $('radar-settling-note').textContent = 'Could not confirm the save. Reopen Settings to check.';
+    }
+  } finally { savingRadar = false; field.disabled = false; }
+});
 function lock() {
+  pinIdle.clear();
   closePreview();
   resetPinForm();
   $('settings-api-key').value = '';
@@ -58,10 +109,11 @@ function lock() {
   clearTimeout(expiryTimer); clearTimeout(retryTimer);
   discard(token); token = null; pin = ''; busy = false; configured = false;
   $('settings-fields').hidden = true; $('pin-panel').hidden = false;
+  sectionSelector.hidden = true;
   enable(false); dots();
 }
 async function open() {
-  lock(); dialog.showModal();
+  lock(); dialog.showModal(); pinIdle.arm();
   const current = generation;
   $('pin-message').textContent = 'Checking settings…';
   try {
@@ -110,6 +162,8 @@ async function showSettings(current) {
     const keyState = await settings.json();
     if (current !== generation) return;
     $('settings-api-note').textContent = '';
+    $('radar-settling').checked = keyState.radar?.waitForSettle ?? true;
+    $('radar-settling-note').textContent = '';
     if (keyState.map) for (const [key,value] of Object.entries(keyState.map)) {
       const field=$(`map-${key}`);
       field.value=key==='overviewZoom'?Number(value.toFixed(2)):value;
@@ -119,7 +173,10 @@ async function showSettings(current) {
     $('map-note').textContent=keyState.mapUpdate?.busy?'Preparing map…':keyState.mapUpdate?.error||'';
     configured = keyState.pinConfigured;
     resetPinForm();
+    pinIdle.clear();
     $('pin-panel').hidden = true; $('settings-fields').hidden = false;
+    sectionSelector.hidden = false;
+    syncDiagnostics();
     $('settings-close').focus();
 }
 function digit(value) {

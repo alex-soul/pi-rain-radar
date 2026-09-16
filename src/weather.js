@@ -10,7 +10,10 @@ export function normalizeCurrent(raw, now = Date.now()) {
   const current = raw?.data?.[0];
   const validTime = time => Number.isSafeInteger(time) && time > now / 1000 - 7200 && time < now / 1000 + 7200;
   if (!current || !validTime(current.dt) || !number(current.temp, -100, 70) || !number(current.feels_like, -120, 90) || !number(current.wind_speed, 0, 200)) throw new Error('Invalid weather response');
-  return { time: current.dt, temperature: current.temp, feelsLike: current.feels_like, windMph: current.wind_speed * 2.2369362921, gustMph: number(current.wind_gust, 0, 200) ? current.wind_gust * 2.2369362921 : null };
+  return { time: current.dt, temperature: current.temp, feelsLike: current.feels_like, windMph: current.wind_speed * 2.2369362921, gustMph: number(current.wind_gust, 0, 200) ? current.wind_gust * 2.2369362921 : null,
+    humidity: number(current.humidity, 0, 100) ? current.humidity : null,
+    dewPoint: number(current.dew_point, -120, 90) ? current.dew_point : null,
+    windDirection: number(current.wind_deg, 0, 360) ? current.wind_deg % 360 : null };
 }
 export function normalizeMinutely(raw, now = Date.now()) {
   if (!Array.isArray(raw?.data)) throw new Error('Invalid forecast response');
@@ -33,7 +36,7 @@ async function save(file, value) {
   await writeFile(temp, JSON.stringify(value), {mode:0o600});
   await rename(temp, file);
 }
-export async function createWeather(directory, { now = Date.now, request = fetch, location = view } = {}) {
+export async function createWeather(directory, { now = Date.now, request = fetch, location = view, onEvent = () => {} } = {}) {
   const folder = join(directory, 'settings');
   await mkdir(folder, {recursive:true,mode:0o700});
   const credentialsFile = join(folder, 'openweather.json');
@@ -64,7 +67,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       if (!response.ok) {
         await response.body?.cancel();
         const message = response.status === 401 || response.status === 403 ? 'OpenWeather rejected the key or One Call 4.0 access. Activate a One Call 4.0 subscription.' : response.status === 429 ? 'OpenWeather request limit reached.' : 'OpenWeather temporarily unavailable.';
-        return {error:`HTTP ${response.status}: ${message}`};
+        return {error:`HTTP ${response.status}: ${message}`, diagnostic: response.status === 401 || response.status === 403 ? 'weather-auth' : response.status === 429 ? 'weather-limit' : 'weather-error'};
       }
       // Never log provider bodies or URLs; both can contain credentials.
       let text = '';
@@ -77,10 +80,13 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       return {error:'Weather refresh failed; will retry automatically.'};
     }
   }
+  let connectionStarted = false, connectionReady = false, lastFailed = false;
   async function refresh() {
     if (!key || busy || configuring || now() < nextAttemptAt) return;
+    if (!connectionStarted) { onEvent('weather-start'); connectionStarted = true; }
     busy = true;
     const epoch = generation;
+    let diagnostic = 'weather-error';
     nextAttemptAt = now() + WEATHER_INTERVAL;
     try {
       await persist(); // Retain the request schedule across ordinary restarts.
@@ -91,6 +97,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       if (epoch !== generation) return;
       error = current.error || null;
       forecastError = forecast.error || null;
+      diagnostic = current.diagnostic || forecast.diagnostic || diagnostic;
       failures = error ? Math.min(2, failures + 1) : 0;
       if (!error || !forecastError) {
         cache = {location:locationKey, data:{current:current.data ?? cache?.data?.current ?? null, minutely:forecast.data ?? cache?.data?.minutely ?? []}, fetchedAt:current.data ? now() : cache?.fetchedAt ?? null};
@@ -102,8 +109,13 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       if (epoch === generation) { failures = Math.min(2, failures + 1); error = forecastError = 'Weather refresh failed; will retry automatically.'; }
     } finally {
       if (epoch === generation) {
+        if (error || forecastError) onEvent(diagnostic);
+        else if (lastFailed) onEvent('weather-recovered');
+        else if (!connectionReady) onEvent('weather-ready');
+        lastFailed = !!(error || forecastError);
+        if (!lastFailed) connectionReady = true;
         // Preserve failed-poll state across restarts, as well as the request budget.
-        try { await persist(); } catch { /* Keep the in-memory result if disk persistence fails. */ }
+        try { await persist(); } catch { onEvent('storage-error'); }
       }
       busy = false;
     }
@@ -129,6 +141,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       configuring = true;
       try {
         await save(credentialsFile,{apiKey:value});
+        onEvent('weather-key');
         generation++; key=value; error=null; forecastError=null;
         if (!key) { cache=null; gust=null; failures=0; forecastFetchedAt=null; }
         // Explicit setup checks have a short, persistent cooldown; background polling keeps its normal interval.

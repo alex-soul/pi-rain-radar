@@ -105,3 +105,28 @@ export function setupControlEditor(canEdit) {
     feedback.textContent = '';
   };
 }
+
+export function setupResponsiveControls() {
+  const stack = document.querySelector('.map-controls');
+  const dock = document.getElementById('weather-dock');
+  const pointers = new Set();
+  let queued;
+  function update() {
+    queued = null;
+    if (pointers.size) return;
+    const controls = stack.getBoundingClientRect(), weather = dock.getBoundingClientRect();
+    const previous = parseFloat(stack.style.getPropertyValue('--controls-offset')) || 0;
+    const naturalTop = controls.top - previous;
+    const collide = controls.left < weather.right + 8 && controls.right > weather.left - 8;
+    const offset = collide ? Math.max(0, weather.bottom + 12 - naturalTop) : 0;
+    stack.style.setProperty('--controls-offset', `${offset}px`);
+  }
+  function schedule() { if (!queued) queued = requestAnimationFrame(update); }
+  const resize = new ResizeObserver(schedule); resize.observe(stack); resize.observe(dock);
+  new MutationObserver(schedule).observe(dock, {attributes:true, attributeFilter:['class','aria-expanded']});
+  window.addEventListener('resize', schedule);
+  document.addEventListener('pointerdown', event => { pointers.add(event.pointerId); }, true);
+  for (const event of ['pointerup','pointercancel']) document.addEventListener(event, e => { pointers.delete(e.pointerId); schedule(); }, true);
+  window.addEventListener('blur', () => { pointers.clear(); schedule(); });
+  schedule();
+}

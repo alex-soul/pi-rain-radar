@@ -125,14 +125,17 @@ for (const failedView of ['main', 'overview']) test(`missing ${failedView} frame
     },
   };
   try {
-    let radar = await createRadar(directory, provider, { settleMs: 0, now: () => 2400000 });
+    const events=[];
+    const options={ waitForSettle: () => false, now: () => 2400000, onEvent: code=>events.push(code) };
+    let radar = await createRadar(directory, provider, options);
     await radar.refresh();
     times = [600, 1200, 1800, 2400];
     await radar.refresh();
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1800, 2400]);
     assert.equal(radar.status().error, null, 'A historical gap does not make the complete newest frame unhealthy');
     assert.deepEqual(radar.archive.window(2400).frames.map(f => f.time), [600, 1800, 2400]);
-    radar = await createRadar(directory, provider, { settleMs: 0, now: () => 2400000 });
+    assert.equal(events.at(-1),'radar-error');
+    radar = await createRadar(directory, provider, options);
     requests = [];
     await radar.refresh();
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1800, 2400]);
@@ -140,6 +143,7 @@ for (const failedView of ['main', 'overview']) test(`missing ${failedView} frame
     assert.ok(requests.every(r => r.time === 1200), 'Do not refetch complete frames');
     fail = false; requests = [];
     await radar.refresh();
+    assert.equal(events.at(-1),'radar-recovered');
     assert.deepEqual(radar.status().frames.map(f => f.time), times);
     assert.ok(requests.every(r => r.time === 1200));
     if (failedView === 'overview') assert.ok(requests.every(r => r.zoom === overviewView.radarZoom), 'Reuse the already complete main image');
@@ -315,6 +319,36 @@ test("settling delays new frames without downloads, survives restart, and preser
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1200, 1800]);
     assert.ok(downloads.every(time => time === 1800));
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('settling changes take effect next acquisition, survive restart, and reuse complete cached pairs', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'radar-policy-transition-'));
+  t.after(() => rm(directory, {recursive:true,force:true}));
+  let clock=1000000, wait=true, times=[600], downloads=0, manifests=0, release;
+  const image=await sharp({create:{width:256,height:256,channels:4,background:'#3489bf'}}).png().toBuffer();
+  let gate=null;
+  const provider={getHistory:async()=>{manifests++;if(gate) await gate;return times.map(time=>({time}));},getTile:async()=>{downloads++;return image;}};
+  const options={now:()=>clock,waitForSettle:()=>wait,nextRefreshAt:()=>clock+299000};
+  let radar=await createRadar(directory,provider,options);
+  gate=new Promise(resolve=>{release=resolve;});
+  const pending=radar.refresh();
+  wait=false; release(); await pending; gate=null;
+  assert.equal(downloads,0,'In-flight acquisition retains its initial policy');
+  assert.equal(manifests,1,'Toggling never initiates requests');
+  assert.equal(radar.status().nextUpdate.expectedAt,1299000);
+  await radar.refresh();
+  const pairCount=radarTiles().length+radarTiles(overviewView).length;
+  assert.equal(downloads,pairCount);assert.equal(radar.status().frame.time,600);
+  wait=true;times=[600,1200]; await radar.refresh();
+  assert.equal(downloads,pairCount,'Off-to-on holds the newly seen timestamp');
+  clock+=300000;
+  radar=await createRadar(directory,provider,options);await radar.refresh();
+  assert.equal(downloads,2*pairCount,'Restart retains first-seen time and complete cache');
+  assert.equal(radar.status().frame.time,1200);
+  wait=false;await radar.refresh();assert.equal(downloads,2*pairCount);
+  times=[3000,3600,4200];await radar.refresh();
+  assert.equal(radar.status().frame.time,4200,'Off catches up including the newest frame');
+  assert.equal(manifests,6);
 });
 
 test("a lone newest frame waits on empty-cache startup", async () => {
