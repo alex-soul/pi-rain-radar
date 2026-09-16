@@ -20,7 +20,13 @@ docker compose stop
 
 The `pi-rain-radar_radar-data` named volume preserves cached state across restarts and container recreation. Do not use `down -v` unless deliberately deleting the cache. `/healthz` reports process readiness and whether a frame exists; `/api/status` exposes acquisition status. A healthy process does not imply fresh provider data.
 
-## Tests
+## Laptop preview and review
+
+Start UI iteration on a laptop before building a Pi candidate. A small temporary Node.js server can serve the real public assets with synthetic provider responses and the production Content-Security-Policy on a separate loopback port (for example 3091). Use disposable data and identify the preview as synthetic; do not copy a deployed PIN or API key. This needs no Docker image build. It is a UI fixture, not proof of full backend or ARM64 behaviour.
+
+Share the preview URL and what changed with the reviewer, keep it running while they review, and iterate locally until the batch is accepted. Refresh frontend assets after edits. Full application tests and provider integration checks remain separate. Stop the fixture and remove its disposable files after review. Then build an identifiable Pi candidate, obtain device acceptance, publish the release and verify the published image on the device. Do not treat automated or agent-only visual checks as reviewer acceptance.
+
+## Automated tests
 
 With Node 24 installed:
 

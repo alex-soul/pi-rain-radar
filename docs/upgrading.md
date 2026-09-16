@@ -1,6 +1,6 @@
 # Upgrades and migration
 
-## v0.2.0 (unreleased): OpenWeather subscription change
+## v0.2.0: OpenWeather subscription change
 
 **Breaking change:** optional weather readings and MinuteCast now require **One Call API 4.0**. One Call 3.0 is no longer supported; there is no version selector or automatic fallback. Radar and its history still work without OpenWeather.
 
