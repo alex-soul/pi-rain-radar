@@ -8,7 +8,7 @@ Settings moves to Map, Interface, System and About. API configuration is under S
 
 Four/six-hour windows use already collected local history and more browser memory, without extra provider requests or retention. Older history is not downloaded on demand. UI lock deliberately keeps all provider links active, with an external-page warning. Diagnostics retains only 25 safe events in memory and clears on restart.
 
-Before upgrading, back up the existing volume and browser profile consistently with their writers stopped. Retain the previous image identity for rollback. New preferences/settings are additive; downgrading does not expose new controls and does not restore older data. Never delete the volume as a rollback step. The reference device's 0.3.0-rc.1 upgrade preserved key/PIN/map files byte-for-byte; the subsequent published v0.3.0 handover also preserved saved settings/history, with its version confirmed on screen.
+Before upgrading, back up the existing volume and browser profile consistently with their writers stopped. Retain the previous image identity for rollback. New preferences/settings are additive; downgrading does not expose new controls and does not restore older data. Never delete the volume as a rollback step. The reference device's 0.3.0-rc.1 upgrade preserved key/PIN/map files byte-for-byte; the subsequent published v0.3.0 handover also preserved saved settings/history, and I confirmed its version on screen.
 
 ## v0.2.0: OpenWeather subscription change
 
@@ -84,4 +84,4 @@ The release workflow tests fresh startup and persistent data across container re
 
 ## Tested on the reference Pi
 
-Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed by the user. Automatic reload across a subsequent version change is covered by browser-logic tests; a later real-Pi version-to-version check is still pending.
+Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed on my Pi. Automatic reload across a subsequent version change is covered by browser-logic tests; a later real-Pi version-to-version check is still pending.
