@@ -72,12 +72,7 @@ Radar works out of the box without an API key. Overview and MinuteCast start clo
 
 See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and installation.
 
-<p>
-  <a href="docs/images/hardware/components.jpg"><img src="docs/images/hardware/components.jpg" width="24%" alt="Raspberry Pi hardware"></a>
-  <a href="docs/images/hardware/enclosure.jpg"><img src="docs/images/hardware/enclosure.jpg" width="24%" alt="Display enclosure"></a>
-  <a href="docs/images/hardware/finished-display.jpg"><img src="docs/images/hardware/finished-display.jpg" width="24%" alt="Finished radar display"></a>
-  <a href="docs/images/hardware/display-close-up.jpg"><img src="docs/images/hardware/display-close-up.jpg" width="24%" alt="Radar display close-up"></a>
-</p>
+[![Hardware, enclosure and touchscreen in use, with two finished-display photos stacked on the right](docs/images/hardware/gallery.webp)](docs/images/hardware/gallery.webp)
 
 ## Documentation
 
