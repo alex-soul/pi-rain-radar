@@ -29,6 +29,8 @@ OpenWeather retains its pay-per-use model: as checked on 16 September 2026, the 
 Back up the data volume before testing an upgrade. The normalized weather cache remains readable across this change; rolling back code does not restore subscription access. A v0.1.2 rollback still needs One Call 3.0 entitlement for weather.
 ## Routine upgrades
 
+Device Power enabled? Follow [its upgrade instructions](device-power.md#upgrade) to retain the helper connection.
+
 First read the [release notes](https://github.com/alex-soul/pi-rain-radar/releases). On your laptop, open PowerShell/Terminal and connect to the Pi just as during setup:
 
 ```sh

@@ -32,6 +32,8 @@ Ready-built images support Linux ARM64 (64-bit Raspberry Pi OS) and AMD64. No Gi
 
 ### Upgrade
 
+Device Power enabled? Follow the [power upgrade instructions](docs/device-power.md#upgrade) first.
+
 ```sh
 cd ~/apps/pi-rain-radar
 docker compose pull
@@ -82,7 +84,7 @@ Pi Rain Radar is [MIT-licensed](LICENSE). You may use, modify and redistribute t
 
 **Weather data is subject to separate provider terms.** RainViewer's public API is intended for personal, educational and small community use; commercial integrations must check terms with the provider. OpenWeather requires your own eligible subscription/key. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Radar is delayed and coverage is best effort. An uncoloured area is not proof that it is dry.
+Radar data may be delayed or incomplete. Areas without rain colouring may have no detected rain—or no available data.
 
 > [!TIP]
 > Questions about installation, the interface, troubleshooting or development? Give your AI this repository link and ask. The documentation covers beginners and developers; [screen indicators](docs/indicators.md) explains the colours.

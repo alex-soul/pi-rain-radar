@@ -12,13 +12,39 @@ From a checkout of the matching release on your Pi:
 sudo sh host/device-power/manage.sh install
 ```
 
-From your existing radar Compose directory, retain your usual overrides and add the generated power override:
+For a standard installation, link the generated power configuration into your app directory once. Compose then loads it automatically, including during upgrades:
 
 ```sh
+cd ~/apps/pi-rain-radar
+ln -s /etc/pi-rain-radar-power/compose.power.yaml compose.override.yaml
+sudo docker compose up -d
+```
+
+If `compose.override.yaml` already exists, do not replace it. Use the explicit configuration described under [Upgrade](#upgrade), retaining your existing overrides. The automatic setup assumes you do not select different files through `-f` or `COMPOSE_FILE`.
+
+No API subscription or PIN is required.
+
+## Upgrade
+
+**Automatic setup above:** the usual README commands preserve Device Power:
+
+```sh
+cd ~/apps/pi-rain-radar
+sudo docker compose pull
+sudo docker compose up -d
+```
+
+**Earlier installations using explicit overrides:** either create the link described under [Enable](#enable) once, or include the power configuration on every upgrade:
+
+```sh
+cd ~/apps/pi-rain-radar
+sudo docker compose -f compose.yaml -f /etc/pi-rain-radar-power/compose.power.yaml pull
 sudo docker compose -f compose.yaml -f /etc/pi-rain-radar-power/compose.power.yaml up -d
 ```
 
-Use that same override when recreating/upgrading the app. Re-running the installer updates the helper while preserving its token and request ledger. It does not restart or shut down your Pi. No API subscription or PIN is required.
+If you use other overrides, include their `-f` arguments too, before the power override. Explicit `-f` commands do not automatically load `compose.override.yaml`. If `pull` fails, stop before running `up`.
+
+The app image update preserves settings and history but does not update the host helper. Only when release instructions require a helper update, re-run its installer from the matching release checkout. This preserves its token and request ledger and does not restart or shut down your Pi.
 
 ## What it permits
 
@@ -37,7 +63,16 @@ Check that the app was recreated with the override and that both configured moun
 
 ## Disable
 
-Recreate the app using its usual Compose files without the power override, then run:
+If you used the automatic setup, first remove only the link created above. This command refuses to remove a different file or link:
+
+```sh
+cd ~/apps/pi-rain-radar
+if [ -L compose.override.yaml ] && [ "$(readlink compose.override.yaml)" = /etc/pi-rain-radar-power/compose.power.yaml ]; then
+  rm compose.override.yaml
+fi
+```
+
+Recreate the app using its usual Compose files without the power override, then run the removal command from the release checkout:
 
 ```sh
 sudo sh host/device-power/manage.sh remove
