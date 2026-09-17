@@ -16,7 +16,7 @@ test('legacy settings default to London; a zone-only save persists without prepa
   await mkdir(join(directory,'settings'));
   await writeFile(join(directory,'settings','map.json'),JSON.stringify(legacy));
   let preparations=0,factories=0;
-  const radar={refresh:()=>{throw new Error('Unexpected acquisition');}};
+  const radar={status:()=>({fetching:false}),refresh:()=>{throw new Error('Unexpected acquisition');}};
   const options={prepare:async()=>{preparations++;},radarFactory:async()=>{factories++;return radar;}};
   const maps=await createMapSettings(directory,options);
   assert.deepEqual(maps.current().settings,defaultSettings);

@@ -13,6 +13,9 @@ export function normalizeCurrent(raw, now = Date.now()) {
   return { time: current.dt, temperature: current.temp, feelsLike: current.feels_like, windMph: current.wind_speed * 2.2369362921, gustMph: number(current.wind_gust, 0, 200) ? current.wind_gust * 2.2369362921 : null,
     humidity: number(current.humidity, 0, 100) ? current.humidity : null,
     dewPoint: number(current.dew_point, -120, 90) ? current.dew_point : null,
+    visibility: number(current.visibility, 0, 10000) ? current.visibility : null,
+    pressure: number(current.pressure, 100, 1200) ? current.pressure : null,
+    uvi: number(current.uvi, 0, 100) ? current.uvi : null,
     windDirection: number(current.wind_deg, 0, 360) ? current.wind_deg % 360 : null };
 }
 export function normalizeMinutely(raw, now = Date.now()) {
@@ -103,16 +106,20 @@ export async function createWeather(directory, { now = Date.now, request = fetch
         cache = {location:locationKey, data:{current:current.data ?? cache?.data?.current ?? null, minutely:forecast.data ?? cache?.data?.minutely ?? []}, fetchedAt:current.data ? now() : cache?.fetchedAt ?? null};
         if (forecast.data) forecastFetchedAt = now();
         const candidate = currentGust(cache.data);
-        if (validGust(candidate) && (!gust || candidate.time >= gust.time)) gust = candidate;
+        if (current.data && validGust(candidate) && (!gust || candidate.time > gust.time || (candidate.time === gust.time && candidate.mph !== gust.mph))) gust = {...candidate, fetchedAt:now()};
       }
     } catch {
       if (epoch === generation) { failures = Math.min(2, failures + 1); error = forecastError = 'Weather refresh failed; will retry automatically.'; }
     } finally {
       if (epoch === generation) {
+        const samples = cache?.data?.minutely ?? [];
+        const forecastGaps = !forecastError && (samples.length < 60 || samples.some((entry,i) => i > 0 && entry.time !== samples[i-1].time + 60));
         if (error || forecastError) onEvent(diagnostic);
-        else if (lastFailed) onEvent('weather-recovered');
-        else if (!connectionReady) onEvent('weather-ready');
-        lastFailed = !!(error || forecastError);
+        if (forecastError) onEvent('forecast-error');
+        else if (forecastGaps) onEvent('forecast-gaps');
+        else if (!error && lastFailed) onEvent('weather-recovered');
+        else if (!error && !connectionReady) onEvent('weather-ready');
+        lastFailed = !!(error || forecastError || forecastGaps);
         if (!lastFailed) connectionReady = true;
         // Preserve failed-poll state across restarts, as well as the request budget.
         try { await persist(); } catch { onEvent('storage-error'); }

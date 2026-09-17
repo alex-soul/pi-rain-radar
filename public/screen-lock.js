@@ -54,6 +54,22 @@ export function setupScreenLock(canEdit) {
 }
 
 // All outbound links use the same deliberate, keyboard-accessible kiosk warning.
+// Keep native hover tooltips in sync, including credits and help links added later.
+function updateLinkTooltip(link) {
+  if (link.matches('a[href]') && /^https?:/.test(link.href)) link.title = link.href;
+}
+document.querySelectorAll('a[href]').forEach(updateLinkTooltip);
+new MutationObserver(records => {
+  for (const record of records) {
+    if (record.type === 'attributes') updateLinkTooltip(record.target);
+    else for (const node of record.addedNodes) {
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      updateLinkTooltip(node);
+      node.querySelectorAll('a[href]').forEach(updateLinkTooltip);
+    }
+  }
+}).observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['href']});
+
 const external = document.getElementById('external-dialog');
 const openLink = document.getElementById('external-open');
 document.addEventListener('click', event => {

@@ -123,14 +123,17 @@ function paintRadarHandle(health, ready = false) {
   const handle = $('footer-toggle');
   handle.dataset.health = ready ? 'ready' : 'warning';
   handle.setAttribute('aria-label', `Radar controls: ${health}`);
-  handle.title = `${$('age').textContent}${$('next-update').textContent ? ` · ${$('next-update').textContent}` : ''}. ${health}`;
+  handle.title = health;
+  for (const id of ['settings-main-status','settings-overview-status']) {
+    const row = $(id);
+    const source=status?.sources?.[id==='settings-main-status'?'main':'overview'];
+    const label=!serverReachable?'Appliance unreachable':source?.error||(!source?health:source.state==='ready'?'Connected':source.state==='stale'?'Data is stale':'Waiting for data');
+    if (row) { row.textContent = `${source?.source==='rainbow'?'Rainbow':'RainViewer'} · ${label}`; row.dataset.health = serverReachable&&(source?source.state==='ready':ready) ? 'ready' : 'warning'; }
+  }
 }
 function paintStatus() {
   paintWeather(serverReachable ? status?.weather : null);
-  const next = serverReachable ? status?.nextUpdate : null;
-  $("next-update").textContent = next?.state === "fetching" ? "Fetching…" : next?.state === "waiting" ? `Next in ${Math.max(1, Math.ceil((next.expectedAt - Date.now()) / 60000))} min` : "";
-  $("next-update").hidden = !next;
-  if (!displayed) { paintRadarHandle('Waiting for radar data'); return; }
+  if (!displayed) { paintRadarHandle(!serverReachable ? 'Appliance unreachable' : status?.error ? 'Update failed — check Log' : 'Waiting for data'); return; }
   // Playback position and acquisition health are separate signals.
   const latest = sequence.at(-1).time;
   const newestAvailable = Math.max(latest, status?.frame?.time || 0);
@@ -138,13 +141,11 @@ function paintStatus() {
     0,
     Math.floor((Date.now() / 1000 - newestAvailable) / 60),
   );
-  const stale = minutes >= 30 || !serverReachable || !!status?.error;
+  const stale = minutes >= 30 || !serverReachable || !!status?.error || Object.values(status?.sources??{}).some(source=>source.state!=='ready');
   document.body.classList.toggle('stale', stale);
   document.body.classList.toggle('ready', !stale);
-  $("age").textContent = `Latest ${minutes < 60 ? `${minutes} min` : `${(minutes / 60).toFixed(1)} hours`}`;
-  const health = stale
-    ? "Radar data is stale or acquisition is unavailable"
-    : "Latest radar data is fresh";
+  const health = !serverReachable ? 'Appliance unreachable' : status?.error ? 'Update failed — check Log'
+    : stale ? 'Data is stale — waiting for an update' : 'Connected';
   paintRadarHandle(health, !stale);
   $("time").textContent = clock(displayed.time);
   $("date").textContent = `${format(displayed.time, { weekday: "short" })}, ${format(displayed.time, { day: "numeric" })} ${format(displayed.time, { month: "short" }).slice(0, 3)}`;
@@ -169,8 +170,20 @@ function paintStatus() {
 function showFrame() {
   displayed = sequence[index];
   if (!displayed) return;
-  $("radar").setAttribute("href", displayed.url);
-  $("overview-radar").setAttribute("href", displayed.overviewUrl);
+  for(const [id,url] of [['radar',displayed.url],['overview-radar',displayed.overviewUrl]]){
+    $(id).style.visibility=url?'visible':'hidden';if(url)$(id).setAttribute('href',url);else $(id).removeAttribute('href');
+  }
+  const sources=new Set([displayed.url?(displayed.source??'rainviewer'):null,displayed.overviewUrl?(displayed.overviewSource??'rainviewer'):null].filter(Boolean));
+  const credit=$('radar-credit'),key=[...sources].sort().join(',');
+  if(credit.dataset.sources!==key){
+    const providers=sources.size>1?[['RainViewer','https://www.rainviewer.com/'],['Rainbow','https://rainbow.ai/']]:sources.has('rainbow')?[['Rainbow','https://rainbow.ai/']]:[['RainViewer','https://www.rainviewer.com/']];
+    const nodes=[];
+    for(const [name,url]of providers){
+      if(nodes.length)nodes.push(document.createTextNode(' & '));
+      const link=document.createElement('a');link.textContent=name;link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('data-provider-credit','');nodes.push(link);
+    }
+    credit.replaceChildren(...nodes);credit.dataset.sources=key;
+  }
   $("empty").hidden = !mapUpdateVisible;
   paintStatus();
 }

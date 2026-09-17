@@ -1,5 +1,5 @@
 import { gustCacheMinutes, weatherPreferences } from './display.js';
-import { temperatureText, windText, directionText, readingNames } from './weather-format.js';
+import { temperatureText, windText, windBearing, windDirectionText, visibilityText, pressureText, readingNames } from './weather-format.js';
 import { formatTime } from './time.js';
 const timeZone = document.querySelector('meta[name="time-zone"]').content;
 const $ = id => document.getElementById(id);
@@ -7,105 +7,97 @@ let description = 'Current weather unavailable', signature = '';
 export const weatherDescription = () => description;
 const stamp = time => formatTime(time, {hour:'2-digit',minute:'2-digit'}, timeZone);
 const fetchedStamp = time => {
+  if (!Number.isFinite(time)) return 'Not acquired';
   const part = options => formatTime(time/1000, options, timeZone);
-  return `${part({day:'numeric'})} ${part({month:'short'}).slice(0,3)} ${stamp(time/1000)}`;
+  return `${part({day:'numeric'})} ${part({month:'short'}).slice(0,3)} ${part({year:'numeric'})} ${stamp(time/1000)}`;
 };
 export function paintWeather(state, now = Date.now()) {
   const prefs = weatherPreferences();
-  const nextSignature = JSON.stringify([prefs,state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust?.time,state?.gust?.mph,gustCacheMinutes()]);
+  const nextSignature = JSON.stringify([prefs,state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust,gustCacheMinutes()]);
   if (signature === nextSignature) return;
   signature = nextSignature;
   $('weather-credit').hidden = !state?.configured;
-  const data = state?.data;
-  const current = data?.current;
+  const current = state?.data?.current;
   const fresh = !!current && current.time * 1000 > now - 1800000 && current.time * 1000 <= now + 300000;
-  const values = [current?.temperature,current?.feelsLike,current?.windMph];
   const failures = state?.failures ?? (state?.error ? 1 : 0);
-  const usable = fresh && values.every(Number.isFinite) && failures < 2;
+  const usable = !!state?.configured && fresh && [current?.temperature,current?.feelsLike,current?.windMph].every(Number.isFinite) && failures < 2;
   const cached = usable && (failures > 0 || !!state?.error);
-  for (const [i, id] of ['weather-temperature','weather-feels','weather-wind'].entries()) {
-    $(id).setAttribute('data-cached', String(cached));
-    $(id).textContent = usable ? (i < 2 ? temperatureText(values[i], prefs.temperatureUnit) : windText(values[i], prefs.windUnit)) : '—';
-    $(id).closest('.weather-reading').setAttribute('aria-label', usable ? `${cached ? 'Cached ' : ''}${['Temperature','Feels like','Wind'][i]} ${$(id).textContent} ${i < 2 ? prefs.temperatureUnit === 'F' ? 'Fahrenheit' : 'Celsius' : prefs.windUnit}` : `${['Temperature','Feels like','Wind'][i]} unavailable`);
+  function reading(id, text, unit = '', acquired = state?.fetchedAt, retained = cached) {
+    const node = $('weather-'+id), row = node.closest('.weather-reading');
+    node.textContent = text;
+    node.setAttribute('data-cached', String(text !== '—' && retained));
+    const label = `${readingNames[id]}: ${text}${unit ? ' '+unit : ''} | ${text === '—' ? 'Not acquired' : fetchedStamp(acquired)}`;
+    row.title = label; row.setAttribute('aria-label',label);
   }
-  description = usable ? `${cached ? 'Cached' : 'Current'} weather at ${stamp(current.time)}: ${temperatureText(values[0], prefs.temperatureUnit)}${prefs.temperatureUnit}, feels like ${temperatureText(values[1], prefs.temperatureUnit)}${prefs.temperatureUnit}, wind ${windText(values[2], prefs.windUnit)} ${prefs.windUnit}` : 'Current weather unavailable';
+  for (const [id,value] of [['temperature',current?.temperature],['feels',current?.feelsLike],['dew',current?.dewPoint]]) {
+    const text = usable ? temperatureText(value, prefs.temperatureUnit) : '—';
+    reading(id,text === '—' ? text : text.replace('°',''),text === '—' ? '' : '°'+prefs.temperatureUnit);
+    $('weather-'+id).textContent = text;
+  }
+  reading('wind',usable ? windText(current?.windMph,prefs.windUnit) : '—',prefs.windUnit);
+  reading('humidity',usable && Number.isFinite(current?.humidity) ? `${Math.round(current.humidity)} %` : '—');
+  if (usable && Number.isFinite(current?.humidity)) $('weather-humidity').textContent = `${Math.round(current.humidity)}%`;
+  reading('direction',usable ? windDirectionText(current?.windDirection,prefs.directionFormat,prefs.directionConvention) : '—');
+  const angle = usable ? windBearing(current?.windDirection,prefs.directionConvention) : null;
+  $('weather-direction-arrow').setAttribute('transform',`rotate(${angle ?? 0} 14 14)`);
+  $('weather-direction-arrow').setAttribute('visibility',angle === null ? 'hidden' : 'visible');
+  reading('visibility',usable ? visibilityText(current?.visibility,prefs.visibilityUnit) : '—',prefs.visibilityUnit || 'km');
+  reading('pressure',usable ? pressureText(current?.pressure,prefs.pressureUnit) : '—',prefs.pressureUnit || 'hPa');
+  reading('uv',usable && Number.isFinite(current?.uvi) ? String(Number(current.uvi.toFixed(1))) : '—');
   for (const unit of document.querySelectorAll('.wind-unit-label')) unit.textContent = prefs.windUnit;
-  for (const [id, value, text] of [['humidity',current?.humidity,`${Math.round(current?.humidity)}%`], ['dew',current?.dewPoint,temperatureText(current?.dewPoint, prefs.temperatureUnit)], ['direction',current?.windDirection,directionText(current?.windDirection)]]) {
-    const available = usable && Number.isFinite(value);
-    $(`weather-${id}`).textContent = available ? text : '—';
-    $(`weather-${id}`).setAttribute('data-cached', String(available && cached));
-    const label = `${readingNames[id]} ${available ? text + (id === 'dew' ? prefs.temperatureUnit : '') : 'unavailable'}`;
-    $(`weather-${id}`).closest('.weather-reading').setAttribute('aria-label', label);
-    $(`weather-${id}`).closest('.weather-reading').title = label;
-    if (id === 'direction') {
-      // Eight bearings; the arrow points towards the source of the wind.
-      const angle = available ? (Math.round(value / 45) % 8) * 45 : 0;
-      $('weather-direction-arrow').setAttribute('transform', `rotate(${angle} 14 14)`);
-      $('weather-direction-arrow').setAttribute('visibility', available ? 'visible' : 'hidden');
-      const row = $(`weather-${id}`).closest('.weather-reading');
-      row.setAttribute('data-cached', String(available && cached));
-      row.title = available ? `Wind from ${text} · Arrow shows the nearest of eight compass directions` : label;
-      row.setAttribute('aria-label', available ? `${cached ? 'Cached wind' : 'Wind'} from ${text}` : label);
-    }
-  }
-  // Old cache payloads still work until the backend's next scheduled response.
-  const gust = state?.gust ?? {mph:current?.gustMph,time:current?.time};
+  $('weather-visibility-unit').textContent = prefs.visibilityUnit || 'km';
+  $('weather-pressure-unit').textContent = prefs.pressureUnit || 'hPa';
+  // Legacy caches have no gust acquisition timestamp: do not invent one.
+  const gust = state?.gust ?? {mph:current?.gustMph,time:current?.time,fetchedAt:state?.fetchedAt};
   const gustUsable = !!state?.configured && Number.isFinite(gust.mph) && Number.isFinite(gust.time)
     && gust.time * 1000 > now - gustCacheMinutes() * 60000 && gust.time * 1000 <= now + 300000;
   const gustCached = gustUsable && (!fresh || failures > 0 || !!state?.error || current?.gustMph !== gust.mph || current?.time !== gust.time);
-  $('weather-gust').setAttribute('data-cached', String(gustCached));
-  const gustDescription = gustUsable ? `${gustCached ? 'Cached' : 'Last reported'} wind gusts ${windText(gust.mph, prefs.windUnit)} ${prefs.windUnit} at ${fetchedStamp(gust.time * 1000)}` : 'Wind gusts unavailable';
-  $('weather-gust').textContent = gustUsable ? windText(gust.mph, prefs.windUnit) : '—';
-  $('weather-gust').closest('.weather-reading').setAttribute('aria-label', gustDescription);
-  $('weather-gust').closest('.weather-reading').title = gustDescription;
-  if (gustUsable) description += `; ${gustDescription}`;
+  reading('gust',gustUsable ? windText(gust.mph,prefs.windUnit) : '—',prefs.windUnit,gust.fetchedAt ?? null,gustCached);
+  description = usable ? `${cached ? 'Cached' : 'Current'} weather at ${stamp(current.time)}: ${temperatureText(current.temperature,prefs.temperatureUnit)}${prefs.temperatureUnit}, wind ${windText(current.windMph,prefs.windUnit)} ${prefs.windUnit}` : 'Current weather unavailable';
+  if (gustUsable) description += `; ${gustCached ? 'cached' : 'current'} wind gusts ${windText(gust.mph,prefs.windUnit)} ${prefs.windUnit}`;
   const expanded = $('weather-dock').getAttribute('aria-expanded') === 'true';
-  $('weather-dock').setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} weather readings: ${description}`);
-  $('weather-dock').title = state?.error || description;
+  $('weather-dock').setAttribute('aria-label',`${expanded ? 'Collapse' : 'Expand'} weather readings: ${description}`);
 
-  const minuteNow = Math.floor(now / 60000) * 60;
-  const entries = (data?.minutely || []).filter(item => item.time >= minuteNow && item.time < minuteNow + 3600);
-  const forecastError = state?.forecastError;
+  const minuteNow = Math.floor(now/60000)*60;
   const forecastFetchedAt = state?.forecastFetchedAt ?? state?.fetchedAt;
-  const health = !state ? ['error', 'Cannot reach weather server.']
-    : !state.configured ? ['neutral', 'No OpenWeather key configured.']
-    : state.error || failures > 0 ? ['error', state.error || 'Weather refresh failed; awaiting recovery.']
-    : forecastError ? ['error', `MinuteCast: ${forecastError}`]
-    : state.fetching && !state.fetchedAt && !forecastFetchedAt ? ['neutral', 'Checking OpenWeather…']
-    : entries.length && usable ? ['ready', `OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`]
-    : state.fetchedAt ? ['stale', 'Weather data missing or expired; awaiting refresh.']
-    : ['neutral', 'Awaiting first OpenWeather response — allow 10–15 min.'];
-  $('weather-dock').setAttribute('data-health', state?.configured === false ? 'unconfigured' : health[0] === 'ready' ? 'ready' : 'warning');
+  const forecastFresh = Number.isFinite(forecastFetchedAt) && forecastFetchedAt <= now+300000 && forecastFetchedAt > now-1800000;
+  const samples = Array.isArray(state?.data?.minutely) ? state.data.minutely : [];
+  const valid = item => Number.isSafeInteger(item?.time) && Number.isFinite(item.precipitation) && item.precipitation >= 0 && item.precipitation <= 1000;
+  const available = new Map(samples.filter(valid).filter(item => item.time >= minuteNow && item.time < minuteNow+3600 && (item.time-minuteNow)%60===0).map(item=>[(item.time-minuteNow)/60,item.precipitation]));
+  // Judge completeness at acquisition, not by the naturally shrinking forecast horizon between polls.
+  const complete = samples.length >= 60 && samples.every((item,i)=>valid(item) && (!i || item.time === samples[i-1].time+60));
+  const forecastUsable = !!state?.configured && forecastFresh && !state?.forecastError;
+  const health = !state ? ['warning','Cannot reach weather server.']
+    : !state.configured ? ['unconfigured','No OpenWeather key configured.']
+    : state.error || failures > 0 ? ['warning',state.error || 'Weather refresh failed; awaiting recovery.']
+    : state.forecastError ? ['warning',`MinuteCast: ${state.forecastError}`]
+    : state.fetching && !state.fetchedAt && !forecastFetchedAt ? ['warning','Checking OpenWeather…']
+    : forecastUsable && complete && available.size && usable ? ['ready',`OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`]
+    : ['warning',forecastUsable && !complete ? 'MinuteCast has missing data; awaiting refresh.' : 'Weather data missing or expired; awaiting refresh.'];
+  $('weather-dock').setAttribute('data-health',health[0]);
   $('weather-dock').title = `${description}. ${health[1]}`;
-  $('settings-api-status').textContent = health[1];
-  const available = new Map(entries.map(item => [Math.round((item.time - minuteNow) / 60), item.precipitation]));
-  const contiguous = entries.length > 0 && entries.every((item, index) => item.time === minuteNow + index * 60 && Number.isFinite(item.precipitation));
-  const forecastFresh = Number.isFinite(forecastFetchedAt) && forecastFetchedAt <= now + 300000 && forecastFetchedAt > now - 1800000;
-  const dry = contiguous && forecastFresh && !forecastError && entries.every(item => item.precipitation === 0);
-  const retry = 'Will retry automatically.';
-  const message = !state ? `Cannot reach the appliance. ${retry}`
-    : !state.configured ? 'Configure OpenWeather in Settings'
-    : /HTTP (401|403)/.test(forecastError || '') ? 'Check OpenWeather access in Settings.'
-    : !entries.length ? `No forecast data received. ${retry}`
-    : forecastError ? `Showing the last available forecast. ${retry}`
-    : dry ? `${entries.length >= 60 ? 'No rain expected in the next hour.' : 'No rain expected in the available forecast.'}\nLast checked at ${fetchedStamp(forecastFetchedAt)}`
-    : '';
-  $('minute-message').textContent = message;
-  $('minute-message').hidden = !message;
-  $('minute-chart').style.visibility = entries.length ? 'visible' : 'hidden';
-  $('minute-chart').setAttribute('viewBox', '0 0 360 85');
-  $('minute-chart').setAttribute('aria-label', entries.length ? `Current precipitation forecast, fetched at ${stamp(forecastFetchedAt/1000)}. ${entries.length} available minute samples. Precipitation in millimetres per hour.` : message);
-  $('minutecast').title = forecastError || (forecastFetchedAt ? `Current forecast · updated ${stamp(forecastFetchedAt/1000)} · OpenWeather` : message);
-  const scale = Math.max(1, ...entries.map(item => item.precipitation));
-  const bars = [];
-  for (let minute=0; minute<60; minute++) {
-    if (!available.has(minute)) continue; // Unknown minutes are gaps, never dry observations.
-    const rain = available.get(minute);
-    const height = Math.max(2, rain / scale * 85);
-    const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    for (const [key,value] of Object.entries({x:minute*6,y:85-height,width:4,height,rx:1.5,fill:rain === 0 ? '#68877c' : rain < 0.5 ? '#75c8bd' : '#329db3',opacity:rain === 0 ? 0.35 : 1})) bar.setAttribute(key,value);
-    const title = document.createElementNS('http://www.w3.org/2000/svg','title');
-    title.textContent = `${stamp(minuteNow+minute*60)} · ${rain} mm/h`;
+  const weatherStatus = $('settings-api-status');
+  const summary = !state ? 'Appliance unreachable' : !state.configured ? 'Not configured'
+    : state.error || failures > 0 ? 'Weather update failed'
+    : state.forecastError ? 'MinuteCast update failed'
+    : forecastUsable && !complete ? 'MinuteCast has missing minutes'
+    : health[0] === 'ready' ? 'Connected' : 'Data missing or expired';
+  weatherStatus.textContent = `OpenWeatherMap · ${summary}`;
+  weatherStatus.setAttribute('data-health',health[0]);
+  $('minute-message').hidden = true; $('minute-message').textContent = '';
+  $('minute-chart').style.visibility = 'visible';
+  $('minute-chart').setAttribute('viewBox','0 0 360 85');
+  const forecastLabel = forecastUsable ? `Current precipitation forecast, fetched at ${fetchedStamp(forecastFetchedAt)}. ${available.size} available minute samples. Precipitation in millimetres per hour.` : 'Forecast unavailable after failed refresh or expiry.';
+  $('minute-chart').setAttribute('aria-label',forecastLabel);
+  $('minutecast').title = state?.forecastError || forecastLabel;
+  const bars = [], scale = Math.max(1,...available.values());
+  if (forecastUsable) for (let minute=0;minute<60;minute++) {
+    const rain=available.get(minute), missing=rain===undefined, baseline=missing||rain===0;
+    const height=baseline?1:Math.max(2,rain/scale*85);
+    const bar=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    for (const [key,value] of Object.entries({x:minute*6,y:85-height,width:baseline?6:4,height,rx:baseline?0:1.5,fill:missing?'#c49343':rain<0.5?'#75c8bd':'#329db3'})) bar.setAttribute(key,value);
+    const title=document.createElementNS('http://www.w3.org/2000/svg','title');
+    title.textContent=`${stamp(minuteNow+minute*60)} · ${missing?'Missing forecast minute':rain+' mm/h'}`;
     bar.append(title); bars.push(bar);
   }
   $('minute-bars').replaceChildren(...bars);

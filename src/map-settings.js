@@ -82,6 +82,7 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
     },
     configure(input) {
       if(busy) return {status:409,error:'A map update is already running.'};
+      if(radar.status().fetching)return {status:409,error:'Wait for the current radar update before changing the map.'};
       let value;
       try { value=validateMapSettings(input); } catch(e) { return {status:400,error:e.message}; }
       if(mapId(value)===mapId(settings)) { error=null; return {status:200,message:'Map already up to date.'}; }

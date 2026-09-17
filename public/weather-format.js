@@ -1,4 +1,4 @@
-export const readingNames = { temperature: 'Temperature', feels: 'Feels like', wind: 'Wind', gust: 'Wind gusts', humidity: 'Humidity', dew: 'Dew point', direction: 'Wind direction' };
+export const readingNames = { temperature: 'Temperature', feels: 'Feels like', wind: 'Wind', gust: 'Wind gusts', humidity: 'Humidity', dew: 'Dew point', direction: 'Wind direction', visibility: 'Visibility', pressure: 'Pressure', uv: 'UV index' };
 export const defaultReadings = ['temperature', 'feels', 'wind', 'gust'];
 export const windUnits = { mph: 1, 'km/h': 1.609344, 'm/s': 0.44704, kn: 0.8689762419 };
 export const playbackSpeeds = [0.5, 0.75, 1, 1.5, 2];
@@ -20,4 +20,26 @@ export function windText(value, unit = 'mph') {
 }
 export function directionText(value) {
   return Number.isFinite(value) ? ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(value / 22.5) % 16] : '—';
+}
+
+export const weatherOptions = {
+  visibilityUnit: ['km', 'mi'], pressureUnit: ['hPa', 'inHg', 'mmHg'],
+  directionFormat: ['compass', 'degrees'], directionConvention: ['flow', 'meteorological'],
+};
+export function windBearing(value, convention = 'flow') {
+  return Number.isFinite(value) ? ((value + (convention === 'meteorological' ? 0 : 180)) % 360 + 360) % 360 : null;
+}
+export function windDirectionText(value, format = 'compass', convention = 'flow') {
+  const bearing = windBearing(value, convention);
+  return bearing === null ? '—' : format === 'degrees' ? `${Math.round(bearing) % 360}°` : directionText(bearing);
+}
+export function visibilityText(metres, unit = 'km') {
+  if (!Number.isFinite(metres) || metres < 0) return '—';
+  const capped = metres >= 10000;
+  const value = Math.min(metres, 10000) / (unit === 'mi' ? 1609.344 : 1000);
+  return `${Number(value.toFixed(1))}${capped ? '+' : ''}`;
+}
+export function pressureText(hPa, unit = 'hPa') {
+  if (!Number.isFinite(hPa) || hPa <= 0) return '—';
+  return unit === 'inHg' ? (hPa / 33.8638866667).toFixed(2) : unit === 'mmHg' ? (hPa / 1.33322387415).toFixed(1) : String(Math.round(hPa));
 }

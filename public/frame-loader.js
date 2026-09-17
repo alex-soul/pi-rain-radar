@@ -44,12 +44,12 @@ export function createFrameLoader({ makeImage = () => new Image(), timeoutMs = 1
           while (current() && cursor < job.frames.length) {
             const index = cursor++, frame = job.frames[index];
             const cached = reuse.get(`${frame.url}|${frame.overviewUrl}`);
-            if (cached) { result[index] = cached; continue; }
+            if (cached) { result[index] = {...cached,...frame}; continue; }
             try {
-              const image = await decode(frame.url);
+              const image = frame.url ? await decode(frame.url).catch(()=>null) : null;
               if (!current()) break;
-              const overviewImage = await decode(frame.overviewUrl);
-              if (current()) result[index] = { ...frame, image, overviewImage };
+              const overviewImage = frame.overviewUrl ? await decode(frame.overviewUrl).catch(()=>null) : null;
+              if (current() && (image || overviewImage)) result[index] = { ...frame, url:image?frame.url:null,overviewUrl:overviewImage?frame.overviewUrl:null,image,overviewImage };
             } catch { /* Leave failed complete pairs as timeline gaps. */ }
           }
         }

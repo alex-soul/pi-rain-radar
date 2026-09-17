@@ -32,3 +32,5 @@ Preserve complete-frame publication and last-good cache recovery. Keep provider 
 Keep the browser image-based and lightweight. Before adding sustained rendering, substantial memory/network use or new infrastructure, explain the cost and consider a bounded, reversible experiment. Laptop results do not establish performance on a Raspberry Pi with 2 GB RAM. Prefer event-driven UI changes and shared backend responses over extra polling or browser-side map processing.
 
 Radar coverage/no-data presentation and sustained Pi resource/recovery validation remain gaps. See [validation](docs/validation.md) for the tested baseline and [design](docs/design.md) for deferred ideas. Contributions are made under the project MIT licence. Preserve applicable third-party notices.
+
+See the [screen indicator guide](docs/indicators.md) for status meanings, [radar provider guide](docs/radar-providers.md) for setup and estimates, and [Device Power guide](docs/device-power.md) for the optional host helper.

@@ -132,7 +132,7 @@ for (const failedView of ['main', 'overview']) test(`missing ${failedView} frame
     times = [600, 1200, 1800, 2400];
     await radar.refresh();
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1800, 2400]);
-    assert.equal(radar.status().error, null, 'A historical gap does not make the complete newest frame unhealthy');
+    assert.ok(radar.status().error, 'An incomplete acquisition remains visible in source health even when the newest frame succeeded');
     assert.deepEqual(radar.archive.window(2400).frames.map(f => f.time), [600, 1800, 2400]);
     assert.equal(events.at(-1),'radar-error');
     radar = await createRadar(directory, provider, options);

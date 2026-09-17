@@ -12,6 +12,7 @@
 node_modules/
 dist/
 coverage/
+__pycache__/
 
 # Editor and operating-system files
 .idea/

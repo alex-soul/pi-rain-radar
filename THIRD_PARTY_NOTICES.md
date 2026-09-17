@@ -8,6 +8,10 @@ Radar imagery and metadata are provided by [RainViewer](https://www.rainviewer.c
 
 Example radar images in the README show historical observations, not current conditions. RainViewer is credited alongside the preview and in the app.
 
+## Rainbow Weather
+
+Optional radar tiles and snapshot metadata come from [Rainbow Weather](https://rainbow.ai/), using the installation's own Tiles API key. Provider subscription, attribution and data terms apply separately; see [Rainbow terms](https://developer.rainbow.ai/terms-of-service) and [setup/usage assumptions](docs/radar-providers.md). Historical captures retain their provider credit. The local archive is not a grant of additional redistribution rights.
+
 ## Natural Earth
 
 Bundled geography is derived from Natural Earth's public-domain datasets. See [Natural Earth's terms](https://www.naturalearthdata.com/about/terms-of-use/) and [the pinned source and regeneration instructions](assets/README.md).
@@ -26,4 +30,4 @@ Optional current conditions and minute precipitation forecasts come from [OpenWe
 
 ## On-screen credits and UI lock
 
-RainViewer, Natural Earth and configured OpenWeather credits remain visible when the dock is hidden, and their links remain usable during UI lock through an external-page warning. No RainViewer exception to disable its link has been obtained or is relied upon. The app uses “Weather by OpenWeatherMap” as its weather credit.
+Displayed RainViewer/Rainbow, Natural Earth and configured OpenWeather credits remain visible when the dock is hidden, and their links remain usable during UI lock through an external-page warning. No RainViewer exception to disable its link has been obtained or is relied upon. The app uses “Weather by OpenWeatherMap” as its weather credit.

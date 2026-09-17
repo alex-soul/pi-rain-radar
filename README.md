@@ -8,7 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-**v0.3.0 is a pre-release.** I tested the release candidate on my Raspberry Pi 4 with 2 GB RAM, including six-hour playback at full speed, and found kiosk playback smooth. Native ARM64 tests and startup/restart checks also passed. Longer soak and recovery testing remain open. See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
+**v0.4.0 is a pre-release.** I tested the new candidate on my Raspberry Pi 4 with 2 GB RAM, including six-hour playback at full speed and restart/shutdown recovery. Native ARM64 tests and startup/restart checks passed. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
 
@@ -49,7 +49,9 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
-- Independent temperature/wind units, configurable reading order, optional humidity/dew point/wind direction, per-display UI lock and a small diagnostic log.
+- Ten optional readings, including visibility, pressure and UV index, configurable units and wind-arrow convention.
+- Optional Rainbow radar, independently selected for Main and Overview maps, with request estimates and an optional cap.
+- Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
 No PIN or API key is needed to start viewing radar. Overview and MinuteCast start closed. The app runs independently of Home Assistant.
@@ -58,7 +60,11 @@ No PIN or API key is needed to start viewing radar. Overview and MinuteCast star
 
 - [Quick Start — install and configure from another computer](docs/quick-start.md)
 - [Raspberry Pi build — unpacking to automatic kiosk, without an attached keyboard](docs/raspberry-pi.md)
-- [User manual — every setting, control and status colour](docs/manual.md)
+- [User manual — settings and controls](docs/manual.md)
+- [Screen indicators — numbered guide to colours and status](docs/indicators.md)
+- [Radar providers — Rainbow setup, estimates and limits](docs/radar-providers.md)
+- [Device Power — optional restart/shutdown setup](docs/device-power.md)
+- [Release follow-ups](docs/follow-ups.md)
 - [Upgrades — routine updates, migration and rollback](docs/upgrading.md)
 - [Troubleshooting and PIN recovery](docs/troubleshooting.md)
 - [Development — local workflow and tests](docs/development.md)
@@ -67,7 +73,7 @@ No PIN or API key is needed to start viewing radar. Overview and MinuteCast star
 - [Contributing](CONTRIBUTING.md)
 - [Third-party data and licences](THIRD_PARTY_NOTICES.md)
 
-Node.js 24, Sharp and plain browser JavaScript. The backend prepares image pairs; the browser plays them over locally bundled maps. Settings and acquired data persist in a Docker volume. The supplied configuration serves port 3080 on the home LAN; an optional bind-address setting restricts it to loopback.
+Node.js 24, Sharp and plain browser JavaScript. The backend prepares map frames; the browser plays them over locally bundled maps. Settings and acquired data persist in a Docker volume. The supplied configuration serves port 3080 on the home LAN; an optional bind-address setting restricts it to loopback.
 
 ## Licence and data
 
@@ -76,6 +82,9 @@ Pi Rain Radar is [MIT-licensed](LICENSE). You may use, modify and redistribute t
 **Weather data is subject to separate provider terms.** RainViewer's public API is intended for personal, educational and small community use; commercial integrations must check terms with the provider. OpenWeather requires your own eligible subscription/key. See [third-party notices](THIRD_PARTY_NOTICES.md).
 
 Radar is delayed and coverage is best effort. An uncoloured area is not proof that it is dry.
+
+> [!TIP]
+> Questions about installation, the interface, troubleshooting or development? Give your AI this repository link and ask. The documentation covers beginners and developers; [screen indicators](docs/indicators.md) explains the colours.
 
 ## Inspiration
 

@@ -16,7 +16,7 @@ import { getHistory, getTile } from "./provider.js";
 export async function createRadar(
   directory,
   provider = { getHistory, getTile },
-  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '' } = {},
+  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '', manageCleanup = true } = {},
 ) {
   const {view, viewKey, overviewView, overviewKey} = views;
   const historyFile = storageKey ? `history-${storageKey}.json` : 'history.json';
@@ -161,6 +161,8 @@ export async function createRadar(
           // Old history is already settled when bootstrapping or catching up.
           if (recovering && frame.time < newest) firstSeen.set(frame.time, startedAt - settleMs);
           else if (!firstSeen.has(frame.time)) firstSeen.set(frame.time, startedAt);
+          if(Number.isFinite(frame.firstSeenAt)&&frame.firstSeenAt<=observedAt)
+            firstSeen.set(frame.time,Math.min(firstSeen.get(frame.time),frame.firstSeenAt));
         }
       }
       await writeFile(join(directory, `${settlingFile}.tmp`), JSON.stringify([...firstSeen]));
@@ -205,7 +207,7 @@ export async function createRadar(
       );
       previous = frames;
       frames = published;
-      error = publishedLatest < latest ? "New radar data temporarily unavailable" : null;
+      error = incomplete || publishedLatest < latest ? "New radar data temporarily unavailable" : null;
       console.log(
         JSON.stringify({
           event: "history-published",
@@ -225,6 +227,7 @@ export async function createRadar(
       lastFailed = !!error || incomplete;
       if (!lastFailed) connectionReady = true;
       try {
+        if (manageCleanup) {
         // Bound partial progress even during repeated failures, retaining last-good history.
         const all = await readdir(directory);
         const files = all
@@ -244,6 +247,7 @@ export async function createRadar(
             Date.now() - (await stat(join(directory, file))).mtimeMs > 3600000
           )
             await unlink(join(directory, file));
+        }
       } catch (e) {
         console.error(
           JSON.stringify({ event: "cache-cleanup-failed", message: e.message }),

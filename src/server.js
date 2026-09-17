@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { createWeather } from './weather.js';
 import { createDiagnostics } from './diagnostics.js';
 import { createRadarSettings } from './radar-settings.js';
+import { createRainbow } from './rainbow.js';
+import { createDevicePower } from './device-power.js';
+import { createRadarSources } from './radar-sources.js';
+import * as rainviewer from './provider.js';
 import { createMapSettings } from './map-settings.js';
 import { mapPage } from './map-page.js';
 import { assetNames } from './map-assets.js';
@@ -17,14 +21,25 @@ let weather;
 const diagnostics = createDiagnostics();
 diagnostics.record('startup');
 const radarSettings = await createRadarSettings(directory, { onEvent: diagnostics.record });
-const maps = await createMapSettings(directory,{nextRefreshAt:()=>nextRefreshAt,waitForSettle:radarSettings.waitForSettle,onEvent:diagnostics.record,onChange:settings=>weather.setLocation(settings)});
+const rainbow=await createRainbow(directory,{monthlyLimit:radarSettings.requestLimit,
+  testRequestLimit:process.env.RAINBOW_TEST_REQUEST_LIMIT?Number(process.env.RAINBOW_TEST_REQUEST_LIMIT):null,
+  inUse:()=>{const s=radarSettings.current();return s.main==='rainbow'||s.overview==='rainbow'||maps.current().radar.status().fetching;},onEvent:diagnostics.record});
+const maps = await createMapSettings(directory,{radarFactory:(directory,_,options)=>createRadarSources(directory,{rainviewer,rainbow},{...options,historyDepth:process.env.RADAR_TEST_HISTORY==='2'?2:13,selection:radarSettings.current}),nextRefreshAt:()=>nextRefreshAt,waitForSettle:radarSettings.waitForSettle,onEvent:diagnostics.record,onChange:settings=>weather.setLocation(settings)});
+radarSettings.setApply((next,commit)=>{
+  if(maps.status().busy)return {status:409,error:'Wait for the map update to finish.'};
+  if((next.main==='rainbow'||next.overview==='rainbow')&&!rainbow.configured())return {status:400,error:'Save a Rainbow key before selecting it.'};
+  return maps.current().radar.configure(next,commit);
+});
 weather = await createWeather(directory,{location:maps.current().settings,onEvent:diagnostics.record});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings });
+const power=createDevicePower({onEvent:diagnostics.record});
+const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power });
 const staticFiles = new Map([
   ["/", ["index.html", "text/html"]],
     ["/control-layout.js", ["control-layout.js", "text/javascript"]],
     ["/display.js", ["display.js", "text/javascript"]],
   ["/settings.js", ["settings.js", "text/javascript"]],
+  ["/radar-settings-ui.js", ["radar-settings-ui.js", "text/javascript"]],
+  ["/device-power.js", ["device-power.js", "text/javascript"]],
   ["/diagnostics.js", ["diagnostics.js", "text/javascript"]],
   ["/frame-loader.js", ["frame-loader.js", "text/javascript"]],
   ["/pin-entry.js", ["pin-entry.js", "text/javascript"]],
@@ -112,8 +127,9 @@ const server = createServer(async (req, res) => {
     res.end("Not found");
   }
 });
-server.listen(3000, "0.0.0.0", () =>
-  console.log("Pi Rain Radar listening on port 3000"),
+const port=Number(process.env.PORT||3000);
+server.listen(port, process.env.BIND_ADDRESS||"0.0.0.0", () =>
+  console.log(`Pi Rain Radar listening on port ${port}`),
 );
 function scheduledRefresh() {
   const startedAt = Date.now();
@@ -121,8 +137,8 @@ function scheduledRefresh() {
   if (!maps.status().busy) void maps.current().radar.refresh(startedAt);
   void weather.refresh();
 }
-scheduledRefresh();
-const timer = setInterval(scheduledRefresh, 300000);
+if(process.env.RADAR_MANUAL_REFRESH!=='1')scheduledRefresh();
+const timer = process.env.RADAR_MANUAL_REFRESH==='1'?null:setInterval(scheduledRefresh, 300000);
 function stop() {
   clearInterval(timer);
   server.close(() => process.exit(0));

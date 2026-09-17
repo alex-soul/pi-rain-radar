@@ -167,7 +167,7 @@ test('display choices restore independently and reject unsupported units and pla
 });
 
 test('reading editor saves reorder, preserves hidden readings, and cancels interrupted drags', () => {
-  const ids=['temperature','feels','wind','gust','humidity','dew','direction'];
+  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv'];
   let children=[], saved, writes=0, editable=true;
   const list={get children(){return children;},append(row){children=children.filter(x=>x!==row);children.push(row);},insertBefore(row,before){children=children.filter(x=>x!==row);children.splice(children.indexOf(before),0,row);}};
   const rows=ids.map(id=>{
@@ -181,7 +181,17 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   handle.handlers.pointerdown({button:0,isPrimary:true,pointerId:1});handle.handlers.pointermove({pointerId:1,clientY:90});
   assert.equal(children[1],rows[0]);cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
-  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction']);
+  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv']);
   assert.deepEqual(saved.readings,['temperature','feels','wind','gust']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
+});
+
+test('new weather preferences default safely and preserve old reading choices',()=>{
+  function load(saved){const c=vm.createContext({localStorage:{getItem:()=>JSON.stringify(saved)}});vm.runInContext(source.replaceAll('export function','function'),c);return c.weatherPreferences();}
+  const old=load({readings:['wind','gust'],readingOrder:['gust','wind']});
+  assert.equal(old.directionConvention,'flow');assert.equal(old.directionFormat,'compass');assert.equal(old.visibilityUnit,'km');assert.equal(old.pressureUnit,'hPa');assert.deepEqual([...old.readings],['wind','gust']);
+  const custom=load({visibilityUnit:'mi',pressureUnit:'mmHg',directionFormat:'degrees',directionConvention:'meteorological',readings:[]});
+  assert.equal(custom.visibilityUnit,'mi');assert.equal(custom.pressureUnit,'mmHg');assert.equal(custom.directionFormat,'degrees');assert.equal(custom.directionConvention,'meteorological');assert.equal(custom.readings.length,0);
+  const invalid=load({visibilityUnit:'m',pressureUnit:'psi',directionFormat:'arrows',directionConvention:'from'});
+  assert.equal(invalid.visibilityUnit,'km');assert.equal(invalid.pressureUnit,'hPa');assert.equal(invalid.directionFormat,'compass');assert.equal(invalid.directionConvention,'flow');
 });

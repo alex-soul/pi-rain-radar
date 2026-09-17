@@ -1,142 +1,65 @@
-import { temperatureText, windText, directionText, readingNames } from '../public/weather-format.js';
-const weatherPreferences = () => ({temperatureUnit:'C',windUnit:'mph',readings:['temperature','feels','wind','gust']});
+import * as format from '../public/weather-format.js';
 import {formatTime} from '../public/time.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const code=(await readFile(new URL('../public/weather.js',import.meta.url),'utf8')).replaceAll('export ','').replace(/^import .*;\r?\n/gm,'');
-test('dry reassurance requires fresh contiguous valid forecast and uses a truthful remaining horizon', () => {
-  const nodes=new Map();
-  function node(){return {attributes:{},style:{},setAttribute(k,v){this.attributes[k]=v;},getAttribute(){return 'true';},closest(){return this;},append(){},replaceChildren(){}};}
-  const document={querySelectorAll:()=>[],querySelector:()=>({content:'Europe/London'}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
-  const context=vm.createContext({weatherPreferences,temperatureText,windText,directionText,readingNames,document,formatTime,gustCacheMinutes:()=>60});
-  vm.runInContext(code,context);
-  const now=1789383600000, samples=Array.from({length:60},(_,i)=>({time:now/1000+i*60,precipitation:0}));
-  const state={configured:true,fetchedAt:now,forecastFetchedAt:now,data:{current:{time:now/1000,temperature:17.5,feelsLike:16,windMph:0},minutely:samples}};
-  context.paintWeather(state,now);assert.match(nodes.get('minute-message').textContent,/next hour.*\nLast checked at 14 Sep 12:00/);
-  context.paintWeather(state,now+600000);assert.match(nodes.get('minute-message').textContent,/available forecast/);
-  context.paintWeather({...state,forecastFetchedAt:now+1,data:{...state.data,minutely:samples.filter((_,i)=>i!==5)}},now);
-  assert.equal(nodes.get('minute-message').hidden,true);
-  context.paintWeather({...state,forecastError:'HTTP 503'},now);assert.match(nodes.get('minute-message').textContent,/last available forecast/);
-  context.paintWeather(state,now+1800001);assert.equal(nodes.get('minute-message').hidden,true);
-  context.paintWeather({...state,forecastError:'HTTP 401',data:{...state.data,minutely:[]}},now);assert.match(nodes.get('minute-message').textContent,/Check OpenWeather access/);
-});
-test('weather rendering distinguishes zero from missing data, expires readings and avoids playback redraws',()=>{
-  const nodes=new Map();let writes=0;
-  function node(){return {attributes:{},children:[],style:{},classList:{toggle(){}},setAttribute(k,v){writes++;this.attributes[k]=v;},getAttribute(){return 'true';},closest(){return this;},append(n){this.children.push(n);},replaceChildren(...children){writes++;this.children=children;}};}
-  const document={querySelectorAll:()=>[],querySelector:()=>({content:"Europe/London"}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:()=>node()};
-  const context=vm.createContext({weatherPreferences,temperatureText,windText,directionText,readingNames,document,Intl,Date,Number,Map,JSON,formatTime,gustCacheMinutes:()=>60});vm.runInContext(code,context);
-  const now=1789383600000;
-  const state={configured:true,fetchedAt:now,data:{current:{time:now/1000,temperature:14,feelsLike:12,windMph:9},minutely:[{time:now/1000,precipitation:0},{time:now/1000+120,precipitation:2}]}};
-  context.paintWeather(state,now);
-  assert.equal(nodes.get('minute-bars').children.length,2);
-  assert.equal(nodes.get('weather-temperature').textContent,'14.0°');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'ready');
-  assert.equal(nodes.get('settings-api-status').textContent,'OpenWeather connected. Last fetched at 14 Sep 12:00.');
-  assert.equal(nodes.get('weather-gust').textContent,'—');
-  const before=writes;context.paintWeather(state,now+1000);assert.equal(writes,before);
-  for (const degrees of [0,45,90,135,180,225,270,315,359,245]) {
-    context.paintWeather({...state,fetchedAt:now+degrees+1,data:{...state.data,current:{...state.data.current,windDirection:degrees}}},now);
-    const arrow=nodes.get('weather-direction-arrow');
-    assert.equal(arrow.attributes.transform,`rotate(${Math.round(degrees/45)%8*45} 14 14)`);
-    assert.equal(arrow.attributes.visibility,'visible');
-    assert.equal(nodes.get('weather-direction').textContent,directionText(degrees));
+const now=1789383600000;
+const forecast=()=>Array.from({length:60},(_,i)=>({time:now/1000+i*60,precipitation:0}));
+const state=()=>({configured:true,fetchedAt:now,forecastFetchedAt:now,failures:0,data:{current:{time:now/1000,temperature:14,feelsLike:12,windMph:9,gustMph:20,humidity:0,dewPoint:0,windDirection:359,visibility:0,pressure:1013,uvi:0},minutely:forecast()}});
+function fixture(zone='Europe/London') {
+  const nodes=new Map();let writes=0,minutes=60;
+  const prefs={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa',directionFormat:'compass',directionConvention:'flow'};
+  function node(){return {attributes:{},children:[],style:{},setAttribute(k,v){writes++;this.attributes[k]=v;},getAttribute(){return 'true';},closest(){return this;},append(n){this.children.push(n);},replaceChildren(...children){writes++;this.children=children;}};}
+  const document={querySelectorAll:()=>[],querySelector:()=>({content:zone}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
+  const c=vm.createContext({...format,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
+  return {nodes,prefs,paint:c.paintWeather,writes:()=>writes,setMinutes:v=>minutes=v};
+}
+test('MinuteCast uses baselines for zero and missing minutes, and clears failed or expired charts without messages',()=>{
+  const f=fixture(),s=state();f.paint(s,now);
+  const bars=()=>f.nodes.get('minute-bars').children;
+  assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.height===1&&b.attributes.width===6&&b.attributes.fill==='#75c8bd'));
+  assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
+  const gap={...s,forecastFetchedAt:now+1,data:{...s.data,minutely:s.data.minutely.filter((_,i)=>i!==5)}};f.paint(gap,now);
+  assert.equal(bars().length,60);assert.equal(bars()[5].attributes.fill,'#c49343');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'warning');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · MinuteCast has missing minutes');
+  f.paint({...s,forecastError:'Forecast failed'},now);
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · MinuteCast update failed');
+  assert.equal(f.nodes.get('settings-api-status').attributes['data-health'],'warning');
+  f.paint({...s,forecastFetchedAt:now+2,data:{...s.data,minutely:[]}},now);assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.fill==='#c49343'));
+  for(const failed of [{...s,forecastError:'Forecast failed'}, {...s,forecastFetchedAt:now-1800000}, {configured:false}, null]) {
+    f.paint(failed,now);assert.equal(bars().length,0);assert.equal(f.nodes.get('minute-message').hidden,true);assert.equal(f.nodes.get('minute-message').textContent,'');
   }
-  context.paintWeather({...state,fetchedAt:now+500},now);
-  assert.equal(nodes.get('weather-direction-arrow').attributes.visibility,'hidden');
-  context.paintWeather({...state,forecastError:'HTTP 503: Forecast unavailable',forecastFetchedAt:now-600000},now);
-  assert.equal(nodes.get('weather-temperature').textContent,'14.0°');
-  assert.equal(nodes.get('weather-temperature').attributes['data-cached'],'false');
-  assert.equal(nodes.get('minute-bars').children.length,2);
-  assert.match(nodes.get('settings-api-status').textContent,/MinuteCast.*503/);
-  assert.match(nodes.get('minute-chart').attributes['aria-label'],/11:50/);
-  context.paintWeather({...state,error:'HTTP 503: Current unavailable',failures:2,forecastFetchedAt:now},now);
-  assert.equal(nodes.get('weather-temperature').textContent,'—');
-  assert.equal(nodes.get('minute-bars').children.length,2);
-  const gustState={...state,fetchedAt:now+1,data:{...state.data,current:{...state.data.current,gustMph:22.4}}};
-  context.paintWeather(gustState,now);
-  assert.equal(nodes.get('weather-gust').textContent,'22');
-  context.paintWeather(gustState,now+31*60000);
-  assert.equal(nodes.get('weather-gust').textContent,'22');
-  assert.equal(nodes.get('weather-temperature').textContent,'—');
-  assert.equal(nodes.get('minute-message').textContent,'No forecast data received. Will retry automatically.');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'warning');
-  context.paintWeather(gustState,now+60*60000);
-  assert.equal(nodes.get('weather-gust').textContent,'—');
-  context.paintWeather({...state,error:'HTTP 401: OpenWeather rejected the key or One Call access.'},now);
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'warning');
-  assert.match(nodes.get('settings-api-status').textContent,/HTTP 401/);
-  context.paintWeather({...state,data:{...state.data,minutely:[{time:now/1000,precipitation:0}]}},now);
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'ready');
-  context.paintWeather({configured:false},now);
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'unconfigured');
-  context.paintWeather({configured:true,fetching:true},now);
-  assert.equal(nodes.get('settings-api-status').textContent,'Checking OpenWeather…');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'warning');
-  context.paintWeather(null,now);
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'warning');
-  assert.match(nodes.get('settings-api-status').textContent,/Cannot reach/);
-  document.querySelector=()=>({content:'America/New_York'});
-  const newYork=vm.createContext({weatherPreferences,temperatureText,windText,directionText,readingNames,document,Intl,Date,Number,Map,JSON,formatTime,gustCacheMinutes:()=>60});
-  vm.runInContext(code,newYork);
-  newYork.paintWeather(state,now);
-  assert.equal(nodes.get('settings-api-status').textContent,'OpenWeather connected. Last fetched at 14 Sep 07:00.');
+  f.paint(s,now+600000);assert.equal(bars().filter(b=>b.attributes.fill==='#c49343').length,10);
+  assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready','natural horizon shrinkage does not imply a failed acquisition');
+  f.paint({...s,data:{...s.data,minutely:s.data.minutely.map((m,i)=>({...m,precipitation:i===2?2:0}))},forecastFetchedAt:now+3},now);
+  assert.equal(bars()[2].attributes.height,85);assert.equal(bars()[2].attributes.width,4);
 });
-
-test('retained gusts use their own age, respect cache settings and clear without credentials',()=>{
-  const nodes=new Map();let minutes=60;
-  function node(){return {attributes:{},style:{},classList:{toggle(){}},setAttribute(k,v){this.attributes[k]=v;},getAttribute(){return 'true';},closest(){return this;},append(){},replaceChildren(){}};}
-  const document={querySelectorAll:()=>[],querySelector:()=>({content:'Europe/London'}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
-  const context=vm.createContext({weatherPreferences,temperatureText,windText,directionText,readingNames,document,Intl,Date,Number,Map,JSON,formatTime,gustCacheMinutes:()=>minutes});vm.runInContext(code,context);
-  const now=1789383600000;
-  const state={configured:true,fetchedAt:now,gust:{mph:0,time:now/1000-1800},data:{current:{time:now/1000,temperature:14,feelsLike:12,windMph:9,gustMph:null},minutely:[{time:now/1000,precipitation:0}]}};
-  context.paintWeather(state,now);
-  assert.equal(nodes.get('weather-gust').textContent,'0');
-  assert.match(nodes.get('weather-gust').title,/Cached.*11:30/);
-  assert.equal(nodes.get('weather-gust').attributes['data-cached'],'true');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'ready');
-  const freshState={...state,fetchedAt:now+1,gust:{mph:12,time:now/1000},data:{...state.data,current:{...state.data.current,gustMph:12}}};
-  context.paintWeather(freshState,now);
-  assert.equal(nodes.get('weather-gust').attributes['data-cached'],'false');
-  assert.equal(nodes.get('weather-gust').textContent,'12');
-  context.paintWeather({...freshState,error:'HTTP 500'},now);
-  assert.equal(nodes.get('weather-gust').attributes['data-cached'],'true');
-  minutes=30;context.paintWeather(state,now);
-  assert.equal(nodes.get('weather-gust').textContent,'—');
-  minutes=60;context.paintWeather({...state,error:'HTTP 500'},now);
-  assert.equal(nodes.get('weather-gust').textContent,'0');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'warning');
-  context.paintWeather(state,now+30*60000);
-  assert.equal(nodes.get('weather-gust').textContent,'—');
-  assert.equal(nodes.get('weather-gust').attributes['data-cached'],'false');
-  context.paintWeather({configured:false},now);
-  assert.equal(nodes.get('weather-gust').textContent,'—');
-  assert.equal(nodes.get('weather-gust').attributes['data-cached'],'false');
+test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
+  const f=fixture(),s=state();f.paint(s,now);
+  assert.equal(f.nodes.get('weather-visibility').textContent,'0');assert.equal(f.nodes.get('weather-uv').textContent,'0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
+  for(const [id,name] of Object.entries(format.readingNames))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ \| 14 Sep 2026 12:00$'));
+  assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C | 14 Sep 2026 12:00');
+  const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);
+  for(const convention of ['flow','meteorological'])for(const value of [0,0.1,45,179.9,180,245.25,359.9,360]) {
+    f.prefs.directionConvention=convention;f.prefs.directionFormat='degrees';f.paint({...s,fetchedAt:now+value+1,data:{...s.data,current:{...s.data.current,windDirection:value}}},now);
+    assert.equal(f.nodes.get('weather-direction-arrow').attributes.transform,`rotate(${format.windBearing(value,convention)} 14 14)`);
+    assert.equal(f.nodes.get('weather-direction').textContent,format.windDirectionText(value,'degrees',convention));
+  }
+  f.prefs.visibilityUnit='mi';f.prefs.pressureUnit='inHg';f.paint({...s,fetchedAt:now+4,data:{...s.data,current:{...s.data.current,visibility:10000,windDirection:null}}},now);
+  assert.equal(f.nodes.get('weather-visibility').textContent,'6.2+');assert.equal(f.nodes.get('weather-pressure').textContent,'29.91');assert.equal(f.nodes.get('weather-direction-arrow').attributes.visibility,'hidden');
+  const ny=fixture('America/New_York');ny.paint(s,now);assert.equal(ny.nodes.get('weather-wind').title,'Wind: 9 mph | 14 Sep 2026 07:00');
 });
-
-test('current readings tint after one failed poll, disappear after two or 30 minutes, and recover normally',()=>{
-  const nodes=new Map();
-  const node=()=>({attributes:{},style:{},setAttribute(k,v){this.attributes[k]=v;},getAttribute(){return 'true';},closest(){return this;},append(){},replaceChildren(){}});
-  const document={querySelectorAll:()=>[],querySelector:()=>({content:'Europe/London'}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
-  const context=vm.createContext({weatherPreferences,temperatureText,windText,directionText,readingNames,document,Intl,Date,Number,Map,JSON,formatTime,gustCacheMinutes:()=>60});vm.runInContext(code,context);
-  const now=1789383600000;
-  const state={configured:true,failures:0,fetchedAt:now,gust:{mph:20,time:now/1000},data:{current:{time:now/1000,temperature:14,feelsLike:12,windMph:9,gustMph:20},minutely:[{time:now/1000,precipitation:0}]}};
-  const ids=['weather-temperature','weather-feels','weather-wind'];
-  context.paintWeather(state,now);
-  for(const id of ids) assert.equal(nodes.get(id).attributes['data-cached'],'false');
-  const failed={...state,failures:1,error:'HTTP 503'};
-  context.paintWeather(failed,now+600000);
-  assert.equal(nodes.get('weather-temperature').textContent,'14.0°');
-  for(const id of ids) assert.equal(nodes.get(id).attributes['data-cached'],'true');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'warning');
-  context.paintWeather({...failed,failures:2},now+1200000);
-  for(const id of ids) {assert.equal(nodes.get(id).textContent,'—');assert.equal(nodes.get(id).attributes['data-cached'],'false');}
-  assert.equal(nodes.get('weather-gust').textContent,'20');
-  context.paintWeather(failed,now+1800000);
-  for(const id of ids) assert.equal(nodes.get(id).textContent,'—');
-  context.paintWeather(state,now);
-  for(const id of ids) assert.equal(nodes.get(id).attributes['data-cached'],'false');
-  assert.equal(nodes.get('weather-temperature').textContent,'14.0°');
-  assert.equal(nodes.get('weather-dock').attributes['data-health'],'ready');
+test('current values tolerate one failed poll while gust age and acquisition remain independent',()=>{
+  const f=fixture(),s=state();s.gust={mph:0,time:now/1000-1800,fetchedAt:now-1700000};s.data.current.gustMph=null;
+  f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'0');assert.equal(f.nodes.get('weather-gust').attributes['data-cached'],'true');assert.match(f.nodes.get('weather-gust').title,/11:31$/);
+  f.paint({...s,error:'Current failed',failures:1},now+600000);assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');assert.equal(f.nodes.get('weather-temperature').attributes['data-cached'],'true');assert.equal(f.nodes.get('minute-bars').children.length,60);
+  f.paint({...s,error:'Current failed',failures:2},now+1200000);assert.equal(f.nodes.get('weather-temperature').textContent,'—');assert.equal(f.nodes.get('weather-gust').textContent,'0');
+  f.setMinutes(30);f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'—');
+  f.setMinutes(60);f.paint({...s,gust:{mph:0,time:s.gust.time}},now);assert.match(f.nodes.get('weather-gust').title,/Not acquired$/,'legacy acquisition time is not invented');
+  f.paint(s,now+1800000);assert.equal(f.nodes.get('weather-gust').textContent,'—');assert.equal(f.nodes.get('weather-temperature').textContent,'—');
+  f.paint(state(),now);assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
+  f.paint({configured:false},now);for(const id of Object.keys(format.readingNames))assert.equal(f.nodes.get('weather-'+id).textContent,'—');
 });

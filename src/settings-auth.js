@@ -2,6 +2,7 @@ import { randomBytes, scrypt as derive, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
+import { makeViews, radarTiles } from './map.js';
 
 const scrypt = promisify(derive);
 export const SESSION_MS = 5 * 60_000;
@@ -92,7 +93,7 @@ export function createSettingsAuth(directory, now = Date.now) {
   };
 }
 
-export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings } = {}) {
+export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power } = {}) {
   return async (req, res, path) => {
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -120,19 +121,34 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
           return send(result.status, result);
         }
       }
-      if ((path === '/api/settings/openweather' || path === '/api/settings/map' || path === '/api/settings/map/preview' || path === '/api/settings/radar') && req.method === 'POST') {
+      if(path==='/api/settings/power'&&(req.method==='GET'||req.method==='POST')) {
+        if(!await auth.authorized(token))return send(401,{});
+        if(!power)return send(503,{});
+        if(req.method==='GET')return send(200,await power.status());
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>256)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        const result=await power.execute(input);return send(result.status,result);
+      }
+      if (path === '/api/settings/rainbow' && req.method === 'GET') {
+        if (!await auth.authorized(token)) return send(401, {});
+        if(!rainbow)return send(503,{});
+        const views=maps?makeViews(maps.current().settings):null;
+        return send(200,{...rainbow.status(),...(views?{tilesPerView:{main:radarTiles(views.view).length,overview:radarTiles(views.overviewView).length}}:{})});
+      }
+      if ((path === '/api/settings/openweather' || path === '/api/settings/map' || path === '/api/settings/map/preview' || path === '/api/settings/radar' || path === '/api/settings/rainbow') && req.method === 'POST') {
         if (!await auth.authorized(token)) return send(401, {});
         const mapRequest = path.startsWith('/api/settings/map');
         const radarRequest = path === '/api/settings/radar';
-        if (radarRequest ? !radarSettings : mapRequest ? !maps : !weather) return send(503, {});
+        const rainbowRequest = path === '/api/settings/rainbow';
+        if (rainbowRequest ? !rainbow : radarRequest ? !radarSettings : mapRequest ? !maps : !weather) return send(503, {});
         let body = '';
         for await (const chunk of req) {
           body += chunk;
-          if (Buffer.byteLength(body) > (mapRequest ? 1024 : 256)) return send(413, {});
+          if (Buffer.byteLength(body) > (mapRequest ? 1024 : rainbowRequest ? 512 : 256)) return send(413, {});
         }
         let input;
         try { input = JSON.parse(body); } catch { return send(400, {}); }
-        const result = radarRequest ? await radarSettings.configure(input) : mapRequest ? (path.endsWith('/preview') ? await maps.preview(input) : maps.configure(input)) : await weather.configure(input.apiKey);
+        const result = rainbowRequest ? await rainbow.configure(input?.apiKey) : radarRequest ? await radarSettings.configure(input) : mapRequest ? (path.endsWith('/preview') ? await maps.preview(input) : maps.configure(input)) : await weather.configure(input.apiKey);
         if (result.retryAfter) res.setHeader('Retry-After', String(result.retryAfter));
         return send(result.status, result);
       }

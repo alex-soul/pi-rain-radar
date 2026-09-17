@@ -1,5 +1,13 @@
 # Upgrades and migration
 
+## v0.4.0: providers and optional power
+
+Keep the same Compose project, named volume, URL and browser profile. Existing PIN, OpenWeather key, map and settling preference are retained. Existing installations use RainViewer on both maps until sources are explicitly changed. Keep the volume to preserve cached captures and settings.
+
+Device Power requires its [optional host installation](device-power.md) and generated Compose override. Retain that override when recreating/upgrading the app. For rollback to an image without Device Power, omit the power override and disable the helper. Retain an immutable previous image and a consistent backup of data and browser profile before changing versions. Restore state only for demonstrated incompatibility, with writers stopped and failed state preserved.
+
+The tested candidate was 0.4.0-rc.1. Use the published v0.4.0 image for normal installation; see [release validation](validation.md).
+
 ## v0.3.0: display preferences and longer playback
 
 This release preserves the existing key, PIN, map and radar archive. No Compose change or additional service is needed. Keep the same browser profile and address to retain layout preferences. New defaults are Celsius/mph, the original four readings, 1× playback, a two-hour window and UI lock off; existing saved preferences take precedence. Radar settling remains on by default and is shared by all screens.
@@ -87,3 +95,5 @@ The release workflow tests fresh startup and persistent data across container re
 ## Tested on the reference Pi
 
 Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed on my Pi. Later published-image handovers and on-screen version confirmation are recorded in [validation](validation.md). Automatic reload is covered by browser-logic tests; controlled verification of every reload path, including Settings-open deferral, remains separate.
+
+See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.

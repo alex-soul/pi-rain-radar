@@ -20,9 +20,9 @@ test('diagnostics distinguish provider access and rate limits, group repeatable 
     return response(input,url);
   }});
   await weather.configure('a'.repeat(32));await idle(weather);
-  assert.deepEqual(events,['weather-key','weather-start','weather-auth']);
-  now+=WEATHER_INTERVAL;status=429;await weather.refresh();assert.equal(events.at(-1),'weather-limit');
-  now+=WEATHER_INTERVAL;await weather.refresh();assert.equal(events.at(-1),'weather-limit');
+  assert.deepEqual(events,['weather-key','weather-start','weather-auth','forecast-error']);
+  now+=WEATHER_INTERVAL;status=429;await weather.refresh();assert.deepEqual(events.slice(-2),['weather-limit','forecast-error']);
+  now+=WEATHER_INTERVAL;await weather.refresh();assert.deepEqual(events.slice(-2),['weather-limit','forecast-error']);
   now+=WEATHER_INTERVAL;status=200;await weather.refresh();assert.equal(events.at(-1),'weather-recovered');
   const count=events.length;now+=WEATHER_INTERVAL;await weather.refresh();assert.equal(events.length,count);
   assert.equal(calls,10);assert.ok(!JSON.stringify(events).includes('private'));
@@ -196,7 +196,7 @@ test('gust cache survives missing samples, failed requests and restarts without 
   assert.deepEqual(weather.status().gust,first);assert.ok(weather.status().error);
   fail=false;input.current.dt=now/1000;input.current.wind_gust=0;
   now+=WEATHER_INTERVAL;await weather.refresh();
-  assert.deepEqual(weather.status().gust,{mph:0,time:input.current.dt});
+  assert.deepEqual(weather.status().gust,{mph:0,time:input.current.dt,fetchedAt:now});
   const newer=weather.status().gust;
   input.current.dt=time/1000;input.current.wind_gust=20;
   now+=WEATHER_INTERVAL;await weather.refresh();assert.deepEqual(weather.status().gust,newer);

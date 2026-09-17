@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — 17 September 2026
+
+- Optional Rainbow radar with independent Main/Overview choices, shared acquisition, total-call limits and clearer usage estimates. History retains captured frames across source changes.
+- Optional Device Power helper with confirmed Restart/Shutdown actions and existing optional PIN protection.
+- Visibility, pressure and UV index; additional unit pickers and continuously rotated wind direction with Flow/Meteorological conventions.
+- Quiet MinuteCast zero/missing baselines, consistent weather tooltips, clearer Status, responsive attribution and simpler settings navigation.
+- Numbered [indicator guide](docs/indicators.md), provider/power setup documentation and tracked [follow-ups](docs/follow-ups.md).
+
+Existing settings, keys and browser preferences remain in place. The helper is optional; Rainbow needs its own key. I tested the candidate on my Pi 4 / 2 GB, including six-hour playback at full speed and restart/shutdown recovery. 116 tests passed locally and natively on ARM64, plus four helper tests. This is a short playback check, not an elapsed six-hour soak. See [validation](docs/validation.md) for release evidence and remaining checks.
+
 ## 0.3.0 — 16 September 2026
 
 Pi Rain Radar gains per-display controls for readings and playback while keeping radar acquisition shared and lightweight.

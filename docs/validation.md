@@ -32,6 +32,12 @@ These are short observations, not a completed multi-hour soak or proof of leak-f
 
 ## Next validation
 
+### 0.4.0 candidate
+
+116 tests passed on Windows and natively on ARM64, with four additional native Python helper tests. Network-isolated ARM64 startup/restart checks passed. I accepted the candidate UI on my Pi 4 / 2 GB, with RainViewer on Main map and Rainbow on Overview, and tested both Restart and Shutdown followed by power restoration. Keys, PIN, map settings and provider selection survived; both providers, weather and helper recovered.
+
+I also selected six-hour playback at full speed and found it smooth. A short resource sample showed 8–14% CPU, about 779 MiB available RAM, no active swapping, 56°C and no throttling. This was not six elapsed hours of soak. Prolonged soak is deferred to the next release in [follow-ups](follow-ups.md). Final publication, CI and published-image acceptance are still pending. User-facing status meanings are maintained in [indicators](indicators.md).
+
 - Observe sustained playback CPU/memory, temperatures and storage growth, including a retained seven-day archive.
 - Exercise browser exit/relaunch and controlled network loss/recovery on the Pi.
 - Check automatic browser refresh during the next version upgrade while preserving display preferences.

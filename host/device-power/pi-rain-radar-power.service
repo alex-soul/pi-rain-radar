@@ -1,0 +1,31 @@
+[Unit]
+Description=Pi Rain Radar optional device power helper
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I /usr/local/lib/pi-rain-radar-power/helper.py
+User=root
+Group=radar-power
+RuntimeDirectory=pi-rain-radar-power
+RuntimeDirectoryMode=0750
+StateDirectory=pi-rain-radar-power
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryMax=48M
+TasksMax=8
+
+[Install]
+WantedBy=multi-user.target

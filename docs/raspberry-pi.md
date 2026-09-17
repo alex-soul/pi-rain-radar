@@ -232,3 +232,5 @@ sudo poweroff
 Wait for shutdown before unplugging. Reconnect power to start it again. The baseline here keeps the display on continuously; motion sensors, scheduled brightness and touch-to-wake sleep are optional customisations outside this guide.
 
 If a step fails, use [Troubleshooting](troubleshooting.md). For what each screen element means, use the [user manual](manual.md).
+
+See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.

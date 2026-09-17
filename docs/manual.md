@@ -1,6 +1,6 @@
 # User manual
 
-Controls, settings and status meanings for Pi Rain Radar. For installation, use [Quick Start](quick-start.md) or the [Raspberry Pi build guide](raspberry-pi.md).
+Controls and settings for Pi Rain Radar. Status meanings live in the numbered [indicator guide](indicators.md). For installation, use [Quick Start](quick-start.md) or the [Raspberry Pi build guide](raspberry-pi.md).
 
 ## One installation, multiple screens
 
@@ -26,10 +26,28 @@ Choose a section from the Settings selector:
 
 - **Map**
 - **Interface:** Display, Buttons, Weather, Readings
-- **System:** API, PIN, Status, Log
+- **System:** Status, API (Radar / Weather), PIN, Log
 - **About**
 
 Small information icons beside setting titles explain their purpose without leaving the page.
+
+Selecting a main section or reopening Settings starts its first sub-tab. System starts on Status. External links show their exact destination on hover.
+
+### Radar sources and estimates
+
+**System → API → Radar** selects Main map and Overview map independently. RainViewer needs no key; Rainbow is optional. Only selected providers expose their configuration. Saving a Rainbow key does not apply source choices: choose **Save and apply sources** afterwards. See [radar setup, estimates and limits](radar-providers.md).
+
+History retains captured frames from whichever providers were selected at that time. Switching sources does not clear it. Map geometry determines which retained history can be replayed.
+
+### Weather readings and units
+
+All ten readings are optional and can be reordered in **Interface → Readings**: temperature, feels-like, wind, gusts, humidity, dew point, wind direction, visibility, pressure and UV index. Missing optional readings do not imply zero. Selecting more readings adds no API requests.
+
+**Interface → Weather** provides temperature (°C/°F), wind (mph/km/h/m/s/kn), visibility (km/mi), pressure (hPa/inHg/mmHg) and direction (compass/degrees) formats. Humidity is percent; UV index is unitless. Wind convention defaults to **Flow**, with **Meteorological** available; see [wind arrow meaning](indicators.md#wind-arrow). The gust helper explains availability and the cache-duration setting.
+
+### Device Power
+
+Restart and Shutdown sit at the bottom of **System → Status**. Each asks for confirmation. The optional host helper must be installed first; without it, the buttons provide setup guidance. PIN protection follows the existing optional Settings PIN. See [Device Power setup and recovery](device-power.md).
 
 ### PIN: optional settings protection
 
@@ -67,11 +85,11 @@ Drag rows up or down to change the order of the five left-side controls. Turn a 
 
 The two dock handles remain available for API status; screen interaction reveals the settings cog independently. Button order, theme and widget layout are remembered in this browser; another browser may have a different layout. Map settings and the weather key belong to the installation and are shared.
 
-### System → API: add current weather and MinuteCast (optional)
+### System → API → Weather: add current weather and MinuteCast (optional)
 
 The app uses **OpenWeather One Call 4.0** for both features. An API key is a private access code from your OpenWeather account. It must have access to this specific service; another OpenWeather subscription may not include it. Check the [provider's current access and pricing information](https://openweathermap.org/api/one-call-4) and your account's request limit before enabling it. One Call 4.0 requires its own subscription, including for existing 3.0 users. As checked on 16 September 2026, the first 1,000 calls/day are free; the default 2,000-call daily limit allows chargeable usage. Set the limit to 1,000 to stay within the free allowance. Normal operation uses approximately 288 calls/day per installation (two requests every ten minutes), plus explicit key checks. Other applications and installations sharing the subscription also consume its allowance.
 
-Paste the key into **Settings → System → API**, then tap **Save key**. The status underneath reports connection errors or **Last fetched at…** after success. Newly created keys may need activation time; do not repeatedly resave them. The app retries automatically.
+Paste the key into **Settings → System → API → Weather**, then tap **Save key**. The message below the field reports whether the key is configured; when configured, Save becomes **Replace key**. Use **System → Status** for connection health and **Log** for available error details. Newly created keys may need activation time; do not repeatedly resave them. The app retries automatically.
 
 Two requests supply current conditions and the minute forecast, normally every 10–15 minutes, shared by all displays. Saving a key triggers an additional check, subject to a short cooldown. Opening widgets or moving the radar slider does not make extra provider requests. Other apps using your OpenWeather account share its allowance.
 
@@ -95,7 +113,7 @@ The key stays on the computer running the app and is not displayed again. **Remo
 
 Choose temperature units independently from wind units: Celsius/Fahrenheit and mph, km/h, m/s or knots. Temperatures always show one decimal, including .0; wind speed and gusts round to whole numbers.
 
-**Cache wind gust (min)** defaults to **60**. Enter a whole number from 1 to 1440; it saves automatically in this browser. The latest reported gust remains visible through missing samples or OpenWeather errors until that many minutes after its observation time, then becomes a dash. A muted amber gust number means a retained value is being used; the icon and unit keep their usual colours. Hover over the gust for its timestamp. The backend keeps one gust reading across restarts, clears it when the coordinates change or the key is removed, and makes no extra API calls. Temperature, feels-like and wind allow one failed poll: retained numbers turn muted amber. After two consecutive failed polls, or once their observation is 30 minutes old, they become dashes. A successful poll restores normal colours and resets the failure count; the API handle remains amber during errors.
+**Cache wind gust (min)** defaults to **60** and accepts whole numbers from 1 to 1440. The last reported gust retains its original observation time through missing samples or provider errors. It survives restart, clears on location change or key removal, and adds no API requests. See [indicators](indicators.md) for retained/expired reading presentation and weather failure states.
 
 ### Interface → Readings
 
@@ -103,7 +121,7 @@ Toggle and drag rows to choose and order Temperature, Feels like, Wind, Wind gus
 
 The top dock sizes to the selected readings, wrapping on narrow screens. Hiding every reading removes the numbers while keeping the health handle. Controls move below an expanded dock when they would collide and move back up when it tucks away.
 
-### System → API: radar settling
+### System → API → Radar: radar settling
 
 **Wait for radar to settle** is on by default and affects every connected display. It waits about five extra minutes before downloading new radar images. Turning it off allows earlier acquisition, but some radar tiles may be missing. Changes take effect on subsequent acquisition; they do not repair already cached imagery or increase polling frequency.
 
@@ -126,36 +144,19 @@ The top dock sizes to the selected readings, wrapping on narrow screens. Hiding 
 | Folded map | Shows or hides **Overview**, a wider map with matching radar. The dot marks your centre; the dashed box marks the main map's area. |
 | Rain cloud | Shows or hides **MinuteCast**, the forecast for approximately the next hour at your chosen coordinates. |
 | Clock with backward arrow | Opens stored radar **History**. See below. |
-| Footer handle | Shows or hides the footer. Its colour reports RainViewer health, even while the footer is hidden. Small Latest/Next messages sit above playback when expanded. |
+| Footer handle | Shows or hides the footer. Its indicator reports selected radar sources even while hidden; see [indicators](indicators.md). |
 | Settings cog, bottom right | Appears on screen interaction for 15 seconds. Opens settings; asks for a PIN only when protection is enabled. |
 | Weather drawer handle | Shows/hides the selected readings in their saved order and units. The handle indicates weather health even when all readings are hidden. |
 | Play / pause, bottom | Starts or pauses the radar animation. Pausing does not stop new data being collected. |
-| Slider | Drag to inspect a radar image and pause playback. Its 13, 25 or 37 ten-minute positions cover the selected 2/4/6-hour window. Missing positions stay amber, including behind the playback thumb. Playback skips gaps; dragging selects the nearest available frame. |
+| Slider | Drag to inspect a radar image and pause playback. Its 13, 25 or 37 ten-minute positions cover the selected 2/4/6-hour window. See [indicators](indicators.md) for gap colours. Playback skips gaps; dragging selects the nearest available frame. |
 
-Drag **Overview** or **MinuteCast** from anywhere on its map or chart to move it. Drag its bottom-right triangle to resize it. A small movement threshold separates taps from dragging. Tab to a widget and use arrow keys to move it; the resize corner has its own keyboard control. Overlapping widgets work like windows: click, drag, resize or focus a widget to bring it forward. Opening a widget also brings it forward. Dashboard controls remain above both widgets. A greenish button outline means that control is expanded or its widget is shown; it is not an API-health indicator.
+Drag **Overview** or **MinuteCast** from anywhere on its map or chart to move it. Drag its bottom-right triangle to resize it. A small movement threshold separates taps from dragging. Tab to a widget and use arrow keys to move it; the resize corner has its own keyboard control. Overlapping widgets work like windows: click, drag, resize or focus a widget to bring it forward. Opening a widget also brings it forward. Dashboard controls remain above both widgets. See [indicators](indicators.md) for toolbar outline meanings.
 
 The **large time and date at bottom left belong to the radar image currently playing**, not the present moment. The top-left clock shows the current time. All dates and clocks follow **Settings → Map → Time zone**, defaulting to Europe/London. Daylight-saving changes are automatic. Changing the map coordinates does not automatically choose a time zone.
 
-### Colours and status messages
+### Colours and status
 
-| Signal | Meaning |
-| --- | --- |
-| Footer handle: greenish | Latest radar is under 30 minutes old, with no reported acquisition/connection error. |
-| Footer handle: amber | Radar is at least 30 minutes old, or acquisition/the connection has a problem. Cached images can still play. |
-| `Latest 12 min` | The newest available radar is 12 minutes old, regardless of which image you are playing. From one hour onward this uses decimal hours: `1.5 hours` means 1 hour 30 minutes. |
-| `Next in 2 min` | A discovered radar frame is pending; this estimates when acquisition can start. It is not a guarantee of completion. The message disappears when nothing is pending. |
-| `Fetching…` | New radar is being acquired. |
-| Frame counter, e.g. `7 / 13` | You are viewing image 7 of 13. The total is greenish for a full selected window (13, 25 or 37 frames), amber when fewer are available. This applies in History too. |
-| Weather drawer's small handle line | Greenish when weather/forecast data is usable, amber from the first failed poll or when data expires, white when no key is configured. Missing optional gusts alone do not make it amber. This remains visible with the drawer collapsed. |
-| Weather numbers: normal colour | Fresh readings from the latest successful weather response. |
-| Weather numbers: muted amber | Retained readings. Temperature/feels-like/wind allow one failed poll and expire after 30 minutes; gusts use the Weather cache duration (60 minutes by default). |
-| Weather value: `—` | No usable reading: absent, expired, or two consecutive failed polls for temperature/feels-like/wind. |
-
-Radar checks run every five minutes. With radar settling enabled, newly discovered frames wait at least another five minutes before download, to allow the provider time to complete them. The estimate includes the polling schedule, so **Next can occasionally exceed five minutes**. “Latest” includes the provider's own delay as well; this is not an instantaneous view of rain.
-
-Radar colours run from lighter rain to heavier rain, as shown by the footer colour strip. The colour is rain intensity, not connection status. A clear patch does not prove it is dry: provider coverage or missing tiles can leave gaps even in a green, 13-frame sequence.
-
-MinuteCast is a **forecast**, separate from the past radar animation. Taller bars mean more predicted precipitation; faint baseline bars represent zero predicted precipitation. Missing samples are gaps, not zero rain. A valid dry forecast shows “No rain expected” with its last-check time; partial coverage is described as the available forecast. Missing or failed data shows an availability/retry message instead of claiming dry weather. Unavailable readings use dashes/messages rather than invented values.
+Use the numbered [screen indicator guide](indicators.md) for dock handles, retained weather, MinuteCast baselines, timeline gaps and rain intensity. For problems, start with System / Status, then Log for available details.
 
 ### Look back with History
 
@@ -163,7 +164,7 @@ Tap History, choose an available **Date** and **Time**, then **Show**. The chose
 
 The History dock expands to show the selected window. Use the same play/pause and slider controls. Tap the **History icon** to return to Now; tap the **date/time range** to reopen the picker. The outer edge of the expanded History dock shows the ten-minute countdown to an automatic return. Selecting another window restarts it; opening and cancelling the picker does not. Hiding History in Buttons hides both touch targets, but automatic return still works.
 
-Background collection continues. The footer freshness messages still describe the latest acquired radar. **Current weather and MinuteCast remain current even while historical radar plays**—they do not yet have historical playback.
+Background collection continues. Status describes current source health. **Current weather and MinuteCast remain current even while historical radar plays**—they do not yet have historical playback.
 
 
 ## About

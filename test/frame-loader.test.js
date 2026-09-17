@@ -4,13 +4,13 @@ import {createFrameLoader} from '../public/frame-loader.js';
 const frames = (count, prefix='a') => Array.from({length:count},(_,i)=>({time:i*600,url:`/${prefix}${i}`,overviewUrl:`/${prefix}${i}-overview`}));
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
 
-test('loader bounds concurrency, reuses paired images and leaves failed pairs absent',async()=>{
+test('loader bounds concurrency and retains the healthy view when its partner fails',async()=>{
   let active=0,peak=0,calls=0;
   const loader=createFrameLoader({makeImage:()=>({src:'',async decode(){calls++;active++;peak=Math.max(peak,active);await turn();active--;if(this.src==='/a4-overview')throw Error('missing');}})});
   const offered=frames(37),first=await loader.load(offered);
-  assert.equal(peak,2);assert.equal(first.length,36);assert.ok(!first.some(f=>f.time===2400));
+  assert.equal(peak,2);assert.equal(first.length,37);assert.equal(first.find(f=>f.time===2400).overviewUrl,null);assert.equal(first.find(f=>f.time===2400).url,'/a4');
   const prior=calls,next=await loader.load(offered,first);
-  assert.equal(calls-prior,2);assert.equal(next[0],first[0]);
+  assert.equal(calls-prior,2);assert.equal(next[0].image,first[0].image);
 });
 
 test('rapid changes replace queued work, cancel active work and load only the latest sequence',async()=>{

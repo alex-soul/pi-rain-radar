@@ -1,4 +1,8 @@
 export const helpText = {
+  "29": "Restart and shutdown require the optional Device Power helper on your host. Select either button for setup guidance if it is not configured. Settings PIN protection is optional.",
+  30: 'Local counter; other apps using your account are not included.',
+  "27": "Flow shows where the wind is going. Meteorological shows where it comes from. Both the arrow and the reading follow your choice.",
+  "28": "Wind gusts are not reported with every update, so this reading may be unavailable. The last reported gust can be cached for the duration set in Interface → Weather. Cached readings appear amber.",
   "1": "Changes here affect every display connected to this appliance.",
   "2": "A display label only. Set latitude and longitude to change the actual location.",
   "3": "Sets the centre of both maps and the location used for weather readings and MinuteCast. Defaults to Coventry: 52.40801, −1.51041.",
@@ -6,10 +10,10 @@ export const helpText = {
   "5": "Sets the area shown in the Overview widget. Use a lower zoom than the main map for a wider view. A good starting point is 5.",
   "6": "Sets the time zone for clocks and timestamps on all displays. It does not change the radar data.",
   "7": "Check the proposed maps before applying them. Preview does not change your current map or download new weather data.",
-  "9": "Enables weather readings and MinuteCast using your OpenWeather account. The key stays on the appliance; collected data is stored centrally and shared with connected displays. Radar works without it.",
+  "9": "The key stays on the appliance; collected data is stored centrally and shared with connected displays.",
   "10": "Hides the weather dock after 15 seconds without interaction. Tap to reveal it, including when screen controls are locked. Applies only to this display.",
   "11": "Hides the radar controls after 15 seconds without interaction. Tap to reveal them, including when screen controls are locked. Applies only to this display.",
-  "12": "Keeps the last reported gust visible for this long after its observation time. Older retained readings appear amber; expired readings become a dash.",
+  "12": "Wind gusts are not reported with every update. Keeps the last reported gust visible for this long after its observation time. Older retained readings appear amber; expired readings become a dash.",
   "13": "Requires a six-digit PIN to open Settings on any connected display. Dashboard controls remain usable unless UI lock is enabled separately.",
   "14": "Applies to temperature, feels-like and dew point on this display. Wind units are chosen separately.",
   "15": "Applies to wind speed and gusts on this display. Temperature units are chosen separately.",
@@ -17,7 +21,7 @@ export const helpText = {
   "17": "An estimate of how warm or cold the air feels, accounting for conditions such as wind and humidity.",
   "18": "Shows relative humidity: how close the air is to saturation at its current temperature. It is not the chance of rain.",
   "19": "The temperature at which moisture in the air begins to condense. A dew point close to the air temperature means high relative humidity.",
-  "20": "Shows the direction the wind comes from. It does not necessarily match the movement of rain on the radar.",
+  "20": "Uses the convention selected in Weather: Flow shows where the wind is going; Meteorological shows where it comes from.",
   "21": "Stops dashboard interaction on this display while playback and updates continue. Settings remains accessible, protected by your PIN if enabled. Taps reveal auto-hidden docks. Manually hidden docks stay tucked away. All provider credit links remain active.",
   "22": "Wait about 5 extra minutes before downloading new radar images. Turning this off shows images sooner, but some radar tiles may be missing. Applies to all displays.",
   "23": "Events are captured even when Settings is closed. Shows the latest 25 important events and updates while this tab is open. Repeated errors are grouped. History clears when the app restarts.",
@@ -34,6 +38,9 @@ export function setupSettingsHelp(dialog) {
   let active;
   function close() { active?.setAttribute('aria-expanded', 'false'); active?.removeAttribute('aria-describedby'); active = null; bubble.hidden = true; }
   const targets = [
+    ['#device-power-title',29],
+    ['label[for="rainbow-key"]',9], ['label[for="rainbow-cap"]',30],
+    ['label[for="direction-convention"]',27], ['label[for="reading-gust"]',28],
     ['label[for="playback-hours"]',26],
     ['label[for="radar-settling"]',22], ['#diagnostic-title',23],
     ['label[for="map-name"]',2], ['#map-lat',3], ['#map-lon',3], ['#map-zoom',4], ['#map-overviewZoom',5],

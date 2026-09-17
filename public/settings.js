@@ -5,15 +5,21 @@ import { setupControlEditor, setupResponsiveControls } from "./control-layout.js
 import { setupDisplaySettings, setupReadingEditor } from "./display.js";
 import { setupPinEntry } from "./pin-entry.js";
 import { setupSettingsHelp } from './settings-help.js';
+import { setupRadarSettings } from './radar-settings-ui.js';
+import { setupDevicePower } from './device-power.js';
 const $ = (id) => document.getElementById(id);
 const dialog = $('settings-dialog');
 setupSettingsHelp(dialog);
 const pinIdle = setupPinIdle(dialog, $('pin-panel'));
 const confirmPinEntry = setupPinEntry($('settings-confirm-pin'), () => $('settings-pin-save').focus());
 const newPinEntry = setupPinEntry($('settings-new-pin'), () => confirmPinEntry.focus());
+let weatherKeyConfigured = false;
+function weatherKeyButtons() { $('weather-key-save').textContent = weatherKeyConfigured ? 'Replace key' : 'Save key'; $('weather-key-remove').disabled = !weatherKeyConfigured; }
 let pin = '', token = null, generation = 0, busy = false, configured = false;
 let expiryTimer, retryTimer, unlockedUntil = 0;
 function canEdit() { return (!configured || (!!token && Date.now() < unlockedUntil)) && dialog.open && !$('settings-fields').hidden; }
+const radarUI=setupRadarSettings(canEdit,request);
+const powerUI=setupDevicePower(canEdit,request);
 const resetButtons = setupControlEditor(canEdit);
 const resetReadings = setupReadingEditor(canEdit);
 const resetControlEditor = () => { resetButtons(); resetReadings(); };
@@ -21,19 +27,28 @@ setupScreenLock(canEdit);
 setupDisplaySettings(canEdit);
 setupResponsiveControls();
 const sectionSelector = $('settings-section');
+function resetSectionTabs() {
+  const panel = $('settings-panel-'+sectionSelector.value);
+  for (const list of panel.querySelectorAll('[role="tablist"]')) list.querySelector('[role="tab"]')?.click();
+}
+try {
+  const saved = localStorage.getItem('radar-settings-section');
+  if ([...sectionSelector.options].some(option => option.value === saved)) sectionSelector.value = saved;
+} catch { /* Session-only navigation. */ }
 sectionSelector.addEventListener('change', () => {
   resetControlEditor();
   for (const option of sectionSelector.options) {
     $(`settings-panel-${option.value}`).hidden = option.value !== sectionSelector.value;
   }
+  resetSectionTabs();
+  try { localStorage.setItem('radar-settings-section',sectionSelector.value); } catch { /* Session-only navigation. */ }
   dialog.scrollTop = 0;
   dialog.dispatchEvent(new Event('settings-tab-change'));
 });
-// Each tab row owns only its immediate panels; parent changes preserve the child selection.
+// Each main section starts at its first subtab, without rebuilding fields or discarding drafts.
 for (const tablist of dialog.querySelectorAll('[role="tablist"]')) {
   const tabs = [...tablist.querySelectorAll('[role="tab"]')];
-  const storageKey = tablist.dataset.preferenceKey || `radar-menu-${tablist.getAttribute('aria-label')}`;
-  function selectTab(selected, remember = true) {
+  function selectTab(selected) {
     resetControlEditor();
     for (const tab of tabs) {
       const active = tab === selected;
@@ -43,12 +58,7 @@ for (const tablist of dialog.querySelectorAll('[role="tablist"]')) {
     }
     dialog.scrollTop = 0;
     dialog.dispatchEvent(new Event('settings-tab-change'));
-    if (remember && storageKey) try { localStorage.setItem(storageKey, selected.id); } catch { /* Session-only fallback. */ }
   }
-  if (storageKey) try {
-    const selected = tabs.find(tab => tab.id === localStorage.getItem(storageKey));
-    if (selected) selectTab(selected, false);
-  } catch { /* Defaults work without storage. */ }
   for (const tab of tabs) {
     tab.addEventListener('click', () => selectTab(tab));
     tab.addEventListener('keydown', event => {
@@ -73,13 +83,14 @@ async function request(path, data, bearer = token) {
     method: data === undefined ? 'GET' : 'POST',
     headers: { ...(data === undefined ? {} : { 'Content-Type': 'application/json' }), ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
     body: data === undefined ? undefined : JSON.stringify(data),
-    cache: 'no-store', signal: AbortSignal.timeout(path==='/map/preview'?60_000:10_000),
+    cache: 'no-store', signal: AbortSignal.timeout(path==='/map/preview'?60_000:path==='/radar'?180_000:path==='/rainbow'?50_000:10_000),
   });
 }
 function discard(bearer) { if (bearer) void request('/lock', {}, bearer).catch(() => {}); }
 const syncDiagnostics = setupDiagnostics(dialog, request, canEdit);
 let savingRadar = false;
 $('radar-settling').addEventListener('change', async () => {
+  if($('radar-main-source')&&!$('fixture-toggle'))return; // Saved with the source form.
   if (!canEdit() || savingRadar) return;
   const field = $('radar-settling'), value = field.checked, epoch = generation;
   savingRadar = true; field.disabled = true;
@@ -98,12 +109,14 @@ $('radar-settling').addEventListener('change', async () => {
   } finally { savingRadar = false; field.disabled = false; }
 });
 function lock() {
+  powerUI.clear();
+  radarUI.clear();
   pinIdle.clear();
   closePreview();
   resetPinForm();
   $('settings-api-key').value = '';
   $('weather-key-save').disabled = false;
-  $('weather-key-remove').disabled = false;
+  $('weather-key-remove').disabled = !weatherKeyConfigured;
   unlockedUntil = 0; resetControlEditor();
   generation++;
   clearTimeout(expiryTimer); clearTimeout(retryTimer);
@@ -161,9 +174,11 @@ async function showSettings(current) {
     if (!settings.ok) throw new Error();
     const keyState = await settings.json();
     if (current !== generation) return;
-    $('settings-api-note').textContent = '';
+    weatherKeyConfigured = !!keyState.apiKeyConfigured; weatherKeyButtons();
+    $('settings-api-note').textContent = weatherKeyConfigured ? 'Configured.' : 'Not configured.';
     $('radar-settling').checked = keyState.radar?.waitForSettle ?? true;
     $('radar-settling-note').textContent = '';
+    void radarUI.load(keyState.radar);
     if (keyState.map) for (const [key,value] of Object.entries(keyState.map)) {
       const field=$(`map-${key}`);
       field.value=key==='overviewZoom'?Number(value.toFixed(2)):value;
@@ -176,6 +191,7 @@ async function showSettings(current) {
     pinIdle.clear();
     $('pin-panel').hidden = true; $('settings-fields').hidden = false;
     sectionSelector.hidden = false;
+    sectionSelector.dispatchEvent(new Event('change'));
     syncDiagnostics();
     $('settings-close').focus();
 }
@@ -214,9 +230,10 @@ async function saveWeatherKey(remove = false) {
     if (response.status === 401) { dialog.close(); return; }
     const result = await response.json();
     if (epoch !== generation) return;
-    $('settings-api-note').textContent = response.ok ? '' : result.error || 'Could not save the key. Try again.';
+    if (response.ok) { weatherKeyConfigured = !!result.apiKeyConfigured; weatherKeyButtons(); }
+    $('settings-api-note').textContent = response.ok ? (weatherKeyConfigured ? 'Configured.' : 'Not configured.') : result.error || 'Could not save the key. Try again.';
   } catch { if (epoch === generation) $('settings-api-note').textContent = 'Save could not be confirmed. Reopen settings to check.'; }
-  finally { if (epoch === generation) { $('weather-key-save').disabled = false; $('weather-key-remove').disabled = false; } }
+  finally { if (epoch === generation) { $('weather-key-save').disabled = false; $('weather-key-remove').disabled = !weatherKeyConfigured; } }
 }
 $('weather-key-save').addEventListener('click', () => void saveWeatherKey());
 $('weather-key-remove').addEventListener('click', () => void saveWeatherKey(true));

@@ -1,11 +1,12 @@
-import { defaultReadings, readingNames, windUnits, playbackSpeeds } from './weather-format.js';
-const preferences = { showScale: true, autoHide: false, autoHideWeather: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2 };
+import { defaultReadings, readingNames, windUnits, playbackSpeeds, weatherOptions } from './weather-format.js';
+const preferences = { showScale: true, autoHide: false, autoHideWeather: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2 };
 preferences.readingOrder = Object.keys(readingNames);
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));
   for (const key of ['showScale', 'autoHide', 'autoHideWeather']) if (typeof saved?.[key] === 'boolean') preferences[key] = saved[key];
   if (Number.isInteger(saved?.gustCacheMinutes) && saved.gustCacheMinutes >= 1 && saved.gustCacheMinutes <= 1440) preferences.gustCacheMinutes = saved.gustCacheMinutes;
   if (['C', 'F'].includes(saved?.temperatureUnit)) preferences.temperatureUnit = saved.temperatureUnit;
+  for (const [key, values] of Object.entries(weatherOptions)) if (values.includes(saved?.[key])) preferences[key] = saved[key];
   if (Object.hasOwn(windUnits, saved?.windUnit)) preferences.windUnit = saved.windUnit;
   if (Array.isArray(saved?.readings)) preferences.readings = Object.keys(readingNames).filter(key => saved.readings.includes(key));
   if (Array.isArray(saved?.readingOrder)) preferences.readingOrder = [...new Set([...saved.readingOrder.filter(key => Object.hasOwn(readingNames, key)), ...Object.keys(readingNames)])];
@@ -14,7 +15,7 @@ try {
 } catch { /* Defaults also work without browser storage. */ }
 
 export function gustCacheMinutes() { return preferences.gustCacheMinutes; }
-export function weatherPreferences() { return { temperatureUnit: preferences.temperatureUnit, windUnit: preferences.windUnit, readings: [...preferences.readings] }; }
+export function weatherPreferences() { return { temperatureUnit: preferences.temperatureUnit, windUnit: preferences.windUnit, readings: [...preferences.readings], ...Object.fromEntries(Object.keys(weatherOptions).map(key => [key, preferences[key]])) }; }
 export function playbackSpeed() { return preferences.playbackSpeed; }
 export function playbackHours() { return preferences.playbackHours; }
 
@@ -99,6 +100,7 @@ export function setupDisplaySettings(canEdit) {
   const gustMinutes = document.getElementById('gust-cache-minutes');
   const tempUnit = document.getElementById('temperature-unit');
   const windUnit = document.getElementById('wind-unit');
+  const extraUnits = Object.entries(weatherOptions).map(([key,valid]) => [document.getElementById(key.replace(/[A-Z]/g, letter => '-'+letter.toLowerCase())), key, valid]);
   const speed = document.getElementById('playback-speed');
   const hours = document.getElementById('playback-hours');
   const readings = [...document.querySelectorAll('[data-reading-choice]')];
@@ -114,6 +116,7 @@ export function setupDisplaySettings(canEdit) {
   function applyWeatherChoices() {
     tempUnit.value = preferences.temperatureUnit;
     windUnit.value = preferences.windUnit;
+    for (const [input,key] of extraUnits) input.value = preferences[key];
     for (const input of readings) input.checked = preferences.readings.includes(input.dataset.readingChoice);
     for (const key of preferences.readingOrder) {
       const row = document.getElementById(`weather-${key}`).closest('.weather-reading');
@@ -124,7 +127,7 @@ export function setupDisplaySettings(canEdit) {
     window.dispatchEvent(new Event('radar-weather-preferences'));
   }
   window.addEventListener('radar-reading-order', applyWeatherChoices);
-  for (const [input, key, valid] of [[tempUnit, 'temperatureUnit', ['C','F']], [windUnit, 'windUnit', Object.keys(windUnits)]]) input.addEventListener('change', () => {
+  for (const [input, key, valid] of [[tempUnit, 'temperatureUnit', ['C','F']], [windUnit, 'windUnit', Object.keys(windUnits)], ...extraUnits]) input.addEventListener('change', () => {
     if (canEdit() && valid.includes(input.value)) { preferences[key] = input.value; persist(); }
     applyWeatherChoices();
   });
@@ -145,7 +148,7 @@ export function setupDisplaySettings(canEdit) {
   applyWeatherChoices(); applySpeed();
   const gear = document.getElementById('settings-toggle');
   const footerToggle = document.getElementById('footer-toggle');
-  const content = [...footer.querySelectorAll('.observation, .playback, #radar-status')];
+  const content = [...footer.querySelectorAll('.observation, .playback')];
   let timer;
   const pointers = new Set();
   function hidden(value) {
@@ -224,6 +227,10 @@ export function setupDisplaySettings(canEdit) {
     scale.style.width = `${Number(scale.dataset.width) * factor}px`;
     scale.style.height = `${32 * factor}px`;
   }
+  const attribution = document.querySelector('.source');
+  new ResizeObserver(() => {
+    document.body.style.setProperty('--attribution-height', `${attribution.offsetHeight}px`);
+  }).observe(attribution);
   new ResizeObserver(size).observe(footer);
   window.addEventListener('resize', size);
   size(); apply();
