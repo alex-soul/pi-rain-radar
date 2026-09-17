@@ -34,6 +34,8 @@ In **12 / 13**, 12 is the frame currently displayed; **13 is the total available
 
 **Amber sections on the playback timeline** mark missing captures, not dry weather. They remain visible behind the playback thumb. Animation skips gaps; scrubbing selects the nearest available frame. The second screenshot shows a missing position and an amber total of 12 rather than 13.
 
+In 0.4.0, saved captures can repeat older map images during a provider outage, so the timeline and total count can remain complete even without fresh observations. The bottom handle and Status report source health separately. Observation-time gaps and late-data recovery are a [planned playback correction](playback-conventions.md), not current behaviour.
+
 ## 6. History playback countdown
 
 When viewing History, the outer edge of the expanded History control shows the countdown to an automatic return to live after ten minutes. It is a playback timer, **not a health warning**.

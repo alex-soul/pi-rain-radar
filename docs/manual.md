@@ -117,7 +117,7 @@ Choose temperature units independently from wind units: Celsius/Fahrenheit and m
 
 ### Interface → Readings
 
-Toggle and drag rows to choose and order Temperature, Feels like, Wind, Wind gusts, Humidity, Dew point and Wind direction. The first four remain defaults. These use the same current-conditions request; unavailable optional fields show dashes. The direction icon has eight orientations indicating where wind comes from, with a finer compass abbreviation beside it. It does not predict radar movement.
+Toggle and drag rows to choose and order the ten optional readings listed under [Weather readings and units](#weather-readings-and-units). These use the same current-conditions request; unavailable optional fields show dashes. Wind direction follows your selected convention; see the [wind arrow guide](indicators.md#wind-arrow). It does not predict radar movement.
 
 The top dock sizes to the selected readings, wrapping on narrow screens. Hiding every reading removes the numbers while keeping the health handle. Controls move below an expanded dock when they would collide and move back up when it tucks away.
 
