@@ -64,7 +64,7 @@ Radar works out of the box without an API key. Overview and MinuteCast start clo
 
 ## Hardware recommendations
 
-- **Raspberry Pi 4 Model B** — tested with 2 GB RAM.
+- **[Raspberry Pi 4 Model B](https://thepihut.com/products/raspberry-pi-4-model-b)** — tested with 2 GB RAM.
 - **[7-inch Raspberry Pi Touch Display 2](https://thepihut.com/products/raspberry-pi-touch-display-2)** — 1280 × 720 in landscape.
 - **[15 W USB-C power supply](https://www.raspberrypi.com/products/type-c-power-supply/)** for the Pi 4.
 - **microSD card** — I use a 64 GB A2-rated card.
