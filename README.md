@@ -72,6 +72,31 @@ Radar works out of the box without an API key. Overview and MinuteCast start clo
 
 See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and installation.
 
+My build, from parts to the finished display. Click a photo to open the full image.
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/images/hardware/components.jpg"><img src="docs/images/hardware/components.jpg" width="320" alt="Raspberry Pi 4 Model B, 7-inch Touch Display 2 and 15 W power supply in their boxes"></a><br>
+      <sub>The hardware</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/images/hardware/enclosure.jpg"><img src="docs/images/hardware/enclosure.jpg" width="320" alt="Rear view of the OneNineDesign display enclosure before assembly"></a><br>
+      <sub>The enclosure</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/images/hardware/finished-display.jpg"><img src="docs/images/hardware/finished-display.jpg" width="320" alt="Completed Pi Rain Radar display on a shelf with blue background lighting"></a><br>
+      <sub>At home</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/images/hardware/display-close-up.jpg"><img src="docs/images/hardware/display-close-up.jpg" width="320" alt="Close-up of the assembled display showing radar, Overview and weather readings"></a><br>
+      <sub>In action</sub>
+    </td>
+  </tr>
+</table>
+
 ## Documentation
 
 - [Quick Start — install and configure from another computer](docs/quick-start.md)
