@@ -60,7 +60,17 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
-No PIN or API key is needed to start viewing radar. Overview and MinuteCast start closed. The app runs independently of Home Assistant.
+Radar works out of the box without an API key. Overview and MinuteCast start closed.
+
+## Hardware recommendations
+
+- **Raspberry Pi 4 Model B** — tested with 2 GB RAM.
+- **[7-inch Raspberry Pi Touch Display 2](https://www.raspberrypi.com/products/touch-display-2/)** — 1280 × 720 in landscape.
+- **[15 W USB-C power supply](https://www.raspberrypi.com/products/type-c-power-supply/)** for the Pi 4.
+- **microSD card** — I use a 64 GB A2-rated card.
+- **Stand or enclosure of your choice** — I use [this enclosure](https://thepihut.com/products/enclosure-for-raspberry-pi-touch-display-2-7). The [Pimoroni Pibow Frame](https://thepihut.com/products/pibow-frame-for-raspberry-pi-touch-display-2) is an alternative that keeps the Pi visible.
+
+See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and installation.
 
 ## Documentation
 
