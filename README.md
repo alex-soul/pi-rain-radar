@@ -67,7 +67,7 @@ Radar works out of the box without an API key. Overview and MinuteCast start clo
 - **[Raspberry Pi 4 Model B](https://thepihut.com/products/raspberry-pi-4-model-b)** — tested with 2 GB RAM.
 - **[7-inch Raspberry Pi Touch Display 2](https://thepihut.com/products/raspberry-pi-touch-display-2)** — 1280 × 720 in landscape.
 - **[15 W USB-C power supply](https://www.raspberrypi.com/products/type-c-power-supply/)** for the Pi 4.
-- **microSD card: [32GB A1](https://thepihut.com/products/sandisk-microsd-card-class-10-a1)** — 32 GB should be plenty based on current storage usage. I use a 64 GB A2-rated card.
+- **microSD card:** [SanDisk MicroSD Card (Class 10 A1)](https://thepihut.com/products/sandisk-microsd-card-class-10-a1) by SanDisk — 32 GB should be plenty based on current storage usage. I use a 64 GB A2-rated card.
 - **Stand or enclosure of your choice** — I use the [Enclosure for Raspberry Pi Touch Display 2 (7")](https://thepihut.com/products/enclosure-for-raspberry-pi-touch-display-2-7) by OneNineDesign (SKU: ASM-1900192-21). The [Pibow Frame for Raspberry Pi Touch Display 2](https://thepihut.com/products/pibow-frame-for-raspberry-pi-touch-display-2) by Pimoroni (SKU: PIM757) is an alternative that keeps the Pi visible.
 
 See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and installation.
