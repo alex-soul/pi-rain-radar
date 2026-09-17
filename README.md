@@ -43,6 +43,8 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 ## What you get
 
 - Two, four or six hours of animated radar, refreshed automatically, with adjustable speed, pause and a timeline showing missing frames.
+- **RainViewer or Rainbow Weather — or both.** Choose either provider for Main and Overview independently, so you can compare them or manually switch when one has problems.
+- **One Rainbow map can fit within the free tile allowance.** The default single-map estimate leaves room below 30,000 tiles/month, assuming snapshot checks are free. Includes usage estimates and an optional request cap; see [setup and usage assumptions](docs/radar-providers.md).
 - A seven-day local archive that builds while the app runs.
 - One Pi, multiple screens: each browser remembers its own buttons, widget layout and theme while sharing the same location and data. Radar and weather acquisition are shared between screens. See [LAN setup](docs/quick-start.md#3-open-it-from-your-laptop).
 - Last-good cached playback through outages; incomplete timestamps do not block newer complete frames.
@@ -50,7 +52,6 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
 - Ten optional readings, including visibility, pressure and UV index, configurable units and wind-arrow convention.
-- Optional Rainbow radar, independently selected for Main and Overview maps, with request estimates and an optional cap.
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
