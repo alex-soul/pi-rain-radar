@@ -2,8 +2,6 @@
 
 A dedicated rain-radar screen for your home. Animate recent rain, see where it has been moving, and glance at optional current temperature and wind readings.
 
-[What's next →](docs/follow-ups.md)
-
 ![Historical rain radar centred on Coventry](docs/images/radar-preview-20260916-2147.gif)
 
 *Recorded on 16 September 2026 in v0.3.0: 13 radar frames over Coventry, spanning 19:40–21:40 BST, with Overview and MinuteCast open. Historical demonstration, not live conditions; weather readings and MinuteCast reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/), basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/radar-preview-20260916-2147.png).*
@@ -13,6 +11,8 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 **v0.4.0 is a pre-release.** I tested the new candidate on my Raspberry Pi 4 with 2 GB RAM, including six-hour playback at full speed and restart/shutdown recovery. Native ARM64 tests and startup/restart checks passed. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
+
+See [what’s next](docs/follow-ups.md) for planned improvements and ideas for future releases.
 
 ## Run with Docker
 
