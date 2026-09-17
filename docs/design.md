@@ -18,6 +18,8 @@ src/rainbow.js confines outbound requests to the fixed provider host, uses heade
 
 ## Captures and playback
 
+This section describes 0.4.0. The agreed [Live / Archive terminology and next-release behaviour](playback-conventions.md) supersede its screen-capture model as the target design; implementation is tracked in [follow-ups](follow-ups.md#live-and-archive-playback).
+
 src/captured-archive.js records the displayed map frame references and their providers in ten-minute slots. The current slot can update as individual views publish. On cold startup the fast map can appear early; the initial historical window is seeded after both workers finish. Provider switching preserves older captures. Geometry determines archive identity; retention is seven days. Cleanup protects images referenced by retained captures.
 
 History replays captured combinations without requesting old provider frames on demand. Current weather/MinuteCast stay current. A chosen historical window automatically returns to live after ten minutes. Longer 2/4/6-hour windows use accumulated local captures, not additional provider calls. A selected six-hour window does not guarantee six hours of data are available.

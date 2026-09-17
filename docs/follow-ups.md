@@ -2,9 +2,22 @@
 
 Open work to pick up after 0.4.0. These items do not block this release.
 
+- [ ] **Live and Archive playback.** Correct observation-time playback in both modes and adopt the agreed naming convention. See the [next-release requirements](#live-and-archive-playback).
 - [ ] **One-time Rainbow key prompt.** Immediately after a successful key save, show “Configured. Please now Save and Apply”. Later normal status shows only “Configured.” Keep key saving separate from source application; do not silently apply the sources.
 - [ ] **Prolonged Pi soak.** Run continuously for several hours or overnight with split RainViewer/Rainbow maps and the six-hour playback window at full speed. Record actual elapsed time, memory growth, active swapping, freezes, provider updates/recovery, history and request-counter persistence. Six-hour playback selection alone is not a six-hour soak.
 - [ ] **Confirm snapshot billing.** Check whether Rainbow excludes snapshot checks from the advertised free tile allowance. Adjust estimate notes in the next release if needed; 0.4.0 explicitly assumes they are free.
 - [ ] **Explore more Rainbow capabilities.** Investigate minute-by-minute forecasts extending up to four hours, the separate radar-tile layer versus the precipitation tiles currently used, cloud-cover tiles/animation, and other useful API features. Verify actual resolution, coverage, update cadence, subscription access, costs and data terms before proposing UI or backend changes. Consider how longer forecasts would fit MinuteCast and how alternative layers affect playback/history and Pi resource use. This is exploration for future releases, not committed release scope. Start with the [Rainbow API documentation](https://doc.rainbow.ai/).
+
+## Live and Archive playback
+
+Agreed for the next release; not implemented in 0.4.0. Follow the canonical [terminology and playback behaviour](playback-conventions.md). This replaces the earlier screen-recording interpretation of History.
+
+- [ ] Build both Live and Archive playback from the best available observations at their original observation times. Include late and recovered data wherever the period remains retained; do not require that it was previously displayed.
+- [ ] Track availability independently for Main and Overview. A healthy provider continues updating when the other fails; reused cached imagery must not hide missing observations. Preserve useful downloaded data through outages and respect request budgets and settling rules.
+- [ ] Review timeline gaps, frame totals and their colours against observation availability. Agree a clear shared-timeline presentation when only one map has data, including what appears in the affected map. Keep source-health handles and Status useful; avoid claiming a complete window solely because captures exist.
+- [ ] Rename the History button/mode to **Archive**, including Settings labels, helpers, tooltips, accessibility text and return-to-Live wording. Use **Playback** for shared animation controls and **history** for stored observations.
+- [ ] Review all current repository documentation and UI copy for this convention and the revised behaviour. Update the manual, indicator guide/screenshots, README, provider guide, design, troubleshooting and development references as applicable. Link to the canonical convention rather than duplicating its definitions. Preserve historical release notes and validation evidence as descriptions of their releases.
+- [ ] Clean up backend/frontend identifiers, comments and tests where safe and useful. Inventory persisted settings, localStorage, archive indexes, filenames and API contracts first; do not rename them mechanically. Preserve compatibility or provide an explicitly tested migration. Retain source provenance and map-geometry isolation; do not invent missing observation timestamps in legacy captures.
+- [ ] Validate late arrivals filling gaps in both modes, one-provider and two-provider outages/recovery, duplicate cached observations, mixed provider cadences/source changes, retention/window boundaries, restart persistence and existing 0.4.0 data/settings migration. Check Pi resource use and API usage before release.
 
 See [validation](validation.md) for wider test limitations and [development](development.md) before starting work.

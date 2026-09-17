@@ -2,6 +2,8 @@
 
 Start with the [development guide](docs/development.md) and [current design](docs/design.md). The application is a small local radar display built with Node.js, Sharp and browser JavaScript.
 
+Use the agreed [playback terminology](docs/playback-conventions.md): Live and Archive are modes, Playback is their shared animation, and history means stored observations. The convention page distinguishes next-release behaviour from the current implementation.
+
 ## Source layout
 
 | Path | Purpose |
