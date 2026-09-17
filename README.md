@@ -89,6 +89,8 @@ Pi Rain Radar is [MIT-licensed](LICENSE). You may use, modify and redistribute t
 
 Radar data may be delayed or incomplete. Areas without rain colouring may have no detected rain—or no available data.
 
+## Support
+
 > [!TIP]
 > Questions about installation, the interface, troubleshooting or development? Give your AI this repository link and ask. The documentation covers beginners and developers; [screen indicators](docs/indicators.md) explains the colours.
 
