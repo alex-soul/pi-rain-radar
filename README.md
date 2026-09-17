@@ -53,7 +53,8 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
-- Ten optional readings, including visibility, pressure and UV index, configurable units and wind-arrow convention.
+- Ten optional weather readings: temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [configurable units and wind-arrow convention](docs/manual.md).
+- Subtle colour indicators show API health and data gaps without cluttering the screen; details are available in Settings and the log. See the [illustrated indicator guide](docs/indicators.md).
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
