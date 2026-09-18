@@ -109,11 +109,37 @@ test('off-grid observations survive exactly; partial totals are incomplete, and 
   await a.add([record(end - 300, 'main'), record(end, 'overview')]);
   assert.deepEqual(a.live().frames.map(f => f.time), [end - 300, end]);
   assert.equal(a.live().playable, 2); assert.equal(a.live().complete, false);
-  clock += 7200000; assert.equal(a.live().playable, 1);
+  clock += 7800000; assert.equal(a.live().playable, 1);
   clock += 600000; assert.equal(a.live().playable, 0);
   assert.equal(a.live().coverage.length, 13);
   assert.ok(a.live().coverage.every(f => !f.main && !f.overview));
   assert.equal(a.live(1), null); assert.equal(a.live(24), null);
+});
+
+test('Live publication grace admits early data, expires absent halves and leaves Archive truthful', async t => {
+  const dir=await fixture(t);let clock=end*1000;
+  const a=await open(dir,{now:()=>clock});
+  await a.add(Array.from({length:14},(_,i)=>['main','overview'].map(role=>record(end-(i+1)*600,role))).flat());
+  assert.equal(a.live().end,end-600);
+  assert.equal(a.live().complete,true);
+  assert.equal(a.live().frames.length,13);
+  await a.add([record(end,'main')]);
+  let live=a.live();
+  assert.equal(live.end,end);assert.equal(live.start,end-7200);
+  assert.equal(live.frames.at(-1).overviewUrl,null);
+  assert.equal(live.coverage.at(-1).pending,true);
+  assert.equal(live.counts.overview.missing,0);assert.equal(live.complete,true);
+  assert.equal(a.window(end).counts.overview.missing,1);
+  assert.equal(a.window(end).complete,false);
+  clock+=599999;assert.equal(a.live().complete,true);
+  clock+=1;live=a.live();
+  assert.equal(live.end,end);assert.equal(live.coverage.at(-1).pending,false);
+  assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
+  await a.add([record(end,'overview')]);
+  assert.equal(a.live().complete,true);assert.equal(a.window(end).complete,true);
+  clock+=600000;live=a.live();
+  assert.equal(live.end,end+600);assert.equal(live.counts.main.missing,1);
+  assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
 });
 
 test('late addition patches missing half without duplicates and source transitions preserve existing slots', async t => {

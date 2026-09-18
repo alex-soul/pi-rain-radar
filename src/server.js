@@ -50,6 +50,7 @@ const staticFiles = new Map([
   ["/device-power.js", ["device-power.js", "text/javascript"]],
   ["/diagnostics.js", ["diagnostics.js", "text/javascript"]],
   ["/playback.js", ["playback.js", "text/javascript"]],
+  ["/live-window.js", ["live-window.js", "text/javascript"]],
   ["/frame-loader.js", ["frame-loader.js", "text/javascript"]],
   ["/pin-entry.js", ["pin-entry.js", "text/javascript"]],
   ["/weather.js", ["weather.js", "text/javascript"]],

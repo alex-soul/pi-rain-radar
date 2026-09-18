@@ -1,4 +1,5 @@
 import { updateStats } from "./stats.js";
+import { liveDueThrough, ageLiveCoverage } from './live-window.js';
 import { formatTime } from './time.js';
 import { paintWeather, weatherDescription } from './weather.js';
 import { playbackSpeed, playbackHours } from './display.js';
@@ -97,7 +98,7 @@ function timelineWindow(frames, end = frames.at(-1)?.time ?? Math.floor(Date.now
   function track(key) {
     const occupied = new Set(frames.filter(f => f[key]).map(f => Math.round((f.time-start)/600)));
     const role=key==='url'?'main':'overview';
-    const missing = frames.coverage ? frames.coverage.filter(c=>!c[role]).map(c=>(c.time-start)/600) : Array.from({length:steps+1},(_,i)=>i).filter(i=>!occupied.has(i));
+    const missing = frames.coverage ? frames.coverage.filter(c=>!c[role]&&!c.pending).map(c=>(c.time-start)/600) : Array.from({length:steps+1},(_,i)=>i).filter(i=>!occupied.has(i));
     const stops = ['transparent 0%'];
     for (const slot of missing) {
       const left=Math.max(0,(slot-.5)/steps*100),right=Math.min(100,(slot+.5)/steps*100);
@@ -307,15 +308,17 @@ window.addEventListener('radar-playback-window', () => {
 });
 function attachWindow(frames, result, hours) {
   frames.windowHours=hours; frames.windowEnd=result.end; frames.complete=result.complete;frames.coverage=result.coverage;frames.borrowFrames=result.borrowFrames??[];
+  frames.dueThrough=result.dueThrough;
   return frames;
 }
 function ageLiveWindow() {
   if(historyWindow || historyLoading || !serverClock)return;
   const now=serverClock.time+(performance.now()-serverClock.receivedAt);
-  const end=Math.max(Math.floor(now/600000)*600,sequenceEnd??0),start=end-sequenceHours*3600;
-  if(end===sequenceEnd)return;
+  const dueThrough=liveDueThrough(now/1000);
+  const end=Math.max(dueThrough,sequenceEnd??0),start=end-sequenceHours*3600;
+  if(end===sequenceEnd&&sequence.dueThrough===dueThrough)return;
   const borrowFrames=[...(sequence.borrowFrames??[]),...sequence].filter(f=>f.time>=start-1800&&f.time<start);
-  const next=attachWindow(sequence.filter(f=>f.time>=start&&f.time<=end),{end,complete:false,borrowFrames},sequenceHours);
+  const next=attachWindow(sequence.filter(f=>f.time>=start&&f.time<=end),{end,dueThrough,...ageLiveCoverage(sequence.coverage,start,end,dueThrough),borrowFrames},sequenceHours);
   pending=null;adopt(next,true);
 }
 let pollRunning = false;
@@ -347,17 +350,17 @@ async function poll() {
       void loadHistory(historyWindow.end,true);
     }
     const offered=status.frames??[],hours=playbackHours();
-    const requestKey=`${hours}:${status.end}:${status.archiveRevision}:${offered.map(f=>`${f.time}:${f.url}:${f.overviewUrl}`).join('|')}`;
+    const requestKey=`${hours}:${status.end}:${status.dueThrough}:${status.archiveRevision}:${offered.map(f=>`${f.time}:${f.url}:${f.overviewUrl}`).join('|')}`;
     if(!historyWindow&&!historyLoading&&epoch===generation&&(returningLive||requestKey!==liveRequestKey)) {
       const next=await decodeFrames(offered,epoch);
       if(epoch!==generation||historyWindow||historyLoading||!next)return;
-      attachWindow(next,{end:status.end??offered.at(-1)?.time,complete:status.complete,coverage:status.coverage,borrowFrames:status.borrowFrames},hours);
+      attachWindow(next,{end:status.end??offered.at(-1)?.time,dueThrough:status.dueThrough,complete:status.complete,coverage:status.coverage,borrowFrames:status.borrowFrames},hours);
       liveRequestKey=requestKey;
       const previousTimes=new Set(sequence.map(f=>f.time));
       const additions=next.some(f=>!previousTimes.has(f.time));
       if(playing&&sequence.length>=2&&next.filter(f=>previousTimes.has(f.time)).length>=2&&sequenceHours===hours&&!returningLive&&additions) {
         pending=next;
-        adopt(attachWindow(next.filter(f=>previousTimes.has(f.time)),{end:next.windowEnd,complete:next.complete,coverage:next.coverage,borrowFrames:next.borrowFrames},hours),true);
+        adopt(attachWindow(next.filter(f=>previousTimes.has(f.time)),{end:next.windowEnd,dueThrough:next.dueThrough,complete:next.complete,coverage:next.coverage,borrowFrames:next.borrowFrames},hours),true);
       } else { adopt(next,!returningLive);pending=null; }
       returningLive=false;paintHistory();
       $('playback-window-note').textContent='';

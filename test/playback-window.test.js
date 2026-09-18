@@ -2,18 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
+import {liveDueThrough,ageLiveCoverage} from '../public/live-window.js';
 const app=(await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replaceAll('\r\n','\n');
 const pollCode=app.slice(app.indexOf("window.addEventListener('radar-playback-window'"),app.indexOf('try {\n  const response = await fetch(`/maps/'));
 const frames=(end,hours)=>Array.from({length:hours*6+1},(_,i)=>({time:end-(hours*6-i)*600,url:`/${end-(hours*6-i)*600}`,overviewUrl:`/o${end-(hours*6-i)*600}`}));
 function harness() {
   let hours=2,end=60000,decodeGate=null;const events={},requests=[],adoptions=[],nodes={};
   const c=vm.createContext({generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
-    sequence:frames(end,2),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
-    playbackHours:()=>hours,mapIdentity:'map',appVersion:'test',AbortSignal,
+    sequence:Object.assign(frames(end,2),{dueThrough:liveDueThrough(end)}),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
+    playbackHours:()=>hours,mapIdentity:'map',appVersion:'test',AbortSignal,liveDueThrough,ageLiveCoverage,
     $:id=>nodes[id]??={textContent:'',dataset:{}},window:{addEventListener:(name,fn)=>events[name]=fn},frameLoader:{cancel(){}},
-    fetch:async url=>{requests.push(url);return {ok:true,json:async()=>({mapId:'map',end,serverTime:end*1000,frames:frames(end,hours)})};},
+    fetch:async url=>{requests.push(url);return {ok:true,json:async()=>({mapId:'map',end,dueThrough:liveDueThrough(end),serverTime:end*1000,frames:frames(end,hours)})};},
     decodeFrames:async offered=>{if(decodeGate)await decodeGate;return offered;},
-    adopt(next,preserve){adoptions.push({next,preserve});c.sequence=next;c.sequenceHours=next.windowHours;},
+    adopt(next,preserve){adoptions.push({next,preserve});c.sequence=next;c.sequenceHours=next.windowHours;c.sequenceEnd=next.windowEnd;},
     paintHistory(){},paintStatus(){},paintMapUpdate(){},location:{reload(){throw Error('unexpected reload');}}});
   vm.runInContext(pollCode,c);
   return {c,requests,adoptions,nodes,change(value){hours=value;events['radar-playback-window']();},setEnd(value){end=value;},gate(value){decodeGate=value;}};

@@ -42,7 +42,7 @@ function filterWindow(data) {
   }).filter(f=>f.url||f.overviewUrl);
   const byTime=new Map(frames.map(f=>[f.time,f]));
   const coverage=(data.coverage??[]).map(c=>({...c,main:!!byTime.get(c.time)?.url,overview:!!byTime.get(c.time)?.overviewUrl}));
-  return {...data,frames,frame:frames.at(-1)??null,coverage,playable:frames.length,complete:coverage.every(c=>c.main&&c.overview),counts:Object.fromEntries(['main','overview'].map(role=>[role,{available:coverage.filter(c=>c[role]).length,missing:coverage.filter(c=>!c[role]).length}]))};
+  return {...data,frames,frame:frames.at(-1)??null,coverage,playable:frames.length,complete:coverage.every(c=>c.pending||(c.main&&c.overview)),counts:Object.fromEntries(['main','overview'].map(role=>[role,{available:coverage.filter(c=>c[role]).length,missing:coverage.filter(c=>!c[role]&&!c.pending).length}]))};
 }
 const server=http(async(req,res)=>{
   try {

@@ -37,6 +37,7 @@ test('HTTP Archive accepts 1–24 while Live remains 2/4/6, with truthful per-ma
     child.stderr.resume();
   });
   const get = path => fetch(`http://127.0.0.1:${port}${path}`);
+  assert.equal((await get('/live-window.js')).status,200);
   const manifestResponse=await get('/manifest.webmanifest');
   assert.equal(manifestResponse.status,200);
   assert.match(manifestResponse.headers.get('content-type'),/application\/manifest\+json/);

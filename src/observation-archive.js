@@ -2,6 +2,7 @@ import { readFile, writeFile, rename, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
+import { liveDueThrough, classifyCoverage } from '../public/live-window.js';
 import { hash } from './map.js';
 import { HISTORY_SECONDS, CLEANUP_BUFFER_SECONDS, HISTORY_DAYS } from './archive.js';
 
@@ -217,11 +218,13 @@ export async function createObservationArchive(directory, views, { now = Date.no
     },
     live(hours = 2) {
       if (![2, 4, 6].includes(hours)) return null;
-      const clock = Math.floor(now() / 1000), gridEnd = Math.floor(clock / 600) * 600;
+      const clock = Math.floor(now() / 1000), gridEnd = liveDueThrough(clock);
       // Do not hide an already acquired off-grid observation until the next tick.
       const end = Math.max(gridEnd, frames(gridEnd, clock).at(-1)?.time ?? gridEnd);
       const start=end-hours*3600;
-      return { ...window(start, end), borrowFrames: frames(start-1800, start-1), serverTime: now(), cadenceSeconds: 600 };
+      const result = window(start, end);
+      return { ...result, ...classifyCoverage(result.coverage, gridEnd), dueThrough: gridEnd,
+        borrowFrames: frames(start-1800, start-1), serverTime: now(), cadenceSeconds: 600 };
     },
   };
 }
