@@ -46,16 +46,17 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 
 ## What you get
 
-- Two, four or six hours of animated radar, refreshed automatically, with adjustable speed, pause and a timeline showing missing frames.
+- **See what is there—and what is missing.** Two, four or six hours of Live radar with adjustable playback speed and independent Main/Overview [timeline tracks](docs/indicators.md#5-frame-gaps). Provider gaps stay visible, and late observations fill their original positions.
 - **RainViewer or Rainbow Weather — or both.** Choose either provider for Main and Overview independently, so you can compare them or manually switch when one has problems.
 - **One Rainbow map can fit within the free tile allowance.** The default single-map estimate leaves room below 30,000 tiles/month, assuming snapshot checks are free. Includes usage estimates and an optional request cap; see [setup and usage assumptions](docs/radar-providers.md).
-- A seven-day local archive that builds while the app runs.
-- One Pi, multiple screens: each browser remembers its own buttons, widget layout and theme while sharing the same location and data. Radar and weather acquisition are shared between screens. See [LAN setup](docs/quick-start.md#3-open-it-from-your-laptop).
-- Live playback through outages with visible per-map gaps and bounded reuse of earlier observations; incomplete timestamps do not block newer data.
+- **Explore up to 24 hours of radar history.** Scrub or replay a selected window from the seven-day local archive, with optional provider labels. [Archive playback](docs/manual.md#look-back-with-archive) shows the observations actually available and builds as the app runs.
+- **One radar server, multiple displays.** Each browser remembers its own buttons, layout and theme while sharing the same configured location and acquisition. Use it on your [home network](docs/quick-start.md#3-open-it-from-your-laptop), optionally [install it on phones and laptops or connect privately through Tailscale](docs/pwa.md), and see the [Android and Windows examples](docs/pwa-gallery.md).
+- **Playback that handles delays.** Live can reuse earlier radar for up to 30 minutes and automatically pause while waiting for enough data to resume. Missing observations remain visible; [Live and Archive rules](docs/playback-conventions.md) explain the difference.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
 - Ten optional weather readings: temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [configurable units and wind-arrow convention](docs/manual.md).
+- **[Stats for nerds](docs/manual.md#stats-for-nerds).** An optional experimental widget shows provider freshness, acquisition timing, missing frames, weather updates and local Rainbow API counters.
 - Subtle colour indicators show API health and data gaps without cluttering the screen; details are available in Settings and the log. See the [illustrated indicator guide](docs/indicators.md).
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
