@@ -116,7 +116,7 @@ test('off-grid observations survive exactly; partial totals are incomplete, and 
   assert.equal(a.live(1), null); assert.equal(a.live(24), null);
 });
 
-test('Live publication grace admits early data, expires absent halves and leaves Archive truthful', async t => {
+test('Live grace delays the endpoint but reports early partial gaps immediately', async t => {
   const dir=await fixture(t);let clock=end*1000;
   const a=await open(dir,{now:()=>clock});
   await a.add(Array.from({length:14},(_,i)=>['main','overview'].map(role=>record(end-(i+1)*600,role))).flat());
@@ -127,11 +127,11 @@ test('Live publication grace admits early data, expires absent halves and leaves
   let live=a.live();
   assert.equal(live.end,end);assert.equal(live.start,end-7200);
   assert.equal(live.frames.at(-1).overviewUrl,null);
-  assert.equal(live.coverage.at(-1).pending,true);
-  assert.equal(live.counts.overview.missing,0);assert.equal(live.complete,true);
+  assert.equal(live.coverage.at(-1).pending,false);
+  assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
   assert.equal(a.window(end).counts.overview.missing,1);
   assert.equal(a.window(end).complete,false);
-  clock+=599999;assert.equal(a.live().complete,true);
+  clock+=599999;assert.equal(a.live().complete,false);
   clock+=1;live=a.live();
   assert.equal(live.end,end);assert.equal(live.coverage.at(-1).pending,false);
   assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
