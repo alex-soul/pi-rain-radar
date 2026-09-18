@@ -48,9 +48,10 @@ export function paintWeather(state, now = Date.now()) {
   $('weather-visibility-unit').textContent = prefs.visibilityUnit || 'km';
   $('weather-pressure-unit').textContent = prefs.pressureUnit || 'hPa';
   // Legacy caches have no gust acquisition timestamp: do not invent one.
-  const gust = state?.gust ?? {mph:current?.gustMph,time:current?.time,fetchedAt:state?.fetchedAt};
+  const off = gustCacheMinutes() === 0;
+  const gust = (off ? null : state?.gust) ?? {mph:current?.gustMph,time:current?.time,fetchedAt:state?.fetchedAt};
   const gustUsable = !!state?.configured && Number.isFinite(gust.mph) && Number.isFinite(gust.time)
-    && gust.time * 1000 > now - gustCacheMinutes() * 60000 && gust.time * 1000 <= now + 300000;
+    && (off ? usable && !cached : gust.time * 1000 > now - gustCacheMinutes() * 60000) && gust.time * 1000 <= now + 300000;
   const gustCached = gustUsable && (!fresh || failures > 0 || !!state?.error || current?.gustMph !== gust.mph || current?.time !== gust.time);
   reading('gust',gustUsable ? windText(gust.mph,prefs.windUnit) : '—',prefs.windUnit,gust.fetchedAt ?? null,gustCached);
   description = usable ? `${cached ? 'Cached' : 'Current'} weather at ${stamp(current.time)}: ${temperatureText(current.temperature,prefs.temperatureUnit)}${prefs.temperatureUnit}, wind ${windText(current.windMph,prefs.windUnit)} ${prefs.windUnit}` : 'Current weather unavailable';

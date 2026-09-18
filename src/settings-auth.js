@@ -89,6 +89,13 @@ export function createSettingsAuth(directory, now = Date.now) {
       }
       return true;
     },
+    async renew(token) {
+      if (!await this.authorized(token)) return { status: 401 };
+      const session = sessions.get(token);
+      if (!session || session.expiresAt <= now()) return { status: 401 };
+      session.expiresAt = now() + SESSION_MS;
+      return { status: 200, expiresAt: session.expiresAt };
+    },
     lock(token) { sessions.delete(token); },
   };
 }
@@ -107,6 +114,7 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
         if (req.headers['content-type'] !== 'application/json' ||
           (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) ||
           req.headers['sec-fetch-site'] === 'cross-site') return send(403, {});
+        if (path === '/api/settings/activity') { const result = await auth.renew(token); return send(result.status, result); }
         if (path === '/api/settings/lock') { auth.lock(token); return send(200, {}); }
         if (path === '/api/settings/unlock' || path === '/api/settings/pin') {
           let body = '';

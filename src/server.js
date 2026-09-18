@@ -1,3 +1,4 @@
+import { localRainbowCounts } from "./stats.js";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -6,6 +7,7 @@ import { createDiagnostics } from './diagnostics.js';
 import { createRadarSettings } from './radar-settings.js';
 import { createRainbow } from './rainbow.js';
 import { createDevicePower } from './device-power.js';
+import { validArchiveHours } from './observation-archive.js';
 import { createRadarSources } from './radar-sources.js';
 import * as rainviewer from './provider.js';
 import { createMapSettings } from './map-settings.js';
@@ -16,7 +18,7 @@ import packageInfo from '../package.json' with {type:'json'};
 import { createSettingsAuth, settingsRoutes } from "./settings-auth.js";
 
 const directory = process.env.DATA_DIR || "/data";
-let nextRefreshAt = Date.now() + 300000;
+let nextRefreshAt = process.env.RADAR_MANUAL_REFRESH === '1' ? null : Date.now() + 300000;
 let weather;
 const diagnostics = createDiagnostics();
 diagnostics.record('startup');
@@ -34,6 +36,12 @@ weather = await createWeather(directory,{location:maps.current().settings,onEven
 const power=createDevicePower({onEvent:diagnostics.record});
 const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power });
 const staticFiles = new Map([
+  ["/manifest.webmanifest", ["manifest.webmanifest", "application/manifest+json"]],
+  ["/icon.svg", ["icon.svg", "image/svg+xml"]],
+  ["/icon-192.png", ["icon-192.png", "image/png"]],
+  ["/icon-512.png", ["icon-512.png", "image/png"]],
+  ["/icon-maskable-512.png", ["icon-maskable-512.png", "image/png"]],
+  ["/you-rock.png", ["you-rock.png", "image/png"]],
   ["/", ["index.html", "text/html"]],
     ["/control-layout.js", ["control-layout.js", "text/javascript"]],
     ["/display.js", ["display.js", "text/javascript"]],
@@ -41,11 +49,13 @@ const staticFiles = new Map([
   ["/radar-settings-ui.js", ["radar-settings-ui.js", "text/javascript"]],
   ["/device-power.js", ["device-power.js", "text/javascript"]],
   ["/diagnostics.js", ["diagnostics.js", "text/javascript"]],
+  ["/playback.js", ["playback.js", "text/javascript"]],
   ["/frame-loader.js", ["frame-loader.js", "text/javascript"]],
   ["/pin-entry.js", ["pin-entry.js", "text/javascript"]],
   ["/weather.js", ["weather.js", "text/javascript"]],
   ["/weather-format.js", ["weather-format.js", "text/javascript"]],
   ["/screen-lock.js", ["screen-lock.js", "text/javascript"]],
+  ["/settings-idle.js", ["settings-idle.js", "text/javascript"]],
   ["/pin-idle.js", ["pin-idle.js", "text/javascript"]],
   ["/settings-help.js", ["settings-help.js", "text/javascript"]],
   ["/time.js", ["time.js", "text/javascript"]],
@@ -53,6 +63,9 @@ const staticFiles = new Map([
   ["/theme.js", ["theme.js", "text/javascript"]],
   ["/preference-upgrade.js", ["preference-upgrade.js", "text/javascript"]],
   ["/overview.js", ["overview.js", "text/javascript"]],
+  ["/stats.js", ["stats.js", "text/javascript"]],
+  ["/stats-format.js", ["stats-format.js", "text/javascript"]],
+  ["/floating-widget.js", ["floating-widget.js", "text/javascript"]],
   ["/rain-forecast.js", ["rain-forecast.js", "text/javascript"]],
   ["/overview.svg", ["overview.svg", "image/svg+xml"]],
   ["/overview-dark.svg", ["overview-dark.svg", "image/svg+xml"]],
@@ -84,11 +97,13 @@ const server = createServer(async (req, res) => {
       if (params.get('map') && params.get('map') !== active.id) { res.writeHead(409); return res.end(); }
       const end = params.get('end');
       const hours = params.get('hours') ?? '2';
-      const result = !['2','4','6'].includes(hours) ? null : end === null ? radar.archive.available() : /^\d+$/.test(end) ? radar.archive.window(Number(end), Number(hours)) : null;
+      const result = !/^([1-9]|1[0-9]|2[0-4])$/.test(hours) || !validArchiveHours(Number(hours)) ? null : end === null ? radar.archive.available() : /^\d+$/.test(end) ? radar.archive.window(Number(end), Number(hours)) : null;
       res.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       return res.end(req.method === 'HEAD' ? undefined : JSON.stringify(result || { error: 'That history is unavailable' }));
     }
     if (path === "/api/status" || path === "/healthz") {
+      const hours = new URL(req.url, "http://localhost").searchParams.get('hours') ?? '2';
+      if (!['2','4','6'].includes(hours)) { res.writeHead(400); return res.end(); }
       res.writeHead(200, {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",
@@ -97,7 +112,7 @@ const server = createServer(async (req, res) => {
         JSON.stringify(
           path === "/healthz"
             ? { ok: true, hasFrame: !!radar.status().frame }
-            : { ...radar.status(), archiveRevision:radar.archive.revision(), appVersion:packageInfo.version, weather: weather.status(), mapId:active.id, mapUpdate:maps.status() },
+            : { ...radar.status(Number(hours)), archiveRevision:radar.archive.revision(), appVersion:packageInfo.version, weather: weather.status(), stats: {rainbow:localRainbowCounts(rainbow.status().usage)}, mapId:active.id, mapUpdate:maps.status() },
         ),
       );
     }

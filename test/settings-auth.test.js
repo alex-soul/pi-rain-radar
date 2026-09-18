@@ -162,3 +162,24 @@ test('competing PIN enrollment requests cannot overwrite the winning PIN', async
   assert.equal((await auth.configure({ enabled: false })).status, 401);
   assert.equal((await auth.unlock('123456')).status, 200);
 });
+
+test('activity renews only a live token; reads, expiry, lock and PIN changes cannot revive it', async t => {
+  const dir=await fixture(t); let time=1000000; await setPin(dir,'123456');
+  const auth=createSettingsAuth(dir,()=>time),first=await auth.unlock('123456');
+  time+=299000;assert.equal(await auth.authorized(first.token),true);
+  const renewed=await auth.renew(first.token);assert.equal(renewed.expiresAt,time+SESSION_MS);
+  time+=SESSION_MS;assert.equal((await auth.renew(first.token)).status,401);
+  const second=await auth.unlock('123456');auth.lock(second.token);assert.equal((await auth.renew(second.token)).status,401);
+  const third=await auth.unlock('123456');await setPin(dir,'654321');assert.equal((await auth.renew(third.token)).status,401);
+});
+
+test('activity HTTP endpoint retains same-origin and bearer checks',async t=>{
+  const dir=await fixture(t);await setPin(dir,'123456');const auth=createSettingsAuth(dir),session=await auth.unlock('123456');
+  const route=settingsRoutes(auth),server=createServer((req,res)=>route(req,res,req.url));await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
+  const url=`http://127.0.0.1:${server.address().port}/api/settings/activity`;
+  const request=headers=>fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:'{}'});
+  assert.equal((await request({})).status,401);
+  assert.equal((await request({Authorization:`Bearer ${session.token}`,Origin:'https://elsewhere.invalid'})).status,403);
+  assert.equal((await request({Authorization:`Bearer ${session.token}`})).status,200);
+  auth.lock(session.token);assert.equal((await request({Authorization:`Bearer ${session.token}`})).status,401);
+});

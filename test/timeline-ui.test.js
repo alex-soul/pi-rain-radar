@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
 const context = vm.createContext({});
 vm.runInContext(app.slice(app.indexOf('function timelineWindow('), app.indexOf('let timelineFrames')), context);
-const frames = Array.from({length:13}, (_,i)=>({time:60000+i*600}));
+const frames = Array.from({length:13}, (_,i)=>({time:60000+i*600,url:`/m${i}`,overviewUrl:`/o${i}`}));
 test('speed changes replace the timeout, scale final hold and do not unpause or advance the frame', () => {
   let speed=1, nextId=0;
   const timers=new Map(), events={};
@@ -34,7 +34,7 @@ test('timeline always spans two hours and marks missing middle and edge slots', 
 test('2/4/6-hour windows retain every ten-minute slot including missing ends and interior frames',()=>{
   for(const hours of [2,4,6]) {
     const steps=hours*6,end=100000,start=end-hours*3600;
-    const offered=Array.from({length:steps+1},(_,i)=>({time:start+i*600})).filter((_,i)=>![0,5,steps].includes(i));
+    const offered=Array.from({length:steps+1},(_,i)=>({time:start+i*600,url:`/m${i}`,overviewUrl:`/o${i}`})).filter((_,i)=>![0,5,steps].includes(i));
     const model=context.timelineWindow(offered,end,hours);
     assert.equal(model.steps,steps);assert.equal(model.start,start);
     assert.deepEqual(Array.from(model.missing),[0,5,steps]);
@@ -52,4 +52,12 @@ test('live and historical keyboard navigation skip missing slots without getting
     handlers.keydown({key:'Home',preventDefault(){}});assert.equal(shown,0);
     handlers.keydown({key:'End',preventDefault(){}});assert.equal(shown,11);
   }
+});
+
+test('touching tracks distinguish each map even when all thirteen positions are playable',()=>{
+  const offered=frames.map(f=>({...f}));offered[5].overviewUrl=null;
+  const model=context.timelineWindow(offered);
+  assert.equal(model.main.missing.length,0);
+  assert.deepEqual(Array.from(model.overview.missing),[5]);
+  assert.notEqual(model.main.gradient,model.overview.gradient);
 });

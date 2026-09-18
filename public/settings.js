@@ -1,5 +1,6 @@
 import { setupScreenLock } from './screen-lock.js';
 import { setupDiagnostics } from './diagnostics.js';
+import { setupSettingsIdle } from './settings-idle.js';
 import { setupPinIdle } from './pin-idle.js';
 import { setupControlEditor, setupResponsiveControls } from "./control-layout.js";
 import { setupDisplaySettings, setupReadingEditor } from "./display.js";
@@ -16,7 +17,25 @@ const newPinEntry = setupPinEntry($('settings-new-pin'), () => confirmPinEntry.f
 let weatherKeyConfigured = false;
 function weatherKeyButtons() { $('weather-key-save').textContent = weatherKeyConfigured ? 'Replace key' : 'Save key'; $('weather-key-remove').disabled = !weatherKeyConfigured; }
 let pin = '', token = null, generation = 0, busy = false, configured = false;
-let expiryTimer, retryTimer, unlockedUntil = 0;
+let retryTimer, unlockedUntil = 0;
+const settingsIdle = setupSettingsIdle({
+  active: () => dialog.open && !$('settings-fields').hidden,
+  protectedSession: () => configured,
+  renew: async () => {
+    const epoch = generation, response = await request('/activity', {});
+    if (!response.ok) throw new Error('Session renewal failed');
+    const result = await response.json();
+    if (epoch === generation) unlockedUntil = result.expiresAt;
+    return result.expiresAt;
+  },
+  close: () => dialog.close(),
+});
+for (const name of ['pointerdown','pointermove','keydown','input','change','click','scroll']) {
+  document.addEventListener(name, event => {
+    if (!event.isTrusted || (name === 'pointermove' && !event.buttons)) return;
+    if (event.target.closest?.('#settings-dialog, #map-preview-dialog, #power-dialog, #radar-confirm-dialog, #external-dialog')) settingsIdle.activity();
+  }, true);
+}
 function canEdit() { return (!configured || (!!token && Date.now() < unlockedUntil)) && dialog.open && !$('settings-fields').hidden; }
 const radarUI=setupRadarSettings(canEdit,request);
 const powerUI=setupDevicePower(canEdit,request);
@@ -119,7 +138,7 @@ function lock() {
   $('weather-key-remove').disabled = !weatherKeyConfigured;
   unlockedUntil = 0; resetControlEditor();
   generation++;
-  clearTimeout(expiryTimer); clearTimeout(retryTimer);
+  settingsIdle.clear(); clearTimeout(retryTimer);
   discard(token); token = null; pin = ''; busy = false; configured = false;
   $('settings-fields').hidden = true; $('pin-panel').hidden = false;
   sectionSelector.hidden = true;
@@ -161,7 +180,6 @@ async function unlock() {
     unlockedUntil = result.expiresAt;
     await showSettings(current);
     if (current !== generation) return;
-    expiryTimer = setTimeout(() => dialog.close(), Math.max(0, result.expiresAt - Date.now()));
   } catch {
     if (current !== generation) return;
     discard(token); token = null; busy = false; enable(configured);
@@ -194,6 +212,7 @@ async function showSettings(current) {
     sectionSelector.dispatchEvent(new Event('change'));
     syncDiagnostics();
     $('settings-close').focus();
+    settingsIdle.start(unlockedUntil);
 }
 function digit(value) {
   if (!dialog.open || busy || !configured || !$('settings-fields').hidden) return;
@@ -313,13 +332,19 @@ $('map-preview-apply').addEventListener('click',()=>{
   if(values) void applyMap(values);
 });
 
+let pinToggleTouched = false;
+function updatePinSave() {
+  $('settings-pin-save').hidden = !pinToggleTouched || ($('settings-pin-enabled').checked === configured && (!configured || !newPinEntry.value()));
+}
 function resetPinForm() {
+  pinToggleTouched = false;
   $('settings-pin-enabled').checked = configured;
   newPinEntry.clear();
   confirmPinEntry.clear();
   $('settings-pin-note').textContent = '';
   $('settings-pin-save').disabled = false;
   updatePinInputs();
+  updatePinSave();
 }
 function updatePinInputs() {
   const enabled = $('settings-pin-enabled').checked;
@@ -329,11 +354,12 @@ function updatePinInputs() {
     if (!enabled) entry.clear();
   }
 }
-$('settings-pin-enabled').addEventListener('change', updatePinInputs);
+$('settings-pin-enabled').addEventListener('change', () => { pinToggleTouched = true; updatePinInputs(); updatePinSave(); });
+$('settings-new-pin').addEventListener('input', updatePinSave);
 $('settings-pin-form').addEventListener('submit', async event => {
   event.preventDefault();
   if (!canEdit()) { dialog.close(); return; }
-  if ($('settings-pin-save').disabled || !$('settings-pin-form').reportValidity()) return;
+  if ($('settings-pin-save').hidden || $('settings-pin-save').disabled || !$('settings-pin-form').reportValidity()) return;
   const enabled = $('settings-pin-enabled').checked;
   const value = newPinEntry.value();
   const confirmation = confirmPinEntry.value();
@@ -349,10 +375,11 @@ $('settings-pin-form').addEventListener('submit', async event => {
     const result = await response.json();
     if (epoch !== generation) return;
     if (!response.ok) { $('settings-pin-note').textContent = result.error || 'Could not save. Please try again.'; return; }
-    clearTimeout(expiryTimer);
+    settingsIdle.clear();
     token = null; unlockedUntil = 0; configured = result.configured;
     resetPinForm();
     if (configured) { dialog.close(); return; }
+    settingsIdle.start();
     $('settings-pin-note').textContent = 'Saved';
   } catch {
     if (epoch === generation) $('settings-pin-note').textContent = 'Save could not be confirmed. Reopen settings to check.';

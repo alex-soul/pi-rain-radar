@@ -63,3 +63,10 @@ test('current values tolerate one failed poll while gust age and acquisition rem
   f.paint(state(),now);assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
   f.paint({configured:false},now);for(const id of Object.keys(format.readingNames))assert.equal(f.nodes.get('weather-'+id).textContent,'—');
 });
+
+test('gust cache Off keeps current gusts but never retained fallback',()=>{
+  const f=fixture(),s=state();f.setMinutes(0);s.gust={mph:35,time:now/1000-600,fetchedAt:now-600000};
+  f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'20');
+  delete s.data.current.gustMph;s.fetchedAt++;f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'—');
+  s.data.current.gustMph=20;s.failures=1;f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'—');
+});

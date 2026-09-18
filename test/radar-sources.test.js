@@ -44,7 +44,7 @@ test('switching a provider between views reuses its settling clock, including af
  assert.equal(radar.status().sources.main.time,start/1000);
  assert.equal(radar.status().sources.overview.time,start/1000);
 });
-test('one provider failure retains its old view while another advances; capture survives switching and restart',async t=>{
+test('one provider failure leaves an observation gap while another advances; provenance survives switching and restart',async t=>{
  const dir=await directory(t);let time=Date.UTC(2026,8,17,12),failed=false,selected={main:'rainviewer',overview:'rainbow'};
  const provider=source=>({getHistory:async()=>[{time:time/1000}],getTile:async()=>{if(source==='rainbow'&&failed)throw Error('offline');return png;}});
  const providers={rainviewer:provider('rainviewer'),rainbow:provider('rainbow')};
@@ -52,7 +52,7 @@ test('one provider failure retains its old view while another advances; capture 
  const radar=await createRadarSources(dir,providers,options);await radar.refresh();const first=radar.status().frame;
  assert.equal(first.source,'rainviewer');assert.equal(first.overviewSource,'rainbow');
  time+=600000;failed=true;await radar.refresh();const next=radar.status().frame;
- assert.notEqual(next.url,first.url);assert.equal(next.overviewUrl,first.overviewUrl);assert.equal(radar.status().sources.overview.state,'warning');
+ assert.notEqual(next.url,first.url);assert.equal(next.overviewUrl,null);assert.equal(radar.status().sources.overview.state,'warning');
  failed=false;const replacement={main:'rainbow',overview:'rainviewer'};
  const result=await radar.configure(replacement,async()=>{selected=replacement;});assert.equal(result.status,200);
  assert.equal(radar.archive.window(first.time).frames.at(-1).source,'rainviewer');

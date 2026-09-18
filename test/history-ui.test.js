@@ -17,23 +17,23 @@ async function harness() {
   const context = vm.createContext({$, Date: class extends Date { static now() { return now; } }, setTimeout: () => 1, clearTimeout() {},
     document: {addEventListener: (event, fn) => events[event] = fn}, window: {addEventListener: (event, fn) => events[event] = fn},
     playbackHours:()=>hours,
-    fetch: async url => {requests.push(url);return {ok:true, json: async () => ({start:2000000-hours*3600,end:2000000,complete:true,times:[2000000],frames:[{time:2000000}]})};},
+    fetch: async url => {requests.push(url);return {ok:true, json: async () => ({start:2000000-Number(new URL(url,'http://test').searchParams.get('hours')??hours)*3600,end:2000000,complete:true,times:[2000000],frames:[{time:2000000}]})};},
     ResizeObserver: class { observe() {} }, mapIdentity: "test-map", AbortSignal, encodeURIComponent, format: () => '', clock: () => '10:30', Option: class {},
-    frameLoader:{cancel(){}}, liveRequestKey:'', decodeFrames: async frames => frames, adopt: frames => adopted = frames, poll: async () => {polls++;}
+    performance, serverClock:null, archiveHours:null, archiveRevision:null, providerOverlay:false, status:null, sequence:[], sequenceEnd:null, paintProviderLabels(){}, showFrame(){}, attachWindow(frames,result,hours){frames.windowHours=hours;frames.windowEnd=result.end;return frames;}, frameLoader:{cancel(){}}, liveRequestKey:'', decodeFrames: async frames => frames, adopt: frames => adopted = frames, poll: async () => {polls++;}
   });
   vm.runInContext(`let historyWindow = null, historyLoading = false, returningLive = false, generation = 0, historyTimer, pending = [1], playing = false;\n${app.slice(app.indexOf('function historyLabel('))}\nglobalThis.inspect = () => ({historyWindow, historyLoading, returningLive, pending, playing}); globalThis.pause = () => playing=false; globalThis.goNow = returnToNow;`, context);
   return {context, $, events, requests, setHours:value=>hours=value, setNow: value => now=value, polls: () => polls, adopted: () => adopted};
 }
 
-test('History uses the preferred duration and resizing preserves its endpoint, pause and return deadline',async()=>{
+test('Archive defaults to Settings and refresh preserves its override, pause and return deadline',async()=>{
   const h=await harness();h.setHours(6);
   await h.$('archive-show').handlers.click();
   assert.match(h.requests.at(-1),/hours=6$/);assert.equal(h.adopted().windowHours,6);
   assert.equal(h.context.inspect().historyWindow.start,2000000-21600);
   h.context.pause();h.setNow(100000);h.setHours(4);
   await h.context.loadHistory(2000000,true);
-  assert.match(h.requests.at(-1),/end=2000000&hours=4$/);
-  assert.equal(h.context.inspect().historyWindow.start,2000000-14400);
+  assert.match(h.requests.at(-1),/end=2000000&hours=6$/);
+  assert.equal(h.context.inspect().historyWindow.start,2000000-21600);
   assert.equal(h.context.inspect().historyWindow.deadline,600000);
   assert.equal(h.context.inspect().playing,false);
 });
@@ -64,7 +64,7 @@ test('Now invalidates a historical image load still in flight', async () => {
 });
 test('live status polling does not decode or replace images during historical playback', async () => {
   let decoded = 0, adopted = 0;
-  const context = vm.createContext({playbackHours:()=>6,mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, mapUpdateVisible:false});
+  const context = vm.createContext({playbackHours:()=>6,mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, ageLiveWindow(){}, performance, serverClock:null, archiveRevision:undefined, $:()=>({dataset:{}}), mapUpdateVisible:false});
   const pollCode = app.slice(app.indexOf('let pollRunning = false;'), app.indexOf('try {\n  const response = await fetch(`/maps/'));
   vm.runInContext(`let generation=1, historyWindow={end:2000000}, historyLoading=false, sequence=[{time:2000000,url:'/old',overviewUrl:'/old-overview'}], pending=null, status=null, serverReachable=false, displayed=sequence[0], returningLive=false;\n${pollCode}\nglobalThis.runPoll=poll; globalThis.readStatus=()=>status;`,context);
   await context.runPoll();
@@ -111,4 +111,18 @@ test('History icon returns to live while the date range reopens the picker witho
   await h.$('history-action').handlers.click();
   assert.equal(h.context.inspect().historyWindow, null);
   assert.equal(h.polls(), 1);
+});
+
+test('Archive override and provider switch reset on return, without changing saved Live preferences',async()=>{
+  const h=await harness();h.setHours(4);
+  await h.$('history-action').handlers.click();
+  assert.equal(h.$('archive-hours').value,'4');assert.equal(h.$('archive-provider').checked,false);
+  h.$('archive-hours').value='24';h.$('archive-hours').handlers.input();
+  h.$('archive-provider').checked=true;h.$('archive-provider').handlers.change();
+  await h.$('archive-show').handlers.click();
+  assert.match(h.requests.at(-1),/hours=24$/);
+  await h.context.goNow();
+  await h.$('history-action').handlers.click(); // returning-Live action remains until poll adopts; open directly below.
+  await h.context.openHistoryPicker();
+  assert.equal(h.$('archive-hours').value,'4');assert.equal(h.$('archive-provider').checked,false);
 });

@@ -1,14 +1,14 @@
 import { createRadar } from './radar.js';
-import { createCapturedArchive, cleanupCaptured } from './captured-archive.js';
+import { cleanupCaptured } from './captured-archive.js';
+import { createObservationArchive } from './observation-archive.js';
 import { hash } from './map.js';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export async function createRadarSources(directory, providers, {
-  views, now = Date.now, waitForSettle, selection, onEvent = ()=>{}, historyDepth=13,
+  views, now = Date.now, waitForSettle, selection, onEvent = ()=>{}, historyDepth=13, nextRefreshAt = () => now() + 300000,
 } = {}) {
-  const archive=await createCapturedArchive(directory,hash(views),{now,legacyViews:views});
-  let bootstrapPending=archive.frames().length===0;
+  const archive=await createObservationArchive(directory,views,{now,selection:selection()});
   const workers=new Map();let busy=false,changing=false,storageError=null,capturing=Promise.resolve();
   const providerSeen=new Map();
   // Restore the earliest observation across both views, including inactive ones.
@@ -55,38 +55,29 @@ export async function createRadarSources(directory, providers, {
           return tiles.get(tileKey);
         },
       };
-      workers.set(id,await createRadar(directory,provider,{now,waitForSettle,manageCleanup:false,storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
+      workers.set(id,await createRadar(directory,provider,{now,waitForSettle,nextRefreshAt,manageCleanup:false,storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
     }
     return workers.get(id);
   }
   async function prepare(s){const sources=resolved(s);return {main:await worker(sources.main,'main'),overview:await worker(sources.overview,'overview')};}
   activeWorkers=await prepare(current);
-  const latest=slot=>activeWorkers[slot]?.status().frame;
-  function capture(seed=false) {
+  function capture() {
     const task=capturing.then(async()=>{
-    // Seed a fresh live playback window from the observations just acquired.
-    // Existing captures are never replaced by a different provider's backfill.
-    if(seed&&bootstrapPending){
-      const mainFrames=activeWorkers.main.status().frames,overviewFrames=activeWorkers.overview.status().frames;
-      const sources=resolved(current),times=[...new Set([...mainFrames,...overviewFrames].map(f=>f.time))].sort((a,b)=>a-b);
-      for(const time of times){
-        if(archive.frames().some(frame=>frame.time===time))continue;
-        const main=mainFrames.findLast(f=>f.time<=time),overview=overviewFrames.findLast(f=>f.time<=time);
-        await archive.capture({time,url:main?.url??null,overviewUrl:overview?.url??null,source:main?sources.main:null,overviewSource:overview?sources.overview:null,mainTime:main?.time??null,overviewTime:overview?.time??null});
+      await archive.select(current);
+      const observations=[];
+      for(const [id,worker] of workers) {
+        const source=id.slice(0,id.indexOf('-')),key=id.slice(id.indexOf('-')+1);
+        // Include every locally acquired observation, not just the latest image.
+        for(const frame of worker.observations()) observations.push({time:frame.time,source,key,url:frame.url});
       }
-      bootstrapPending=false;
-    }
-    const main=latest('main'),overview=latest('overview'),sources=resolved(current);
-    if(!main&&!overview)return;
-    await archive.capture({time:Math.floor(now()/600000)*600,url:main?.url??null,overviewUrl:overview?.url??null,
-      source:main?sources.main:null,overviewSource:overview?sources.overview:null,mainTime:main?.time??null,overviewTime:overview?.time??null});
+      await archive.add(observations);
     });capturing=task.catch(()=>{});return task;
   }
   function sourceStatus(slot) {
     const source=resolved(current)[slot],state=activeWorkers[slot].status(),provider=providers[source].status?.();
     const frame=state.frame;
     const error=provider?.error||state.error;
-    return {source,time:frame?.time??null,fetching:state.fetching,error,
+    return {source,time:frame?.time??null,checkedAt:state.checkedAt,nextCheckAt:nextRefreshAt(),nextUpdate:state.nextUpdate,fetching:state.fetching,error,
       state:error?'warning':!frame?'waiting':frame.time<now()/1000-1800?'stale':'ready'};
   }
   return {
@@ -96,7 +87,7 @@ export async function createRadarSources(directory, providers, {
       try {
         // A view publishes independently as soon as its own acquisition finishes.
         await Promise.all(Object.entries(activeWorkers).map(async([,worker])=>{await worker.refresh();await capture();}));
-        await capture(true);
+        await capture();
         storageError=null;await cleanupCaptured(directory,now);
       } catch {storageError='Could not save radar history.';onEvent('storage-error');}
       finally {busy=false;tiles.clear();}
@@ -110,15 +101,15 @@ export async function createRadarSources(directory, providers, {
         await Promise.all(Object.values(candidate).map(w=>w.refresh()));
         if(Object.values(candidate).some(w=>!w.status().frame||w.status().error))return {status:503,error:'The selected sources are not ready. Your previous sources remain active; try again shortly.'};
         await commit();current={...next};activeWorkers=candidate;
-        try{await capture(true);}catch{storageError='Could not save radar history.';onEvent('storage-error');}
+        try{await capture();}catch{storageError='Could not save radar history.';onEvent('storage-error');}
         return {status:200};
       }catch{return {status:503,error:'Could not apply radar sources. Check Status and try again.'};}
       finally{changing=false;tiles.clear();}
     },
-    status() {
-      const all=archive.frames(),end=all.at(-1)?.time??0,frames=all.filter(f=>f.time>=end-7200).slice(-13);
+    status(hours=2) {
+      const live=archive.live(hours),frames=live.frames;
       const sources={main:sourceStatus('main'),overview:sourceStatus('overview')};
-      return {frames,frame:frames.at(-1)??null,sources,error:storageError||Object.values(sources).find(s=>s.error)?.error||null,
+      return {...live,frames,frame:frames.at(-1)??null,sources,error:storageError||Object.values(sources).find(s=>s.error)?.error||null,
         fetching:busy||changing,progress:null,view:views.view};
     },
   };

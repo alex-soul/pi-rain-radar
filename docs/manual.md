@@ -169,4 +169,6 @@ Background collection continues. Status describes current source health. **Curre
 
 ## About
 
+For optional phone/laptop installation and private remote access, see [PWA and HTTPS setup](pwa.md). Normal browser and kiosk use do not require it.
+
 The About tab identifies the app version and links to the project and provider information. Use this version when reporting a problem. See [upgrades](upgrading.md) and [troubleshooting/PIN recovery](troubleshooting.md).

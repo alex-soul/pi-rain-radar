@@ -31,6 +31,10 @@ Use the agreed [playback terminology](docs/playback-conventions.md): Live and Ar
 
 Preserve complete-frame publication and last-good cache recovery. Keep provider calls in the backend and respect request pacing. Commit regenerated map assets when geography changes; check their alignment with radar overlays. Never include credentials, private deployment settings or runtime caches in contributions.
 
+All per-display settings must be operable by touch without a keyboard on the Pi. Use tap-friendly pickers and toggles, and make help accessible by tapping rather than hover alone. Shared installation settings, such as API keys, may require keyboard entry because they can be configured remotely from another device. This is the standard for new and revised local controls; the existing gust-cache numeric field is tracked for correction in the next release.
+
+At the reference 1280 × 720 landscape display, ordinary Settings views should fit without scrolling while preserving the established control heights and touch usability. Expanded optional detail, such as API Estimates, may require scrolling. This fit requirement applies only to the reference display; other sizes may clip or scroll and do not require a universal no-scroll redesign. The Readings layout correction is tracked for the next release.
+
 Keep the browser image-based and lightweight. Before adding sustained rendering, substantial memory/network use or new infrastructure, explain the cost and consider a bounded, reversible experiment. Laptop results do not establish performance on a Raspberry Pi with 2 GB RAM. Prefer event-driven UI changes and shared backend responses over extra polling or browser-side map processing.
 
 Radar coverage/no-data presentation and sustained Pi resource/recovery validation remain gaps. See [validation](docs/validation.md) for the tested baseline and [design](docs/design.md) for deferred ideas. Contributions are made under the project MIT licence. Preserve applicable third-party notices.

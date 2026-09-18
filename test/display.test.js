@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const formatSource = (await readFile(new URL('../public/weather-format.js', import.meta.url), 'utf8')).replaceAll('export ', '');
+const floatingSource = (await readFile(new URL('../public/floating-widget.js', import.meta.url), 'utf8')).replace(/^import[^\n]+\n/,'').replace('export function','function');
 const source = formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
 test('display preferences suspend idle hiding during interaction and dialogs, and recover on tap', () => {
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
@@ -26,8 +27,8 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   editable=false;node('gust-cache-minutes').value='120';node('gust-cache-minutes').handlers.change();
   assert.equal(node('gust-cache-minutes').value,90);assert.equal(saved.gustCacheMinutes,90);editable=true;
   let invalid=0;node('gust-cache-minutes').reportValidity=()=>invalid++;
-  for(const value of ['', '0', '1.5', '-1', '1441']) {node('gust-cache-minutes').value=value;node('gust-cache-minutes').handlers.change();}
-  assert.equal(invalid,5);assert.equal(saved.gustCacheMinutes,90);
+  for(const value of ['1', '1.5', '-1', '1441']) {node('gust-cache-minutes').value=value;node('gust-cache-minutes').handlers.change();}
+  assert.equal(invalid,4);assert.equal(saved.gustCacheMinutes,90);
 
   events.click();assert.equal(node('settings-toggle').hidden,false);timer();assert.equal(node('settings-toggle').hidden,true);
   assert.equal(classes.has('footer-hidden'),false);
@@ -71,10 +72,10 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
 
 for (const widget of ['overview', 'rain-forecast']) {
   const widgetSource = await readFile(new URL(`../public/${widget}.js`, import.meta.url), 'utf8');
-  test(`${widget} restores low saved positions with auto-hide, but respects a permanent footer`, () => {
+  test(`${widget} retains low saved positions regardless of dock auto-hide`, () => {
     for (const autoHide of [true, false]) {
       const nodes = {}, events = {};
-      const node = id => nodes[id] ??= {style:{}, offsetWidth:200, offsetHeight:170, setAttribute(){}, addEventListener(){}};
+      const node = id => nodes[id] ??= {dataset:{},style:{}, offsetWidth:200, offsetHeight:170, setAttribute(){}, addEventListener(){}};
       const context = vm.createContext({
         document:{getElementById:node, querySelector:()=>({getBoundingClientRect:()=>({top:644})})},
         window:{addEventListener:(event,fn)=>events[event]=fn}, innerWidth:1280, innerHeight:720,
@@ -82,27 +83,29 @@ for (const widget of ['overview', 'rain-forecast']) {
         ResizeObserver:class {observe(){}},
       });
       vm.runInContext(source.replaceAll('export function','function'),context);
+      if(widget==='rain-forecast')vm.runInContext(floatingSource,context);
       vm.runInContext(widgetSource.replace(/^import[^\n]+\n/,''),context);
-      assert.equal(node(widget).style.top, autoHide?'530px':'466px');
+      assert.equal(node(widget).style.top, '530px');
       events.resize();
-      assert.equal(node(widget).style.top, autoHide?'530px':'466px');
+      assert.equal(node(widget).style.top, '530px');
       events['radar-display-change']();
-      assert.equal(node(widget).style.top, autoHide?'530px':'466px');
+      assert.equal(node(widget).style.top, '530px');
     }
   });
 }
 
 test('last interacted widget comes forward without moving either widget', () => {
-  const nodes = Object.fromEntries(['overview','rain-forecast'].map(id=>[id,{
+  const nodes = Object.fromEntries(['overview','rain-forecast','stats'].map(id=>[id,{
     front:false, handlers:{}, style:{left:'20px',top:'530px'},
     classList:{toggle(key,value){nodes[id].front=value;}},
     addEventListener(key,fn){this.handlers[key]=fn;},
   }]));
-  vm.runInNewContext(source.replaceAll('export function','function')+"\nsetupWidgetLayer(document.getElementById('overview'));setupWidgetLayer(document.getElementById('rain-forecast'));",{
+  vm.runInNewContext(source.replaceAll('export function','function')+"\nsetupWidgetLayer(document.getElementById('overview'));setupWidgetLayer(document.getElementById('rain-forecast'));setupWidgetLayer(document.getElementById('stats'));",{
     document:{getElementById:id=>nodes[id]}, localStorage:{getItem:()=>null},
   });
-  for(const [id,event] of [['overview','pointerdown'],['rain-forecast','click'],['overview','focusin']]) {
+  for(const [id,event] of [['overview','pointerdown'],['rain-forecast','click'],['stats','click'],['overview','focusin']]) {
     nodes[id].handlers[event]();
+    assert.equal(nodes.stats.front,id==='stats');
     assert.equal(nodes.overview.front,id==='overview');
     assert.equal(nodes['rain-forecast'].front,id==='rain-forecast');
     for(const node of Object.values(nodes)) assert.deepEqual(node.style,{left:'20px',top:'530px'});
@@ -112,7 +115,7 @@ test('last interacted widget comes forward without moving either widget', () => 
 for (const widget of ['overview', 'rain-forecast']) {
   test(`${widget} surface drag ignores taps and resize controls`, async () => {
     const nodes = {};
-    const node = id => nodes[id] ??= {style:{}, handlers:{}, offsetWidth:300, offsetHeight:170,
+    const node = id => nodes[id] ??= {dataset:{},style:{}, handlers:{}, offsetWidth:300, offsetHeight:170,
       setAttribute(){}, focus(){}, setPointerCapture(){}, getBoundingClientRect:()=>({left:20,top:100}),
       addEventListener(k,fn){this.handlers[k]=fn;}};
     const context = vm.createContext({document:{getElementById:node,querySelector:()=>({})},
@@ -121,6 +124,7 @@ for (const widget of ['overview', 'rain-forecast']) {
       localStorage:{getItem:()=>JSON.stringify({visible:true,x:20,y:100,width:300,height:170}),setItem(){}},
     });
     const code = await readFile(new URL(`../public/${widget}.js`, import.meta.url),'utf8');
+    if(widget==='rain-forecast')vm.runInContext(floatingSource,context);
     vm.runInContext(code.replace(/^import[^\n]+\n/,''),context);
     const panel=node(widget), target={closest:()=>null};
     const down={button:0,isPrimary:true,pointerId:1,clientX:100,clientY:150,target};
@@ -139,7 +143,7 @@ for (const widget of ['overview', 'rain-forecast']) {
 }
 
 test('gust display lifetime restores valid preferences and defaults invalid values to 60 minutes',()=>{
-  for(const [value,expected] of [[undefined,60],[false,60],[0,60],[-1,60],['90',60],[1.5,60],[1441,60],[1,1],[90,90],[1440,1440]]) {
+  for(const [value,expected] of [[undefined,60],[false,60],[0,0],[-1,60],['90',60],[1.5,60],[1441,180],[1,15],[90,90],[1440,180],[75,60],[38,45],[120,120],[180,180]]) {
     const context=vm.createContext({localStorage:{getItem:()=>JSON.stringify({gustCacheMinutes:value})}});
     vm.runInContext(source.replaceAll('export function','function'),context);
     assert.equal(context.gustCacheMinutes(),expected);
@@ -172,14 +176,16 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   const list={get children(){return children;},append(row){children=children.filter(x=>x!==row);children.push(row);},insertBefore(row,before){children=children.filter(x=>x!==row);children.splice(children.indexOf(before),0,row);}};
   const rows=ids.map(id=>{
     const handle={handlers:{},addEventListener(name,fn){this.handlers[name]=fn;},setPointerCapture(){},focus(){}};
-    const row={dataset:{readingRow:id},handle,classList:{add(){},remove(){}},querySelector:()=>handle,getBoundingClientRect:()=>({top:children.indexOf(row)*60,bottom:children.indexOf(row)*60+54})};return row;
+    const row={dataset:{readingRow:id},handle,classList:{add(){},remove(){}},querySelector:()=>handle,getBoundingClientRect:()=>({left:Math.floor(children.indexOf(row)/5)*320,right:Math.floor(children.indexOf(row)/5)*320+300,top:(children.indexOf(row)%5)*60,bottom:(children.indexOf(row)%5)*60+54})};return row;
   });
   children=[...rows];
   const c=vm.createContext({document:{getElementById:id=>id==='reading-list'?list:{}},window:{dispatchEvent(){}},Event:class{},localStorage:{getItem:()=>null,setItem:(_,value)=>{saved=JSON.parse(value);writes++;}}});
   vm.runInContext(source.replaceAll('export function','function'),c);
   const cancel=c.setupReadingEditor(()=>editable), handle=rows[0].handle;
-  handle.handlers.pointerdown({button:0,isPrimary:true,pointerId:1});handle.handlers.pointermove({pointerId:1,clientY:90});
-  assert.equal(children[1],rows[0]);cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
+  handle.handlers.pointerdown({button:0,isPrimary:true,pointerId:1});handle.handlers.pointermove({pointerId:1,clientX:100,clientY:90});
+  assert.equal(children[1],rows[0]);
+  handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
+  cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
   assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv']);
   assert.deepEqual(saved.readings,['temperature','feels','wind','gust']);

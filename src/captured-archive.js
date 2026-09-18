@@ -60,7 +60,13 @@ export async function cleanupCaptured(directory, now = Date.now) {
   const files=await readdir(directory),keep=new Set();
   for(const file of files.filter(f=>/^captured-[a-f0-9]{12}\.json$/.test(f))) {
     const entries=JSON.parse(await readFile(join(directory,file),'utf8'));
-    for(const frame of entries)if(frame.time>=cutoff)for(const url of [frame.url,frame.overviewUrl])if(url&&framePath.test(url))keep.add(url.slice('/frames/'.length));
+    // Original capture evidence is retained for migration rollback, including uncertain timestamps.
+    for(const frame of entries)for(const url of [frame.url,frame.overviewUrl])if(url&&framePath.test(url))keep.add(url.slice('/frames/'.length));
+  }
+  for(const file of files.filter(f=>/^observations-[a-f0-9]{12}\.json$/.test(f))) {
+    const saved=JSON.parse(await readFile(join(directory,file),'utf8'));
+    if(saved.version!==1||!Array.isArray(saved.observations))throw new Error('Invalid observation index; cleanup stopped.');
+    for(const frame of saved.observations)if(frame.time>=cutoff&&framePath.test(frame.url))keep.add(frame.url.slice('/frames/'.length));
   }
   for(const file of files)if(/^\d+-[a-f0-9]{12}\.png$/.test(file)&&Number(file.split('-')[0])<cutoff&&!keep.has(file))await unlink(join(directory,file));
   for(const file of files)if(file.endsWith('.tmp')&&now()-(await stat(join(directory,file))).mtimeMs>3600000)await unlink(join(directory,file));

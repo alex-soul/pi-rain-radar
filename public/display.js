@@ -1,10 +1,16 @@
 import { defaultReadings, readingNames, windUnits, playbackSpeeds, weatherOptions } from './weather-format.js';
+const gustChoices = [0, 15, 30, 45, 60, 90, 120, 180];
+function normalizeGust(value) {
+  if (value === 0) return 0;
+  if (!Number.isInteger(value) || value < 1) return 60;
+  return gustChoices.slice(1).reduce((best, pick) => Math.abs(pick-value) < Math.abs(best-value) ? pick : best, 15);
+}
 const preferences = { showScale: true, autoHide: false, autoHideWeather: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2 };
 preferences.readingOrder = Object.keys(readingNames);
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));
   for (const key of ['showScale', 'autoHide', 'autoHideWeather']) if (typeof saved?.[key] === 'boolean') preferences[key] = saved[key];
-  if (Number.isInteger(saved?.gustCacheMinutes) && saved.gustCacheMinutes >= 1 && saved.gustCacheMinutes <= 1440) preferences.gustCacheMinutes = saved.gustCacheMinutes;
+  preferences.gustCacheMinutes = normalizeGust(saved?.gustCacheMinutes);
   if (['C', 'F'].includes(saved?.temperatureUnit)) preferences.temperatureUnit = saved.temperatureUnit;
   for (const [key, values] of Object.entries(weatherOptions)) if (values.includes(saved?.[key])) preferences[key] = saved[key];
   if (Object.hasOwn(windUnits, saved?.windUnit)) preferences.windUnit = saved.windUnit;
@@ -53,7 +59,7 @@ export function setupReadingEditor(canEdit) {
       if (drag?.pointer !== event.pointerId || !canEdit()) return;
       const other = [...list.children].find(item => {
         const rect = item.getBoundingClientRect();
-        return item !== row && event.clientY >= rect.top && event.clientY <= rect.bottom;
+        return item !== row && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
       });
       if (!other) return;
       const from = preferences.readingOrder.indexOf(id), to = preferences.readingOrder.indexOf(other.dataset.readingRow);
@@ -73,14 +79,14 @@ export function setupReadingEditor(canEdit) {
 
 let footerHidden = false;
 
-// Auto-hide reserves no permanent footer space, even while the footer is visible.
+// Widgets use the whole viewport regardless of dock visibility.
 export function widgetBottom() {
-  return preferences.autoHide || footerHidden ? innerHeight : document.querySelector('footer').getBoundingClientRect().top;
+  return innerHeight;
 }
 
 export function setupWidgetLayer(panel) {
   const raise = () => {
-    for (const id of ['overview', 'rain-forecast']) {
+    for (const id of ['overview', 'rain-forecast', 'stats']) {
       const widget = document.getElementById(id);
       widget.classList.toggle('widget-front', widget === panel);
     }
@@ -199,7 +205,7 @@ export function setupDisplaySettings(canEdit) {
   gustMinutes.addEventListener('change', () => {
     if (!canEdit()) { gustMinutes.value = preferences.gustCacheMinutes; return; }
     const value = Number(gustMinutes.value);
-    if (!Number.isInteger(value) || value < 1 || value > 1440) { gustMinutes.reportValidity(); return; }
+    if (gustMinutes.value === '' || !gustChoices.includes(value)) { gustMinutes.reportValidity(); return; }
     preferences.gustCacheMinutes = value;
     try { localStorage.setItem('radar-display', JSON.stringify(preferences)); } catch { /* Session-only fallback. */ }
     window.dispatchEvent(new Event('radar-gust-cache-change'));

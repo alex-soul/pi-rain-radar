@@ -1,6 +1,8 @@
+import { updateStats } from "./stats.js";
 import { formatTime } from './time.js';
 import { paintWeather, weatherDescription } from './weather.js';
 import { playbackSpeed, playbackHours } from './display.js';
+import { mapObservation, playbackState, frameProvider, windowProviders } from './playback.js';
 import { createFrameLoader } from './frame-loader.js';
 import { dockOutline } from './weather-format.js';
 const $ = (id) => document.getElementById(id);
@@ -10,6 +12,7 @@ const mapIdentity = document.querySelector('meta[name="map-id"]').content;
 const appVersion = document.querySelector('meta[name="app-version"]').content;
 function paintThemeToggle() {
   const dark = document.documentElement.dataset.theme === "dark";
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#142623' : '#edf4ee');
   $("theme-toggle").textContent = dark ? "☀" : "☾";
   $("theme-toggle").setAttribute(
     "aria-label",
@@ -48,6 +51,7 @@ weatherDock.addEventListener("click", () => {
   setWeatherExpanded(expanded);
   try { localStorage.setItem("radar-weather-expanded", String(expanded)); } catch { /* Optional preference. */ }
 });
+let statsReceivedAt = null;
 let historyWindow = null, historyLoading = false, returningLive = false, generation = 0;
 let historyTimer;
 let displayed = null,
@@ -58,6 +62,8 @@ let sequence = [],
   index = 0,
   playing = true;
 let sequenceHours = 2, sequenceEnd = null, liveRequestKey = '';
+let archiveHours = null, providerOverlay = false, renderRevision = 0;
+let serverClock = null, archiveRevision = null;
 const frameLoader = createFrameLoader();
 const format = (time, options) => formatTime(time, options, timeZone);
 const clock = (time) => format(time, { hour: "2-digit", minute: "2-digit" });
@@ -86,17 +92,22 @@ paintCurrentTime();
 setInterval(paintCurrentTime, 1000);
 document.addEventListener("visibilitychange", paintCurrentTime);
 // Fixed ten-minute slots; frame arrays still contain only available images.
-function timelineWindow(frames, end = frames.at(-1)?.time, hours = 2) {
+function timelineWindow(frames, end = frames.at(-1)?.time ?? Math.floor(Date.now()/600000)*600, hours = 2) {
   const steps = hours * 6, start = end - hours * 3600;
-  const occupied = new Set(frames.map(frame => Math.round((frame.time - start) / 600)));
-  const missing = Array.from({ length: steps + 1 }, (_, slot) => slot).filter(slot => !occupied.has(slot));
-  const stops = ['transparent 0%'];
-  for (const slot of missing) {
-    const left = Math.max(0, (slot - 0.5) / steps * 100), right = Math.min(100, (slot + 0.5) / steps * 100);
-    stops.push(`transparent ${left}%`, `var(--timeline-gap) ${left}%`, `var(--timeline-gap) ${right}%`, `transparent ${right}%`);
+  function track(key) {
+    const occupied = new Set(frames.filter(f => f[key]).map(f => Math.round((f.time-start)/600)));
+    const role=key==='url'?'main':'overview';
+    const missing = frames.coverage ? frames.coverage.filter(c=>!c[role]).map(c=>(c.time-start)/600) : Array.from({length:steps+1},(_,i)=>i).filter(i=>!occupied.has(i));
+    const stops = ['transparent 0%'];
+    for (const slot of missing) {
+      const left=Math.max(0,(slot-.5)/steps*100),right=Math.min(100,(slot+.5)/steps*100);
+      stops.push(`transparent ${left}%`, `var(--timeline-gap) ${left}%`, `var(--timeline-gap) ${right}%`, `transparent ${right}%`);
+    }
+    stops.push('transparent 100%');
+    return {missing,gradient:`linear-gradient(to right, ${stops.join(', ')})`};
   }
-  stops.push('transparent 100%');
-  return { start, end, steps, missing, gradient: `linear-gradient(to right, ${stops.join(', ')})` };
+  const main=track('url'),overview=track('overviewUrl');
+  return {start,end,steps,main,overview,missing:[...new Set([...main.missing,...overview.missing])].sort((a,b)=>a-b),gradient:main.gradient};
 }
 function nearestTimelineFrame(frames, start, slot) {
   const time = start + slot * 600;
@@ -104,14 +115,15 @@ function nearestTimelineFrame(frames, start, slot) {
 }
 let timelineFrames, timelineEnd, timelineHours, timelineModel;
 function paintTimeline() {
-  const end = historyWindow?.end ?? sequenceEnd ?? sequence.at(-1).time;
+  const end = historyWindow?.end ?? sequenceEnd ?? sequence.at(-1)?.time ?? Math.floor(Date.now()/600000)*600;
   const hours = sequenceHours;
   if (timelineFrames !== sequence || timelineEnd !== end || timelineHours !== hours) {
     timelineFrames = sequence; timelineEnd = end; timelineHours = hours;
     timelineModel = timelineWindow(sequence, end, hours);
-    $('timeline').style.setProperty('--timeline-gaps', timelineModel.gradient);
+    $('timeline').style.setProperty('--timeline-main-gaps', timelineModel.main.gradient);
+    $('timeline').style.setProperty('--timeline-overview-gaps', timelineModel.overview.gradient);
   }
-  const slot = Math.max(0, Math.min(timelineModel.steps, Math.round((displayed.time - timelineModel.start) / 600)));
+  const slot = Math.max(0, Math.min(timelineModel.steps, ((displayed?.time ?? timelineModel.start) - timelineModel.start) / 600));
   $('history-start').textContent = clock(timelineModel.start);
   $('history-end').textContent = clock(end);
   $('timeline').max = timelineModel.steps;
@@ -132,51 +144,76 @@ function paintRadarHandle(health, ready = false) {
   }
 }
 function paintStatus() {
+  updateStats({status, reachable:serverReachable, receivedAt:statsReceivedAt, selected:historyWindow, hours:playbackHours(), loading:historyLoading});
   paintWeather(serverReachable ? status?.weather : null);
-  if (!displayed) { paintRadarHandle(!serverReachable ? 'Appliance unreachable' : status?.error ? 'Update failed — check Log' : 'Waiting for data'); return; }
+
   // Playback position and acquisition health are separate signals.
-  const latest = sequence.at(-1).time;
+  const latest = sequence.at(-1)?.time ?? Math.floor(Date.now()/600000)*600;
   const newestAvailable = Math.max(latest, status?.frame?.time || 0);
   const minutes = Math.max(
     0,
     Math.floor((Date.now() / 1000 - newestAvailable) / 60),
   );
-  const stale = minutes >= 30 || !serverReachable || !!status?.error || Object.values(status?.sources??{}).some(source=>source.state!=='ready');
+  const stale = !sequence.length || minutes >= 30 || !serverReachable || !!status?.error || Object.values(status?.sources??{}).some(source=>source.state!=='ready');
   document.body.classList.toggle('stale', stale);
   document.body.classList.toggle('ready', !stale);
   const health = !serverReachable ? 'Appliance unreachable' : status?.error ? 'Update failed — check Log'
     : stale ? 'Data is stale — waiting for an update' : 'Connected';
   paintRadarHandle(health, !stale);
-  $("time").textContent = clock(displayed.time);
-  $("date").textContent = `${format(displayed.time, { weekday: "short" })}, ${format(displayed.time, { day: "numeric" })} ${format(displayed.time, { month: "short" }).slice(0, 3)}`;
+  $("time").textContent = displayed ? clock(displayed.time) : '—';
+  $("date").textContent = displayed ? `${format(displayed.time, { weekday: "short" })}, ${format(displayed.time, { day: "numeric" })} ${format(displayed.time, { month: "short" }).slice(0, 3)}` : '';
   paintTimeline();
   $("timeline").disabled = sequence.length < 2;
   $("timeline").setAttribute(
     "aria-valuetext",
-    `${clock(displayed.time)}, frame ${index + 1} of ${sequence.length}`,
+    `${displayed ? clock(displayed.time) : "No captures"}, frame ${displayed ? index + 1 : 0} of ${sequence.length}`,
   );
-  $("play").disabled = sequence.length < 2;
-  $("play").dataset.paused = String(!playing);
+  const state = playbackState(playing, sequence.length, !!historyWindow);
+  $("play").disabled = !!historyWindow && sequence.length < 2;
+  $("play").dataset.state = state;
+  $("play").dataset.paused = String(state !== "playing");
   $("play").setAttribute(
     "aria-label",
-    playing ? "Pause radar animation" : "Play radar animation",
+    state === "waiting" ? "Automatically paused; waiting for captures. Click to pause manually" : state === "playing" ? "Pause playback" : "Play playback",
   );
-  $("frame-position").textContent = String(index + 1);
+  $("frame-position").textContent = String(displayed ? index + 1 : 0);
   $("frame-total").textContent = String(sequence.length);
   const expected = sequenceHours * 6 + 1;
-  $("frame-total").classList.toggle("incomplete", sequence.length < expected);
-  $("frame-count").setAttribute("aria-label", `Frame ${index + 1} of ${sequence.length}. Expected ${expected} frames in a complete ${sequenceHours}-hour window.`);
+  $("frame-total").classList.toggle("incomplete", sequence.complete === false || timelineModel.missing.length > 0);
+  $("frame-count").setAttribute("aria-label", `Frame ${displayed ? index + 1 : 0} of ${sequence.length}. Expected ${expected} frames in a complete ${sequenceHours}-hour window.`);
+}
+function paintProviderLabels(frame) {
+  for (const [i,id] of ['main-provider','overview-provider'].entries()) {
+    const label=$(id),source=frameProvider(frame,i===0?'main':'overview');
+    label.hidden=!(historyWindow && providerOverlay && source);
+    label.textContent=source === 'rainbow' ? 'Rainbow' : source === 'rainviewer' ? 'RainViewer' : '';
+  }
 }
 function showFrame() {
-  displayed = sequence[index];
-  if (!displayed) return;
-  for(const [id,url] of [['radar',displayed.url],['overview-radar',displayed.overviewUrl]]){
-    $(id).style.visibility=url?'visible':'hidden';if(url)$(id).setAttribute('href',url);else $(id).removeAttribute('href');
+  displayed = sequence[index] ?? null;
+  const epoch=++renderRevision;
+  const observations=['main','overview'].map(role=>mapObservation(sequence,index,role,!!historyWindow));
+  paintProviderLabels(displayed);
+  for (const [i,id] of ['radar','overview-radar'].entries()) {
+    const node=$(id),observation=observations[i];
+    if (!observation) { node.style.visibility='hidden'; node.removeAttribute('href'); continue; }
+    // Never leave a different timestamp visible while its replacement is loading.
+    if(node.getAttribute('href')!==observation.url)node.style.visibility='hidden';
+    void frameLoader.prepare(observation.url).then(image=>{
+      if(epoch!==renderRevision)return;
+      node.style.visibility=image?'visible':'hidden';
+      if(image)node.setAttribute('href',observation.url);else node.removeAttribute('href');
+      node.dataset.loading=image?'ready':'failed';
+    });
   }
-  const sources=new Set([displayed.url?(displayed.source??'rainviewer'):null,displayed.overviewUrl?(displayed.overviewSource??'rainviewer'):null].filter(Boolean));
+  for(let offset=1;offset<=2;offset++) {
+    const ahead=sequence[(index+offset)%sequence.length];
+    if(ahead)for(const url of [ahead.url,ahead.overviewUrl])if(url)void frameLoader.prepare(url,false);
+  }
+  const sources=sequence.providers??windowProviders(sequence);
   const credit=$('radar-credit'),key=[...sources].sort().join(',');
   if(credit.dataset.sources!==key){
-    const providers=sources.size>1?[['RainViewer','https://www.rainviewer.com/'],['Rainbow','https://rainbow.ai/']]:sources.has('rainbow')?[['Rainbow','https://rainbow.ai/']]:[['RainViewer','https://www.rainviewer.com/']];
+    const providers=[['rainviewer','RainViewer','https://www.rainviewer.com/'],['rainbow','Rainbow','https://rainbow.ai/']].filter(([source])=>sources.has(source)).map(([,name,url])=>[name,url]);
     const nodes=[];
     for(const [name,url]of providers){
       if(nodes.length)nodes.push(document.createTextNode(' & '));
@@ -189,6 +226,7 @@ function showFrame() {
 }
 function adopt(next, preservePosition = false) {
   const previousTime = displayed?.time;
+  next.providers=windowProviders(next);
   sequence = next;
   sequenceHours = next.windowHours ?? 2;
   sequenceEnd = next.windowEnd ?? next.at(-1)?.time;
@@ -202,7 +240,7 @@ function schedulePlayback() {
 }
 window.addEventListener('radar-playback-speed', schedulePlayback);
 function tick() {
-  if (playing && sequence.length) {
+  if (playing && sequence.length >= 2) {
     if (index === sequence.length - 1 && pending) {
       adopt(pending);
       pending = null;
@@ -215,8 +253,8 @@ function tick() {
 }
 $("play").addEventListener("click", () => {
   playing = !playing;
-  if (playing && pending) {
-    adopt(pending);
+  if (pending) {
+    adopt(pending, true);
     pending = null;
   }
   paintStatus();
@@ -245,7 +283,7 @@ function paintMapUpdate(update) {
   const error = update?.error;
   mapUpdateVisible = !!update?.applying || !!(error && error !== dismissedMapError);
   $('map-update-dismiss').hidden = !mapUpdateVisible || !!update?.applying;
-  if (!mapUpdateVisible) { $('empty').hidden = !!displayed; return; }
+  if (!mapUpdateVisible) { $('empty').hidden = true; return; }
   $('empty').hidden = false;
   $('empty').querySelector('h2').textContent = update.applying
     ? (update.progress ? 'Preparing radar history' : 'Preparing map') : 'Map update unavailable';
@@ -263,25 +301,35 @@ window.addEventListener('map-update-started', () => {
   void poll();
 });
 window.addEventListener('radar-playback-window', () => {
-  if (historyWindow || historyLoading) {
-    void loadHistory(historyLoading ? historyTargetEnd : historyWindow.end, !!historyWindow);
-    return;
-  }
+  if (historyWindow || historyLoading) return; // Archive override lasts for this visit.
   generation++; frameLoader.cancel(); pending = null; liveRequestKey = '';
-  $('playback-window-note').textContent = `Loading ${playbackHours()} hours…`;
   void poll();
 });
+function attachWindow(frames, result, hours) {
+  frames.windowHours=hours; frames.windowEnd=result.end; frames.complete=result.complete;frames.coverage=result.coverage;frames.borrowFrames=result.borrowFrames??[];
+  return frames;
+}
+function ageLiveWindow() {
+  if(historyWindow || historyLoading || !serverClock)return;
+  const now=serverClock.time+(performance.now()-serverClock.receivedAt);
+  const end=Math.max(Math.floor(now/600000)*600,sequenceEnd??0),start=end-sequenceHours*3600;
+  if(end===sequenceEnd)return;
+  const borrowFrames=[...(sequence.borrowFrames??[]),...sequence].filter(f=>f.time>=start-1800&&f.time<start);
+  const next=attachWindow(sequence.filter(f=>f.time>=start&&f.time<=end),{end,complete:false,borrowFrames},sequenceHours);
+  pending=null;adopt(next,true);
+}
 let pollRunning = false;
 async function poll() {
   if (pollRunning) return;
   pollRunning = true;
   const epoch = generation;
   try {
-    const response = await fetch("/api/status", {
+    const response = await fetch(`/api/status?hours=${playbackHours()}`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) throw new Error("Status unavailable");
     status = await response.json();
+    statsReceivedAt = Date.now();
     if (status.appVersion && status.appVersion !== appVersion) {
       if (!$('settings-dialog').open) location.reload();
       return;
@@ -293,41 +341,26 @@ async function poll() {
       $('map-apply').disabled=!!status.mapUpdate.busy;
     }
     serverReachable = true;
-    let offered = status.frames || (status.frame ? [status.frame] : []);
-    const signature = (frames) => frames.map((frame) => `${frame.url}:${frame.overviewUrl}`).join("|");
-    const hours = playbackHours(), end = offered.at(-1)?.time;
-    const requestKey = `${mapIdentity}:${hours}:${status.archiveRevision}:${signature(offered)}`;
-    if (
-      !historyWindow && !historyLoading && epoch === generation && offered.length &&
-      (returningLive || requestKey !== liveRequestKey)
-    ) {
-      $('playback-window-note').textContent = `Loading ${hours} hours…`;
-      if (hours !== 2) {
-        const archive = await fetch(`/api/archive?map=${mapIdentity}&end=${end}&hours=${hours}`, {signal:AbortSignal.timeout(10000)});
-        if (!archive.ok) throw new Error('Stored radar unavailable');
-        const result = await archive.json();
-        if (epoch !== generation || historyWindow || historyLoading) return;
-        offered = result.frames;
-      }
-      const next = await decodeFrames(offered, epoch);
-      if (epoch !== generation || historyWindow || historyLoading) return;
-      if (!next?.length) throw new Error('No readable radar frames');
-      next.windowHours = hours; next.windowEnd = end;
-      liveRequestKey = next.length === offered.length ? requestKey : '';
-      $('playback-window-note').textContent = '';
-      if (returningLive || !sequence.length || sequence.length === 1 || sequenceHours !== hours || !playing) {
-        adopt(next, !returningLive && !!sequence.length); pending = null; returningLive = false; paintHistory();
-      }
-      else pending = next;
+    serverClock={time:status.serverTime??Date.now(),receivedAt:performance.now()};
+    if(historyWindow && !historyLoading && archiveRevision!==status.archiveRevision) {
+      archiveRevision=status.archiveRevision;
+      void loadHistory(historyWindow.end,true);
     }
-    if (returningLive && offered.length && !historyWindow && !historyLoading && epoch === generation) { returningLive = false; paintHistory(); }
-    if (!displayed && !mapUpdateVisible) {
-      $("empty").querySelector("h2").textContent = status.error
-        ? "No radar data available"
-        : "Preparing radar history";
-      $("empty").querySelector("p").textContent = status.progress
-        ? `Caching complete frames · ${status.progress.completed} of ${status.progress.total}`
-        : "The map is ready. We will retry automatically.";
+    const offered=status.frames??[],hours=playbackHours();
+    const requestKey=`${hours}:${status.end}:${status.archiveRevision}:${offered.map(f=>`${f.time}:${f.url}:${f.overviewUrl}`).join('|')}`;
+    if(!historyWindow&&!historyLoading&&epoch===generation&&(returningLive||requestKey!==liveRequestKey)) {
+      const next=await decodeFrames(offered,epoch);
+      if(epoch!==generation||historyWindow||historyLoading||!next)return;
+      attachWindow(next,{end:status.end??offered.at(-1)?.time,complete:status.complete,coverage:status.coverage,borrowFrames:status.borrowFrames},hours);
+      liveRequestKey=requestKey;
+      const previousTimes=new Set(sequence.map(f=>f.time));
+      const additions=next.some(f=>!previousTimes.has(f.time));
+      if(playing&&sequence.length>=2&&next.filter(f=>previousTimes.has(f.time)).length>=2&&sequenceHours===hours&&!returningLive&&additions) {
+        pending=next;
+        adopt(attachWindow(next.filter(f=>previousTimes.has(f.time)),{end:next.windowEnd,complete:next.complete,coverage:next.coverage,borrowFrames:next.borrowFrames},hours),true);
+      } else { adopt(next,!returningLive);pending=null; }
+      returningLive=false;paintHistory();
+      $('playback-window-note').textContent='';
     }
   } catch {
     if (epoch !== generation) return;
@@ -342,6 +375,8 @@ async function poll() {
     }
   } finally {
     pollRunning = false;
+    ageLiveWindow();
+    if(['radar','overview-radar'].some(id=>$(id).dataset.loading==='failed'))showFrame();
     paintStatus();
     if (epoch !== generation && !historyWindow && !historyLoading) void poll();
   }
@@ -369,7 +404,7 @@ try {
 void poll();
 setInterval(() => void poll(), 15000);
 schedulePlayback();
-setInterval(paintStatus, 10000);
+setInterval(() => { ageLiveWindow(); paintStatus(); }, 1000);
 
 function historyLabel(start, end) {
   const date = time => {
@@ -388,8 +423,8 @@ function paintHistory() {
   paintHistoryRing();
   const active = !!historyWindow || returningLive;
   $('history-countdown').toggleAttribute('hidden', !active);
-  $('history-action').setAttribute('aria-label', active ? 'Return to Now' : 'Open radar history');
-  $('history-action').title = returningLive ? 'Returning to Now…' : active ? 'Return to Now' : 'Open radar history';
+  $('history-action').setAttribute('aria-label', active ? 'Return to Live' : 'Open Archive');
+  $('history-action').title = returningLive ? 'Returning to Live…' : active ? 'Return to Live' : 'Open Archive';
   $('history-range').inert = !active;
   $('history-toggle').setAttribute('data-expanded', String(active));
   $('history-selection').setAttribute('aria-hidden', String(!active));
@@ -397,13 +432,17 @@ function paintHistory() {
     const selected = historyLabel(historyWindow.start, historyWindow.end);
     $('history-selection').textContent = selected;
     $('history-selection').dateTime = new Date(historyWindow.end * 1000).toISOString();
-    $('history-range').setAttribute('aria-label', `Choose radar history. Selected window ${selected}`);
+    $('history-range').setAttribute('aria-label', `Choose Archive. Selected window ${selected}`);
   }
 }
 async function returnToNow() {
   generation++;
   frameLoader.cancel(); liveRequestKey = '';
   historyWindow = null;
+  archiveHours=null;providerOverlay=false;archiveRevision=null;
+  $('archive-provider').checked=false;
+  paintProviderLabels(null);
+  sequence=[];sequenceEnd=null;showFrame();
   historyLoading = false;
   pending = null;
   clearTimeout(historyTimer);
@@ -430,6 +469,10 @@ function populateTimes() {
 }
 $('archive-day').addEventListener('change', populateTimes);
 async function openHistoryPicker() {
+  if(!historyWindow&&!historyLoading){archiveHours=playbackHours();providerOverlay=false;}
+  $('archive-hours').value=String(archiveHours??playbackHours());
+  $('archive-hours-value').textContent=`${$('archive-hours').value} h`;
+  $('archive-provider').checked=providerOverlay;
   historyDialog.showModal();
   $('archive-feedback').textContent = 'Loading available history…';
   $('archive-show').disabled = true;
@@ -445,13 +488,21 @@ async function openHistoryPicker() {
     if (selectedEnd) $('archive-time').value = String(selectedEnd);
     $('archive-feedback').textContent = archiveTimes.length ? '' : 'No stored history yet.';
     $('archive-show').disabled = !archiveTimes.length;
-  } catch { $('archive-feedback').textContent = 'History unavailable. Please try again.'; }
+  } catch { $('archive-feedback').textContent = 'Archive unavailable. Please try again.'; }
 }
 $('archive-close').addEventListener('click', () => historyDialog.close());
+$('archive-hours').addEventListener('input',()=>{
+  archiveHours=Number($('archive-hours').value);
+  $('archive-hours-value').textContent=`${archiveHours} h`;
+});
+$('archive-provider').addEventListener('change',()=>{
+  providerOverlay=$('archive-provider').checked;
+  if(historyWindow)showFrame();
+});
 $('archive-show').addEventListener('click', () => loadHistory($('archive-time').value));
 async function loadHistory(end, preserve = false) {
   const epoch = ++generation;
-  const hours = playbackHours();
+  const hours = preserve ? historyWindow.hours : archiveHours ?? playbackHours();
   const deadline = preserve ? historyWindow.deadline : null;
   historyTargetEnd = end;
   frameLoader.cancel();
@@ -467,8 +518,9 @@ async function loadHistory(end, preserve = false) {
     const next = await decodeFrames(window.frames, epoch);
     if (epoch !== generation) return;
     if (!next?.length) throw new Error('No readable history');
-    next.windowHours = hours; next.windowEnd = window.end;
-    historyWindow = { start: window.start, end: window.end, complete: window.complete, deadline: deadline ?? Date.now() + 600000 };
+    attachWindow(next,window,hours);
+    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, deadline: deadline ?? Date.now() + 600000 };
+    archiveHours=hours;archiveRevision=status?.archiveRevision;
     returningLive = false;
     if (!preserve) playing = true;
     adopt(next, preserve);
@@ -477,7 +529,7 @@ async function loadHistory(end, preserve = false) {
     paintHistory();
     historyLoading = false;
     $('playback-window-note').textContent = '';
-    historyDialog.close();
+    if(!preserve)historyDialog.close();
   } catch {
     if (epoch === generation) {
       const message = 'Could not load that window. Your current map is unchanged.';

@@ -2,11 +2,12 @@ const controls = [
   { id: 'clock-toggle', label: 'Clock' },
   { id: 'overview-toggle', label: 'Overview' },
   { id: 'rain-forecast-toggle', label: 'Rain forecast' },
-  { id: 'history-toggle', label: 'History' },
+  { id: 'history-toggle', label: 'Archive' },
   { id: 'theme-toggle', label: 'Light / dark' },
+  { id: 'stats-toggle', label: 'Stats for nerds', visible: false },
 ];
 const key = 'radar-controls';
-let layout = controls.map(({ id }) => ({ id, visible: true }));
+let layout = controls.map(({ id, visible = true }) => ({ id, visible }));
 try {
   const saved = JSON.parse(localStorage.getItem(key));
   if (Array.isArray(saved)) {
@@ -71,7 +72,7 @@ export function setupControlEditor(canEdit) {
         const rows = [...list.children];
         const other = rows.find(r => {
           const rect = r.getBoundingClientRect();
-          return r !== row && event.clientY >= rect.top && event.clientY <= rect.bottom;
+          return r !== row && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
         });
         if (!other) return;
         const from = layout.findIndex(c => c.id === id);

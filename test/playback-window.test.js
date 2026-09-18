@@ -8,10 +8,10 @@ const frames=(end,hours)=>Array.from({length:hours*6+1},(_,i)=>({time:end-(hours
 function harness() {
   let hours=2,end=60000,decodeGate=null;const events={},requests=[],adoptions=[],nodes={};
   const c=vm.createContext({generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
-    sequence:frames(end,2),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,
+    sequence:frames(end,2),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
     playbackHours:()=>hours,mapIdentity:'map',appVersion:'test',AbortSignal,
-    $:id=>nodes[id]??={textContent:''},window:{addEventListener:(name,fn)=>events[name]=fn},frameLoader:{cancel(){}},
-    fetch:async url=>{requests.push(url);return {ok:true,json:async()=>url==='/api/status'?{mapId:'map',frames:frames(end,2)}:{frames:frames(end,hours)}};},
+    $:id=>nodes[id]??={textContent:'',dataset:{}},window:{addEventListener:(name,fn)=>events[name]=fn},frameLoader:{cancel(){}},
+    fetch:async url=>{requests.push(url);return {ok:true,json:async()=>({mapId:'map',end,serverTime:end*1000,frames:frames(end,hours)})};},
     decodeFrames:async offered=>{if(decodeGate)await decodeGate;return offered;},
     adopt(next,preserve){adoptions.push({next,preserve});c.sequence=next;c.sequenceHours=next.windowHours;},
     paintHistory(){},paintStatus(){},paintMapUpdate(){},location:{reload(){throw Error('unexpected reload');}}});
@@ -19,11 +19,11 @@ function harness() {
   return {c,requests,adoptions,nodes,change(value){hours=value;events['radar-playback-window']();},setEnd(value){end=value;},gate(value){decodeGate=value;}};
 }
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
-test('paused duration changes apply immediately and archive requests occur only for changed live windows',async()=>{
+test('paused Live duration changes use status windows without archive requests',async()=>{
   const h=harness();h.change(6);await turn();
   assert.equal(h.c.playing,false);assert.equal(h.adoptions.at(-1).preserve,true);
   assert.equal(h.adoptions.at(-1).next.length,37);
-  await h.c.poll();assert.equal(h.requests.filter(url=>url.startsWith('/api/archive')).length,1);
+  await h.c.poll();assert.equal(h.requests.filter(url=>url.startsWith('/api/archive')).length,0);
   h.setEnd(60600);await h.c.poll();assert.equal(h.adoptions.at(-1).next.at(-1).time,60600);
   h.change(4);await turn();assert.equal(h.adoptions.at(-1).next.length,25);
 });
@@ -32,13 +32,13 @@ test('rapid changes during decode discard the obsolete window and converge on th
   h.change(6);await turn();h.change(4);h.change(2);
   h.gate(null);release();await turn();await turn();
   assert.equal(h.adoptions.length,1);assert.equal(h.adoptions[0].next.windowHours,2);
-  assert.equal(h.c.pending,null);assert.equal(h.requests.filter(url=>url==='/api/status').length,2);
+  assert.equal(h.c.pending,null);assert.equal(h.requests.filter(url=>url.startsWith('/api/status')).length,2);
 });
-test('changing duration during manual History reloads the same endpoint, including an in-flight selection',()=>{
+test('saved Live duration changes leave an active Archive visit alone',()=>{
   const h=harness();const loads=[];h.c.loadHistory=(end,preserve)=>loads.push({end,preserve});
   h.c.historyWindow={end:10000};h.change(6);
   assert.equal(h.requests.length,0);assert.equal(h.adoptions.length,0);
-  assert.deepEqual(loads,[{end:10000,preserve:true}]);
+  assert.deepEqual(loads,[]);
   h.c.historyLoading=true;h.c.historyTargetEnd=20000;h.change(4);
-  assert.deepEqual(loads.at(-1),{end:20000,preserve:true});
+  assert.deepEqual(loads,[]);
 });

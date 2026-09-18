@@ -13,7 +13,7 @@ export const helpText = {
   "9": "The key stays on the appliance; collected data is stored centrally and shared with connected displays.",
   "10": "Hides the weather dock after 15 seconds without interaction. Tap to reveal it, including when screen controls are locked. Applies only to this display.",
   "11": "Hides the radar controls after 15 seconds without interaction. Tap to reveal them, including when screen controls are locked. Applies only to this display.",
-  "12": "Wind gusts are not reported with every update. Keeps the last reported gust visible for this long after its observation time. Older retained readings appear amber; expired readings become a dash.",
+  "12": "Wind gusts are not reported with every update. Keeps the last reported gust visible for this long after its observation time. Older retained readings appear amber; expired readings become a dash. Set to 0 (Off) to disable caching on this display; current gust readings still appear.",
   "13": "Requires a six-digit PIN to open Settings on any connected display. Dashboard controls remain usable unless UI lock is enabled separately.",
   "14": "Applies to temperature, feels-like and dew point on this display. Wind units are chosen separately.",
   "15": "Applies to wind speed and gusts on this display. Temperature units are chosen separately.",

@@ -1,72 +1,59 @@
-// One active sequence and one replaceable request, with at most two images decoding.
-// No second image cache: retain only the caller's current/pending sequence references.
-export function createFrameLoader({ makeImage = () => new Image(), timeoutMs = 15000, sequenceTimeoutMs = 30000 } = {}) {
-  let revision = 0, running = false, queued = null;
-  const cancellations = new Set();
+// URLs/availability belong to the backend. Decoding never changes that metadata.
+// Keep a small LRU of decoded images and at most two active decodes.
+export function createFrameLoader({ makeImage = () => new Image(), timeoutMs = 15000, maxImages = 12 } = {}) {
+  const cache = new Map(), jobs = new Map();
+  let queue = [], active = 0, revision = 0;
+  function trim() {
+    while (cache.size > maxImages) {
+      const key = cache.keys().next().value;
+      cache.get(key).src = ''; cache.delete(key);
+    }
+  }
+  function drain() {
+    while (active < 2 && queue.length) {
+      const job = queue.shift(); active++;
+      const image = makeImage(); let done = false;
+      const finish = success => {
+        if (done) return; done = true; clearTimeout(timer); active--; jobs.delete(job.url);
+        if (success && job.revision === revision) { cache.set(job.url, image); trim(); job.resolve(image); }
+        else { image.src = ''; job.resolve(null); }
+        drain();
+      };
+      job.stop = () => finish(false);
+      const timer = setTimeout(() => finish(false), timeoutMs);
+      image.src = job.url;
+      Promise.resolve().then(() => image.decode()).then(() => finish(true), () => finish(false));
+    }
+  }
   function cancel() {
     revision++;
-    if (queued) { queued.resolve(null); queued = null; }
-    for (const stop of [...cancellations]) stop();
+    const waiting = queue; queue = [];
+    for (const job of waiting) { jobs.delete(job.url); job.resolve(null); }
+    for (const job of [...jobs.values()]) job.stop?.();
   }
-  function decode(url) {
-    return new Promise((resolve, reject) => {
-      const image = makeImage();
-      let timer, settled = false;
-      const finish = (error) => {
-        if (settled) return;
-        settled = true; clearTimeout(timer); cancellations.delete(stop);
-        if (error) { image.src = ''; reject(error); } else resolve(image);
-      };
-      const stop = () => finish(new Error('Image load cancelled'));
-      cancellations.add(stop);
-      timer = setTimeout(() => finish(new Error('Image load timed out')), timeoutMs);
-      image.src = url;
-      Promise.resolve().then(() => image.decode()).then(() => finish(), finish);
-    });
-  }
-  async function drain() {
-    if (running) return;
-    running = true;
-    try {
-      while (queued) {
-        const job = queued; queued = null;
-        let expired = false;
-        const valid = () => job.revision === revision && job.isCurrent();
-        const current = () => !expired && valid();
-        const deadline = setTimeout(() => {
-          expired = true;
-          for (const stop of [...cancellations]) stop();
-        }, sequenceTimeoutMs);
-        const reuse = new Map(job.reusable.map(frame => [`${frame.url}|${frame.overviewUrl}`, frame]));
-        const result = new Array(job.frames.length);
-        let cursor = 0;
-        async function worker() {
-          while (current() && cursor < job.frames.length) {
-            const index = cursor++, frame = job.frames[index];
-            const cached = reuse.get(`${frame.url}|${frame.overviewUrl}`);
-            if (cached) { result[index] = {...cached,...frame}; continue; }
-            try {
-              const image = frame.url ? await decode(frame.url).catch(()=>null) : null;
-              if (!current()) break;
-              const overviewImage = frame.overviewUrl ? await decode(frame.overviewUrl).catch(()=>null) : null;
-              if (current() && (image || overviewImage)) result[index] = { ...frame, url:image?frame.url:null,overviewUrl:overviewImage?frame.overviewUrl:null,image,overviewImage };
-            } catch { /* Leave failed complete pairs as timeline gaps. */ }
-          }
-        }
-        await Promise.all([worker(), worker()]);
-        clearTimeout(deadline);
-        job.resolve(valid() ? result.filter(Boolean) : null);
-      }
-    } finally { running = false; }
+  function prepare(url, priority = true) {
+    if (!url) return Promise.resolve(null);
+    if (cache.has(url)) { const image = cache.get(url); cache.delete(url); cache.set(url, image); return Promise.resolve(image); }
+    if (jobs.has(url)) {
+      const job = jobs.get(url), index = queue.indexOf(job);
+      if (priority && index >= 0) { queue.splice(index, 1); queue.unshift(job); }
+      return job.promise;
+    }
+    let resolve;
+    const promise = new Promise(r => resolve = r), job = { url, revision, resolve, promise };
+    jobs.set(url, job); priority ? queue.unshift(job) : queue.push(job);
+    // Rapid scrubbing discards obsolete queued work before it can grow unbounded.
+    while (queue.length > 8) { const old = queue.pop(); jobs.delete(old.url); old.resolve(null); }
+    drain(); return promise;
   }
   return {
-    cancel,
-    load(frames, reusable = [], isCurrent = () => true) {
+    cancel, prepare,
+    async load(frames, reusable = [], isCurrent = () => true) {
       cancel();
-      return new Promise(resolve => {
-        queued = { frames: frames.slice(-37), reusable, isCurrent, revision, resolve };
-        void drain();
-      });
+      const urls = new Set(frames.flatMap(f => [f.url, f.overviewUrl]).filter(Boolean));
+      for (const [url, image] of cache) if (!urls.has(url)) { image.src = ''; cache.delete(url); }
+      return isCurrent() ? frames.map(f => ({ ...f })) : null;
     },
+    metrics: () => ({ cached: cache.size, active, queued: queue.length }),
   };
 }

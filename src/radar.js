@@ -78,6 +78,8 @@ export async function createRadar(
     if (e.code !== "ENOENT") error = "Cached radar unavailable";
   }
 
+  const observations = new Map(frames.map(frame => [frame.time, frame]));
+
   async function composeImage(frame, view, key) {
     try { return await cachedImage(frame.time, view, key); } catch { /* Compose missing view only. */ }
     const overlays = [];
@@ -140,6 +142,7 @@ export async function createRadar(
     let incomplete = false;
     let previous = [];
     try {
+      checkedAt = new Date(now()).toISOString();
       const available = await provider.getHistory();
       if (
         !Array.isArray(available) ||
@@ -147,7 +150,6 @@ export async function createRadar(
         available.length > 13
       )
         throw new Error("No usable radar history");
-      checkedAt = new Date().toISOString();
       if (frames.length && available.at(-1).time < frames.at(-1).time)
         throw new Error("Provider history is older than cached history");
       const observedAt = now();
@@ -186,6 +188,7 @@ export async function createRadar(
           try { local = await cached(frame.time); }
           catch { local = await compose(frame); }
           archive.add(local);
+          observations.set(local.time, local);
           next.push(local);
         } catch (e) {
           incomplete = true;
@@ -253,22 +256,26 @@ export async function createRadar(
           JSON.stringify({ event: "cache-cleanup-failed", message: e.message }),
         );
       }
+      for (const time of observations.keys()) if (time < archive.cutoff()) observations.delete(time);
       busy = false;
       progress = null;
     }
   }
   function nextUpdate() {
     if (busy && progress) return { state: "fetching" };
-    const pending = [...firstSeen].filter(([time]) => time > (frames.at(-1)?.time ?? 0));
+    const known = new Set(frames.map(frame => frame.time));
+    const pending = [...firstSeen].filter(([time]) => !known.has(time));
     if (!pending.length || error) return null;
     const eligibleAt = Math.min(...pending.map(([, seen]) => seen + (waitForSettle() ? settleMs : 0)));
     const pollAt = nextRefreshAt();
+    if (!Number.isFinite(pollAt)) return { state: "waiting", expectedAt: null };
     const expectedAt = pollAt + Math.max(0, Math.ceil((eligibleAt - pollAt) / 300000)) * 300000;
     return { state: "waiting", expectedAt };
   }
   return {
     refresh,
     archive,
+    observations: () => [...observations.values()].map(f => ({ time: f.time, url: `/frames/${f.file}` })),
     status: () => ({
       frames: frames.map((frame) => ({
         ...frame,
