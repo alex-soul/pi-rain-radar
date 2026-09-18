@@ -1,5 +1,8 @@
 # Release follow-ups
 
+## Known fixes for a future release
+
+- **About: Buy me a coffee link.** In 0.5.0 the button incorrectly opens the GitHub repository. Change its destination to [buymeacoffee.com/alexsoul](https://buymeacoffee.com/alexsoul), preserving the separate View on GitHub link and kiosk-only external-link warning. Confirmed in `public/index.html`; tracked only, not fixed in the running release.
 ## Remaining validation
 
 - **Prolonged Pi soak:** deferred until after 0.5.0. Observe several-hour/overnight split-provider playback, memory growth, swap, recovery, retained history and request counters. Short successful checks are not a soak.

@@ -59,7 +59,7 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - **[Stats for nerds](docs/manual.md#stats-for-nerds).** An optional experimental widget shows provider freshness, acquisition timing, missing frames, weather updates and local Rainbow API counters.
 - Subtle colour indicators show API health and data gaps without cluttering the screen; details are available in Settings and the log. See the [illustrated indicator guide](docs/indicators.md).
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
-- Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
+- **Light/dark themes and touch controls.** Designed for 16:9 landscape displays and tested at 1280 × 720. Other screen shapes receive best-effort layout support.
 
 Radar works out of the box without an API key. Overview and Rain forecast start closed.
 
