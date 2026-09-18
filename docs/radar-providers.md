@@ -11,7 +11,7 @@ RainViewer generously provides public API access without a key. The app caches d
 1. Obtain a Tiles API key from the [Rainbow developer portal](https://developer.rainbow.ai/).
 2. Select Rainbow for Main map or Overview map to reveal its configuration.
 3. Enter your key and choose **Save key**. A saved key is validated and stored on the appliance. When configured, the button becomes **Replace key**; Remove is disabled when no key exists.
-4. Choose **Save and apply sources**. Saving a key and applying map sources are separate actions. Wait for the selected maps to be prepared.
+4. On initial key setup, pending provider changes trigger a **Save and Apply now** confirmation. Accept to apply them, or decline and use **Save and apply sources** later. Saving a key alone does not silently apply provider changes. Wait for the selected maps to be prepared.
 
 Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while Live may retain compatible earlier radar for up to 30 minutes, then clears its radar overlay. Archive never borrows. See [indicators](indicators.md).
 

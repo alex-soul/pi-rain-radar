@@ -71,7 +71,7 @@ Coventry is pre-set, so you can leave everything alone to try it first.
 
 Tap **Preview** to see the proposed Main map and Overview before changing anything. Use **Back** to adjust the fields, or **Apply** in the preview when satisfied. Preview shows maps without rain or a distance scale and makes no radar requests.
 
-The dashed rectangle in Overview follows the proposed centre and zooms. It outlines the full 1280 × 720 main map, both in Preview and during normal use. A differently shaped screen may crop that main map, so the rectangle can show more area than is visible on screen. Landscape 1280 × 720 remains the recommended target; configurable render resolutions are a future consideration.
+The dashed rectangle in Overview follows the proposed centre and zooms. It outlines the full 1280 × 720 main map, both in Preview and during normal use. A differently shaped screen may crop that main map, so the rectangle can show more area than is visible on screen. The intended shape is 16:9 landscape, with 1280 × 720 as the tested reference. Higher display resolution does not automatically add detail to the fixed-size backend images.
 
 **Preview and Apply validate your entries.** Missing required fields, invalid coordinates or time zones, unsupported zoom combinations and views crossing the map's polar boundary produce an error. The existing map stays unchanged. A blank location name is valid.
 

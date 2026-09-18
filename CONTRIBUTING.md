@@ -14,7 +14,7 @@ Use the agreed [playback terminology](docs/playback-conventions.md): Live and Ar
 | `assets/` | Pinned, compressed public-domain geography for map preparation |
 | `src/radar.js` | Image composition, complete-history publication and persistent cache |
 | `src/weather.js` | Shared OpenWeather acquisition, retained gusts, failure counts and request budgets |
-| `src/archive.js` | Seven-day paired-frame index and historical windows |
+| `src/observation-archive.js`, `public/live-window.js` | Seven-day observation index, migration, per-map coverage and Live endpoint grace |
 | `src/settings-auth.js`, `src/setup-pin.js` | PIN setup, sessions and authorized settings routes |
 | `src/server.js` | HTTP routes, static assets, health and polling startup |
 | `public/` | Display UI and bundled map assets; `display.js` owns screen preferences and widget boundaries/stacking |

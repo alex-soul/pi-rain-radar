@@ -12,7 +12,7 @@ Run Pi Rain Radar, then configure it from a browser. No programming, Git or Node
 - **Other Linux computers:** install [Docker Engine and Compose](https://docs.docker.com/engine/install/).
 - **Windows/macOS:** install and open [Docker Desktop](https://docs.docker.com/desktop/). Wait until it is running. Windows needs Linux containers.
 
-Images support Linux ARM64 and AMD64. The Pi walkthrough used 64-bit Raspberry Pi OS on a Pi 4 with a 7-inch Touch Display 2. The app's recommended display shape is 1280 × 720 landscape; other shapes crop the main map.
+Images support Linux ARM64 and AMD64. The Pi walkthrough used 64-bit Raspberry Pi OS on a Pi 4 with a 7-inch Touch Display 2. The app is designed for 16:9 landscape displays and tested at 1280 × 720. Other shapes receive best-effort layout support and may crop the main map.
 
 ## 2. Install the app
 
