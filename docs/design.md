@@ -18,13 +18,11 @@ src/rainbow.js confines outbound requests to the fixed provider host, uses heade
 
 ## Captures and playback
 
-This section describes 0.4.0. The agreed [Live / Archive terminology and next-release behaviour](playback-conventions.md) supersede its screen-capture model as the target design; implementation is tracked in [follow-ups](follow-ups.md#live-and-archive-playback).
+src/observation-archive.js indexes usable images by original observation time, provider and map geometry. Legacy capture indexes provide provenance where valid and are retained. Seven-day cleanup protects retained references. New or changed images are decoded; unchanged images reuse persisted validation only after matching content hashes and dimensions.
 
-src/captured-archive.js records the displayed map frame references and their providers in ten-minute slots. The current slot can update as individual views publish. On cold startup the fast map can appear early; the initial historical window is seeded after both workers finish. Provider switching preserves older captures. Geometry determines archive identity; retention is seven days. Cleanup protects images referenced by retained captures.
+Live and Archive follow the [playback rules](playback-conventions.md), including per-map gaps, immediate late-data placement, Live endpoint grace and bounded borrowing. Archive offers 1–24 hours of locally retained data without extra acquisition requests. Current weather and Rain forecast stay current, and Archive returns to Live after ten minutes.
 
-History replays captured combinations without requesting old provider frames on demand. Current weather/Rain forecast stay current. A chosen historical window automatically returns to live after ten minutes. Longer 2/4/6-hour windows use accumulated local captures, not additional provider calls. A selected six-hour window does not guarantee six hours of data are available.
-
-The frontend polls local status and uses bounded decoding, cancellation and reuse for incoming image sequences. Playback speed scales the existing animation cadence; pausing/scrubbing does not pause acquisition. The old Latest/Next debug display has been removed. Status reports current source health regardless of the image being played.
+The frontend polls local status and uses bounded decoding, cancellation and reuse. Pausing and scrubbing do not pause acquisition. Experimental Stats for nerds reports current acquisition separately from selected playback coverage.
 
 ## Weather
 
@@ -34,15 +32,15 @@ Browser formatting handles temperature, wind, visibility and pressure units, com
 
 ## Settings, security and optional power
 
-Settings changes use same-origin/CSRF checks and the optional six-digit PIN/session boundary. New installations do not require a PIN. Browser UI lock is a separate convenience feature, not an operating-system security boundary. Provider credits stay active through the kiosk navigation confirmation. All HTTP(S) anchors receive destination tooltips, including dynamically inserted/changed links.
+Settings changes use same-origin/CSRF checks and the optional six-digit PIN/session boundary. New installations do not require a PIN. Browser UI lock is a separate convenience feature, not an operating-system security boundary. Provider credits stay active; only explicit kiosk mode requests navigation confirmation. All HTTP(S) anchors receive destination tooltips, including dynamically inserted/changed links.
 
-System opens on Status; API has Radar and Weather sub-tabs. Reopening a section resets its nested tab to the first. Keys are validated before replacement and never returned to the browser. Saving the Rainbow key does not apply source selection.
+System opens on Status; API has Radar and Weather sub-tabs. Reopening a section resets its nested tab to the first. Keys are validated before replacement and never returned to the browser. Initial Rainbow key configuration with pending provider changes offers a Save and Apply confirmation; otherwise saving the key does not apply source selection.
 
 The optional [Device Power helper](device-power.md) uses a root-owned systemd service, Unix socket, fixed restart/shutdown operations, signed short-lived requests, persistent replay protection and a cooldown. The unprivileged container receives only read-only token/socket-directory mounts and the supplementary group. It receives no Docker socket or privileged mode. Power operations require UI confirmation and inherit optional PIN protection.
 
 ## Layout and diagnostics
 
-Playback remains centred; compact layouts place date and intensity below. Attribution is right-aligned at the bottom edge, independently of the sliding dock, without adding a footer row. Settings stays above it. Overview and Rain forecast remain draggable/resizable with per-browser positions, keyboard support and click-to-front stacking.
+Playback remains centred; compact layouts keep date beside time and the intensity legend alongside. Attribution is right-aligned at the bottom edge, independently of the sliding dock, without adding a footer row. Settings stays above it. Overview and Rain forecast remain draggable/resizable with per-browser positions, keyboard support and click-to-front stacking.
 
 System Status reports each map and weather separately. The bounded in-memory Log groups repeated events and resets at restart; full container logs are separate. No credentials or raw provider response bodies are included in user-facing errors.
 

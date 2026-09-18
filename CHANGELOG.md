@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — 18 September 2026
+
+- Live and Archive now use original observation times independently for Main and Overview, including late arrivals. The touching top/bottom timeline halves show each map's gaps; complete outages are skipped without delay.
+- Live allows a ten-minute publication grace before advancing an empty endpoint. Any newer acquired frame advances it immediately, with missing halves shown immediately. Live can borrow compatible earlier radar for up to 30 minutes; Archive never borrows.
+- Live automatically pauses with fewer than two playable positions and resumes when data returns, unless manually paused. Archive has a temporary 1–24-hour window and optional provider-name overlays.
+- Touch gust-cache choices, freely positioned widgets, improved dock/attribution layering, reference-screen Settings layout, five-minute inactivity timeout, clearer API setup and PIN saving.
+- Experimental Stats for nerds shows acquisition, completeness, weather timing and local Rainbow counters. Optional PWA metadata supports installation through trusted HTTPS; normal browser/kiosk use remains available.
+- Faster retained-history startup reuses content-hash validation for unchanged images. Existing kiosk launchers need the explicit kiosk URL flag for external-link warnings.
+
+See [upgrade notes](docs/upgrading.md), [playback rules](docs/playback-conventions.md), [optional HTTPS/PWA setup](docs/pwa.md) and [validation limits](docs/validation.md). Prolonged soak and Rainbow billing verification remain deferred.
+
 ## 0.4.1 — 18 September 2026
 
 - Rename the precipitation widget to **Rain forecast** throughout the interface, accessibility labels, diagnostics, current documentation and frontend assets.

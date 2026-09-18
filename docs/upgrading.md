@@ -1,5 +1,17 @@
 # Upgrades and migration
 
+## 0.5.0: observation-time playback
+
+Keep the existing Compose project, data volume, browser profile and optional Device Power override. Keys, PIN, map and provider settings remain in place. No new container or mandatory HTTPS setup is needed.
+
+The new observation index imports usable cached images at their own observation timestamps, not at repeated legacy capture times. Original capture indexes are retained. Ambiguous old provider provenance cannot always be reconstructed; unsupported or corrupt images do not become fabricated observations. Historical frame counts can therefore differ from old capture counts. Retain a consistent data/profile backup and previous image before upgrading; do not delete the volume to roll back. A migrated real-history copy was successfully opened with 0.4.1 during candidate testing.
+
+First conversion validates new images; later starts reuse saved validation only when content hashes and dimensions match. Seven-day retained-file-count testing is documented in [validation](validation.md).
+
+Existing Pi kiosks should change only the URL in their launcher to **http://127.0.0.1:3080/?kiosk=1**, retaining the same profile. This enables external-link warnings on the kiosk. Ordinary browser and PWA URLs should omit the flag. The supplied new-install launcher already includes it.
+
+Saved gust durations migrate to the nearest supported positive choice (lower on ties, capped at 180); zero means Off and invalid values default to 60. Existing positive durations never migrate to Off. Shared server settings remain unchanged when switching to an HTTPS URL, but browser layout preferences belong to each origin; see [PWA setup](pwa.md).
+
 ## 0.4.1: Rain forecast naming patch
 
 The precipitation widget is now called **Rain forecast**. Forecast data and behaviour are unchanged. On first load, browser preferences are migrated automatically to preserve the widget position, size, open state and button order/visibility. New preferences take priority; the old widget preference is retained for rollback. API keys, PIN, provider choices and radar data are unchanged.

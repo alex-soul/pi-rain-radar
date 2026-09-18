@@ -1,5 +1,16 @@
 # Validation and remaining work
 
+## v0.5.0 candidate acceptance — 18 September 2026
+
+- RC.6 passed all 160 tests locally and on native ARM64, plus network-isolated fresh startup/restart checks. Coverage includes observation migration, late arrivals, one/two-provider gaps, Live grace, offline aging, Archive truth and PIN sessions.
+- I accepted the final Live behaviour and reviewed the UI on my Pi 4 / 2 GB: delays are visible and understandable. Archive was tested in an earlier candidate and its behaviour was unchanged by the final Live correction.
+- I tested remote 24-hour Archive at full speed with all widgets maximized. A short Pi sample had 845–858 MiB available RAM, CPU usually 4–14% with an acquisition burst to 67%, negligible swap traffic, 56–59 C and no throttling. This does not establish Pi-local 24-hour rendering performance or prolonged soak.
+- A seven-day synthetic history with 2,018 PNGs reached health in 71 seconds on initial conversion and 27 seconds on restart. It repeats real image content to test file count and validation work, not weather diversity. Existing migrated history also remained readable by 0.4.1.
+- Settings and original capture indexes were preserved across candidate installs. Real split-provider acquisition, weather and optional power helper remained healthy. The final candidate was installed without a new backup at my request; earlier protected recovery assets were retained.
+- Windows Chrome and Android Chrome installed the Tailscale-served development preview. Pi-hosted HTTPS, reconnect/background-resume coverage and prolonged soak remain separate follow-ups. Narrow-screen layout is best effort.
+
+Release CI and published-image handover are recorded separately when complete; candidate acceptance does not claim those checks.
+
 ## v0.4.1 naming patch — 18 September 2026
 
 - The 0.4.1-rc.1 candidate passed visual/touch review on my Pi, including Rain forecast toggle and retained widget placement, size and button order.

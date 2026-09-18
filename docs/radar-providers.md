@@ -13,7 +13,7 @@ RainViewer generously provides public API access without a key. The app caches d
 3. Enter your key and choose **Save key**. A saved key is validated and stored on the appliance. When configured, the button becomes **Replace key**; Remove is disabled when no key exists.
 4. Choose **Save and apply sources**. Saving a key and applying map sources are separate actions. Wait for the selected maps to be prepared.
 
-Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while the affected map retains its last captured image. See [indicators](indicators.md).
+Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while Live may retain compatible earlier radar for up to 30 minutes, then clears its radar overlay. Archive never borrows. See [indicators](indicators.md).
 
 **Wait for radar to settle** is one global switch. Each provider independently waits about five extra minutes after new frames are first observed. Both maps share a provider's observation time; switching that provider between views does not start the wait again.
 
@@ -29,8 +29,8 @@ The optional **Maximum API requests** limit counts **all** locally dispatched re
 
 **Total calls** shows this month's count, with `/limit` when enabled. Counts survive restart. A crash after reservation can conservatively overcount. Older development ledgers without a monthly total carry their lifetime total into that month's count to avoid silently resetting usage.
 
-## History and attribution
+## Archive and attribution
 
-History replays the captured map frames, including mixed sources, without downloading old frames on demand. Changing providers preserves it. Changing map geometry selects a different retained history; changing only name or time zone does not. Current weather and Rain forecast remain current during historical radar playback.
+Archive replays available observations at their original times, including mixed sources and late arrivals, without downloading old frames on demand. Changing providers preserves it. Changing map geometry selects a different retained history; changing only name or time zone does not. Current weather and Rain forecast remain current during historical radar playback.
 
 Credit at the bottom follows the displayed radar sources, including historical frames. Mixed sources show **Radar by RainViewer & Rainbow**, with separate direct links. Credits stay visible when the dock is tucked away.

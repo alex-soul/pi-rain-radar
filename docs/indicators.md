@@ -28,17 +28,21 @@ If the forecast call fails or the data expires, the **entire chart is uncoloured
 
 ## 4. Total frames indicator
 
-In **12 / 13**, 12 is the frame currently displayed; **13 is the total available**. The total is **greenish** when the selected window is complete and **amber** when frames are missing. Complete 2-, 4- and 6-hour windows contain 13, 25 and 37 ten-minute positions respectively. This applies in live playback and History.
+In **12 / 13**, 12 is the current playable position and 13 the number of playable positions. The total is greenish only when both maps have observations throughout the selected window; otherwise it is amber. Even 13 can be amber in a two-hour window when one provider is missing at a position.
 
 ## 5. Frame gaps
 
-**Amber sections on the playback timeline** mark missing captures, not dry weather. They remain visible behind the playback thumb. Animation skips gaps; scrubbing selects the nearest available frame. The second screenshot shows a missing position and an amber total of 12 rather than 13.
+The timeline's touching upper/lower halves show Main/Overview availability. Missing observations are amber, not dry weather. One missing half remains playable; two missing halves are skipped without delay. Live may display borrowed radar for up to 30 minutes but never hides its gap. Archive leaves the affected basemap empty of radar. Late arrivals fill their original gaps.
 
-In 0.4.0, saved captures can repeat older map images during a provider outage, so the timeline and total count can remain complete even without fresh observations. The bottom handle and Status report source health separately. Observation-time gaps and late-data recovery are a [planned playback correction](playback-conventions.md), not current behaviour.
+Live waits one ten-minute interval before opening an empty new endpoint, but newer actual data advances it immediately and any missing half is visible immediately. See [playback rules](playback-conventions.md).
 
-## 6. History playback countdown
+## 6. Archive playback countdown
 
-When viewing History, the outer edge of the expanded History control shows the countdown to an automatic return to live after ten minutes. It is a playback timer, **not a health warning**.
+The expanded Archive control shows the ten-minute automatic-return countdown. This is a playback timer, not a health warning. The older screenshots above document 0.4.0; current timeline semantics are described here.
+
+### Automatic pause
+
+With fewer than two playable Live positions, the combined play/pause icon means playback is waiting for recovery. Switch to manual pause to prevent automatic resumption, or back to automatic waiting to resume when data returns.
 
 ## If a handle turns amber
 

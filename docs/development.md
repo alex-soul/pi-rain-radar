@@ -72,7 +72,7 @@ Run `node scripts/prepare-geography.js` with Internet access to rebuild this sou
 
 If changing the renderer or bundled assets incompatibly, increment the `mapAssetId` version in `src/map.js` so cached immutable asset URLs change, and keep the page identity in `src/map-settings.js` consistent for all time zones. Changing defaults alone must not invalidate existing installed settings. Pi/ARM64 rendering time, peak memory and SD performance still need hardware validation.
 
-A time-zone-only Apply reuses prepared assets, radar frames and history, without rendering or acquisition. It persists the zone and triggers the normal browser reload. Map asset identity excludes the time zone; page identity includes it so existing browsers adopt the change. History choices retain epoch timestamps, distinguishing repeated local times by their displayed zone abbreviation/offset. Relative ages, retention and countdowns are unchanged.
+A time-zone-only Apply reuses prepared assets, radar frames and history, without rendering or acquisition. It persists the zone and triggers the normal browser reload. Map asset identity excludes the time zone; page identity includes it so existing browsers adopt the change. Archive choices retain epoch timestamps, distinguishing repeated local times by their displayed zone abbreviation/offset. Relative ages, retention and countdowns are unchanged.
 
 ## Preview proposed map settings
 

@@ -8,7 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-**v0.4.1 is a pre-release.** The precipitation widget is now called **Rain forecast**. I tested the naming patch on my Raspberry Pi 4 with 2 GB RAM; existing layout and settings were preserved. All 120 tests passed locally and natively on ARM64, plus native startup/restart checks. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
+**v0.5.0 is a pre-release.** Live and Archive now show actual observation availability for each map, with late-data recovery, Archive windows up to 24 hours and experimental Stats for nerds. I reviewed the UI and accepted Live behaviour on my Pi 4 / 2 GB; Archive was tested during candidate review. All 160 tests passed locally and natively on ARM64, plus native startup/restart checks. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
 
@@ -51,7 +51,7 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - **One Rainbow map can fit within the free tile allowance.** The default single-map estimate leaves room below 30,000 tiles/month, assuming snapshot checks are free. Includes usage estimates and an optional request cap; see [setup and usage assumptions](docs/radar-providers.md).
 - A seven-day local archive that builds while the app runs.
 - One Pi, multiple screens: each browser remembers its own buttons, widget layout and theme while sharing the same location and data. Radar and weather acquisition are shared between screens. See [LAN setup](docs/quick-start.md#3-open-it-from-your-laptop).
-- Last-good cached playback through outages; incomplete timestamps do not block newer complete frames.
+- Live playback through outages with visible per-map gaps and bounded reuse of earlier observations; incomplete timestamps do not block newer data.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.

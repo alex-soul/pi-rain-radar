@@ -10,7 +10,7 @@ Tailscale provides a convenient private HTTPS address and access away from home.
 
 ### What has been tested
 
-During development of the next release, I installed the app and confirmed its app-like experience on my Android phone using a Windows-hosted preview through Tailscale Serve. The preview used local port 3091 and HTTPS port 8443. HTTPS page and manifest requests also passed certificate verification from Windows. This establishes the preview installation path; it is not yet a completed Pi-hosted installation, mobile-data/reconnection or background-resume validation. Windows Chrome on the test host was 153.0.8010.52; the phone's exact Chrome version was not recorded.
+During development of 0.5.0, I installed the app in Windows Chrome and on my Android phone and confirmed its app-like experience using a Windows-hosted preview through Tailscale Serve. The preview used local port 3091 and HTTPS port 8443. HTTPS page and manifest requests also passed certificate verification from Windows. This establishes the preview installation path; it is not yet a completed Pi-hosted installation, mobile-data/reconnection or background-resume validation. Windows Chrome on the test host was 153.0.8010.52; the phone's exact Chrome version was not recorded.
 
 ### Set up your radar host
 

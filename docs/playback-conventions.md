@@ -1,28 +1,28 @@
-# Playback terminology and agreed behaviour
-
-Use these terms in new product documentation, UI work and implementation discussions. This is the canonical naming convention, agreed on 17 September 2026.
+# Playback terminology and behaviour
 
 | Term | Meaning |
 | --- | --- |
-| **Live** | Playback of the latest 2, 4 or 6 hours, with the window advancing as time passes. It does not mean instantaneous radar observations. |
-| **Archive** | Playback of a selected older period. This is the agreed replacement for the current **History** UI label. |
-| **Playback** | The animation and its controls in either mode. |
-| **History** | Stored radar observations generally, including recent observations used by Live. It is not the name of a separate playback mode. |
-| **Provider frame / observation** | Radar data belonging to a provider's observation time. |
-| **Capture** | A saved combination of displayed map images in the 0.4.0 implementation. A capture can reuse older observations; it is not proof of fresh data. |
+| **Live** | Latest 2, 4 or 6 hours of observations; not instantaneous radar. |
+| **Archive** | A selected older period, with a temporary 1–24-hour window. |
+| **Playback** | Animation and controls in either mode. |
+| **History** | Stored observations, retained for seven days. |
+| **Provider frame / observation** | One provider's radar at its original observation time. |
+| **Capture** | A paired position in playback; it may have one or both provider frames. Legacy captures could repeat older observations. |
 
-## Agreed next-release behaviour
+## Observation-time playback
 
-Both Live and Archive should replay the best available observations for their selected period, including observations acquired or recovered later. Place each image at its observation time, not its download time or the time it first appeared on screen. Apply this independently to Main and Overview, including mixed providers.
+Both modes use the best available observations at their original times, independently for Main and Overview. An observation acquired late fills its original position wherever the period remains retained. Repeated cached imagery does not count as a fresh observation. Data no longer offered by a provider cannot necessarily be recovered.
 
-For example, if the 14:10 observation arrives at 14:20, add it at 14:10 wherever that period is still retained. Live includes it if it is within the selected window; Archive includes it when that period is selected. A missing observation remains a gap until usable data for that time is acquired. Repeating an older cached image must not count as a fresh observation or hide the missing data.
+The timeline consists of two touching halves: Main above, Overview below. Every visible position shows actual availability. If one half is missing it shows a gap and makes the total amber, even if all 13 positions in a two-hour window have something playable. Positions missing both halves are skipped without a playback delay.
 
-This supersedes the earlier decision that History must reproduce exactly what appeared on screen. Previously unseen or recovered observations are useful and must not be excluded simply because they were unavailable at the original display time.
+## Live publication grace and borrowing
 
-This does not promise recovery of data that providers no longer offer, unlimited retention, extra API entitlement or automatic provider failover. The implementation must respect existing request limits and resource constraints.
+The normal endpoint is the preceding ten-minute boundary: at 21:00 it is 20:50. A newer acquired observation advances it immediately. If RainViewer supplies 21:00 while Rainbow only has 20:50, the endpoint becomes 21:00 and Rainbow's half shows a gap immediately. At 21:10, 21:00 enters the window even if both maps are missing. The chosen duration extends backward from the endpoint. This grace does not change acquisition timing or the separate settling preference.
 
-## Current release boundary
+Live may borrow a compatible earlier observation for a missing map for up to 30 minutes. Beyond that, only its basemap is shown. Borrowing does not fill timeline gaps or improve completeness. With fewer than two playable positions, automatic pause waits for recovery; the combined play/pause icon distinguishes it from manual pause. Manual pause stays paused until changed by the user.
 
-**0.4.0 has not implemented this change.** Its UI still says History. Both playback modes use captured combinations, which can repeat cached images during provider failures. Its timeline gaps and total count describe captures, not completeness of provider observations. See [current design](design.md#captures-and-playback).
+## Archive
 
-Implementation, migration, mixed-map gap/count presentation and repository-wide naming alignment are tracked in [release follow-ups](follow-ups.md#live-and-archive-playback).
+Archive never borrows: a missing frame leaves that map's basemap visible and its timeline half missing. Late arrivals can fill gaps. Zero/one playable position cannot animate. The temporary duration and provider-name switch reset on return to Live; current weather and Rain forecast remain current.
+
+Source changes retain provenance and geometry isolation. No automatic provider failover, extra API entitlement or unlimited retention is implied. See [upgrade notes](upgrading.md) for legacy conversion limits.
