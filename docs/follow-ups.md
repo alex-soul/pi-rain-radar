@@ -7,7 +7,6 @@
 
 - **Prolonged Pi soak:** deferred until after 0.5.0. Observe several-hour/overnight split-provider playback, memory growth, swap, recovery, retained history and request counters. Short successful checks are not a soak.
 - **Rainbow billing:** revisit no earlier than November 2026 after a full billing cycle. Snapshot billing and estimates remain conditional until confirmed.
-- **Tailscale reboot persistence:** Pi-hosted HTTPS and Android Wi-Fi/mobile-data/background-return checks passed. A Pi reboot after Serve setup remains untested; the service is enabled and Serve uses its persistent background configuration.
 - **Reference hardware and wider installation feedback:** retained seven-day fixture startup was tested, but full long-running collection and independent fresh-install walkthroughs remain useful. Narrow phones receive best-effort layout support; minor attribution overlap may remain.
 
 ## Delivered in 0.5.0

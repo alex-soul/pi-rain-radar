@@ -12,7 +12,7 @@ Tailscale provides a convenient private HTTPS address and access away from home.
 
 ### What has been tested
 
-I installed the app through Chrome on Windows and Android during development. With published 0.5.0 running on my Pi 4 / 2 GB, I then tested the installed Android app over home Wi-Fi and mobile data, and switching away and returning. All worked. HTTPS page, manifest, health and version checks passed from Windows with normal certificate verification. The Pi used Debian 13 Trixie ARM64 and Tailscale 1.102.4. A Pi reboot with Serve configured has not yet been tested.
+I installed the app through Chrome on Windows and Android during development. With published 0.5.0 running on my Pi 4 / 2 GB, I then tested the installed Android app over home Wi-Fi and mobile data, and switching away and returning. All worked. HTTPS page, manifest, health and version checks passed from Windows with normal certificate verification. The Pi used Debian 13 Trixie ARM64 and Tailscale 1.102.4. A subsequent Pi reboot also restored the kiosk, radar service and private HTTPS access successfully. The remote app kept playing already-loaded images during the interruption and reconnected afterwards.
 
 This remains a dedicated radar display for a configured location: the map does not offer drag-to-pan or pinch-to-change-location. Narrow phones receive best-effort layout support; tablets can be useful remote displays. The radar host must remain running, but a Pi-hosted installation does not depend on a laptop.
 
