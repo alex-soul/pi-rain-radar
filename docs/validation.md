@@ -9,7 +9,7 @@
 - Settings and original capture indexes were preserved across candidate installs. Real split-provider acquisition, weather and optional power helper remained healthy. The final candidate was installed without a new backup at my request; earlier protected recovery assets were retained.
 - Windows Chrome and Android Chrome installed the Tailscale-served development preview. Pi-hosted HTTPS, reconnect/background-resume coverage and prolonged soak remain separate follow-ups. Narrow-screen layout is best effort.
 
-Release CI and published-image handover are recorded separately when complete; candidate acceptance does not claim those checks.
+[Release CI 35392991827](https://github.com/alex-soul/pi-rain-radar/actions/runs/35392991827) passed the suite, AMD64/ARM64 image builds and fresh startup/restart checks on both architectures, then promoted v0.5.0 to latest. Both tags resolve to index digest `sha256:b94397562e41da52d1769a76a043683bbb6e0dd4603f85cbbce56802103a908e`; anonymous manifest access passed. Pi published-image handover remains separate from candidate acceptance.
 
 ## v0.4.1 naming patch — 18 September 2026
 
