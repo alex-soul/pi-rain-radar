@@ -8,7 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-**v0.4.0 is a pre-release.** I tested the new candidate on my Raspberry Pi 4 with 2 GB RAM, including six-hour playback at full speed and restart/shutdown recovery. Native ARM64 tests and startup/restart checks passed. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
+**v0.4.1 is a pre-release.** The precipitation widget is now called **Rain forecast**. I tested the naming patch on my Raspberry Pi 4 with 2 GB RAM; existing layout and settings were preserved. All 120 tests passed locally and natively on ARM64, plus native startup/restart checks. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
 

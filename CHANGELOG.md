@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.1 — Unreleased
+## 0.4.1 — 18 September 2026
 
 - Rename the precipitation widget to **Rain forecast** throughout the interface, accessibility labels, diagnostics, current documentation and frontend assets.
 - Preserve existing browser widget placement, size, visibility and control ordering through a compatibility migration.

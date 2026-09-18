@@ -1,5 +1,13 @@
 # Validation and remaining work
 
+## v0.4.1 naming patch — 18 September 2026
+
+- The 0.4.1-rc.1 candidate passed visual/touch review on my Pi, including Rain forecast toggle and retained widget placement, size and button order.
+- 120 tests passed locally and on native ARM64. The parallel Pi run hit an existing two-second radar test timeout; all 120 passed sequentially. Offline image startup/restart passed on ARM64.
+- Both radar sources and OpenWeather were healthy after installation. Keys, PIN, map and provider settings matched the pre-upgrade backup.
+- This is a naming and browser-preference migration patch; acquisition and playback behaviour are unchanged. It adds no prolonged-soak claim.
+
+
 This is the public handover point for the working appliance baseline. Runtime source is authoritative; the user-facing behaviour is described in the [manual](manual.md), with implementation detail in [design](design.md).
 
 ## Baseline: v0.1.2

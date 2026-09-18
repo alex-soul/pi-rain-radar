@@ -1,6 +1,6 @@
 # Upgrades and migration
 
-## 0.4.1 naming patch (in preparation)
+## 0.4.1: Rain forecast naming patch
 
 The precipitation widget is now called **Rain forecast**. Forecast data and behaviour are unchanged. On first load, browser preferences are migrated automatically to preserve the widget position, size, open state and button order/visibility. New preferences take priority; the old widget preference is retained for rollback. API keys, PIN, provider choices and radar data are unchanged.
 
