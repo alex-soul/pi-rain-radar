@@ -6,7 +6,9 @@ Keep the existing Compose project, data volume, browser profile and optional Dev
 
 The new observation index imports usable cached images at their own observation timestamps, not at repeated legacy capture times. Original capture indexes are retained. Ambiguous old provider provenance cannot always be reconstructed; unsupported or corrupt images do not become fabricated observations. Historical frame counts can therefore differ from old capture counts. Retain a consistent data/profile backup and previous image before upgrading; do not delete the volume to roll back. A migrated real-history copy was successfully opened with 0.4.1 during candidate testing.
 
-First conversion validates new images; later starts reuse saved validation only when content hashes and dimensions match. Seven-day retained-file-count testing is documented in [validation](validation.md).
+**Allow several minutes for the first startup when upgrading from an older version with retained history.** The first conversion decodes and validates the retained images before the backend is ready. Let it finish rather than repeatedly restarting the container or rebooting the Pi. Later starts reuse saved validation when content hashes and dimensions match, so an update from an already-converted release candidate can be much quicker.
+
+On the reference Pi 4 / 2 GB, a seven-day synthetic fixture containing 2,018 PNGs took **71 seconds to backend readiness on first conversion**, versus **27 seconds on restart**. These are measured examples, not time limits or whole-Pi boot timings: the fixture repeated real image content, and actual duration depends on retained image sizes, storage speed and other workload. See [validation](validation.md) for the test scope. If startup appears stuck, inspect `docker compose logs --tail=100 radar` before interrupting it.
 
 Existing Pi kiosks should change only the URL in their launcher to **http://127.0.0.1:3080/?kiosk=1**, retaining the same profile. This enables external-link warnings on the kiosk. Ordinary browser and PWA URLs should omit the flag. The supplied new-install launcher already includes it.
 
