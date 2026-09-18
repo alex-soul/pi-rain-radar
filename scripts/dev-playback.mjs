@@ -68,7 +68,7 @@ const server=http(async(req,res)=>{
       res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(await response.text());
     }
     if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(403);return res.end('Playback fixture is read-only');}
-    const response=await fetch(origin+req.url,{method:req.method});
+    const response=await fetch(origin+req.url,{method:req.method,headers:req.headers.authorization?{Authorization:req.headers.authorization}:{}});
     if(path.pathname==='/api/settings'&&response.ok){const data=await response.json();return send({...data,radar:demoRadar});}
     if(path.pathname==='/api/status' && scenario==='unreachable'){res.writeHead(503);return res.end('Synthetic connection failure');}
     if(path.pathname==='/api/status'||path.pathname==='/api/archive'){

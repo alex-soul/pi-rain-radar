@@ -334,7 +334,7 @@ $('map-preview-apply').addEventListener('click',()=>{
 
 let pinToggleTouched = false;
 function updatePinSave() {
-  $('settings-pin-save').hidden = !pinToggleTouched || ($('settings-pin-enabled').checked === configured && (!configured || !newPinEntry.value()));
+  $('settings-pin-save').hidden = !configured && (!pinToggleTouched || !$('settings-pin-enabled').checked);
 }
 function resetPinForm() {
   pinToggleTouched = false;

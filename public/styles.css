@@ -996,6 +996,8 @@ footer .mini-legend { grid-column: 3; grid-row: 1; margin: 0; white-space: nowra
   #reading-list { display: grid; grid-template-rows: repeat(5, auto); grid-auto-flow: column; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 footer { z-index: 4; }
+/* Expanded dock credits stay readable/clickable; tucked handle stays above them. */
+body:not(.footer-hidden) .source { z-index: 5; }
 
 #radar-confirm-dialog { width: min(420px, calc(100vw - 32px)); border: 1px solid #a6bfb5; border-radius: 12px; padding: 20px; background: #edf4ee; color: #284d47; }
 #radar-confirm-dialog::backdrop { background: #07141070; }
