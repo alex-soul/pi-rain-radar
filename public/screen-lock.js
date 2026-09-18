@@ -18,7 +18,7 @@ function paint() {
       link.removeAttribute('aria-disabled'); delete link.dataset.lockedLink; blockedLinks.delete(link);
     }
   }
-  for (const selector of ['.map-controls','#weather-dock','.playback','#overview','#minutecast','#footer-toggle']) {
+  for (const selector of ['.map-controls','#weather-dock','.playback','#overview','#rain-forecast','#footer-toggle']) {
     document.querySelector(selector).inert = locked || (selector === '.playback' && document.body.classList.contains('footer-hidden'));
   }
 }

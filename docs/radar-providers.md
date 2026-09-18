@@ -31,6 +31,6 @@ The optional **Maximum API requests** limit counts **all** locally dispatched re
 
 ## History and attribution
 
-History replays the captured map frames, including mixed sources, without downloading old frames on demand. Changing providers preserves it. Changing map geometry selects a different retained history; changing only name or time zone does not. Current weather and MinuteCast remain current during historical radar playback.
+History replays the captured map frames, including mixed sources, without downloading old frames on demand. Changing providers preserves it. Changing map geometry selects a different retained history; changing only name or time zone does not. Current weather and Rain forecast remain current during historical radar playback.
 
 Credit at the bottom follows the displayed radar sources, including historical frames. Mixed sources show **Radar by RainViewer & Rainbow**, with separate direct links. Credits stay visible when the dock is tucked away.

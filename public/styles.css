@@ -170,8 +170,8 @@ body.footer-hidden { --footer-visible-height: 0px; }
   transition: bottom 180ms ease;
 }
 .map-scale[hidden] { display: none; }
-#overview, #minutecast { z-index: 0; }
-#overview.widget-front, #minutecast.widget-front { z-index: 1; }
+#overview, #rain-forecast { z-index: 0; }
+#overview.widget-front, #rain-forecast.widget-front { z-index: 1; }
 .footer-hidden footer { transform: translateY(100%); }
 .footer-hidden footer > :is(.observation, .playback) { visibility: hidden; }
 .settings-content .misc-option { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
@@ -512,22 +512,22 @@ footer .eyebrow {
 :root[data-theme="dark"] #overview-markers { color: #e1eee7; }
 :root[data-theme="dark"] #overview-markers circle { stroke: #111d26; }
 
-/* MinuteCast widget. */
-#minutecast-toggle { pointer-events: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d2ddd4; border-radius: 22px; background: #ffffffc9; color: #243c3c; cursor: pointer; }
-#minutecast-toggle[aria-pressed="true"] { border-color: #389488; box-shadow: inset 0 0 0 1px #389488; }
-#minutecast { display: flex; flex-direction: column; height: 138px; position: absolute; width: min(410px, calc(100vw - 16px)); top: 230px; left: 18px; border: 1px solid #a6bfb5; border-radius: 10px; overflow: hidden; background: #edf4ee; color: #284d47; box-shadow: 0 4px 18px #0003; }
-#minutecast[hidden] { display: none; }
-#minutecast-toggle:focus-visible, #minutecast:focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
+/* Rain forecast widget. */
+#rain-forecast-toggle { pointer-events: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d2ddd4; border-radius: 22px; background: #ffffffc9; color: #243c3c; cursor: pointer; }
+#rain-forecast-toggle[aria-pressed="true"] { border-color: #389488; box-shadow: inset 0 0 0 1px #389488; }
+#rain-forecast { display: flex; flex-direction: column; height: 138px; position: absolute; width: min(410px, calc(100vw - 16px)); top: 230px; left: 18px; border: 1px solid #a6bfb5; border-radius: 10px; overflow: hidden; background: #edf4ee; color: #284d47; box-shadow: 0 4px 18px #0003; }
+#rain-forecast[hidden] { display: none; }
+#rain-forecast-toggle:focus-visible, #rain-forecast:focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
 .minute-content { padding: 14px 20px 24px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #minute-chart { display: block; width: 100%; flex: 1; min-height: 0; }
 .minute-grid { stroke: currentColor; stroke-opacity: .12; fill: none; }
 .minute-axis { margin-top: 8px; flex-shrink: 0; display: flex; justify-content: space-between; font-size: 9px; opacity: .75; font-variant-numeric: tabular-nums; }
-:root[data-theme="dark"] #minutecast { background: #142623; color: #e1eee7; border-color: #455b51; }
-:root[data-theme="dark"] #minutecast-toggle { background: #1d2b29e8; color: #e1eee7; }
+:root[data-theme="dark"] #rain-forecast { background: #142623; color: #e1eee7; border-color: #455b51; }
+:root[data-theme="dark"] #rain-forecast-toggle { background: #1d2b29e8; color: #e1eee7; }
 
-#minutecast-resize { position: absolute; right: 0; bottom: 0; width: 32px; height: 32px; padding: 5px; border: 0; background: transparent; color: inherit; font-size: 20px; cursor: nwse-resize; touch-action: none; opacity: .4; }
-#minutecast-resize:hover, #minutecast-resize:focus-visible { opacity: .8; }
-#minutecast-resize:focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
+#rain-forecast-resize { position: absolute; right: 0; bottom: 0; width: 32px; height: 32px; padding: 5px; border: 0; background: transparent; color: inherit; font-size: 20px; cursor: nwse-resize; touch-action: none; opacity: .4; }
+#rain-forecast-resize:hover, #rain-forecast-resize:focus-visible { opacity: .8; }
+#rain-forecast-resize:focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
 
 #play { display: grid; place-items: center; padding: 0; }
 #play .play-icon, #play[data-paused="true"] .pause-icon { display: none; }
@@ -565,7 +565,7 @@ footer .eyebrow {
 #pin-keypad button:focus-visible { outline: 2px solid #389488; outline-offset: 2px; }
 :root[data-theme="dark"] #pin-keypad button { background: #1d2b29; }
 
-#clock-toggle[hidden], #theme-toggle[hidden], #overview-toggle[hidden], #minutecast-toggle[hidden] { display: none; }
+#clock-toggle[hidden], #theme-toggle[hidden], #overview-toggle[hidden], #rain-forecast-toggle[hidden] { display: none; }
 #control-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
 #control-list li { display: flex; align-items: center; gap: 12px; padding: 5px 12px 5px 4px; border: 1px solid #a6bfb560; border-radius: 9px; min-height: 54px; font-size: 14px; }
 #control-list li.dragging { background: #38948825; border-color: #389488; }
@@ -672,13 +672,13 @@ header { display: grid; grid-template-columns: minmax(0, 1fr); }
 #minute-message[hidden] { display: none; }
 
 /* One outline treatment for every dashboard control in either theme. */
-:root :is(#clock-toggle, #theme-toggle, #overview-toggle, #minutecast-toggle, #history-toggle, #settings-toggle) {
+:root :is(#clock-toggle, #theme-toggle, #overview-toggle, #rain-forecast-toggle, #history-toggle, #settings-toggle) {
   border-color: var(--control-outline);
   box-shadow: none;
 }
 :root :is(#clock-toggle)[aria-expanded="true"],
 :root #history-toggle[data-expanded="true"],
-:root :is(#overview-toggle, #minutecast-toggle)[aria-pressed="true"] {
+:root :is(#overview-toggle, #rain-forecast-toggle)[aria-pressed="true"] {
   border-color: var(--control-active);
   box-shadow: inset 0 0 0 1px var(--control-active);
 }
@@ -732,8 +732,8 @@ footer::before { content: ""; position: absolute; top: -1px; left: 0; right: 0; 
   box-shadow: inset 0 1px 0 #ffffff40, inset 0 -1px 0 #00000030, 0 0 4px 1px color-mix(in srgb, var(--grip-color) 35%, transparent);
 }
 
-#overview, #minutecast { cursor: grab; touch-action: none; user-select: none; }
-#overview:active, #minutecast:active { cursor: grabbing; }
+#overview, #rain-forecast { cursor: grab; touch-action: none; user-select: none; }
+#overview:active, #rain-forecast:active { cursor: grabbing; }
 
 /* The handle occupies the transparent border gap: do not double-paint its join. */
 :root[data-theme] footer { background-clip: padding-box; }
@@ -757,12 +757,12 @@ footer::before { content: ""; position: absolute; top: -1px; left: 0; right: 0; 
 :root[data-theme="light"] #history-toggle[data-expanded="true"] { background: #dce6dfad; color: #293630; }
 
 /* Background alpha only: precipitation bars retain their own solid fills. */
-:root[data-theme="light"] #minutecast { background-color: #dce6dfad; }
+:root[data-theme="light"] #rain-forecast { background-color: #dce6dfad; }
 
-/* Expanded controls and MinuteCast share the dark dock surface. */
+/* Expanded controls and Rain forecast share the dark dock surface. */
 :root[data-theme="dark"] #clock-toggle[aria-expanded="true"],
 :root[data-theme="dark"] #history-toggle[data-expanded="true"],
-:root[data-theme="dark"] #minutecast { background-color: #071410ad; }
+:root[data-theme="dark"] #rain-forecast { background-color: #071410ad; }
 
 /* Missing slots stay amber on both the played and unplayed track. */
 #timeline { appearance: none; -webkit-appearance: none; background: transparent; --timeline-fill: #e8f7ef; --timeline-rest: #ffffff30; --timeline-gap: #ae925d; --timeline-progress: 0%; --timeline-gaps: linear-gradient(transparent, transparent); }

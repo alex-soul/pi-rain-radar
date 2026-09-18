@@ -14,11 +14,11 @@ Use the same browser profile and address each time. Hostname, IP address and loc
 
 ## Fresh-browser defaults
 
-Dark theme; clock expanded; Overview and MinuteCast closed; all five buttons visible; map scale on; both dock auto-hide switches off; gust cache 60 minutes; Celsius/mph; temperature, feels-like, wind and gusts shown; 2-hour playback at 1×; UI lock off. Existing saved preferences take priority.
+Dark theme; clock expanded; Overview and Rain forecast closed; all five buttons visible; map scale on; both dock auto-hide switches off; gust cache 60 minutes; Celsius/mph; temperature, feels-like, wind and gusts shown; 2-hour playback at 1×; UI lock off. Existing saved preferences take priority.
 
 ## Settings
 
-The app starts on Coventry. Overview and MinuteCast start closed; all buttons are shown in this order: Clock, Overview, MinuteCast, History, Light/dark. Previously saved browser preferences keep their own order and visibility.
+The app starts on Coventry. Overview and Rain forecast start closed; all buttons are shown in this order: Clock, Overview, Rain forecast, History, Light/dark. Previously saved browser preferences keep their own order and visibility.
 
 Tap the screen to reveal the **settings cog at the bottom right**. It disappears after 15 seconds of inactivity. Tap the cog to open settings. Display preferences apply immediately; Map, key and PIN changes use their own Preview/Apply or Save actions. No PIN is required by default.
 
@@ -75,7 +75,7 @@ The dashed rectangle in Overview follows the proposed centre and zooms. It outli
 
 **Preview and Apply validate your entries.** Missing required fields, invalid coordinates or time zones, unsupported zoom combinations and views crossing the map's polar boundary produce an error. The existing map stays unchanged. A blank location name is valid.
 
-Tap **Apply**. Once accepted, Settings closes and the startup-style popup shows **Preparing map**, then **Preparing radar history** with completed/total frames. The count is acquisition progress, not a promise of exactly 13 displayed frames; extra candidates can be considered while preparing a view. You can leave this running without keeping Settings open. The backend uses the same coordinates and zooms to prepare matching radar for both maps; you do not configure the radar separately. The existing map remains visible until the new maps and radar are ready, then the page reloads. If preparation fails, your previous setup remains in use. After a coordinate change, old weather readings are cleared and the next eligible request supplies the new location. **Awaiting first OpenWeather response — allow 10–15 min** is normal during this wait. Current weather and MinuteCast follow the selected coordinates; zoom does not affect those point forecasts/readings.
+Tap **Apply**. Once accepted, Settings closes and the startup-style popup shows **Preparing map**, then **Preparing radar history** with completed/total frames. The count is acquisition progress, not a promise of exactly 13 displayed frames; extra candidates can be considered while preparing a view. You can leave this running without keeping Settings open. The backend uses the same coordinates and zooms to prepare matching radar for both maps; you do not configure the radar separately. The existing map remains visible until the new maps and radar are ready, then the page reloads. If preparation fails, your previous setup remains in use. After a coordinate change, old weather readings are cleared and the next eligible request supplies the new location. **Awaiting first OpenWeather response — allow 10–15 min** is normal during this wait. Current weather and Rain forecast follow the selected coordinates; zoom does not affect those point forecasts/readings.
 
 Changing coordinates or either zoom selects a different history; it **does not delete the previous history**. Old images remain subject to the normal seven-day retention. Returning to the exact previous coordinates and both zoom values can restore that matching history while it is retained. Changing only the name or time zone preserves radar history. A time-zone change reloads the display and changes how timestamps are shown, without fetching new radar.
 
@@ -85,7 +85,7 @@ Drag rows up or down to change the order of the five left-side controls. Turn a 
 
 The two dock handles remain available for API status; screen interaction reveals the settings cog independently. Button order, theme and widget layout are remembered in this browser; another browser may have a different layout. Map settings and the weather key belong to the installation and are shared.
 
-### System → API → Weather: add current weather and MinuteCast (optional)
+### System → API → Weather: add current weather and Rain forecast (optional)
 
 The app uses **OpenWeather One Call 4.0** for both features. An API key is a private access code from your OpenWeather account. It must have access to this specific service; another OpenWeather subscription may not include it. Check the [provider's current access and pricing information](https://openweathermap.org/api/one-call-4) and your account's request limit before enabling it. One Call 4.0 requires its own subscription, including for existing 3.0 users. As checked on 16 September 2026, the first 1,000 calls/day are free; the default 2,000-call daily limit allows chargeable usage. Set the limit to 1,000 to stay within the free allowance. Normal operation uses approximately 288 calls/day per installation (two requests every ten minutes), plus explicit key checks. Other applications and installations sharing the subscription also consume its allowance.
 
@@ -135,14 +135,14 @@ The top dock sizes to the selected readings, wrapping on narrow screens. Hiding 
 
 ![Example radar display in dark mode](images/radar-preview-20260916-2147.png)
 
-*Recorded v0.3.0 display, 16 September 2026, with Overview and MinuteCast open. Historical example, not live conditions.*
+*Recorded v0.3.0 display, 16 September 2026, with Overview and Rain forecast open. Historical example, not live conditions.*
 
 | Control | What it does |
 | --- | --- |
 | Clock, top left | Tap to show or tuck away the current clock, including seconds. |
 | Sun / moon | Switches theme. The icon shows what pressing it will do: sun for light, moon for dark. |
 | Folded map | Shows or hides **Overview**, a wider map with matching radar. The dot marks your centre; the dashed box marks the main map's area. |
-| Rain cloud | Shows or hides **MinuteCast**, the forecast for approximately the next hour at your chosen coordinates. |
+| Rain cloud | Shows or hides **Rain forecast**, the forecast for approximately the next hour at your chosen coordinates. |
 | Clock with backward arrow | Opens stored radar **History**. See below. |
 | Footer handle | Shows or hides the footer. Its indicator reports selected radar sources even while hidden; see [indicators](indicators.md). |
 | Settings cog, bottom right | Appears on screen interaction for 15 seconds. Opens settings; asks for a PIN only when protection is enabled. |
@@ -150,13 +150,13 @@ The top dock sizes to the selected readings, wrapping on narrow screens. Hiding 
 | Play / pause, bottom | Starts or pauses the radar animation. Pausing does not stop new data being collected. |
 | Slider | Drag to inspect a radar image and pause playback. Its 13, 25 or 37 ten-minute positions cover the selected 2/4/6-hour window. See [indicators](indicators.md) for gap colours. Playback skips gaps; dragging selects the nearest available frame. |
 
-Drag **Overview** or **MinuteCast** from anywhere on its map or chart to move it. Drag its bottom-right triangle to resize it. A small movement threshold separates taps from dragging. Tab to a widget and use arrow keys to move it; the resize corner has its own keyboard control. Overlapping widgets work like windows: click, drag, resize or focus a widget to bring it forward. Opening a widget also brings it forward. Dashboard controls remain above both widgets. See [indicators](indicators.md) for toolbar outline meanings.
+Drag **Overview** or **Rain forecast** from anywhere on its map or chart to move it. Drag its bottom-right triangle to resize it. A small movement threshold separates taps from dragging. Tab to a widget and use arrow keys to move it; the resize corner has its own keyboard control. Overlapping widgets work like windows: click, drag, resize or focus a widget to bring it forward. Opening a widget also brings it forward. Dashboard controls remain above both widgets. See [indicators](indicators.md) for toolbar outline meanings.
 
 The **large time and date at bottom left belong to the radar image currently playing**, not the present moment. The top-left clock shows the current time. All dates and clocks follow **Settings → Map → Time zone**, defaulting to Europe/London. Daylight-saving changes are automatic. Changing the map coordinates does not automatically choose a time zone.
 
 ### Colours and status
 
-Use the numbered [screen indicator guide](indicators.md) for dock handles, retained weather, MinuteCast baselines, timeline gaps and rain intensity. For problems, start with System / Status, then Log for available details.
+Use the numbered [screen indicator guide](indicators.md) for dock handles, retained weather, Rain forecast baselines, timeline gaps and rain intensity. For problems, start with System / Status, then Log for available details.
 
 ### Look back with History
 
@@ -164,7 +164,7 @@ Tap History, choose an available **Date** and **Time**, then **Show**. The chose
 
 The History dock expands to show the selected window. Use the same play/pause and slider controls. Tap the **History icon** to return to Now; tap the **date/time range** to reopen the picker. The outer edge of the expanded History dock shows the ten-minute countdown to an automatic return. Selecting another window restarts it; opening and cancelling the picker does not. Hiding History in Buttons hides both touch targets, but automatic return still works.
 
-Background collection continues. Status describes current source health. **Current weather and MinuteCast remain current even while historical radar plays**—they do not yet have historical playback.
+Background collection continues. Status describes current source health. **Current weather and Rain forecast remain current even while historical radar plays**—they do not yet have historical playback.
 
 
 ## About

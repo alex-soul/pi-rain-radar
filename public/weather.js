@@ -70,17 +70,17 @@ export function paintWeather(state, now = Date.now()) {
   const health = !state ? ['warning','Cannot reach weather server.']
     : !state.configured ? ['unconfigured','No OpenWeather key configured.']
     : state.error || failures > 0 ? ['warning',state.error || 'Weather refresh failed; awaiting recovery.']
-    : state.forecastError ? ['warning',`MinuteCast: ${state.forecastError}`]
+    : state.forecastError ? ['warning',`Rain forecast: ${state.forecastError}`]
     : state.fetching && !state.fetchedAt && !forecastFetchedAt ? ['warning','Checking OpenWeather…']
     : forecastUsable && complete && available.size && usable ? ['ready',`OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`]
-    : ['warning',forecastUsable && !complete ? 'MinuteCast has missing data; awaiting refresh.' : 'Weather data missing or expired; awaiting refresh.'];
+    : ['warning',forecastUsable && !complete ? 'Rain forecast has missing data; awaiting refresh.' : 'Weather data missing or expired; awaiting refresh.'];
   $('weather-dock').setAttribute('data-health',health[0]);
   $('weather-dock').title = `${description}. ${health[1]}`;
   const weatherStatus = $('settings-api-status');
   const summary = !state ? 'Appliance unreachable' : !state.configured ? 'Not configured'
     : state.error || failures > 0 ? 'Weather update failed'
-    : state.forecastError ? 'MinuteCast update failed'
-    : forecastUsable && !complete ? 'MinuteCast has missing minutes'
+    : state.forecastError ? 'Rain forecast update failed'
+    : forecastUsable && !complete ? 'Rain forecast has missing minutes'
     : health[0] === 'ready' ? 'Connected' : 'Data missing or expired';
   weatherStatus.textContent = `OpenWeatherMap · ${summary}`;
   weatherStatus.setAttribute('data-health',health[0]);
@@ -89,7 +89,7 @@ export function paintWeather(state, now = Date.now()) {
   $('minute-chart').setAttribute('viewBox','0 0 360 85');
   const forecastLabel = forecastUsable ? `Current precipitation forecast, fetched at ${fetchedStamp(forecastFetchedAt)}. ${available.size} available minute samples. Precipitation in millimetres per hour.` : 'Forecast unavailable after failed refresh or expiry.';
   $('minute-chart').setAttribute('aria-label',forecastLabel);
-  $('minutecast').title = state?.forecastError || forecastLabel;
+  $('rain-forecast').title = state?.forecastError || forecastLabel;
   const bars = [], scale = Math.max(1,...available.values());
   if (forecastUsable) for (let minute=0;minute<60;minute++) {
     const rain=available.get(minute), missing=rain===undefined, baseline=missing||rain===0;

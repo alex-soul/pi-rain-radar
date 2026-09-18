@@ -16,7 +16,7 @@ function fixture(zone='Europe/London') {
   const c=vm.createContext({...format,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
   return {nodes,prefs,paint:c.paintWeather,writes:()=>writes,setMinutes:v=>minutes=v};
 }
-test('MinuteCast uses baselines for zero and missing minutes, and clears failed or expired charts without messages',()=>{
+test('Rain forecast uses baselines for zero and missing minutes, and clears failed or expired charts without messages',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   const bars=()=>f.nodes.get('minute-bars').children;
   assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.height===1&&b.attributes.width===6&&b.attributes.fill==='#75c8bd'));
@@ -24,9 +24,9 @@ test('MinuteCast uses baselines for zero and missing minutes, and clears failed 
   assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
   const gap={...s,forecastFetchedAt:now+1,data:{...s.data,minutely:s.data.minutely.filter((_,i)=>i!==5)}};f.paint(gap,now);
   assert.equal(bars().length,60);assert.equal(bars()[5].attributes.fill,'#c49343');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'warning');
-  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · MinuteCast has missing minutes');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Rain forecast has missing minutes');
   f.paint({...s,forecastError:'Forecast failed'},now);
-  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · MinuteCast update failed');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Rain forecast update failed');
   assert.equal(f.nodes.get('settings-api-status').attributes['data-health'],'warning');
   f.paint({...s,forecastFetchedAt:now+2,data:{...s.data,minutely:[]}},now);assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.fill==='#c49343'));
   for(const failed of [{...s,forecastError:'Forecast failed'}, {...s,forecastFetchedAt:now-1800000}, {configured:false}, null]) {

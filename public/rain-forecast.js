@@ -1,21 +1,21 @@
 import { widgetBottom, setupWidgetLayer } from "./display.js";
-const panel = document.getElementById("minutecast");
+const panel = document.getElementById("rain-forecast");
 const raise = setupWidgetLayer(panel);
-const toggle = document.getElementById("minutecast-toggle");
+const toggle = document.getElementById("rain-forecast-toggle");
 const handle = panel;
 let position = null;
 let visible = false;
 let preferredWidth = 410, preferredHeight = 138;
-const resizeHandle = document.getElementById("minutecast-resize");
+const resizeHandle = document.getElementById("rain-forecast-resize");
 try {
-  const saved = JSON.parse(localStorage.getItem("radar-minutecast"));
+  const saved = JSON.parse(localStorage.getItem("radar-rain-forecast"));
   if (Number.isFinite(saved?.width)) preferredWidth = Math.max(300, Math.min(640, saved.width));
   if (Number.isFinite(saved?.height)) preferredHeight = Math.max(108, Math.min(420, saved.height));
   if (saved && typeof saved.visible === "boolean") visible = saved.visible;
   if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) position = saved;
 } catch { /* Defaults remain usable without storage. */ }
 function save() {
-  try { localStorage.setItem("radar-minutecast", JSON.stringify({ ...position, visible, width: preferredWidth, height: preferredHeight })); } catch { /* Optional preference. */ }
+  try { localStorage.setItem("radar-rain-forecast", JSON.stringify({ ...position, visible, width: preferredWidth, height: preferredHeight })); } catch { /* Optional preference. */ }
 }
 function place(x, y) {
   const maxX = Math.max(8, innerWidth - panel.offsetWidth - 8);
@@ -35,7 +35,7 @@ function layout() {
 function paint() {
   panel.hidden = !visible;
   toggle.setAttribute("aria-pressed", String(visible));
-  toggle.setAttribute("aria-label", visible ? "Hide MinuteCast" : "Show MinuteCast");
+  toggle.setAttribute("aria-label", visible ? "Hide Rain forecast" : "Show Rain forecast");
   layout();
 }
 toggle.addEventListener("click", () => { visible = !visible; paint(); if (visible) raise(); save(); });

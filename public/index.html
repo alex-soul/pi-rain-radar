@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="app-version" content="{{APP_VERSION}}" />
     <title>Pi Rain Radar · {{LOCATION}}</title>
+    <script src="/preference-upgrade.js"></script>
     <script src="/theme.js"></script>
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/screen-lock.js"></script>
     <script type="module" src="/app.js"></script>
     <script type="module" src="/settings.js"></script>
     <script type="module" src="/overview.js"></script>
-    <script type="module" src="/minutecast.js"></script>
+    <script type="module" src="/rain-forecast.js"></script>
   </head>
   <body>
     <main aria-label="Rain radar centred on {{LOCATION}}">
@@ -95,7 +96,7 @@
         <button id="overview-toggle" type="button" aria-label="Show map overview" aria-pressed="false" aria-controls="overview">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </button>
-        <button id="minutecast-toggle" type="button" aria-label="Show MinuteCast" aria-pressed="false" aria-controls="minutecast">
+        <button id="rain-forecast-toggle" type="button" aria-label="Show Rain forecast" aria-pressed="false" aria-controls="rain-forecast">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M5 11a4 4 0 0 1 1-7 5 5 0 0 1 9 1 3 3 0 0 1 3 6H5M5 17v3m5-6v6m5-4v4m5-6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div id="history-toggle" class="live-clock" role="group" aria-label="Radar history" data-expanded="false"><svg id="history-countdown" class="history-ring" aria-hidden="true" hidden><path id="history-track" class="history-ring-track" pathLength="100"/><path id="history-progress" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg><button id="history-action" type="button" aria-label="Open radar history"><svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M3 9a9 9 0 1 1 0 6M3 3v6h6m3-3v6l4 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="clock-reveal"><button id="history-range" type="button" aria-label="Choose radar history" aria-haspopup="dialog" inert><time id="history-selection">—</time></button></span></div>
@@ -305,7 +306,7 @@
         </svg>
         <button id="overview-resize" type="button" aria-label="Resize map overview. Drag or use arrow keys." title="Resize map overview">◢</button>
       </aside>
-      <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="minutecast" aria-label="Current minute precipitation forecast" hidden>
+      <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="rain-forecast" aria-label="Current minute precipitation forecast" hidden>
         <div class="minute-content">
           <svg id="minute-chart" viewBox="0 0 360 100" preserveAspectRatio="none" role="img" aria-label="Forecast unavailable">
             <path d="M0 25H360M0 55H360M0 85H360" class="minute-grid"/>
@@ -314,7 +315,7 @@
           <span id="minute-message" role="status">Forecast unavailable</span>
           <div class="minute-axis"><span>NOW</span><span>+15 min</span><span>+30 min</span><span>+45 min</span><span>+60 min</span></div>
         </div>
-        <button id="minutecast-resize" type="button" aria-label="Resize MinuteCast. Drag or use arrow keys." title="Resize MinuteCast">◢</button>
+        <button id="rain-forecast-resize" type="button" aria-label="Resize Rain forecast. Drag or use arrow keys." title="Resize Rain forecast">◢</button>
       </aside>
       <div id="empty" role="status">
         <span class="empty-icon">↻</span>

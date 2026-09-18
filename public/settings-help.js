@@ -5,7 +5,7 @@ export const helpText = {
   "28": "Wind gusts are not reported with every update, so this reading may be unavailable. The last reported gust can be cached for the duration set in Interface → Weather. Cached readings appear amber.",
   "1": "Changes here affect every display connected to this appliance.",
   "2": "A display label only. Set latitude and longitude to change the actual location.",
-  "3": "Sets the centre of both maps and the location used for weather readings and MinuteCast. Defaults to Coventry: 52.40801, −1.51041.",
+  "3": "Sets the centre of both maps and the location used for weather readings and Rain forecast. Defaults to Coventry: 52.40801, −1.51041.",
   "4": "Higher numbers show a smaller area. Zooming in enlarges the radar image without adding finer rain detail. A good starting point is 8.",
   "5": "Sets the area shown in the Overview widget. Use a lower zoom than the main map for a wider view. A good starting point is 5.",
   "6": "Sets the time zone for clocks and timestamps on all displays. It does not change the radar data.",

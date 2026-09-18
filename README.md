@@ -4,7 +4,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ![Historical rain radar centred on Coventry](docs/images/radar-preview-20260916-2147.gif)
 
-*Recorded on 16 September 2026 in v0.3.0: 13 radar frames over Coventry, spanning 19:40–21:40 BST, with Overview and MinuteCast open. Historical demonstration, not live conditions; weather readings and MinuteCast reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/), basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/radar-preview-20260916-2147.png).*
+*Recorded on 16 September 2026 in v0.3.0: 13 radar frames over Coventry, spanning 19:40–21:40 BST, with Overview and Rain forecast open. Historical demonstration, not live conditions; weather readings and Rain forecast reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/), basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/radar-preview-20260916-2147.png).*
 
 ## Status
 
@@ -60,7 +60,7 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - Light/dark themes and touch controls. Target display: 1280 × 720 landscape; other shapes crop the map.
 
-Radar works out of the box without an API key. Overview and MinuteCast start closed.
+Radar works out of the box without an API key. Overview and Rain forecast start closed.
 
 ## Hardware recommendations
 

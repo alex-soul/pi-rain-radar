@@ -1,11 +1,17 @@
 # Changelog
 
+## 0.4.1 — Unreleased
+
+- Rename the precipitation widget to **Rain forecast** throughout the interface, accessibility labels, diagnostics, current documentation and frontend assets.
+- Preserve existing browser widget placement, size, visibility and control ordering through a compatibility migration.
+- Forecast acquisition, rendering, radar playback and stored server settings are unchanged.
+
 ## 0.4.0 — 17 September 2026
 
 - Optional Rainbow radar with independent Main/Overview choices, shared acquisition, total-call limits and clearer usage estimates. History retains captured frames across source changes.
 - Optional Device Power helper with confirmed Restart/Shutdown actions and existing optional PIN protection.
 - Visibility, pressure and UV index; additional unit pickers and continuously rotated wind direction with Flow/Meteorological conventions.
-- Quiet MinuteCast zero/missing baselines, consistent weather tooltips, clearer Status, responsive attribution and simpler settings navigation.
+- Quiet Rain forecast zero/missing baselines, consistent weather tooltips, clearer Status, responsive attribution and simpler settings navigation.
 - Numbered [indicator guide](docs/indicators.md), provider/power setup documentation and tracked [follow-ups](docs/follow-ups.md).
 
 Existing settings, keys and browser preferences remain in place. The helper is optional; Rainbow needs its own key. I tested the candidate on my Pi 4 / 2 GB, including six-hour playback at full speed and restart/shutdown recovery. 116 tests passed locally and natively on ARM64, plus four helper tests. This is a short playback check, not an elapsed six-hour soak. See [validation](docs/validation.md) for release evidence and remaining checks.
@@ -27,7 +33,7 @@ Pi Rain Radar gains per-display controls for readings and playback while keeping
 
 - Settings grouped into Map; Interface → Display, Buttons, Weather, Readings; System → API, PIN, Status, Log; and About. Small inline helpers explain relevant settings.
 - Content-sized weather dock with curved shoulders, narrow-screen wrapping and toolbar collision avoidance.
-- Clear MinuteCast dry/partial/unavailable messages and slightly larger time-axis labels.
+- Clear Rain forecast dry/partial/unavailable messages and slightly larger time-axis labels.
 - Auto-hidden docks wake on tap during UI lock. Provider credits remain visible when the footer hides.
 - Bounded image decoding and cancellation/reuse during longer-window changes.
 

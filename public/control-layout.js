@@ -1,7 +1,7 @@
 const controls = [
   { id: 'clock-toggle', label: 'Clock' },
   { id: 'overview-toggle', label: 'Overview' },
-  { id: 'minutecast-toggle', label: 'MinuteCast' },
+  { id: 'rain-forecast-toggle', label: 'Rain forecast' },
   { id: 'history-toggle', label: 'History' },
   { id: 'theme-toggle', label: 'Light / dark' },
 ];

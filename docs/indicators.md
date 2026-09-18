@@ -4,21 +4,21 @@ This page is the single reference for status colours and symbols. For setup and 
 
 ![Numbered locations of screen indicators](images/indicators-numbered-0.4.0.png)
 
-*My Pi running the 0.4.0 release candidate on 17 September 2026. The amber tail in MinuteCast shows minutes beyond the last acquired forecast. Numbers 1-4 mark the indicators in this live view. Radar by [RainViewer](https://www.rainviewer.com/) and [Rainbow](https://rainbow.ai/), map by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeatherMap](https://openweathermap.org/).*
+*My Pi running the 0.4.0 release candidate on 17 September 2026. The amber tail in Rain forecast shows minutes beyond the last acquired forecast. Numbers 1-4 mark the indicators in this live view. Radar by [RainViewer](https://www.rainviewer.com/) and [Rainbow](https://rainbow.ai/), map by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeatherMap](https://openweathermap.org/).*
 
 ![History showing an amber frame total, a timeline gap and the return-to-live countdown](images/indicators-history-numbered-0.4.0.png)
 
-*The same Pi in History: **4** marks the amber total of 12 available frames, **5** the missing timeline position, and **6** the countdown around the History control. This two-hour window is incomplete: a full window has 13 frames. Weather and MinuteCast remain current while radar replays the selected past window. Provider credits are visible along the bottom.*
+*The same Pi in History: **4** marks the amber total of 12 available frames, **5** the missing timeline position, and **6** the countdown around the History control. This two-hour window is incomplete: a full window has 13 frames. Weather and Rain forecast remain current while radar replays the selected past window. Provider credits are visible along the bottom.*
 
 ## 1. Top dock indicator
 
-**Greenish:** current weather and MinuteCast are usable, with no reported update error. **Amber:** an update failed, data was incomplete when acquired, data expired, or the connection was lost. **Neutral/white:** no weather key configured. Missing optional gusts alone do not make it amber.
+**Greenish:** current weather and Rain forecast are usable, with no reported update error. **Amber:** an update failed, data was incomplete when acquired, data expired, or the connection was lost. **Neutral/white:** no weather key configured. Missing optional gusts alone do not make it amber.
 
 ## 2. Bottom dock indicator
 
 **Greenish:** both selected radar sources are ready with recent data. **Amber:** either map has an acquisition/connection problem, stale or missing data, or an exhausted local request limit. Radar becomes stale at 30 minutes. Cached images can keep playing during a problem; playback alone does not mean updates are working.
 
-## 3. MinuteCast indicator
+## 3. Rain forecast indicator
 
 A coloured bar means predicted rain. A thin line on the axis in the lowest-rain colour means **zero predicted rain**. An **amber line** means no forecast sample for that minute.
 
@@ -42,7 +42,7 @@ When viewing History, the outer edge of the expanded History control shows the c
 
 ## If a handle turns amber
 
-Open **Settings → System → Status**. Radar sources reports Main map and Overview map separately; Weather sources reports the top-dock/MinuteCast connection. Check **Log** for available event details. The log retains the latest 25 important events since restart and groups repeats. If the appliance itself cannot be reached, its log may also be unavailable.
+Open **Settings → System → Status**. Radar sources reports Main map and Overview map separately; Weather sources reports the top-dock/Rain forecast connection. Check **Log** for available event details. The log retains the latest 25 important events since restart and groups repeats. If the appliance itself cannot be reached, its log may also be unavailable.
 
 Provider-status links open external status pages, which may not reflect your key, allowance or connection. All external links show their exact destination on hover.
 

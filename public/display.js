@@ -80,7 +80,7 @@ export function widgetBottom() {
 
 export function setupWidgetLayer(panel) {
   const raise = () => {
-    for (const id of ['overview', 'minutecast']) {
+    for (const id of ['overview', 'rain-forecast']) {
       const widget = document.getElementById(id);
       widget.classList.toggle('widget-front', widget === panel);
     }

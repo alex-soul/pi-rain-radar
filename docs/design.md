@@ -22,7 +22,7 @@ This section describes 0.4.0. The agreed [Live / Archive terminology and next-re
 
 src/captured-archive.js records the displayed map frame references and their providers in ten-minute slots. The current slot can update as individual views publish. On cold startup the fast map can appear early; the initial historical window is seeded after both workers finish. Provider switching preserves older captures. Geometry determines archive identity; retention is seven days. Cleanup protects images referenced by retained captures.
 
-History replays captured combinations without requesting old provider frames on demand. Current weather/MinuteCast stay current. A chosen historical window automatically returns to live after ten minutes. Longer 2/4/6-hour windows use accumulated local captures, not additional provider calls. A selected six-hour window does not guarantee six hours of data are available.
+History replays captured combinations without requesting old provider frames on demand. Current weather/Rain forecast stay current. A chosen historical window automatically returns to live after ten minutes. Longer 2/4/6-hour windows use accumulated local captures, not additional provider calls. A selected six-hour window does not guarantee six hours of data are available.
 
 The frontend polls local status and uses bounded decoding, cancellation and reuse for incoming image sequences. Playback speed scales the existing animation cadence; pausing/scrubbing does not pause acquisition. The old Latest/Next debug display has been removed. Status reports current source health regardless of the image being played.
 
@@ -30,7 +30,7 @@ The frontend polls local status and uses bounded decoding, cancellation and reus
 
 OpenWeather One Call 4.0 current and minute-forecast endpoints update independently on the existing schedule. weather.json retains normalized data, request budgets, errors and one last valid gust with its original observation time. Credentials are stored separately. Failed responses do not renew data age. Ten optional readings share these responses; adding visibility, pressure or UV adds no request.
 
-Browser formatting handles temperature, wind, visibility and pressure units, compass/degrees, and Flow/Meteorological wind convention. Current weather can retain one failed poll within its age limit; gust lifetime is independently configurable. MinuteCast clears on forecast failure/expiry rather than presenting stale data as a successful response. Rendering details and all signal meanings belong in [indicators](indicators.md).
+Browser formatting handles temperature, wind, visibility and pressure units, compass/degrees, and Flow/Meteorological wind convention. Current weather can retain one failed poll within its age limit; gust lifetime is independently configurable. Rain forecast clears on forecast failure/expiry rather than presenting stale data as a successful response. Rendering details and all signal meanings belong in [indicators](indicators.md).
 
 ## Settings, security and optional power
 
@@ -42,7 +42,7 @@ The optional [Device Power helper](device-power.md) uses a root-owned systemd se
 
 ## Layout and diagnostics
 
-Playback remains centred; compact layouts place date and intensity below. Attribution is right-aligned at the bottom edge, independently of the sliding dock, without adding a footer row. Settings stays above it. Overview and MinuteCast remain draggable/resizable with per-browser positions, keyboard support and click-to-front stacking.
+Playback remains centred; compact layouts place date and intensity below. Attribution is right-aligned at the bottom edge, independently of the sliding dock, without adding a footer row. Settings stays above it. Overview and Rain forecast remain draggable/resizable with per-browser positions, keyboard support and click-to-front stacking.
 
 System Status reports each map and weather separately. The bounded in-memory Log groups repeated events and resets at restart; full container logs are separate. No credentials or raw provider response bodies are included in user-facing errors.
 

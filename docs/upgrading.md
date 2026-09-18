@@ -1,5 +1,9 @@
 # Upgrades and migration
 
+## 0.4.1 naming patch (in preparation)
+
+The precipitation widget is now called **Rain forecast**. Forecast data and behaviour are unchanged. On first load, browser preferences are migrated automatically to preserve the widget position, size, open state and button order/visibility. New preferences take priority; the old widget preference is retained for rollback. API keys, PIN, provider choices and radar data are unchanged.
+
 ## v0.4.0: providers and optional power
 
 Keep the same Compose project, named volume, URL and browser profile. Existing PIN, OpenWeather key, map and settling preference are retained. Existing installations use RainViewer on both maps until sources are explicitly changed. Keep the volume to preserve cached captures and settings.
@@ -20,7 +24,7 @@ Before upgrading, back up the existing volume and browser profile consistently w
 
 ## v0.2.0: OpenWeather subscription change
 
-**Breaking change:** optional weather readings and MinuteCast now require **One Call API 4.0**. One Call 3.0 is no longer supported; there is no version selector or automatic fallback. Radar and its history still work without OpenWeather.
+**Breaking change:** optional weather readings and Rain forecast now require **One Call API 4.0**. One Call 3.0 is no longer supported; there is no version selector or automatic fallback. Radar and its history still work without OpenWeather.
 
 Before upgrading, activate a separate One Call 4.0 subscription in your existing OpenWeather account. An existing API key may then work unchanged; the subscription entitlement matters. Saved keys, PIN, map settings, radar history and browser preferences are preserved. If a 401/403 persists after provider activation, check the subscription and re-save the key in Settings to request another check. Never post your key in an issue.
 

@@ -69,7 +69,7 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   assert.ok(classes.has('footer-hidden'));assert.equal(dispatched.length,count);
 });
 
-for (const widget of ['overview', 'minutecast']) {
+for (const widget of ['overview', 'rain-forecast']) {
   const widgetSource = await readFile(new URL(`../public/${widget}.js`, import.meta.url), 'utf8');
   test(`${widget} restores low saved positions with auto-hide, but respects a permanent footer`, () => {
     for (const autoHide of [true, false]) {
@@ -93,23 +93,23 @@ for (const widget of ['overview', 'minutecast']) {
 }
 
 test('last interacted widget comes forward without moving either widget', () => {
-  const nodes = Object.fromEntries(['overview','minutecast'].map(id=>[id,{
+  const nodes = Object.fromEntries(['overview','rain-forecast'].map(id=>[id,{
     front:false, handlers:{}, style:{left:'20px',top:'530px'},
     classList:{toggle(key,value){nodes[id].front=value;}},
     addEventListener(key,fn){this.handlers[key]=fn;},
   }]));
-  vm.runInNewContext(source.replaceAll('export function','function')+"\nsetupWidgetLayer(document.getElementById('overview'));setupWidgetLayer(document.getElementById('minutecast'));",{
+  vm.runInNewContext(source.replaceAll('export function','function')+"\nsetupWidgetLayer(document.getElementById('overview'));setupWidgetLayer(document.getElementById('rain-forecast'));",{
     document:{getElementById:id=>nodes[id]}, localStorage:{getItem:()=>null},
   });
-  for(const [id,event] of [['overview','pointerdown'],['minutecast','click'],['overview','focusin']]) {
+  for(const [id,event] of [['overview','pointerdown'],['rain-forecast','click'],['overview','focusin']]) {
     nodes[id].handlers[event]();
     assert.equal(nodes.overview.front,id==='overview');
-    assert.equal(nodes.minutecast.front,id==='minutecast');
+    assert.equal(nodes['rain-forecast'].front,id==='rain-forecast');
     for(const node of Object.values(nodes)) assert.deepEqual(node.style,{left:'20px',top:'530px'});
   }
 });
 
-for (const widget of ['overview', 'minutecast']) {
+for (const widget of ['overview', 'rain-forecast']) {
   test(`${widget} surface drag ignores taps and resize controls`, async () => {
     const nodes = {};
     const node = id => nodes[id] ??= {style:{}, handlers:{}, offsetWidth:300, offsetHeight:170,
