@@ -1,5 +1,13 @@
 # Release follow-ups
 
+## Added to 0.5.0 candidate review
+
+- [ ] **Kiosk-only external-link warnings.** Explicit `?kiosk=1` in the launcher URL retains the warning on the Pi kiosk; ordinary browsers and installed PWAs open links normally. Include existing-launcher upgrade guidance. RC.2 includes the UI change; actual launcher update and Pi validation remain pending.
+- [ ] **Compact mobile bottom dock.** RC.2 places the rain-intensity legend beside the timestamp/date on narrow screens, avoiding its separate full row. Playback controls remain unchanged. Phone review remains pending.
+- [ ] **Bounded retained-history startup.** Replace repeated pixel-statistics scans with full decode for new/changed images and persisted content-hash validation for unchanged PNGs. Verify corruption handling and first/repeated startup with realistic and seven-day datasets on the Pi before candidate acceptance.
+
+## Previously tracked 0.5.0 scope — pending release reconciliation
+
 Open work to pick up after 0.4.0. These items do not block this release.
 
 - [ ] **Live and Archive playback.** Correct observation-time playback in both modes and adopt the agreed naming convention. See the [next-release requirements](#live-and-archive-playback).

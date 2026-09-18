@@ -53,7 +53,9 @@ export function setupScreenLock(canEdit) {
   paint();
 }
 
-// All outbound links use the same deliberate, keyboard-accessible kiosk warning.
+// The launcher explicitly identifies a kiosk; fullscreen/PWA mode cannot do so.
+const kioskMode = new URLSearchParams(window.location.search).get('kiosk') === '1';
+// Only kiosks need the deliberate, keyboard-accessible navigation warning.
 // Keep native hover tooltips in sync, including credits and help links added later.
 function updateLinkTooltip(link) {
   if (link.matches('a[href]') && /^https?:/.test(link.href)) link.title = link.href;
@@ -73,6 +75,7 @@ new MutationObserver(records => {
 const external = document.getElementById('external-dialog');
 const openLink = document.getElementById('external-open');
 document.addEventListener('click', event => {
+  if (!kioskMode) return;
   const link = event.target.closest?.('a[href]');
   if (!link || link === openLink || !/^https?:/.test(link.href)) return;
   event.preventDefault(); event.stopPropagation();
@@ -81,7 +84,7 @@ document.addEventListener('click', event => {
   external.showModal(); document.getElementById('external-cancel').focus();
 }, true);
 for (const name of ['auxclick','contextmenu','dragstart']) document.addEventListener(name, event => {
-  if (event.target.closest?.('a')) event.preventDefault();
+  if (kioskMode && event.target.closest?.('a')) event.preventDefault();
 }, true);
 document.getElementById('external-cancel').addEventListener('click', () => external.close());
 openLink.addEventListener('click', () => { setTimeout(() => external.close(), 0); });

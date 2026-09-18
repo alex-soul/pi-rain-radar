@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const source=(await readFile(new URL('../public/screen-lock.js',import.meta.url),'utf8')).replaceAll('export ', '');
-function fixture(saved='false') {
+function fixture(saved='false',search='') {
   const handlers={}, documentHandlers={}, nodes={}, classes=new Set();let editable=true, stored=saved, observer;
   function node(id) { return nodes[id]??={handlers:{},attributes:{},dataset:{},checked:false,hidden:false,
     addEventListener(name,fn){this.handlers[name]=fn;},setAttribute(k,v){this.attributes[k]=String(v);},
@@ -11,9 +11,9 @@ function fixture(saved='false') {
     get href(){return this.attributes.href;},matches(selector){return selector==='a[href]'?this.hasAttribute('href'):this.required;},focus(){},showModal(){this.open=true;},close(){this.open=false;this.handlers.close?.();}}; }
   const optional=node('optional');optional.attributes.href='https://example.org';
   const required=node('required');required.required=true;required.attributes.href='https://www.rainviewer.com/';
-  const ctx=vm.createContext({MutationObserver:class {constructor(fn){observer=fn;}observe(){}},Node:{ELEMENT_NODE:1},document:{body:{classList:{contains:k=>classes.has(k),toggle(k,v){v?classes.add(k):classes.delete(k);}}},getElementById:node,querySelector:node,querySelectorAll:()=>[optional,required],addEventListener:(k,fn)=>documentHandlers[k]=fn},window:{addEventListener:(k,fn)=>handlers[k]=fn,dispatchEvent(){}},localStorage:{getItem:()=>stored,setItem:(k,v)=>stored=v},Event,URL,setTimeout,canEdit:()=>editable});
+  const ctx=vm.createContext({MutationObserver:class {constructor(fn){observer=fn;}observe(){}},Node:{ELEMENT_NODE:1},document:{body:{classList:{contains:k=>classes.has(k),toggle(k,v){v?classes.add(k):classes.delete(k);}}},getElementById:node,querySelector:node,querySelectorAll:()=>[optional,required],addEventListener:(k,fn)=>documentHandlers[k]=fn},window:{location:{search},addEventListener:(k,fn)=>handlers[k]=fn,dispatchEvent(){}},localStorage:{getItem:()=>stored,setItem:(k,v)=>stored=v},Event,URL,URLSearchParams,setTimeout,canEdit:()=>editable});
   vm.runInContext(source+'\nsetupScreenLock(canEdit);',ctx);
-  return {handlers,nodes,node,classes,optional,required,stored:()=>stored,editable:v=>editable=v,mutate:records=>observer(records)};
+  return {handlers,documentHandlers,nodes,node,classes,optional,required,stored:()=>stored,editable:v=>editable=v,mutate:records=>observer(records)};
 }
 test('screen lock is local, persists, preserves required links and restores optional links',()=>{
   const a=fixture(), b=fixture();
@@ -44,4 +44,16 @@ test('external URL titles follow changed destinations',()=>{
   f.optional.setAttribute('href','https://example.org/new');
   f.mutate([{type:'attributes',target:f.optional}]);
   assert.equal(f.optional.title,'https://example.org/new');
+});
+
+test('external navigation warns only for an explicitly marked kiosk',()=>{
+  for(const search of ['', '?kiosk=0', '?kiosk=1']) {
+    const f=fixture('false',search);let prevented=false;
+    f.documentHandlers.click({target:{closest:()=>f.required},preventDefault(){prevented=true;},stopPropagation(){}});
+    assert.equal(prevented,search==='?kiosk=1');
+    assert.equal(!!f.node('external-dialog').open,search==='?kiosk=1');
+    let blocked=false;
+    f.documentHandlers.auxclick({target:{closest:()=>f.required},preventDefault(){blocked=true;}});
+    assert.equal(blocked,search==='?kiosk=1');
+  }
 });

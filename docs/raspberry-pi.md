@@ -180,7 +180,7 @@ while true; do
         --password-store=basic \
         --noerrdialogs \
         --kiosk \
-        http://127.0.0.1:3080
+        'http://127.0.0.1:3080/?kiosk=1'
     sleep 5
 done
 EOF

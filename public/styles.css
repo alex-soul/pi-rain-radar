@@ -948,7 +948,16 @@ footer .mini-legend { grid-column: 3; grid-row: 1; margin: 0; white-space: nowra
   .observation #date { font-size: 20px; }
 }
 @media (max-width: 519.98px) {
-  footer { min-height: 164px; align-content: start; }
+  footer { min-height: 0; align-content: start; }
+  .footer-details { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+  .observation > div { display: grid; gap: 2px; }
+  .observation strong { font-size: 36px; }
+  .observation #date { margin-left: 0; font-size: 14px; }
+  footer .mini-legend { display: grid; grid-template-columns: auto auto; gap: 5px 8px; width: clamp(96px, 30vw, 128px); }
+  footer .mini-legend i { grid-column: 1 / -1; grid-row: 1; width: 100%; }
+  footer .mini-legend span { grid-row: 2; }
+  footer .mini-legend span:first-child { text-align: left; }
+  footer .mini-legend span:last-child { text-align: right; }
 }
 
 .power-buttons { display: flex; gap: 10px; }

@@ -26,6 +26,32 @@ async function fixture(t) {
 async function images(dir, records) { for (const r of records) await writeFile(join(dir, r.url.slice(8)), png); }
 const open = (dir, options = {}) => createObservationArchive(dir, views, { now: () => end * 1000, selection, ...options });
 
+test('restart reuses byte-validated images but detects replaced, damaged and removed files',async t=>{
+  const dir=await fixture(t),r=record(end,'main'),path=join(dir,r.url.slice(8));
+  await images(dir,[r]);
+  let decodes=0;const raw=sharp.prototype.raw;
+  t.mock.method(sharp.prototype,'raw',function(...args){decodes++;return raw.apply(this,args);});
+  assert.equal((await open(dir)).frames().length,1);assert.equal(decodes,1);
+  assert.equal((await open(dir)).frames().length,1);assert.equal(decodes,1);
+  const replacement=await sharp({create:{width:32,height:32,channels:4,background:'#def'}}).png().toBuffer();
+  await writeFile(path,replacement);
+  assert.equal((await open(dir)).frames().length,1);assert.equal(decodes,2);
+  const broken=Buffer.from(replacement);broken.fill(0,45,Math.min(65,broken.length));
+  await writeFile(path,broken);
+  assert.equal((await open(dir)).frames().length,0);
+  await writeFile(path,png);assert.equal((await open(dir)).frames().length,1);
+  await rm(path);assert.equal((await open(dir)).frames().length,0);
+});
+
+test('older indexes without validation fingerprints are revalidated once',async t=>{
+  const dir=await fixture(t);await images(dir,[record(end,'main')]);await open(dir);
+  const path=join(dir,`observations-${hash(views)}.json`),saved=JSON.parse(await readFile(path,'utf8'));
+  delete saved.observations[0].validation;await writeFile(path,JSON.stringify(saved));
+  await open(dir);
+  const next=JSON.parse(await readFile(path,'utf8'));
+  assert.match(next.observations[0].validation.sha256,/^[a-f0-9]{64}$/);
+});
+
 test('migration uses real times, imports independent disk history, preserves old bytes and restarts idempotently', async t => {
   const dir = await fixture(t);
   const observations = [record(end - 600, 'main'), record(end, 'overview'), record(end - 3600, 'overview')];

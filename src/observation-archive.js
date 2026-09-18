@@ -1,6 +1,7 @@
 import { readFile, writeFile, rename, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
+import { createHash } from 'node:crypto';
 import { hash } from './map.js';
 import { HISTORY_SECONDS, CLEANUP_BUFFER_SECONDS, HISTORY_DAYS } from './archive.js';
 
@@ -54,8 +55,9 @@ export async function createObservationArchive(directory, views, { now = Date.no
   if (!validSelection(current)) throw new Error('Invalid observation source selection');
   if (!transitions.length) transitions = [{ time: 0, ...current }];
 
-  // Validate local files once on startup, not on each status request. Both sources
-  // can have retained images even when only one is currently selected.
+  // Hash compressed bytes to detect changes, including corruption with unchanged
+  // file size/timestamps. Decode only new/changed images; never calculate pixel
+  // statistics just to check integrity. The geometry-specific index owns the cache.
   const files = await readdir(directory), usable = new Set();
   for (const name of files) {
     const match = name.match(/^(\d+)-([a-f0-9]{12})\.png$/);
@@ -67,10 +69,17 @@ export async function createObservationArchive(directory, views, { now = Date.no
       if (!valid(r)) continue;
       try {
         const target = role === 'main' ? views.view : views.overviewView;
-        const image = sharp(await readFile(join(directory, name)));
-        const info = await image.metadata();
-        if (info.width !== target.width || info.height !== target.height) throw new Error();
-        await image.stats();
+        const bytes = await readFile(join(directory, name));
+        const sha256 = createHash('sha256').update(bytes).digest('hex');
+        const previous = records.get(id(r))?.validation;
+        if (previous?.version !== 1 || previous.sha256 !== sha256 ||
+            previous.width !== target.width || previous.height !== target.height) {
+          const image = sharp(bytes, { failOn: 'warning' });
+          const info = await image.metadata();
+          if (info.format !== 'png' || info.width !== target.width || info.height !== target.height) throw new Error();
+          await image.raw().toBuffer();
+        }
+        r.validation = { version: 1, sha256, width: target.width, height: target.height };
         usable.add(id(r)); records.set(id(r), r);
       } catch { issue('unusable-image', name); }
     }
