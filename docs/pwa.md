@@ -4,6 +4,8 @@ Pi Rain Radar includes standard Progressive Web App (PWA) metadata and icons. Yo
 
 HTTPS and remote access are optional host/network configuration, outside the base app setup. Installation does not add offline radar storage or notifications: the app still needs to reach your running radar server.
 
+See [Android and Windows screenshots](pwa-gallery.md) for the installed app, phone orientations and Chrome installation steps.
+
 ## Tailscale Serve
 
 Tailscale provides a convenient private HTTPS address and access away from home. Install and connect Tailscale on the radar host and each device you want to use, under your own tailnet. Access follows your tailnet's access rules. See [Tailscale installation](https://tailscale.com/download) and [Serve documentation](https://tailscale.com/docs/features/tailscale-serve).
