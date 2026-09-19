@@ -1,5 +1,13 @@
 # Validation and remaining work
 
+## v0.6.0 candidate acceptance — 20 September 2026
+
+- 188 tests passed locally and on native ARM64, plus isolated fresh startup/restart checks. A protected data/browser/host backup was restored into isolated copies; candidate → 0.5.0 → candidate opened retained history with 1,337 protected settings/capture/history files unchanged. Older writers may discard new incident counters; retain the backup for rollback.
+- I accepted the new UI on my Pi 4 / 2 GB, including Stats for nerds, About and the Map API tab. I tested the Pi-hosted HA embed on LAN and through Nabu Casa outside the LAN with Tailscale connected. HTTPS worked; the HTTP embed through HTTPS Home Assistant failed as expected. See the [embed guide](embed.md).
+- I tested reboot and shutdown followed by power-up, including popups, offline/red indicators and automatic kiosk/remote recovery. Remote playback continued with loaded captures while the Pi was offline. Settings and incident counters survived; both radar providers and weather recovered without errors.
+- Short resource samples showed approximately 845–968 MB available RAM, 56–58.4 C and no throttling; a ten-second sample after the HA test showed 83–97% CPU idle and no swap traffic. Node RSS samples were approximately 157–237 MiB. These samples do not establish per-viewer cost or prolonged stability. Docker memory accounting/limits remain unavailable on this host, so host/process measurements were used.
+- Retained-copy readiness with one CPU allocated was 28.8 seconds for the candidate, 20.7 for 0.5.0 and 23.0 for the candidate again. These are application startup samples, not whole-Pi boot timings or guarantees.
+
 ## v0.5.0 candidate acceptance — 18 September 2026
 
 - RC.6 passed all 160 tests locally and on native ARM64, plus network-isolated fresh startup/restart checks. Coverage includes observation migration, late arrivals, one/two-provider gaps, Live grace, offline aging, Archive truth and PIN sessions.

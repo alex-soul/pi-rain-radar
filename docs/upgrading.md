@@ -1,12 +1,12 @@
 # Upgrades and migration
 
-## Next release candidate
+## 0.6.0: embedding and diagnostics
 
 Embedding defaults to disabled and preserves normal browser preferences. Shared embed settings and release-check metadata use the existing data volume. HTTPS remains optional host configuration.
 
 Incident tracking extends the observation index with gaps/arrival evidence. Existing images remain usable, but history without evidence is untracked. Back up the data before candidate installation: older versions may read images but drop incident metadata when rewriting the index. Rolling back without restoring the backup may lose those counters. Do not delete the volume.
 
-About counts published versions, not completed image builds. See [release checks](release-checks.md) and [Embed setup](embed.md). Candidate Pi acceptance is pending.
+About counts published versions, not completed image builds. See [release checks](release-checks.md) and [Embed setup](embed.md). The candidate passed Pi UI, LAN/remote HA embed and reboot/shutdown recovery checks. Keep the existing Compose project, data volume, browser profile and optional Device Power override when upgrading.
 
 ## 0.5.0: observation-time playback
 

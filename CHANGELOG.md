@@ -1,15 +1,15 @@
 # Changelog
 
-## 0.6.0-rc.1 — local candidate, 20 September 2026
+## 0.6.0 — 20 September 2026
 
-- Optional Embedded Radar: main radar, status LED and credits only, with trusted dashboard origins, shared window/speed/theme settings and no admin controls. LAN HTTP and laptop-preview HTTPS through Tailscale/Nabu Casa were reviewed; Pi-hosted embed acceptance is pending.
+- Optional Embedded Radar: main radar, status LED and credits only, with trusted dashboard origins, shared window/speed/theme settings and no admin controls. I tested Pi-hosted embedding through Home Assistant on LAN and through Nabu Casa on mobile data with Tailscale HTTPS.
 - Red status for stale/unavailable radar, current weather and browser disconnection. Minute forecast reports its own failures on a red baseline, independently of dock handles. Meaningful failures enter Log; routine radar gaps stay quiet. Browser connection events remain available in that browser after recovery.
 - Stats for nerds now retains gaps seen and late arrivals across ordinary restarts, with honest partial/untracked history. Three compact columns separate Main, Overview and OpenWeather; Rainbow monthly usage appears once under its provider.
 - Accepted restart/shutdown closes Settings and shows a friendly acknowledgement. API begins with a built-in Map information tab.
 - About checks published releases daily in the backend and shows newer-version counts, pre-release information and dated cached results through an inline info bubble. No automatic upgrade or image-readiness promise.
 - Reusable synthetic development scenarios, isolated embed review transport and corrected About coffee link.
 
-Local integrated checks passed with 188 tests. Pi validation and publication remain pending. See the run-time guides for limits and setup.
+188 tests passed locally and natively on ARM64, along with isolated image startup/restart and copied-history rollback checks. I tested the UI, HA embedding, reboot and shutdown recovery on my Pi 4 / 2 GB. Remote playback continued with already-loaded images while the Pi was offline and reconnected automatically. Short resource checks passed; prolonged soak remains deferred. See [validation](docs/validation.md) and [upgrade notes](docs/upgrading.md).
 
 ## 0.5.0 — 18 September 2026
 

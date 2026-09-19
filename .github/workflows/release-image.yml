@@ -54,4 +54,13 @@ jobs:
           bash scripts/smoke-image.sh "$IMAGE:$RELEASE_TAG" linux/amd64
           bash scripts/smoke-image.sh "$IMAGE:$RELEASE_TAG" linux/arm64
       - name: Promote tested image to latest
-        run: docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE:$RELEASE_TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq '.[] | select(.draft == false) | .tag_name' > "$RUNNER_TEMP/radar-release-tags.txt"
+          newer=$(node -e 'const fs=require("node:fs"),semver=require("semver");const current=semver.valid(process.env.RELEASE_TAG);if(!current)process.exit(1);const tags=fs.readFileSync(process.argv[1],"utf8").trim().split(/\s+/);console.log(tags.filter(t=>semver.valid(t)&&semver.gt(t,current)).length)' "$RUNNER_TEMP/radar-release-tags.txt")
+          if [ "$newer" -gt 0 ]; then
+            echo "A newer release exists; leaving latest unchanged."
+          else
+            docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE:$RELEASE_TAG"
+          fi

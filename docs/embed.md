@@ -14,13 +14,13 @@ Radar and status update automatically. Reload the iframe after changing its pres
 
 ## HTTP, HTTPS and remote access
 
-I tested the embed in Home Assistant over HTTP on the local network. I also confirmed it through Nabu Casa on a phone using mobile data, with Wi-Fi off and Tailscale connected. That HTTPS test used the laptop's synthetic development preview through Tailscale Serve; it was not a Pi-hosted embed or a prolonged reliability test. Certificate verification and the preview's restricted routes passed separately. The existing [PWA/HTTPS guide](pwa.md) records normal-app HTTPS tests on the Pi.
+I tested the Pi-hosted embed in Home Assistant over HTTP on the local network and through Nabu Casa on a phone outside the LAN with Tailscale connected. The HTTPS embed worked remotely; the local HTTP embed showed Home Assistant's expected HTTPS/HTTP restriction. This followed an earlier test with a synthetic laptop preview. Certificate verification passed separately. These are functional checks, not prolonged reliability tests. The existing [PWA/HTTPS guide](pwa.md) also records normal-app HTTPS tests on the Pi.
 
 An HTTPS Home Assistant dashboard cannot embed an HTTP radar URL. A VPN can make the server reachable, but an `http://` address remains HTTP from the browser's perspective. See [Home Assistant's Webpage card documentation](https://www.home-assistant.io/dashboards/iframe/).
 
 ### Private HTTPS with Tailscale Serve
 
-Tailscale Serve provides private HTTPS in front of the radar's existing HTTP server. The mobile iframe test above validates this approach with the development preview; the production setup below uses the normal radar service. Follow the [existing setup guide](pwa.md#tailscale-serve) for installation, certificates and client access. Reuse an existing radar Serve route if you already have one.
+Tailscale Serve provides private HTTPS in front of the radar's existing HTTP server. The mobile iframe test above used the normal Pi radar service. Follow the [existing setup guide](pwa.md#tailscale-serve) for installation, certificates and client access. Reuse an existing radar Serve route if you already have one.
 
 For a new route, inspect existing configuration first. On the radar host, with Tailscale connected and ordinary radar access working:
 
