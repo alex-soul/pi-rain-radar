@@ -22,6 +22,18 @@ The `pi-rain-radar_radar-data` named volume preserves cached state across restar
 
 ## Laptop preview and review
 
+### Reusable scenario studio
+
+Run `npm run dev:scenarios` from the repository root with dependencies installed. Wait for the printed ready message, then open [Scenario studio](http://127.0.0.1:3091/__dev) and its **Open radar preview** link. Keep both tabs open: selecting a case updates its explanation immediately and the radar follows on its normal poll within 15 seconds. Refresh the radar for an immediate check; leave it open when testing recovery. All preview windows share the selected case.
+
+The library preserves playback, radar, weather and connection cases. Each explains the simulated condition, expected result and useful next comparison. It serves the real UI and production CSP against disposable generated data, with no provider acquisition. Both Main radar and Overview radar have animated synthetic rain, with motion scaled to each viewport so neither becomes accidentally blank. These illustrative patterns are not geographically matched provider imagery. It binds only to loopback and is not included in the production image. Do not enter real keys. Backend unavailable returns HTTP 503 for all application APIs (including Settings, Log and Archive) and health checks. The scenario console, UI and image files remain reachable so recovery can be selected; this is not a full offline/network/power test. The generated capture window is fixed at launch, while health responses simulate current conditions; restart for a fresh capture window during a long session.
+
+Stop with Ctrl+C; retain the printed temporary data path and process identities when launching in the background. The temporary data remains available for inspection. Browser preferences persist on the local preview origin independently of the Pi.
+
+To extend it, add a stable ID and explanatory copy to `scripts/dev-scenarios.mjs`, implement its synthetic response in `scripts/dev-playback.mjs`, and check entry, expected state and recovery. Keep earlier cases available; update their explanations when accepted product behaviour changes. `scripts/dev-controls.js` and `.css` own the console presentation. Add meaningful tests for new state logic; the console does not replace automated tests or Pi acceptance.
+
+### Other isolated fixtures
+
 Start UI iteration on a laptop before building a Pi candidate. A small temporary Node.js server can serve the real public assets with synthetic provider responses and the production Content-Security-Policy on a separate loopback port (for example 3091). Use disposable data and identify the preview as synthetic; do not copy a deployed PIN or API key. This needs no Docker image build. It is a UI fixture, not proof of full backend or ARM64 behaviour.
 
 Share the preview URL and what changed with the reviewer, keep it running while they review, and iterate locally until the batch is accepted. Refresh frontend assets after edits. Full application tests and provider integration checks remain separate. Stop the fixture and remove its disposable files after review. Then build an identifiable Pi candidate, obtain device acceptance, publish the release and verify the published image on the device. Do not treat automated or agent-only visual checks as reviewer acceptance.
@@ -128,6 +140,12 @@ The runnable app is authoritative when prose drifts. Keep personal machine detai
 
 See [validation and remaining work](validation.md) before describing a behaviour as tested on hardware. Full browser visual checks remain separate from VM-based logic tests. The older private development repository is not an active development target.
 ## Development-to-release workflow
+
+The scenario studio also serves `/__embed`, with small and tall cards running the real optional embed page. The disposable fixture enables embedding for its loopback review origin; add your own HA test origins through Settings; production still defaults to disabled. Edit its presentation through normal Settings → Embed, then reload the cards. Main radar and backend-loss scenarios affect the LED; Overview and weather failures do not.
+
+Device Power in this studio is also synthetic: Settings → System → Status → Restart/Shutdown returns an accepted response and displays the normal acknowledgement without executing any host action. Backend unavailable still blocks these requests. Use the UI tests for rejected/interrupted responses. This fixture never forwards power actions to the backend helper.
+
+For an explicit LAN review, run `node scripts/dev-embed-lan.mjs <local-LAN-IP>` alongside the studio. It serves the synthetic embed at `http://<local-LAN-IP>:3092/embed`, forwarding only embed assets, frames and status to loopback port 3091. Settings and the scenario console are not exposed through this transport. Set exact trusted HA origins in the fixture's normal Embed settings. This is an experimental HTTP/LAN review: an HTTPS HA dashboard cannot frame the HTTP URL. Stop this optional process after review. Never use this development proxy against a production backend.
 
 Use one simple development stream:
 

@@ -1,4 +1,6 @@
 import { setupScreenLock } from './screen-lock.js';
+import { setupReleaseInfo } from './release-ui.js';
+import { setupEmbedSettings } from './embed-settings-ui.js';
 import { setupDiagnostics } from './diagnostics.js';
 import { setupSettingsIdle } from './settings-idle.js';
 import { setupPinIdle } from './pin-idle.js';
@@ -11,6 +13,7 @@ import { setupDevicePower } from './device-power.js';
 const $ = (id) => document.getElementById(id);
 const dialog = $('settings-dialog');
 setupSettingsHelp(dialog);
+setupReleaseInfo(dialog);
 const pinIdle = setupPinIdle(dialog, $('pin-panel'));
 const confirmPinEntry = setupPinEntry($('settings-confirm-pin'), () => $('settings-pin-save').focus());
 const newPinEntry = setupPinEntry($('settings-new-pin'), () => confirmPinEntry.focus());
@@ -38,6 +41,7 @@ for (const name of ['pointerdown','pointermove','keydown','input','change','clic
 }
 function canEdit() { return (!configured || (!!token && Date.now() < unlockedUntil)) && dialog.open && !$('settings-fields').hidden; }
 const radarUI=setupRadarSettings(canEdit,request);
+const embedUI=setupEmbedSettings(canEdit,request);
 const powerUI=setupDevicePower(canEdit,request);
 const resetButtons = setupControlEditor(canEdit);
 const resetReadings = setupReadingEditor(canEdit);
@@ -69,6 +73,7 @@ for (const tablist of dialog.querySelectorAll('[role="tablist"]')) {
   const tabs = [...tablist.querySelectorAll('[role="tab"]')];
   function selectTab(selected) {
     resetControlEditor();
+    if (selected.id === 'settings-tab-api') $('api-tab-map').click();
     for (const tab of tabs) {
       const active = tab === selected;
       tab.setAttribute('aria-selected', String(active));
@@ -128,6 +133,7 @@ $('radar-settling').addEventListener('change', async () => {
   } finally { savingRadar = false; field.disabled = false; }
 });
 function lock() {
+  embedUI.clear();
   powerUI.clear();
   radarUI.clear();
   pinIdle.clear();
@@ -197,6 +203,7 @@ async function showSettings(current) {
     $('radar-settling').checked = keyState.radar?.waitForSettle ?? true;
     $('radar-settling-note').textContent = '';
     void radarUI.load(keyState.radar);
+    void embedUI.load();
     if (keyState.map) for (const [key,value] of Object.entries(keyState.map)) {
       const field=$(`map-${key}`);
       field.value=key==='overviewZoom'?Number(value.toFixed(2)):value;

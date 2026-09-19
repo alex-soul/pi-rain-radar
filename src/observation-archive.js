@@ -20,6 +20,7 @@ export async function createObservationArchive(directory, views, { now = Date.no
     return [role, Object.fromEntries(sources.map(source => [source,
       source === 'rainviewer' ? originalKey : hash({ source, originalKey })]))];
   }));
+  let incidents = new Map(), activeSince = {main: now()/1000, overview: now()/1000};
   let records = new Map(), bindings = {}, transitions = [], revision = 0;
   let issues = [], issueCount = 0, writing = Promise.resolve();
   const cutoff = () => Math.floor(now() / 1000) - HISTORY_SECONDS - CLEANUP_BUFFER_SECONDS;
@@ -47,6 +48,10 @@ export async function createObservationArchive(directory, views, { now = Date.no
     revision = Number.isSafeInteger(saved.revision) && saved.revision >= 0 ? saved.revision : 0;
     records = new Map(saved.observations.filter(r => r.time >= cutoff()).map(r => [id(r), r]));
     transitions = saved.transitions; bindings = saved.bindings;
+    if (Array.isArray(saved.incidents) && saved.incidents.length <= 20000) incidents = new Map(saved.incidents.filter(r =>
+      valid({...r,url:`/frames/${r.time}-${r.key}.png`}) && r.time >= cutoff() &&
+      typeof r.tracked === 'boolean' && typeof r.gap === 'boolean' &&
+      (r.arrivedAt == null || Number.isFinite(r.arrivedAt))).map(r => [id(r),r]));
     issues = (saved.migration?.issues ?? []).slice(0, 100); issueCount = saved.migration?.issueCount ?? issues.length;
     restored = true;
   } catch (e) {
@@ -126,6 +131,7 @@ export async function createObservationArchive(directory, views, { now = Date.no
     }
   }
   function prune() {
+    for (const [key,r] of incidents) if(r.time < cutoff()) incidents.delete(key);
     for (const [key, r] of records) if (r.time < cutoff()) records.delete(key);
     for (const time of Object.keys(bindings)) if (Number(time) < cutoff()) delete bindings[time];
     // Retain the last transition before the boundary to interpret the first slot.
@@ -134,20 +140,48 @@ export async function createObservationArchive(directory, views, { now = Date.no
   async function persist() {
     prune();
     const body = JSON.stringify({ version: 1, revision: revision + 1, observations: [...records.values()], bindings, transitions,
-      migration: { issueCount, issues } });
+      incidents: [...incidents.values()], migration: { issueCount, issues } });
     await writeFile(file + '.tmp', body); await rename(file + '.tmp', file);
     revision++;
   }
   function transaction(change) {
     const task = writing.then(async () => {
-      const before = { records: new Map(records), bindings: structuredClone(bindings), transitions: [...transitions] };
+      const before = { records: new Map(records), bindings: structuredClone(bindings), transitions: [...transitions], incidents: new Map(incidents), activeSince: {...activeSince} };
       try { if (change()) await persist(); }
-      catch (e) { ({ records, bindings, transitions } = before); throw e; }
+      catch (e) { ({ records, bindings, transitions, incidents, activeSince } = before); throw e; }
     });
     writing = task.catch(() => {}); return task;
   }
   function expected(time, role) {
     return bindings[time]?.[role] ?? transitions.findLast(s => s.time <= time)?.[role] ?? transitions[0][role];
+  }
+  // Only observe the running session; never manufacture incidents during downtime.
+  function observe(clock = now()/1000) {
+    const due = liveDueThrough(clock);
+    const end = Math.max(due, frames(due,clock).at(-1)?.time ?? due);
+    const times = new Set(frames(end-21600,end).map(f=>f.time));
+    for(let time=Math.ceil((end-21600)/600)*600;time<=end;time+=600) times.add(time);
+    let changed=false;
+    for(const time of times) for(const role of roles) {
+      const source=expected(time,role),key=keys[role][source];
+      if(source!==transitions.at(-1)[role] || time<=activeSince[role]) continue;
+      const identity=id({source,key,time}),previous=incidents.get(identity);
+      const gap=!records.has(identity);
+      if(!previous?.tracked || (gap&&!previous.gap)) {
+        incidents.set(identity,{time,source,key,tracked:true,gap:gap||previous?.gap||false,...(previous?.arrivedAt!=null?{arrivedAt:previous.arrivedAt}:{})});changed=true;
+      }
+    }
+    return changed;
+  }
+  function diagnosticCounts(coverage,role) {
+    let tracked=0,gapsSeen=0,lateArrivals=0;
+    for(const slot of coverage) {
+      const source=slot.sources[role],r=incidents.get(id({source,key:keys[role][source],time:slot.time}));
+      if(r?.tracked) tracked++;
+      if(r?.gap) gapsSeen++;
+      if(r?.arrivedAt>slot.time*1000+600000) lateArrivals++;
+    }
+    return {gapsSeen,lateArrivals,tracked,total:coverage.length};
   }
   function frames(start, end) {
     const byTime = new Map();
@@ -175,6 +209,7 @@ export async function createObservationArchive(directory, views, { now = Date.no
       main: !!byTime.get(time)?.url, overview: !!byTime.get(time)?.overviewUrl,
       sources: Object.fromEntries(roles.map(role => [role, expected(time, role)])) }));
     const counts = Object.fromEntries(roles.map(role => [role, {
+      ...diagnosticCounts(coverage,role),
       available: coverage.filter(f => f[role]).length, missing: coverage.filter(f => !f[role]).length,
     }]));
     return { start, end, frames: selected, coverage, counts, playable: selected.length,
@@ -189,6 +224,7 @@ export async function createObservationArchive(directory, views, { now = Date.no
       if (time < transitions.at(-1).time) throw new Error('Source change clock moved backwards');
       // Existing slots keep their source, including the missing half of a pair.
       for (const f of frames(cutoff(), time)) bindings[f.time] = { ...f.expectedSources };
+      for(const role of roles) if(next[role]!==transitions.at(-1)[role]) activeSince[role]=now()/1000;
       if (time === transitions.at(-1).time) transitions.pop();
       transitions.push({ time, ...next }); return true;
     });
@@ -199,15 +235,24 @@ export async function createObservationArchive(directory, views, { now = Date.no
     revision: () => revision, cutoff,
     migration: () => ({ issueCount, issues: structuredClone(issues) }),
     select,
+    observe: () => transaction(observe),
     add(observations) {
       return transaction(() => {
-        let changed = false;
+        // Inspect the still-missing state before recovery can erase it. The
+        // millisecond exclusion keeps an exact-deadline arrival on time.
+        const arrivals=observations.filter(r=>!records.has(id(r)) && Number.isFinite(r.arrivedAt)).map(r=>r.arrivedAt);
+        let changed = observe(Math.min(now(),...arrivals)/1000 - 0.001);
         for (const r of observations) {
           if (!valid(r) || r.time < cutoff()) continue;
+          const identity=id(r),previous=incidents.get(identity);
+          const eligible=roles.some(role=>keys[role][r.source]===r.key && transitions.at(-1)[role]===r.source && r.time>activeSince[role]);
+          if(!records.has(identity) && Number.isFinite(r.arrivedAt) && r.arrivedAt>=r.time*1000 && r.arrivedAt<=now() && (eligible||previous)) {
+            incidents.set(identity,{time:r.time,key:r.key,source:r.source,tracked:previous?.tracked??false,gap:previous?.gap??false,arrivedAt:previous?.arrivedAt??r.arrivedAt});changed=true;
+          }
           if (!records.has(id(r))) { records.set(id(r), { time: r.time, key: r.key, source: r.source, url: r.url }); changed = true; }
         }
         if ([...records.values()].some(r => r.time < cutoff())) changed = true;
-        return changed;
+        return observe() || changed;
       });
     },
     frames: () => frames(now() / 1000 - HISTORY_SECONDS, Math.floor(now() / 1000)),
@@ -223,7 +268,7 @@ export async function createObservationArchive(directory, views, { now = Date.no
       const end = Math.max(gridEnd, frames(gridEnd, clock).at(-1)?.time ?? gridEnd);
       const start=end-hours*3600;
       const result = window(start, end);
-      return { ...result, ...classifyCoverage(result.coverage, gridEnd), dueThrough: gridEnd,
+      return { ...result, ...classifyCoverage(result.coverage, gridEnd), counts: result.counts, dueThrough: gridEnd,
         borrowFrames: frames(start-1800, start-1), serverTime: now(), cadenceSeconds: 600 };
     },
   };

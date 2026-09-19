@@ -8,7 +8,7 @@ const pollCode=app.slice(app.indexOf("window.addEventListener('radar-playback-wi
 const frames=(end,hours)=>Array.from({length:hours*6+1},(_,i)=>({time:end-(hours*6-i)*600,url:`/${end-(hours*6-i)*600}`,overviewUrl:`/o${end-(hours*6-i)*600}`}));
 function harness() {
   let hours=2,end=60000,decodeGate=null;const events={},requests=[],adoptions=[],nodes={};
-  const c=vm.createContext({generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
+  const c=vm.createContext({recordConnection(){},generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
     sequence:Object.assign(frames(end,2),{dueThrough:liveDueThrough(end)}),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
     playbackHours:()=>hours,mapIdentity:'map',appVersion:'test',AbortSignal,liveDueThrough,ageLiveCoverage,
     $:id=>nodes[id]??={textContent:'',dataset:{}},window:{addEventListener:(name,fn)=>events[name]=fn},frameLoader:{cancel(){}},

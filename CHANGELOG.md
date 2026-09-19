@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0-rc.1 — local candidate, 20 September 2026
+
+- Optional Embedded Radar: main radar, status LED and credits only, with trusted dashboard origins, shared window/speed/theme settings and no admin controls. LAN HTTP and laptop-preview HTTPS through Tailscale/Nabu Casa were reviewed; Pi-hosted embed acceptance is pending.
+- Red status for stale/unavailable radar, current weather and browser disconnection. Minute forecast reports its own failures on a red baseline, independently of dock handles. Meaningful failures enter Log; routine radar gaps stay quiet. Browser connection events remain available in that browser after recovery.
+- Stats for nerds now retains gaps seen and late arrivals across ordinary restarts, with honest partial/untracked history. Three compact columns separate Main, Overview and OpenWeather; Rainbow monthly usage appears once under its provider.
+- Accepted restart/shutdown closes Settings and shows a friendly acknowledgement. API begins with a built-in Map information tab.
+- About checks published releases daily in the backend and shows newer-version counts, pre-release information and dated cached results through an inline info bubble. No automatic upgrade or image-readiness promise.
+- Reusable synthetic development scenarios, isolated embed review transport and corrected About coffee link.
+
+Local integrated checks passed with 188 tests. Pi validation and publication remain pending. See the run-time guides for limits and setup.
+
 ## 0.5.0 — 18 September 2026
 
 - Live and Archive now use original observation times independently for Main and Overview, including late arrivals. The touching top/bottom timeline halves show each map's gaps; complete outages are skipped without delay.

@@ -41,6 +41,7 @@ function paint() {
   onVisibility(visible);
 }
 toggle.addEventListener("click", () => { visible = !visible; paint(); if (visible) raise(); save(); });
+document.getElementById(`${id}-close`)?.addEventListener("click", () => { visible = false; paint(); save(); toggle.focus(); });
 let drag = null;
 handle.addEventListener("pointerdown", event => {
   if (event.button !== 0 || !event.isPrimary) return;

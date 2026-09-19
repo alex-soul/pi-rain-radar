@@ -4,6 +4,8 @@ Restart or shut down the host from **Settings → System → Status → Device P
 
 ## Enable
 
+After an accepted action, Settings closes and a dismissible **Reboot initiated** or **Shutdown initiated** message explains what happens next. Already-loaded radar may continue while usable, and the browser reconnects automatically. This does not guarantee indefinite offline playback. Unconfirmed requests retain an error message; they are not retried automatically.
+
 Supported hosts: Debian 12 or later and Raspberry Pi OS Bookworm or later, running systemd, with Python 3 installed. The helper runs on the host, separately from Docker. These instructions apply to a release containing Device Power support.
 
 From a checkout of the matching release on your Pi:

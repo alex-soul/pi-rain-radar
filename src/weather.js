@@ -89,7 +89,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
     if (!connectionStarted) { onEvent('weather-start'); connectionStarted = true; }
     busy = true;
     const epoch = generation;
-    let diagnostic = 'weather-error';
+    let diagnostic = 'weather-error', currentDiagnostic = 'weather-error';
     nextAttemptAt = now() + WEATHER_INTERVAL;
     try {
       await persist(); // Retain the request schedule across ordinary restarts.
@@ -101,6 +101,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       error = current.error || null;
       forecastError = forecast.error || null;
       diagnostic = current.diagnostic || forecast.diagnostic || diagnostic;
+      currentDiagnostic = current.diagnostic || currentDiagnostic;
       failures = error ? Math.min(2, failures + 1) : 0;
       if (!error || !forecastError) {
         cache = {location:locationKey, data:{current:current.data ?? cache?.data?.current ?? null, minutely:forecast.data ?? cache?.data?.minutely ?? []}, fetchedAt:current.data ? now() : cache?.fetchedAt ?? null};
@@ -114,12 +115,11 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       if (epoch === generation) {
         const samples = cache?.data?.minutely ?? [];
         const forecastGaps = !forecastError && (samples.length < 60 || samples.some((entry,i) => i > 0 && entry.time !== samples[i-1].time + 60));
-        if (error || forecastError) onEvent(diagnostic);
-        if (forecastError) onEvent('forecast-error');
-        else if (forecastGaps) onEvent('forecast-gaps');
-        else if (!error && lastFailed) onEvent('weather-recovered');
-        else if (!error && !connectionReady) onEvent('weather-ready');
-        lastFailed = !!(error || forecastError || forecastGaps);
+        if (error) onEvent(currentDiagnostic);
+        else if (forecastError && ['weather-auth','weather-limit'].includes(diagnostic)) onEvent(diagnostic);
+        if (!forecastError && !forecastGaps && !error && lastFailed) onEvent('weather-recovered');
+        else if (!error && !forecastError && !forecastGaps && !connectionReady) onEvent('weather-ready');
+        lastFailed = !!(error || forecastError);
         if (!lastFailed) connectionReady = true;
         // Preserve failed-poll state across restarts, as well as the request budget.
         try { await persist(); } catch { onEvent('storage-error'); }

@@ -37,6 +37,18 @@ test('HTTP Archive accepts 1–24 while Live remains 2/4/6, with truthful per-ma
     child.stderr.resume();
   });
   const get = path => fetch(`http://127.0.0.1:${port}${path}`);
+  assert.equal((await get('/embed')).status,404);
+  const embedConfig={enabled:true,origins:['http://haos:8123'],hours:4,speed:0.75,theme:'light'};
+  const saveEmbed=await fetch(`http://127.0.0.1:${port}/api/settings/embed`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(embedConfig)});
+  assert.equal(saveEmbed.status,200);
+  const embed=await get('/embed?settings=true&theme=dark'),embedHtml=await embed.text();
+  assert.match(embed.headers.get('content-security-policy'),/frame-ancestors http:\/\/haos:8123$/);
+  assert.match((await get('/')).headers.get('content-security-policy'),/frame-ancestors 'none'/);
+  assert.match(embedHtml,/data-theme="light"/);assert.match(embedHtml,/name="embed-hours" content="4"/);
+  assert.match(embedHtml,/\/maps\/[a-f0-9]{12}\/basemap.svg/);
+  assert.ok(!/\{\{|settings\.js|app\.js|overview|<button|places|centre|clock-toggle/.test(embedHtml));
+  assert.equal((await get('/embed/unknown')).status,404);
+  for(const asset of ['/embed.js','/embed.css','/embed-settings-ui.js'])assert.equal((await get(asset)).status,200);
   assert.equal((await get('/live-window.js')).status,200);
   const manifestResponse=await get('/manifest.webmanifest');
   assert.equal(manifestResponse.status,200);

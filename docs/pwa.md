@@ -85,6 +85,8 @@ This leaves radar and normal LAN/kiosk access running. Do not reset unrelated Se
 
 ## Other HTTPS options
 
+For dashboard iframes, see the [Embed guide](embed.md), including a separate successful Nabu Casa/mobile-data test through Tailscale Serve using the laptop development preview.
+
 The app is not coupled to Tailscale. These are alternatives, not setups validated in the test above:
 
 | Option | What you configure outside the app |

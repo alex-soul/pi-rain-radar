@@ -16,7 +16,7 @@ import { getHistory, getTile } from "./provider.js";
 export async function createRadar(
   directory,
   provider = { getHistory, getTile },
-  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '', manageCleanup = true } = {},
+  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '', manageCleanup = true, onObservation = async()=>{} } = {},
 ) {
   const {view, viewKey, overviewView, overviewKey} = views;
   const historyFile = storageKey ? `history-${storageKey}.json` : 'history.json';
@@ -121,7 +121,7 @@ export async function createRadar(
   async function compose(frame) {
     const file = await composeImage(frame, view, viewKey);
     const overviewFile = await composeImage(frame, overviewView, overviewKey);
-    return { time: frame.time, file, viewKey, overviewFile, overviewKey };
+    return { time: frame.time, file, viewKey, overviewFile, overviewKey, arrivedAt: now() };
   }
   // Persist only the bounded first-seen times, not another image cache.
   let firstSeen = new Map();
@@ -139,7 +139,7 @@ export async function createRadar(
     const delay = waitForSettle() ? settleMs : 0;
     if (!connectionStarted) { onEvent('radar-start'); connectionStarted = true; }
     busy = true;
-    let incomplete = false;
+    let incomplete = false, acquisitionFailed = false;
     let previous = [];
     try {
       checkedAt = new Date(now()).toISOString();
@@ -188,7 +188,9 @@ export async function createRadar(
           try { local = await cached(frame.time); }
           catch { local = await compose(frame); }
           archive.add(local);
+          local.arrivedAt ??= observations.get(local.time)?.arrivedAt;
           observations.set(local.time, local);
+          await onObservation({time:local.time,url:`/frames/${local.file}`,arrivedAt:local.arrivedAt});
           next.push(local);
         } catch (e) {
           incomplete = true;
@@ -219,15 +221,16 @@ export async function createRadar(
         }),
       );
     } catch (e) {
+      acquisitionFailed = true;
       error = "New radar data temporarily unavailable";
       console.error(
         JSON.stringify({ event: "refresh-failed", message: e.message }),
       );
     } finally {
-      if (error || incomplete) onEvent('radar-error');
+      if (acquisitionFailed) onEvent('radar-error');
       else if (lastFailed) onEvent('radar-recovered');
       else if (!connectionReady) onEvent('radar-ready');
-      lastFailed = !!error || incomplete;
+      lastFailed = acquisitionFailed;
       if (!lastFailed) connectionReady = true;
       try {
         if (manageCleanup) {
@@ -275,7 +278,7 @@ export async function createRadar(
   return {
     refresh,
     archive,
-    observations: () => [...observations.values()].map(f => ({ time: f.time, url: `/frames/${f.file}` })),
+    observations: () => [...observations.values()].map(f => ({ time: f.time, url: `/frames/${f.file}`, arrivedAt:f.arrivedAt })),
     status: () => ({
       frames: frames.map((frame) => ({
         ...frame,

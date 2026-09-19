@@ -1,3 +1,5 @@
+import { recordConnection } from './connection-events.js';
+import { radarSourceHealth, worstHealth } from './health.js';
 import { updateStats } from "./stats.js";
 import { liveDueThrough, ageLiveCoverage } from './live-window.js';
 import { formatTime } from './time.js';
@@ -132,35 +134,28 @@ function paintTimeline() {
   $('timeline').style.setProperty('--timeline-progress', `${slot / timelineModel.steps * 100}%`);
   $('timeline').title = timelineModel.missing.length ? `Missing: ${timelineModel.missing.map(slot => clock(timelineModel.start + slot * 600)).join(', ')}` : `Complete ${hours}-hour window`;
 }
-function paintRadarHandle(health, ready = false) {
+function paintRadarHandle(health, sources) {
   const handle = $('footer-toggle');
-  handle.dataset.health = ready ? 'ready' : 'warning';
-  handle.setAttribute('aria-label', `Radar controls: ${health}`);
-  handle.title = health;
-  for (const id of ['settings-main-status','settings-overview-status']) {
-    const row = $(id);
-    const source=status?.sources?.[id==='settings-main-status'?'main':'overview'];
-    const label=!serverReachable?'Appliance unreachable':source?.error||(!source?health:source.state==='ready'?'Connected':source.state==='stale'?'Data is stale':'Waiting for data');
-    if (row) { row.textContent = `${source?.source==='rainbow'?'Rainbow':'RainViewer'} · ${label}`; row.dataset.health = serverReachable&&(source?source.state==='ready':ready) ? 'ready' : 'warning'; }
+  handle.dataset.health = health[0];
+  handle.setAttribute('aria-label', `Radar controls: ${health[1]}`);
+  handle.title = health[1];
+  for (const role of ['main', 'overview']) {
+    const row = $('settings-'+role+'-status');
+    if (row) {
+      row.textContent = `${status?.sources?.[role]?.source === 'rainbow' ? 'Rainbow' : 'RainViewer'} · ${sources[role][1]}`;
+      row.dataset.health = sources[role][0];
+    }
   }
 }
 function paintStatus() {
   updateStats({status, reachable:serverReachable, receivedAt:statsReceivedAt, selected:historyWindow, hours:playbackHours(), loading:historyLoading});
   paintWeather(serverReachable ? status?.weather : null);
 
-  // Playback position and acquisition health are separate signals.
-  const latest = sequence.at(-1)?.time ?? Math.floor(Date.now()/600000)*600;
-  const newestAvailable = Math.max(latest, status?.frame?.time || 0);
-  const minutes = Math.max(
-    0,
-    Math.floor((Date.now() / 1000 - newestAvailable) / 60),
-  );
-  const stale = !sequence.length || minutes >= 30 || !serverReachable || !!status?.error || Object.values(status?.sources??{}).some(source=>source.state!=='ready');
-  document.body.classList.toggle('stale', stale);
-  document.body.classList.toggle('ready', !stale);
-  const health = !serverReachable ? 'Appliance unreachable' : status?.error ? 'Update failed — check Log'
-    : stale ? 'Data is stale — waiting for an update' : 'Connected';
-  paintRadarHandle(health, !stale);
+  const sources = Object.fromEntries(['main','overview'].map(role => [role, radarSourceHealth(status?.sources?.[role], serverReachable)]));
+  const health = worstHealth(Object.values(sources));
+  document.body.classList.toggle('stale', health[0] !== 'ready');
+  document.body.classList.toggle('ready', health[0] === 'ready');
+  paintRadarHandle(health, sources);
   $("time").textContent = displayed ? clock(displayed.time) : '—';
   $("date").textContent = displayed ? `${format(displayed.time, { weekday: "short" })}, ${format(displayed.time, { day: "numeric" })} ${format(displayed.time, { month: "short" }).slice(0, 3)}` : '';
   paintTimeline();
@@ -344,6 +339,7 @@ async function poll() {
       $('map-apply').disabled=!!status.mapUpdate.busy;
     }
     serverReachable = true;
+    recordConnection(true);
     serverClock={time:status.serverTime??Date.now(),receivedAt:performance.now()};
     if(historyWindow && !historyLoading && archiveRevision!==status.archiveRevision) {
       archiveRevision=status.archiveRevision;
@@ -368,6 +364,7 @@ async function poll() {
   } catch {
     if (epoch !== generation) return;
     serverReachable = false;
+    recordConnection(false);
     if (epoch === generation && !historyWindow && !historyLoading) $('playback-window-note').textContent = 'Could not load the selected window. Keeping available radar; retrying shortly.';
     if (mapUpdateVisible) {
       $('empty').querySelector('p').textContent = 'Connection interrupted. Checking map progress again automatically.';

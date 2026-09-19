@@ -12,19 +12,17 @@ This page is the single reference for status colours and symbols. For setup and 
 
 ## 1. Top dock indicator
 
-**Greenish:** current weather and Rain forecast are usable, with no reported update error. **Amber:** an update failed, data was incomplete when acquired, data expired, or the connection was lost. **Neutral/white:** no weather key configured. Missing optional gusts alone do not make it amber.
+**Greenish:** current weather is usable with no update failure. **Amber:** one failed current-weather update retains still-fresh readings, or initial acquisition is pending. **Red:** two failed current-weather updates, unusable/expired data (30 minutes), or an unreachable backend. **Neutral:** no weather key configured. Gust age remains independent. Minute forecast does not affect this handle.
 
 ## 2. Bottom dock indicator
 
-**Greenish:** both selected radar sources are ready with recent data. **Amber:** either map has an acquisition/connection problem, stale or missing data, or an exhausted local request limit. Radar becomes stale at 30 minutes. Cached images can keep playing during a problem; playback alone does not mean updates are working.
+**Greenish:** both selected radar sources are ready with recent data. **Amber:** a source reports a delay/problem while usable data remains, or initial acquisition is pending. **Red:** either source has no usable data after a failed acquisition, observations are at least 30 minutes old, or the browser cannot reach the backend. Already-loaded playback can continue while usable; animation does not prove connection health. Historical timeline gaps alone do not determine handle colour.
 
 ## 3. Rain forecast indicator
 
-A coloured bar means predicted rain. A thin line on the axis in the lowest-rain colour means **zero predicted rain**. An **amber line** means no forecast sample for that minute.
+Coloured bars mean predicted rain; a thin baseline in the lowest-rain colour means zero predicted rain. Missing minutes use amber. As forecast time advances, the newly uncovered tail turns amber normally.
 
-As time passes between updates, the end of the forecast moves closer. The newly uncovered tail turns amber, as in this screenshot. This is normal and does not by itself turn the top dock amber: the top indicator checks whether the forecast was complete when acquired. Gaps inside a forecast also use amber, so missing data is never presented as dry weather.
-
-If the forecast call fails or the data expires, the **entire chart is uncoloured**, and the top dock indicates the problem.
+A failed or expired minute forecast shows a **red baseline**, rather than an empty chart. The forecast owns this signal independently of current weather and the dock handles. Without a configured key it is neutral.
 
 ## 4. Total frames indicator
 
@@ -44,9 +42,9 @@ The expanded Archive control shows the ten-minute automatic-return countdown. Th
 
 With fewer than two playable Live positions, the combined play/pause icon means playback is waiting for recovery. Switch to manual pause to prevent automatic resumption, or back to automatic waiting to resume when data returns.
 
-## If a handle turns amber
+## If a handle turns amber or red
 
-Open **Settings → System → Status**. Radar sources reports Main map and Overview map separately; Weather sources reports the top-dock/Rain forecast connection. Check **Log** for available event details. The log retains the latest 25 important events since restart and groups repeats. If the appliance itself cannot be reached, its log may also be unavailable.
+Open **Settings → System → Status**. Radar sources reports Main map and Overview map separately; Weather sources reports weather acquisition; inspect the readings and forecast separately. Check **Log** for available event details. The log retains the latest 25 important events since restart and groups repeats. If the appliance cannot be reached, its server log is unavailable. This browser separately retains up to 25 connection-loss/recovery events in memory, even while Log is closed, and shows them after reconnection. They are not uploaded and do not survive a page reload. Routine radar gaps do not produce user-facing log entries.
 
 Provider-status links open external status pages, which may not reflect your key, allowance or connection. All external links show their exact destination on hover.
 

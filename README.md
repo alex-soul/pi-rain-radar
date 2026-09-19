@@ -8,6 +8,8 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
+The working source includes the next release's [Embedded Radar](docs/embed.md), persistent [Stats incident counters](docs/stats-for-nerds.md), clearer health/power messages and [daily release awareness](docs/release-checks.md). These changes have local synthetic review; the next candidate still requires Pi validation and publication. The published baseline below remains 0.5.0.
+
 **v0.5.0 is a pre-release.** Live and Archive now show actual observation availability for each map, with late-data recovery, Archive windows up to 24 hours and experimental Stats for nerds. I reviewed the UI and accepted Live behaviour on my Pi 4 / 2 GB; Archive was tested during candidate review. All 160 tests passed locally and natively on ARM64, plus native startup/restart checks. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
@@ -56,7 +58,7 @@ Settings and history stay in the existing data volume. Browsers running v0.1.2 o
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
 - Ten optional weather readings: temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [configurable units and wind-arrow convention](docs/manual.md).
-- **[Stats for nerds](docs/manual.md#stats-for-nerds).** An optional experimental widget shows provider freshness, acquisition timing, missing frames, weather updates and local Rainbow API counters.
+- **[Stats for nerds](docs/stats-for-nerds.md).** An optional widget shows provider freshness, acquisition timing, missing frames, weather updates and local Rainbow API counters.
 - Subtle colour indicators show API health and data gaps without cluttering the screen; details are available in Settings and the log. See the [illustrated indicator guide](docs/indicators.md).
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - **Light/dark themes and touch controls.** Designed for 16:9 landscape displays and tested at 1280 × 720. Other screen shapes receive best-effort layout support.

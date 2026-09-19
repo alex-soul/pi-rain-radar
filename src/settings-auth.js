@@ -100,7 +100,7 @@ export function createSettingsAuth(directory, now = Date.now) {
   };
 }
 
-export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power } = {}) {
+export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, embed } = {}) {
   return async (req, res, path) => {
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -128,6 +128,14 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
           if (result.retryAfter) res.setHeader('Retry-After', String(result.retryAfter));
           return send(result.status, result);
         }
+      }
+      if(path==='/api/settings/embed'&&(req.method==='GET'||req.method==='POST')) {
+        if(!await auth.authorized(token))return send(401,{});
+        if(!embed)return send(503,{});
+        if(req.method==='GET')return send(200,embed.current());
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>3072)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        const result=await embed.configure(input);return send(result.status,result);
       }
       if(path==='/api/settings/power'&&(req.method==='GET'||req.method==='POST')) {
         if(!await auth.authorized(token))return send(401,{});

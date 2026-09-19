@@ -1,6 +1,6 @@
 {
   "name": "pi-rain-radar",
-  "version": "0.5.0",
+  "version": "0.6.0-rc.1",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -10,11 +10,13 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "dev:scenarios": "node scripts/dev-playback.mjs",
     "test": "node --test",
     "prepare:map": "node scripts/prepare-map.js",
     "prepare:overview": "node scripts/prepare-overview.js"
   },
   "dependencies": {
+    "semver": "7.8.5",
     "sharp": "0.35.4"
   }
 }

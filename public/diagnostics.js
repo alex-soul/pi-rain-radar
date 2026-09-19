@@ -1,20 +1,13 @@
+import { connectionEvents } from './connection-events.js';
 export function setupDiagnostics(dialog, request, canEdit) {
   const panel = document.getElementById('settings-panel-log');
   const output = document.getElementById('diagnostic-events');
   const note = document.getElementById('diagnostic-note');
   const timeZone = document.querySelector('meta[name="time-zone"]').content;
-  let timer, generation = 0;
-  const visible = () => canEdit() && !document.hidden && !panel.hidden && !panel.closest('[hidden]');
-  async function update(epoch) {
-    if (!visible() || epoch !== generation) return;
-    try {
-      const response = await request('/diagnostics');
-      if (!visible() || epoch !== generation) return;
-      if (response.status === 401) { dialog.close(); return; }
-      if (!response.ok) throw new Error();
-      const { events, limit } = await response.json();
-      if (!visible() || epoch !== generation) return;
+  let timer, generation = 0, backendEvents=[], limit=25;
+  function render() {
       const follow = output.scrollHeight - output.scrollTop - output.clientHeight < 30;
+      const events=[...backendEvents,...connectionEvents()].sort((a,b)=>a.lastAt.localeCompare(b.lastAt)).slice(-limit);
       const rows = events.map(event => {
         const row = document.createElement('div'); row.className = `diagnostic-event ${event.severity}`;
         const time = document.createElement('time'); time.dateTime = event.lastAt;
@@ -28,9 +21,22 @@ export function setupDiagnostics(dialog, request, canEdit) {
       });
       output.replaceChildren(...rows);
       if (follow) output.scrollTop = output.scrollHeight;
-      note.textContent = `Last ${limit} events since restart`;
+      note.textContent = `Last ${limit} events · appliance since restart; this browser since page load`;
+  }
+  const visible = () => canEdit() && !document.hidden && !panel.hidden && !panel.closest('[hidden]');
+  async function update(epoch) {
+    if (!visible() || epoch !== generation) return;
+    try {
+      const response = await request('/diagnostics');
+      if (!visible() || epoch !== generation) return;
+      if (response.status === 401) { dialog.close(); return; }
+      if (!response.ok) throw new Error();
+      const data=await response.json();
+      if (!visible() || epoch !== generation) return;
+      backendEvents=data.events;limit=data.limit;
+      render();
     } catch {
-      if (visible() && epoch === generation) note.textContent = 'Cannot refresh events. Retrying shortly.';
+      if (visible() && epoch === generation) { render(); note.textContent = 'Appliance log unavailable. Showing cached events and this browser’s connection history; retrying shortly.'; }
     } finally {
       if (visible() && epoch === generation) timer = setTimeout(() => update(epoch), 10000);
     }

@@ -16,21 +16,21 @@ function fixture(zone='Europe/London') {
   const c=vm.createContext({...format,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
   return {nodes,prefs,paint:c.paintWeather,writes:()=>writes,setMinutes:v=>minutes=v};
 }
-test('Rain forecast uses baselines for zero and missing minutes, and clears failed or expired charts without messages',()=>{
+test('Rain forecast uses baselines for zero and missing minutes, and replaces failed or expired charts with a red baseline',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   const bars=()=>f.nodes.get('minute-bars').children;
   assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.height===1&&b.attributes.width===6&&b.attributes.fill==='#75c8bd'));
   assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
   assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
   const gap={...s,forecastFetchedAt:now+1,data:{...s.data,minutely:s.data.minutely.filter((_,i)=>i!==5)}};f.paint(gap,now);
-  assert.equal(bars().length,60);assert.equal(bars()[5].attributes.fill,'#c49343');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'warning');
-  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Rain forecast has missing minutes');
+  assert.equal(bars().length,60);assert.equal(bars()[5].attributes.fill,'#c49343');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
   f.paint({...s,forecastError:'Forecast failed'},now);
-  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Rain forecast update failed');
-  assert.equal(f.nodes.get('settings-api-status').attributes['data-health'],'warning');
-  f.paint({...s,forecastFetchedAt:now+2,data:{...s.data,minutely:[]}},now);assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.fill==='#c49343'));
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
+  assert.equal(f.nodes.get('settings-api-status').attributes['data-health'],'ready');
+  f.paint({...s,forecastFetchedAt:now+2,data:{...s.data,minutely:[]}},now);assert.equal(bars().length,1);assert.equal(bars()[0].attributes.fill,'#c27878');
   for(const failed of [{...s,forecastError:'Forecast failed'}, {...s,forecastFetchedAt:now-1800000}, {configured:false}, null]) {
-    f.paint(failed,now);assert.equal(bars().length,0);assert.equal(f.nodes.get('minute-message').hidden,true);assert.equal(f.nodes.get('minute-message').textContent,'');
+    f.paint(failed,now);assert.equal(bars().length,1);assert.equal(bars()[0].attributes.width,360);assert.equal(bars()[0].attributes.fill,failed?.configured===false?'#89958f':'#c27878');assert.equal(f.nodes.get('minute-message').hidden,true);assert.equal(f.nodes.get('minute-message').textContent,'');
   }
   f.paint(s,now+600000);assert.equal(bars().filter(b=>b.attributes.fill==='#c49343').length,10);
   assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready','natural horizon shrinkage does not imply a failed acquisition');
@@ -69,4 +69,21 @@ test('gust cache Off keeps current gusts but never retained fallback',()=>{
   f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'20');
   delete s.data.current.gustMph;s.fetchedAt++;f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'—');
   s.data.current.gustMph=20;s.failures=1;f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'—');
+});
+
+test('weather severity preserves one-poll grace, independent forecast failure, startup and recovery',()=>{
+  const f=fixture(),s=state(),health=()=>f.nodes.get('weather-dock').attributes['data-health'];
+  f.paint({configured:true,fetching:true},now);assert.equal(health(),'warning');
+  assert.equal(f.nodes.get('minute-bars').children[0].attributes.fill,'#c49343');
+  f.paint({...s,error:'Current failed',failures:1},now);assert.equal(health(),'warning');
+  f.paint({...s,error:'Current failed',failures:2},now);assert.equal(health(),'error');
+  assert.equal(f.nodes.get('weather-temperature').textContent,'—');
+  assert.equal(f.nodes.get('minute-bars').children.length,60);
+  f.paint({...s,forecastError:'Forecast failed'},now);assert.equal(health(),'ready');
+  assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');
+  assert.equal(f.nodes.get('minute-bars').children.length,1);
+  f.paint(s,now+1800000);assert.equal(health(),'error');
+  f.paint(null,now);assert.equal(health(),'error');
+  f.paint({configured:false},now);assert.equal(health(),'unconfigured');
+  f.paint(s,now);assert.equal(health(),'ready');
 });

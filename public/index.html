@@ -124,6 +124,7 @@
             <option value="map">Map</option>
             <option value="dashboard">Interface</option>
             <option value="system">System</option>
+            <option value="embed">Embed</option>
             <option value="about">About</option>
           </select>
           <button id="settings-close" type="button" aria-label="Close settings">×</button>
@@ -214,7 +215,7 @@
           </div>
           <section id="settings-panel-api" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-api" tabindex="0" hidden>
 
-            <div class="settings-tabs preview-api-tabs" role="tablist" aria-label="API categories"><button id="api-tab-radar" type="button" role="tab" aria-selected="true" aria-controls="api-radar" tabindex="0">Radar</button><button id="api-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="api-weather" tabindex="-1">Weather</button></div><div id="api-radar" role="tabpanel" aria-labelledby="api-tab-radar"><div class="units-grid"><div><label for="radar-main-source">Main map</label><select id="radar-main-source"><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div><div><label for="radar-overview-source">Overview map</label><select id="radar-overview-source"><option value="same">Same as main</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div></div><label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
+            <div class="settings-tabs preview-api-tabs" role="tablist" aria-label="API categories"><button id="api-tab-map" type="button" role="tab" aria-selected="true" aria-controls="api-map" tabindex="0">Map</button><button id="api-tab-radar" type="button" role="tab" aria-selected="false" aria-controls="api-radar" tabindex="-1">Radar</button><button id="api-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="api-weather" tabindex="-1">Weather</button></div><div id="api-map" role="tabpanel" aria-labelledby="api-tab-map"><div class="api-map-info"><strong>Built-in base map</strong><p>The base map is included with Pi Rain Radar and uses Natural Earth map data. No API key or external map-service requests are needed to display it.</p></div></div><div id="api-radar" role="tabpanel" aria-labelledby="api-tab-radar" hidden><div class="units-grid"><div><label for="radar-main-source">Main map</label><select id="radar-main-source"><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div><div><label for="radar-overview-source">Overview map</label><select id="radar-overview-source"><option value="same">Same as main</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div></div><label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
             <p id="radar-settling-note" role="status"></p><div id="rainbow-config"><div class="api-key-heading"><label for="rainbow-key">Rainbow API key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div><input id="rainbow-key" type="password" autocomplete="off" placeholder="Enter your Rainbow key"><div class="weather-key-actions"><button id="rainbow-save">Save key</button><button id="rainbow-remove">Remove key</button></div><p id="rainbow-key-note" role="status">Not configured.</p><label class="misc-option" for="rainbow-cap">Limit monthly usage<input id="rainbow-cap" type="checkbox" class="control-switch" role="switch"></label><div id="rainbow-limit-fields" hidden><label for="rainbow-limit">Maximum API requests</label><input id="rainbow-limit" type="number" min="1" max="10000000" value="28000"></div><details id="rainbow-estimates" class="estimate-drawer"><summary>Estimates</summary><div class="usage-card"><strong id="rainbow-estimate"></strong><div id="rainbow-usage"></div><small>Based on the selected maps running continuously. Repeated map changes can use more; the suggested limit does not guarantee zero charges.</small></div></details></div><div class="weather-key-actions"><button id="radar-apply">Save and apply sources</button></div><p id="radar-source-note" role="status"></p></div><div id="api-weather" role="tabpanel" aria-labelledby="api-tab-weather" hidden><div id="openweather-config" class="api-provider-config"><div class="api-key-heading"><label for="settings-api-key">OpenWeather API Key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div>
             <input id="settings-api-key" type="password" placeholder="Enter OpenWeather key" autocomplete="off" spellcheck="false" maxlength="32" aria-describedby="settings-api-note" /><p id="settings-api-note" role="status"></p>
             <div class="weather-key-actions"><button id="weather-key-save" type="button">Save key</button><button id="weather-key-remove" type="button">Remove key</button></div>
@@ -273,10 +274,30 @@
             </div>
           </section>
           </section>
+          <section id="settings-panel-embed" class="settings-content settings-tab-panel" role="region" aria-label="Embed" tabindex="0" hidden>
+            <details class="estimate-drawer embed-help"><summary><h3>Embedded Radar</h3></summary>
+              <p>Just the main radar, status light and credits in an iframe.</p>
+              <p>Trust your dashboard’s origin (scheme, host and port), one per line, without paths. Settings save automatically; origins save when you leave the field. Reload the embed after changes.</p>
+              <p>Tested in Home Assistant on LAN over HTTP and remotely through Nabu Casa with Tailscale Serve. HTTPS dashboards need an HTTPS radar address; this remote setup needs Tailscale connected on your device.</p>
+              <p>For a full setup guide, please refer to the <a href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/embed.md" target="_blank" rel="noopener noreferrer">Embed setup guide</a>.</p>
+            </details>
+            <label class="misc-option" for="embed-enabled">Enable embed<input id="embed-enabled" type="checkbox" class="control-switch" role="switch"></label>
+            <div id="embed-fields" hidden>
+            <label for="embed-origins">Trusted iframe origins</label><textarea id="embed-origins" rows="2" maxlength="2010" placeholder="http://homeassistant.local:8123"></textarea>
+            <div class="units-grid embed-options">
+              <div><label for="embed-hours">Window</label><select id="embed-hours"><option value="2">2 hours</option><option value="4">4 hours</option><option value="6">6 hours</option></select></div>
+              <div><label for="embed-speed">Speed</label><select id="embed-speed"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div>
+              <div><label for="embed-theme">Theme</label><select id="embed-theme"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+            </div>
+            <div class="embed-url-group"><strong>Embed URL</strong><p>Use your radar’s address followed by <code>/embed</code>:<br><code>http://pi-rain-radar.local:3080/embed</code><br><code>https://pi-rain-radar/embed</code></p></div>
+            </div>
+            <p id="embed-note" role="status"></p>
+          </section>
           <section id="settings-panel-about" class="settings-content settings-tab-panel" role="region" aria-label="About" tabindex="0" hidden>
 
 <div class="settings-columns about-layout"><div class="settings-group about-credits"><div>            <h3 class="about-title">Pi Rain Radar</h3>
-            <p>Version: {{APP_VERSION}}<br>Created by Alex Soul.<br>Built with OpenAI Codex.</p>
+            <p>Version: {{APP_VERSION}} <button id="release-info" type="button" class="settings-info" aria-label="About this version" aria-expanded="false" aria-controls="release-bubble">i</button><br>Created by Alex Soul.<br>Built with OpenAI Codex.</p>
+            <div id="release-bubble" class="settings-help-bubble" hidden><div><p id="release-summary"></p><p id="release-detail"></p><p id="release-date"></p></div><p id="release-notice" hidden></p><a href="https://github.com/alex-soul/pi-rain-radar/releases" target="_blank" rel="noopener noreferrer">Release notes</a></div>
             <p class="about-dedication"><em>“To my curious kids<br>— never stop wondering.”</em></p>
 </div><span class="about-sketch" role="img" aria-label="You Rock! Hand-drawn thumbs-up by Alex Soul"></span></div><div>            <div class="about-links">
               <a class="about-coffee" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/quick-start.md" target="_blank" rel="noopener noreferrer">
@@ -288,7 +309,7 @@
                 <span>View on GitHub</span><span class="coffee-arrow" aria-hidden="true">↗</span>
               </a>
             </div>
-            <a class="about-coffee" href="https://github.com/alex-soul/pi-rain-radar" target="_blank" rel="noopener noreferrer" aria-label="Buy Alex Soul a coffee (opens in a new tab)">
+            <a class="about-coffee" href="https://buymeacoffee.com/alexsoul" target="_blank" rel="noopener noreferrer" aria-label="Buy Alex Soul a coffee (opens in a new tab)">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h12v7a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5V8Zm12 1h2a3 3 0 0 1 0 6h-2M3 22h17M8 2v3m4-3v3m4-3v3"/></svg>
               <span>Buy me a coffee</span><span class="coffee-arrow" aria-hidden="true">↗</span>
             </a>
@@ -310,7 +331,8 @@
         </div>
       </dialog>
       <aside id="stats" tabindex="0" aria-label="Stats for nerds" aria-description="Drag to move, or use arrow keys when focused." hidden>
-        <div class="stats-content"><h3>Stats for nerds</h3><p>Experimental · current backend status</p><p id="stats-connection">Waiting for status…</p><div id="stats-data"></div></div>
+        <div class="stats-header"><h3>Stats for nerds <span id="stats-connection">(waiting…)</span></h3><button id="stats-close" type="button" aria-label="Close Stats for nerds" title="Close Stats for nerds">×</button></div>
+        <div class="stats-content"><div id="stats-data"></div></div>
         <button id="stats-resize" type="button" aria-label="Resize Stats for nerds. Drag or use arrow keys." title="Resize Stats for nerds">◢</button>
       </aside>
       <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="overview" aria-label="Overview map and observed precipitation" hidden>
@@ -341,6 +363,11 @@
         <button id="map-update-dismiss" type="button" hidden>Continue with current map</button>
       </div>
 
+      <dialog id="power-ack-dialog" aria-labelledby="power-ack-title">
+        <div class="power-ack-heading"><h2 id="power-ack-title"></h2><button id="power-ack-close" type="button" aria-label="Dismiss power message">×</button></div>
+        <p id="power-ack-message"></p>
+        <p>Radar already loaded in this browser can keep playing while it’s available. We’ll reconnect automatically when your Pi is back online.</p>
+      </dialog>
       <dialog id="power-dialog" aria-labelledby="power-title">
         <h2 id="power-title">Device Power</h2><p id="power-message" role="status"></p>
         <a id="power-guide" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/device-power.md" target="_blank" rel="noopener noreferrer">Setup &amp; troubleshooting</a>

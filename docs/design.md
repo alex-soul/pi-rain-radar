@@ -28,7 +28,7 @@ The frontend polls local status and uses bounded decoding, cancellation and reus
 
 OpenWeather One Call 4.0 current and minute-forecast endpoints update independently on the existing schedule. weather.json retains normalized data, request budgets, errors and one last valid gust with its original observation time. Credentials are stored separately. Failed responses do not renew data age. Ten optional readings share these responses; adding visibility, pressure or UV adds no request.
 
-Browser formatting handles temperature, wind, visibility and pressure units, compass/degrees, and Flow/Meteorological wind convention. Current weather can retain one failed poll within its age limit; gust lifetime is independently configurable. Rain forecast clears on forecast failure/expiry rather than presenting stale data as a successful response. Rendering details and all signal meanings belong in [indicators](indicators.md).
+Browser formatting handles temperature, wind, visibility and pressure units, compass/degrees, and Flow/Meteorological wind convention. Current weather can retain one failed poll within its age limit; gust lifetime is independently configurable. Rain forecast shows a red baseline on forecast failure/expiry, independently of the current-weather dock handle. Rendering details and all signal meanings belong in [indicators](indicators.md).
 
 ## Settings, security and optional power
 
@@ -47,3 +47,9 @@ System Status reports each map and weather separately. The bounded in-memory Log
 ## Limits
 
 Coverage gaps, delayed provider data, network loss and cold starts remain possible. Cached playback is not evidence of fresh acquisition. Native Pi checks are distinct from emulated CI, and short resource samples are not a soak. Some Pi kernels do not enforce Docker memory limits; measure available RAM, process memory and swap directly. See [validation](validation.md) and tracked [follow-ups](follow-ups.md).
+
+## Optional embedding and release awareness
+
+The dedicated `/embed` page imports only lightweight playback/health helpers. It contains Main radar, an LED and credits. Embed settings are shared server-side, disabled by default, atomically persisted and protected by the normal Settings flow. Only exact configured origins may frame it; normal pages remain non-frameable. No profiles or UI/admin controls are initialized. See [Embed](embed.md).
+
+The backend checks fixed public release metadata at most once per 24-hour cycle (bounded pagination), storing the last attempt and successful result. About reads the local cache only. Semantic version ordering uses the existing semver package as a direct backend dependency. Failures do not affect acquisition health; there is no automatic update. See [release checks](release-checks.md).

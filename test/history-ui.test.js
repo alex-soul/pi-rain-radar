@@ -14,7 +14,7 @@ async function harness() {
   let now = 0, polls = 0, adopted, hours = 2;
   const requests=[];
   const events = {};
-  const context = vm.createContext({$, Date: class extends Date { static now() { return now; } }, setTimeout: () => 1, clearTimeout() {},
+  const context = vm.createContext({recordConnection(){},$, Date: class extends Date { static now() { return now; } }, setTimeout: () => 1, clearTimeout() {},
     document: {addEventListener: (event, fn) => events[event] = fn}, window: {addEventListener: (event, fn) => events[event] = fn},
     playbackHours:()=>hours,
     fetch: async url => {requests.push(url);return {ok:true, json: async () => ({start:2000000-Number(new URL(url,'http://test').searchParams.get('hours')??hours)*3600,end:2000000,complete:true,times:[2000000],frames:[{time:2000000}]})};},
@@ -64,7 +64,7 @@ test('Now invalidates a historical image load still in flight', async () => {
 });
 test('live status polling does not decode or replace images during historical playback', async () => {
   let decoded = 0, adopted = 0;
-  const context = vm.createContext({playbackHours:()=>6,mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, ageLiveWindow(){}, performance, serverClock:null, archiveRevision:undefined, $:()=>({dataset:{}}), mapUpdateVisible:false});
+  const context = vm.createContext({recordConnection(){},playbackHours:()=>6,mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, ageLiveWindow(){}, performance, serverClock:null, archiveRevision:undefined, $:()=>({dataset:{}}), mapUpdateVisible:false});
   const pollCode = app.slice(app.indexOf('let pollRunning = false;'), app.indexOf('try {\n  const response = await fetch(`/maps/'));
   vm.runInContext(`let generation=1, historyWindow={end:2000000}, historyLoading=false, sequence=[{time:2000000,url:'/old',overviewUrl:'/old-overview'}], pending=null, status=null, serverReachable=false, displayed=sequence[0], returningLive=false;\n${pollCode}\nglobalThis.runPoll=poll; globalThis.readStatus=()=>status;`,context);
   await context.runPoll();
@@ -75,7 +75,7 @@ test('live status polling does not decode or replace images during historical pl
 
 test('history range labels omit ordinals and include both dates across midnight', () => {
   const format = (time, options) => new Intl.DateTimeFormat('en-GB', {timeZone:'Europe/London', ...options}).format(new Date(time * 1000));
-  const context = vm.createContext({format, clock: time => format(time,{hour:'2-digit',minute:'2-digit'})});
+  const context = vm.createContext({recordConnection(){},format, clock: time => format(time,{hour:'2-digit',minute:'2-digit'})});
   vm.runInContext(app.slice(app.indexOf('function historyLabel('), app.indexOf('function paintHistory()')), context);
   const stamp = text => Date.parse(text) / 1000;
   assert.equal(context.historyLabel(stamp('2026-08-12T08:50:00Z'),stamp('2026-08-12T10:50:00Z')), '12 Aug 09:50 - 11:50');

@@ -26,7 +26,7 @@ function paint() {
 function guard(event) {
   if (!locked) return;
   const target = event.target;
-  if (target.closest?.('#settings-dialog, #map-preview-dialog, #radar-confirm-dialog, #power-dialog, #external-dialog, #settings-toggle, [data-provider-credit]')) return;
+  if (target.closest?.('#settings-dialog, #map-preview-dialog, #radar-confirm-dialog, #power-dialog, #power-ack-dialog, #external-dialog, #settings-toggle, [data-provider-credit]')) return;
   if (event.type === 'click' || event.type === 'pointerdown' || event.type === 'keydown') {
     document.getElementById('settings-toggle').hidden = false;
     window.dispatchEvent(new Event('radar-settings-wake'));

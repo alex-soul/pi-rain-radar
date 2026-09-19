@@ -10,6 +10,14 @@ import {createRadarSettings} from '../src/radar-settings.js';
 const png=await sharp({create:{width:256,height:256,channels:4,background:'#329db3'}}).png().toBuffer();
 const views={view:{lat:0,lon:0,zoom:0,radarZoom:0,width:128,height:128},viewKey:'111111111111',overviewView:{lat:0,lon:0,zoom:1,radarZoom:1,width:128,height:128},overviewKey:'222222222222'};
 async function directory(t){const dir=await mkdtemp(join(tmpdir(),'radar-source-test-'));t.after(()=>rm(dir,{recursive:true,force:true}));return dir;}
+
+test('routine incomplete history stays out of Log while failed acquisition is recorded',async t=>{
+ const dir=await directory(t),time=Date.UTC(2026,8,19,12),events=[];let failed=false;
+ const provider={getHistory:async()=>{if(failed)throw Error('offline');return [{time:time/1000-600},{time:time/1000}];},getTile:async frame=>{if(frame.time===time/1000-600)throw Error('missing old frame');return png;}};
+ const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{views,now:()=>time,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'}),onEvent:code=>events.push(code)});
+ await radar.refresh();assert.ok(radar.status().frame);assert.equal(events.includes('radar-error'),false);
+ failed=true;await radar.refresh();assert.ok(events.includes('radar-error'));
+});
 test('cold startup publishes the fast map then seeds complete history after the slower map finishes',async t=>{
  const dir=await directory(t),time=Date.UTC(2026,8,17,12);
  let release;const gate=new Promise(resolve=>{release=resolve;});

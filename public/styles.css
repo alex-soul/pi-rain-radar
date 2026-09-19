@@ -1047,12 +1047,43 @@ body:not(.footer-hidden) .source { z-index: 5; }
 .about-sketch::before { clip-path: polygon(0 0, 100% 0, 100% 90%, 43% 90%, 43% 100%, 0 100%); }
 .about-sketch::after { clip-path: inset(90% 0 0 43%); transform: translateY(4px) scale(1.6); transform-origin: 90% 96%; }
 #settings-pin-save[hidden] { display: none; }
+#embed-origins { box-sizing: border-box; width: 100%; resize: vertical; background: transparent; color: inherit; border: 1px solid #80988b88; border-radius: 6px; padding: 8px; font: inherit; }
+.embed-options { grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 18px; }
+.embed-url-group { margin-top: 18px; }
+#release-info { top: -2px; }
+#release-detail { white-space: pre-line; }
+#release-info.release-behind { color: #b77721; border-color: currentColor; opacity: 1; }
+:root[data-theme="dark"] #release-info.release-behind { color: #e3b361; }
+#release-bubble p { margin: 0 0 8px; }
+#release-bubble #release-notice { margin-top: 12px; padding-top: 10px; border-top: 1px solid #8aa79a60; }
+#release-bubble a { color: inherit; }
+.api-map-info { border: 1px solid #80988b88; border-radius: 10px; padding: 16px; line-height: 1.5; }
+.api-map-info p { margin-bottom: 0; }
+#power-ack-dialog { box-sizing: border-box; width: min(440px, calc(100vw - 24px)); padding: 20px; border: 1px solid #a6bfb5; border-radius: 14px; background: #edf3ee; color: #293630; }
+#power-ack-dialog::backdrop { background: #07141050; }
+.power-ack-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.power-ack-heading h2 { margin: 0; font-size: 20px; }
+#power-ack-close { flex: 0 0 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; font-size: 26px; cursor: pointer; }
+#power-ack-dialog p { line-height: 1.5; }
+#power-ack-dialog p:last-child { margin-bottom: 0; }
+:root[data-theme="dark"] #power-ack-dialog { background: #1d2b29; color: #edf3ee; border-color: #455b51; }
+#embed-fields[hidden] { display: none; }
+#settings-panel-embed { padding-top: 8px; }
+#settings-panel-embed .embed-help { margin-top: 0; margin-bottom: 16px; }
+.embed-help summary h3 { display: inline; margin: 0; }
+#settings-panel-embed label[for="embed-origins"] { margin-bottom: 8px; }
 
-.stats-content { padding: 14px 18px 16px; overflow: auto; min-height: 0; font-size: 12px; line-height: 1.5; touch-action: pan-y; }
+.stats-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 10px 2px 18px; border-bottom: 1px solid currentColor; border-bottom-color: #80988b55; flex-shrink: 0; }
+.stats-header h3 { margin: 0; font-size: 15px; line-height: 18px; }
+#stats-connection { margin: 0; font-size: 11px; line-height: 14px; opacity: .7; }
+.stats-header h3 span { font-size: 11px; font-weight: normal; opacity: .65; }
+#stats-close { flex-shrink: 0; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 24px; cursor: pointer; }
+#stats-close:hover, #stats-close:focus-visible { background: #80988b33; }
+.stats-content { padding: 8px 18px 16px; overflow: auto; min-height: 0; font-size: 12px; line-height: 1.5; touch-action: pan-y; }
 .stats-content h3 { margin: 0; font-size: 15px; }
 .stats-content h4 { margin: 10px 0 4px; font-size: 12px; }
 .stats-content p { margin: 2px 0; opacity: .7; }
-.stats-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; }
 .stats-grid strong { display: block; }
 .stats-content dl { margin: 4px 0; }
 .stats-content dt { opacity: .65; }
@@ -1083,3 +1114,8 @@ body:not(.footer-hidden) .source { z-index: 5; }
     :root[data-theme="dark"] #settings-section::picker(select) { background: #142623; color: #e1eee7; }
   }
 }
+
+/* Unavailable acquisition or backend; distinct from usable amber warnings. */
+#weather-dock[data-health="error"] .weather-grip,
+#footer-toggle[data-health="error"] .footer-grip { --grip-color: #c27878; }
+.source-status-row [data-health="error"]::before { background: #c27878; }

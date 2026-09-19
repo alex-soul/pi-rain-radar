@@ -67,28 +67,32 @@ export function paintWeather(state, now = Date.now()) {
   const available = new Map(samples.filter(valid).filter(item => item.time >= minuteNow && item.time < minuteNow+3600 && (item.time-minuteNow)%60===0).map(item=>[(item.time-minuteNow)/60,item.precipitation]));
   // Judge completeness at acquisition, not by the naturally shrinking forecast horizon between polls.
   const complete = samples.length >= 60 && samples.every((item,i)=>valid(item) && (!i || item.time === samples[i-1].time+60));
-  const forecastUsable = !!state?.configured && forecastFresh && !state?.forecastError;
-  const health = !state ? ['warning','Cannot reach weather server.']
+  const forecastUsable = !!state?.configured && forecastFresh && !state?.forecastError && available.size > 0;
+  const starting = !!state?.fetching && !state?.fetchedAt && !state?.error;
+  const forecastStarting = !!state?.fetching && !forecastFetchedAt && !state?.forecastError;
+  const health = !state ? ['error','Cannot reach weather server.']
     : !state.configured ? ['unconfigured','No OpenWeather key configured.']
+    : starting ? ['warning','Checking OpenWeather…']
+    : !usable ? ['error','Current weather missing or expired.']
     : state.error || failures > 0 ? ['warning',state.error || 'Weather refresh failed; awaiting recovery.']
-    : state.forecastError ? ['warning',`Rain forecast: ${state.forecastError}`]
-    : state.fetching && !state.fetchedAt && !forecastFetchedAt ? ['warning','Checking OpenWeather…']
-    : forecastUsable && complete && available.size && usable ? ['ready',`OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`]
-    : ['warning',forecastUsable && !complete ? 'Rain forecast has missing data; awaiting refresh.' : 'Weather data missing or expired; awaiting refresh.'];
+    : ['ready',`OpenWeather connected. Last fetched at ${fetchedStamp(state.fetchedAt)}.`];
   $('weather-dock').setAttribute('data-health',health[0]);
+  $('weather-dock').setAttribute('aria-label',`${expanded ? 'Collapse' : 'Expand'} weather readings: ${description}. ${health[1]}`);
   $('weather-dock').title = `${description}. ${health[1]}`;
   const weatherStatus = $('settings-api-status');
   const summary = !state ? 'Appliance unreachable' : !state.configured ? 'Not configured'
+    : starting ? 'Checking OpenWeather…'
     : state.error || failures > 0 ? 'Weather update failed'
-    : state.forecastError ? 'Rain forecast update failed'
-    : forecastUsable && !complete ? 'Rain forecast has missing minutes'
     : health[0] === 'ready' ? 'Connected' : 'Data missing or expired';
   weatherStatus.textContent = `OpenWeatherMap · ${summary}`;
   weatherStatus.setAttribute('data-health',health[0]);
   $('minute-message').hidden = true; $('minute-message').textContent = '';
   $('minute-chart').style.visibility = 'visible';
   $('minute-chart').setAttribute('viewBox','0 0 360 85');
-  const forecastLabel = forecastUsable ? `Current precipitation forecast, fetched at ${fetchedStamp(forecastFetchedAt)}. ${available.size} available minute samples. Precipitation in millimetres per hour.` : 'Forecast unavailable after failed refresh or expiry.';
+  const forecastLabel = forecastUsable ? `Current precipitation forecast, fetched at ${fetchedStamp(forecastFetchedAt)}. ${available.size} available minute samples. Precipitation in millimetres per hour.`
+    : !state ? 'Forecast unavailable: appliance unreachable.'
+    : !state.configured ? 'Forecast not configured.'
+    : forecastStarting ? 'Waiting for first forecast.' : 'Forecast unavailable after failed refresh or expiry.';
   $('minute-chart').setAttribute('aria-label',forecastLabel);
   $('rain-forecast').title = state?.forecastError || forecastLabel;
   const bars = [], scale = Math.max(1,...available.values());
@@ -100,6 +104,12 @@ export function paintWeather(state, now = Date.now()) {
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
     title.textContent=`${stamp(minuteNow+minute*60)} · ${missing?'Missing forecast minute':rain+' mm/h'}`;
     bar.append(title); bars.push(bar);
+  }
+  if (!forecastUsable) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    const fill = !state ? '#c27878' : !state.configured ? '#89958f' : forecastStarting ? '#c49343' : '#c27878';
+    for (const [key,value] of Object.entries({x:0,y:84,width:360,height:1,fill})) line.setAttribute(key,value);
+    bars.push(line);
   }
   $('minute-bars').replaceChildren(...bars);
 }

@@ -2,7 +2,7 @@ export function statsSnapshot({status, reachable, receivedAt, selected, hours, l
   const stale = !reachable || !receivedAt || now - receivedAt > 45000;
   return {
     stale,
-    connection: !receivedAt ? 'Waiting for status…' : stale ? 'Backend unreachable or stale · last received data below' : 'Backend connected',
+    connection: !receivedAt ? 'Waiting…' : stale ? 'Offline / stale' : 'Connected',
     sources: status?.sources ?? {},
     windowLabel: `${selected ? 'Archive' : 'Live'} · ${selected?.hours ?? hours} h${loading ? ' · loading selection…' : ''}`,
     end: selected?.end ?? status?.end,

@@ -44,8 +44,22 @@ test('OpenWeather uses separate successful fetch times and retry schedule, inclu
   const context=vm.createContext({document:{querySelector:()=>({content:'UTC'}),getElementById:node,createElement:node},statsSnapshot,formatTime:time=>String(time),setupFloatingWidget:o=>o.onVisibility(true)});
   vm.runInContext(source,context);texts=[];
   context.updateStats({status:{weather:{configured:true,fetchedAt:10000,forecastFetchedAt:20000,nextAttemptAt:30000,error:'Failed'}},reachable:true,receivedAt:Date.now(),hours:2});
-  for(const expected of ['Weather fetched: 10','Forecast fetched: 20','Next attempt: 30','Problem'])assert.ok(texts.includes(expected),expected);
+  for(const expected of ['Current weather','10','Minute forecast','20','Next check','30','Problem'])assert.ok(texts.includes(expected),expected);
   texts=[];
   context.updateStats({status:{weather:{configured:false,fetchedAt:null,nextAttemptAt:null}},reachable:true,receivedAt:Date.now(),hours:2});
-  assert.ok(texts.includes('Not configured'));assert.ok(!texts.some(t=>t.startsWith('Weather fetched:')));
+  assert.ok(texts.includes('Not configured'));assert.ok(!texts.includes('Current weather'));
+});
+
+test('Stats replaces the next estimate with real acquisition activity, but not stale activity',async()=>{
+  let texts=[];
+  const source=(await readFile(new URL('../public/stats.js',import.meta.url),'utf8')).replace(/^import[^\n]+\n/gm,'').replace('export function','function');
+  const node=()=>({dataset:{},append(){},replaceChildren(){},set textContent(v){texts.push(v);}});
+  const context=vm.createContext({document:{querySelector:()=>({content:'UTC'}),getElementById:node,createElement:node},statsSnapshot,formatTime:time=>String(time),setupFloatingWidget:o=>o.onVisibility(true)});
+  vm.runInContext(source,context);
+  const update=(fetching,nextUpdate,reachable=true)=>{texts=[];context.updateStats({status:{sources:{main:{time:100,nextCheckAt:300000,fetching,nextUpdate,state:'ready'}}},receivedAt:Date.now(),reachable,hours:2});};
+  update(true,null);assert.ok(texts.includes('Checking…'));assert.ok(!texts.includes('Fetching…'));
+  update(true,{state:'fetching'});assert.equal(texts.filter(t=>t==='Fetching…').length,2);
+  assert.ok(texts.some(t=>t.startsWith('100 ·')),'Latest remains the last completed observation');
+  update(false,null);assert.ok(texts.includes('300'));assert.ok(!texts.includes('Fetching…'));
+  update(true,{state:'fetching'},false);assert.ok(!texts.includes('Fetching…'));assert.ok(texts.includes('Last received'));
 });

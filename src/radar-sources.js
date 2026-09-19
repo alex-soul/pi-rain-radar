@@ -55,7 +55,7 @@ export async function createRadarSources(directory, providers, {
           return tiles.get(tileKey);
         },
       };
-      workers.set(id,await createRadar(directory,provider,{now,waitForSettle,nextRefreshAt,manageCleanup:false,storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
+      workers.set(id,await createRadar(directory,provider,{now,waitForSettle,nextRefreshAt,manageCleanup:false,onEvent:code=>{if(code==='radar-error'||code==='radar-recovered')onEvent(code);},onObservation:r=>archive.add([{...r,source,key}]),storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
     }
     return workers.get(id);
   }
@@ -68,7 +68,7 @@ export async function createRadarSources(directory, providers, {
       for(const [id,worker] of workers) {
         const source=id.slice(0,id.indexOf('-')),key=id.slice(id.indexOf('-')+1);
         // Include every locally acquired observation, not just the latest image.
-        for(const frame of worker.observations()) observations.push({time:frame.time,source,key,url:frame.url});
+        for(const frame of worker.observations()) observations.push({time:frame.time,source,key,url:frame.url,arrivedAt:frame.arrivedAt});
       }
       await archive.add(observations);
     });capturing=task.catch(()=>{});return task;
@@ -82,6 +82,7 @@ export async function createRadarSources(directory, providers, {
   }
   return {
     archive,
+    observe: () => archive.observe().catch(()=>{storageError='Could not save radar history.';onEvent('storage-error');}),
     async refresh() {
       if(busy||changing)return;busy=true;resetRequests();
       try {
@@ -91,7 +92,6 @@ export async function createRadarSources(directory, providers, {
         storageError=null;await cleanupCaptured(directory,now);
       } catch {storageError='Could not save radar history.';onEvent('storage-error');}
       finally {busy=false;tiles.clear();}
-      if(['main','overview'].some(slot=>sourceStatus(slot).state!=='ready'))onEvent('radar-error');
     },
     async configure(next, commit) {
       if(busy||changing)return {status:409,error:'Radar is updating. Please try again shortly.'};
@@ -106,6 +106,7 @@ export async function createRadarSources(directory, providers, {
       }catch{return {status:503,error:'Could not apply radar sources. Check Status and try again.'};}
       finally{changing=false;tiles.clear();}
     },
+    healthSources: () => ({main:sourceStatus('main'),overview:sourceStatus('overview')}),
     status(hours=2) {
       const live=archive.live(hours),frames=live.frames;
       const sources={main:sourceStatus('main'),overview:sourceStatus('overview')};

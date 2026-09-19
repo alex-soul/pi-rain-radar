@@ -240,3 +240,83 @@ test('migration retains uniquely proven observations from providers no longer se
   assert.equal(a.frames()[0].source, 'rainbow');
   assert.equal(a.frames()[0].time, end - 600);
 });
+
+
+test('incident evidence records early gaps, exact grace and late recovery once without viewers',async t=>{
+  const dir=await fixture(t);let clock=end*1000+180000;
+  const a=await open(dir,{now:()=>clock});
+  const slot=end+600,main=record(slot,'main'),overview=record(slot,'overview');
+  clock=(slot+360)*1000;
+  await images(dir,[main]);await a.add([{...main,arrivedAt:clock}]);
+  assert.equal(a.live().counts.overview.gapsSeen,1);
+  assert.equal(a.live().counts.main.lateArrivals,0);
+  clock=(slot+600)*1000;
+  await images(dir,[overview]);await a.add([{...overview,arrivedAt:clock}]);
+  assert.equal(a.live().counts.overview.lateArrivals,0);
+  assert.equal(a.live().counts.overview.gapsSeen,1);
+  const late=record(slot+600,'main');clock=(slot+1200)*1000+1;
+  await a.observe();await images(dir,[late]);await a.add([{...late,arrivedAt:clock}]);
+  await Promise.all(Array.from({length:8},()=>a.add([{...late,arrivedAt:clock+1}])));
+  assert.equal(a.live().counts.main.lateArrivals,1);
+  assert.equal(a.live().counts.main.gapsSeen,1);
+  assert.equal(a.live().counts.overview.gapsSeen,2);
+  assert.equal(a.window(slot+600,1).counts.main.lateArrivals,1);
+  const restarted=await open(dir,{now:()=>clock});
+  assert.deepEqual(restarted.live().counts,a.live().counts);
+  clock+=8*3600000;await restarted.observe();
+  assert.equal(restarted.live().counts.main.lateArrivals,0);
+});
+
+test('startup backfill and downtime are unknown, known gaps survive restart and late recovery',async t=>{
+  const dir=await fixture(t);let clock=end*1000;
+  let a=await open(dir,{now:()=>clock});
+  const old=record(end-600,'main');await images(dir,[old]);await a.add([{...old,arrivedAt:clock}]);
+  assert.equal(a.live().counts.main.tracked,0);
+  clock=(end+1200)*1000;await a.observe();
+  assert.equal(a.live().counts.main.gapsSeen,1);
+  clock=(end+3600)*1000;a=await open(dir,{now:()=>clock});await a.observe();
+  assert.equal(a.live().counts.main.gapsSeen,1);
+  const recovered=record(end+600,'main');await images(dir,[recovered]);await a.add([{...recovered,arrivedAt:clock}]);
+  assert.equal(a.live().counts.main.lateArrivals,1);
+  assert.ok(a.live().counts.main.tracked<a.live().counts.main.total);
+  clock+=9*86400000;await a.observe();
+  const saved=JSON.parse(await readFile(join(dir,`observations-${hash(views)}.json`),'utf8'));
+  assert.ok(saved.incidents.every(r=>r.time>=a.cutoff()));
+  assert.ok(saved.incidents.length<=74);
+});
+
+test('incident publication rolls back atomically and source switches do not invent backfill incidents',async t=>{
+  const dir=await fixture(t);let clock=end*1000;
+  const a=await open(dir,{now:()=>clock}),file=join(dir,`observations-${hash(views)}.json`);
+  const before=await readFile(file,'utf8');
+  clock=(end+1200)*1000;await mkdir(file+'.tmp');
+  await assert.rejects(a.observe());assert.equal(a.live().counts.main.gapsSeen,0);
+  assert.equal(await readFile(file,'utf8'),before);await rm(file+'.tmp',{recursive:true});
+  await a.observe();assert.equal(a.live().counts.main.gapsSeen,1);
+  clock+=180000;await a.select({main:'rainbow',overview:'rainbow'});
+  const old=record(end+600,'main','rainbow');await images(dir,[old]);await a.add([{...old,arrivedAt:clock}]);
+  assert.equal(a.live().counts.main.lateArrivals,0);
+  clock=(end+2400)*1000;await a.observe();
+  const state=JSON.parse(await readFile(file,'utf8'));
+  assert.ok(state.incidents.some(r=>r.source==='rainbow'&&r.key===key('main','rainbow')));
+  assert.ok(state.incidents.some(r=>r.source==='rainviewer'&&r.key===key('main','rainviewer')));
+});
+
+
+test('recovery between clock ticks cannot erase a due gap',async t=>{
+  const dir=await fixture(t);let clock=end*1000;
+  const a=await open(dir,{now:()=>clock}),r=record(end+600,'main');
+  clock=(end+1200)*1000+1;await images(dir,[r]);await a.add([{...r,arrivedAt:clock}]);
+  assert.equal(a.live().counts.main.gapsSeen,1);
+  assert.equal(a.live().counts.main.lateArrivals,1);
+});
+
+
+test('first arrival at exact grace boundary creates neither a gap nor lateness',async t=>{
+  const dir=await fixture(t);let clock=end*1000;
+  const a=await open(dir,{now:()=>clock}),r=record(end+600,'main');
+  clock=(end+1200)*1000;await images(dir,[r]);await a.add([{...r,arrivedAt:clock}]);
+  assert.equal(a.live().counts.main.gapsSeen,0);
+  assert.equal(a.live().counts.main.lateArrivals,0);
+  assert.equal(a.live().counts.overview.gapsSeen,1);
+});

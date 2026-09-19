@@ -1,5 +1,14 @@
 const $=id=>document.getElementById(id);
 export function setupDevicePower(canEdit,request) {
+  const acknowledgement=$('power-ack-dialog');
+  $('power-ack-close').onclick=()=>acknowledgement.close();
+  function accepted(name){
+    $('power-ack-title').textContent=name==='restart'?'Reboot initiated':'Shutdown initiated';
+    $('power-ack-message').textContent=name==='restart'?'Give your Pi a moment to restart.':'Your Pi is shutting down. Let it finish before switching off the power. Power it back up whenever you’re ready.';
+    const settings=$('settings-dialog');
+    settings.addEventListener('close',()=>{acknowledgement.showModal();$('power-ack-close').focus();},{once:true});
+    settings.close();
+  }
   const popup=$('power-dialog');let action=null,requestId=null,busy=false,generation=0;
   function message(title,text,confirm=false,guide=false){
     $('power-title').textContent=title;$('power-message').textContent=text;
@@ -33,7 +42,7 @@ export function setupDevicePower(canEdit,request) {
     $('power-confirm').disabled=true;$('power-cancel').disabled=true;
     const epoch=generation;
     try{const response=await request('/power',{action,requestId}),result=await response.json();if(epoch!==generation)return;
-      if(response.status===202)message('Request accepted',action==='restart'?'Restart requested. The display will reconnect when the device is ready.':'Shutdown requested. Wait for the device to finish shutting down before disconnecting power.');
+      if(response.status===202)accepted(action);
       else message('Power request not confirmed',result.error||'Check the device before trying again.',false,true);
     }catch{if(epoch===generation)message('Power request not confirmed','The connection was interrupted. Check the device before trying again.');}
     finally{busy=false;}

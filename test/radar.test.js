@@ -134,7 +134,7 @@ for (const failedView of ['main', 'overview']) test(`missing ${failedView} frame
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1800, 2400]);
     assert.ok(radar.status().error, 'An incomplete acquisition remains visible in source health even when the newest frame succeeded');
     assert.deepEqual(radar.archive.window(2400).frames.map(f => f.time), [600, 1800, 2400]);
-    assert.equal(events.at(-1),'radar-error');
+    assert.ok(!events.includes('radar-error'),'routine missing frames do not enter the log');
     radar = await createRadar(directory, provider, options);
     requests = [];
     await radar.refresh();
@@ -143,7 +143,7 @@ for (const failedView of ['main', 'overview']) test(`missing ${failedView} frame
     assert.ok(requests.every(r => r.time === 1200), 'Do not refetch complete frames');
     fail = false; requests = [];
     await radar.refresh();
-    assert.equal(events.at(-1),'radar-recovered');
+    assert.ok(!events.includes('radar-recovered'),'routine gap repair stays quiet');
     assert.deepEqual(radar.status().frames.map(f => f.time), times);
     assert.ok(requests.every(r => r.time === 1200));
     if (failedView === 'overview') assert.ok(requests.every(r => r.zoom === overviewView.radarZoom), 'Reuse the already complete main image');

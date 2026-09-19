@@ -1,3 +1,6 @@
+import { createHealthEvents } from './health-events.js';
+import { createReleaseCheck } from './release-check.js';
+import { createEmbedSettings } from './embed-settings.js';
 import { localRainbowCounts } from "./stats.js";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -34,8 +37,18 @@ radarSettings.setApply((next,commit)=>{
 });
 weather = await createWeather(directory,{location:maps.current().settings,onEvent:diagnostics.record});
 const power=createDevicePower({onEvent:diagnostics.record});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power });
+const embed=await createEmbedSettings(directory);
+const releases=await createReleaseCheck(directory,packageInfo.version);
+const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, embed });
+const observeHealth=createHealthEvents(diagnostics.record);
+const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());
+const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
+  ['/release-ui.js',['release-ui.js','text/javascript']],
+  ['/embed.js',['embed.js','text/javascript']],
+  ['/embed.css',['embed.css','text/css']],
+  ['/embed-settings-ui.js',['embed-settings-ui.js','text/javascript']],
+  ['/connection-events.js',['connection-events.js','text/javascript']],
   ["/manifest.webmanifest", ["manifest.webmanifest", "application/manifest+json"]],
   ["/icon.svg", ["icon.svg", "image/svg+xml"]],
   ["/icon-192.png", ["icon-192.png", "image/png"]],
@@ -54,6 +67,7 @@ const staticFiles = new Map([
   ["/frame-loader.js", ["frame-loader.js", "text/javascript"]],
   ["/pin-entry.js", ["pin-entry.js", "text/javascript"]],
   ["/weather.js", ["weather.js", "text/javascript"]],
+  ["/health.js", ["health.js", "text/javascript"]],
   ["/weather-format.js", ["weather-format.js", "text/javascript"]],
   ["/screen-lock.js", ["screen-lock.js", "text/javascript"]],
   ["/settings-idle.js", ["settings-idle.js", "text/javascript"]],
@@ -79,6 +93,7 @@ const server = createServer(async (req, res) => {
   try {
     const settingsPath = new URL(req.url, "http://localhost").pathname;
     if (settingsPath === "/api/settings" || settingsPath.startsWith("/api/settings/")) {
+      checkHealth();
       return await handleSettings(req, res, settingsPath);
     }
     if (req.method !== "GET" && req.method !== "HEAD") {
@@ -93,6 +108,14 @@ const server = createServer(async (req, res) => {
       "Content-Security-Policy",
       "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'",
     );
+    if (path === '/embed') {
+      const config=embed.current();
+      if(!config.enabled||!config.origins.length){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Embedding is disabled.');}
+      res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; frame-ancestors ${config.origins.join(' ')}`);
+      const template=(await readFile('public/embed.html','utf8')).replace('{{EMBED_THEME}}',config.theme).replace('{{EMBED_HOURS}}',String(config.hours)).replace('{{EMBED_SPEED}}',String(config.speed)).replace('{{EMBED_BASEMAP}}',config.theme==='dark'?'basemap-dark.svg':'basemap.svg');
+      res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-store'});
+      return res.end(req.method==='HEAD'?undefined:mapPage(template,active));
+    }
     if (path === "/api/archive") {
       const params = new URL(req.url, "http://localhost").searchParams;
       if (params.get('map') && params.get('map') !== active.id) { res.writeHead(409); return res.end(); }
@@ -102,7 +125,12 @@ const server = createServer(async (req, res) => {
       res.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       return res.end(req.method === 'HEAD' ? undefined : JSON.stringify(result || { error: 'That history is unavailable' }));
     }
+    if (path === '/api/releases') {
+      res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
+      return res.end(req.method==='HEAD'?undefined:JSON.stringify(releases.status()));
+    }
     if (path === "/api/status" || path === "/healthz") {
+      checkHealth();
       const hours = new URL(req.url, "http://localhost").searchParams.get('hours') ?? '2';
       if (!['2','4','6'].includes(hours)) { res.writeHead(400); return res.end(); }
       res.writeHead(200, {
@@ -155,9 +183,14 @@ function scheduledRefresh() {
   void weather.refresh();
 }
 if(process.env.RADAR_MANUAL_REFRESH!=='1')scheduledRefresh();
+// Synthetic/manual runs never contact GitHub. Status reads never trigger checks.
+if(process.env.RADAR_MANUAL_REFRESH!=='1')void releases.check();
+const releaseTimer=process.env.RADAR_MANUAL_REFRESH==='1'?null:setInterval(()=>void releases.check(),3600000);
 const timer = process.env.RADAR_MANUAL_REFRESH==='1'?null:setInterval(scheduledRefresh, 300000);
 function stop() {
   clearInterval(timer);
+  clearInterval(releaseTimer);
+  clearInterval(healthTimer);
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000).unref();
 }

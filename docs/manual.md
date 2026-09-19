@@ -170,10 +170,16 @@ Current weather and Rain forecast remain current during Archive playback.
 
 ### Stats for nerds
 
-Enable its button under **Interface → Buttons** to open the experimental draggable/resizable widget. It reports each provider's latest observation, last/next check and acquisition state; selected-window availability; OpenWeather fetch/next-attempt timing; and local monthly Rainbow request/tile counts. These are not billing totals or guarantees of the next frame. It needs no extra host permissions and is separate from Log.
+Enable its button under **Interface → Buttons** to open the draggable/resizable widget. It reports each provider's latest observation, last/next check and acquisition state; selected-window availability; OpenWeather fetch/next-attempt timing; and local monthly Rainbow request/tile counts. These are not billing totals or guarantees of the next frame. It needs no extra host permissions and is separate from Log.
+
+See the [Stats for nerds reference](stats-for-nerds.md) for metric definitions and tracking limitations.
+
+## Embedded Radar
+
+Use **Settings → Embed** for a stripped-down iframe containing the main radar, status light and credits. See the [Embed guide](embed.md) for trusted origins, automatic saving, LAN setup and private HTTPS through Tailscale, with the tested scope recorded.
 
 ## About
 
 For optional phone/laptop installation and private remote access, see [PWA and HTTPS setup](pwa.md). Normal browser and kiosk use do not require it.
 
-The About tab identifies the app version and links to the project and provider information. Use this version when reporting a problem. See [upgrades](upgrading.md) and [troubleshooting/PIN recovery](troubleshooting.md).
+The About tab identifies the app version and links to the project and provider information. Tap the version's info icon for [daily release checks](release-checks.md), including newer versions and dated saved results. Use the installed version when reporting a problem. See [upgrades](upgrading.md) and [troubleshooting/PIN recovery](troubleshooting.md).
