@@ -6,6 +6,8 @@ Enable its button under **Settings → Interface → Buttons**, then open the dr
 
 This page is the reference for the widget’s metrics and limitations. See [screen indicators](indicators.md) for colours elsewhere in the UI and [playback conventions](playback-conventions.md) for Live, Archive and grace rules.
 
+The widget and persistent incident counters shipped in 0.6.0 without an experimental label. Reboot and shutdown/power-up tests retained real incident counts while current availability continued to change independently. Use the [scenario studio](development.md#reusable-scenario-studio) for repeatable local review; production still preserves honest partial and untracked history.
+
 ## Current metrics
 
 ### Backend connection

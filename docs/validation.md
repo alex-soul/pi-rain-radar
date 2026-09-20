@@ -8,6 +8,8 @@
 - Short resource samples showed approximately 845–968 MB available RAM, 56–58.4 C and no throttling; a ten-second sample after the HA test showed 83–97% CPU idle and no swap traffic. Node RSS samples were approximately 157–237 MiB. These samples do not establish per-viewer cost or prolonged stability. Docker memory accounting/limits remain unavailable on this host, so host/process measurements were used.
 - Retained-copy readiness with one CPU allocated was 28.8 seconds for the candidate, 20.7 for 0.5.0 and 23.0 for the candidate again. These are application startup samples, not whole-Pi boot timings or guarantees.
 
+[Release CI 35477330205](https://github.com/alex-soul/pi-rain-radar/actions/runs/35477330205) passed tests, AMD64/ARM64 builds and startup/restart persistence on both architectures. Published v0.6.0 and latest resolve to index `sha256:930b8aa5fb8a50626e56ed9fb3aabbf77a3506e12be8a8d0ba061f0e094dad3b`; anonymous manifest access passed. The Pi returned to this published image using ordinary Compose plus its power helper, preserving settings, history, counters and HTTPS embed origins. I confirmed About 0.6.0 and normal Pi/HA appearance after handover.
+
 ## v0.5.0 candidate acceptance — 18 September 2026
 
 - RC.6 passed all 160 tests locally and on native ARM64, plus network-isolated fresh startup/restart checks. Coverage includes observation migration, late arrivals, one/two-provider gaps, Live grace, offline aging, Archive truth and PIN sessions.

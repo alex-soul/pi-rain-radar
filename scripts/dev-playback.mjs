@@ -54,11 +54,11 @@ function filterWindow(data) {
   }).filter(f=>f.url||f.overviewUrl);
   const byTime=new Map(frames.map(f=>[f.time,f]));
   const coverage=(data.coverage??[]).map(c=>({...c,main:!!byTime.get(c.time)?.url,overview:!!byTime.get(c.time)?.overviewUrl}));
-  const statsCases=['gap-grace','late-recovered','gap-outstanding','tracking-partial'];
+  const statsCases=['gap-grace','late-recovered','gap-outstanding'];
   const incidents=role=>{
-    const tracked=statsCases.includes(scenario)?coverage.filter(c=>scenario!=='tracking-partial'||c.time>=end-1800):[];
+    const tracked=statsCases.includes(scenario)?coverage:[];
     const includes=time=>tracked.some(c=>c.time===time);
-    const main=role==='main',late=['late-recovered','tracking-partial'].includes(scenario);
+    const main=role==='main',late=scenario==='late-recovered';
     return {total:coverage.length,tracked:tracked.length,
       gapsSeen:main?(late?Number(includes(end-1200))+Number(scenario==='late-recovered'&&includes(end-2400)):0):Number(statsCases.includes(scenario)&&includes(end-1800)),
       lateArrivals:Number(main&&late&&includes(end-1200))};

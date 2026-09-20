@@ -8,9 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-The working source includes the next release's [Embedded Radar](docs/embed.md), persistent [Stats incident counters](docs/stats-for-nerds.md), clearer health/power messages and [daily release awareness](docs/release-checks.md). These changes have local synthetic review; the next candidate still requires Pi validation and publication. The published baseline below remains 0.5.0.
-
-**v0.5.0 is a pre-release.** Live and Archive now show actual observation availability for each map, with late-data recovery, Archive windows up to 24 hours and experimental Stats for nerds. I reviewed the UI and accepted Live behaviour on my Pi 4 / 2 GB; Archive was tested during candidate review. All 160 tests passed locally and natively on ARM64, plus native startup/restart checks. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
+**[v0.6.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.6.0) is the current pre-release.** It adds optional [Embedded Radar](docs/embed.md), persistent [Stats incident counters](docs/stats-for-nerds.md), clearer health/power messages and [daily release awareness](docs/release-checks.md). I tested the UI, Home Assistant embedding on LAN and through Tailscale/Nabu Casa, and reboot/shutdown recovery on my Pi 4 / 2 GB, then confirmed the published image. 188 tests passed locally and natively on ARM64; release CI verified AMD64/ARM64 images and startup/restart persistence. Prolonged soak remains a [follow-up](docs/follow-ups.md). See [validation](docs/validation.md) and the [changelog](CHANGELOG.md).
 
 Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
 
