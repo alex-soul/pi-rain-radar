@@ -1,5 +1,11 @@
 # Validation and remaining work
 
+## 0.7.0 published-image acceptance — 21 September 2026
+
+[Release CI 35634068431](https://github.com/alex-soul/pi-rain-radar/actions/runs/35634068431) passed 275 tests, AMD64/ARM64 builds and fresh-start/restart checks for both architectures. The Pi runs the published image from the normal Compose configuration, preserving settings and archive generation. I confirmed About 0.7.0 and healthy operation after handover. The camera interruption during handover was a local issue, unrelated to the Pi.
+
+Published index: `sha256:956d951ddc589f6a2fa965eeb7bc3a67cf6e80455c581426be3ec07fafe7644f`. Runtime source matches accepted RC3 apart from version metadata. Non-blocking UI observations remain for later review; no new fixes are implied by this acceptance.
+
 ## 0.7.0 candidate acceptance — 21 September 2026
 
 I tested RC3 on my Pi 4 / 2 GB and accepted it for release: no major problems found, and everything is working. Non-blocking UI observations will be assessed separately. Prolonged soak remains outstanding.
