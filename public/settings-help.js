@@ -1,4 +1,10 @@
 export const helpText = {
+ reviewSource:'Choose the primary source for weather readings. Home Assistant can supply the four mapped readings; other readings use OpenWeather when available. Optional OpenWeather fallback appears amber when a mapped HA reading is unavailable. Configure the HA connection under System > API > HA. Collection is managed separately in Collection. Source, mappings and units apply to every screen; layout stays on this browser.',
+ reviewMap:'Return to the exact previous coordinates and both zoom values to use matching history while it remains retained. Name and time-zone changes preserve history.',
+ reviewHA:'Use the Home Assistant address reachable from the appliance. This shared connection is used by camera and weather. Configure collection separately for each feature.',
+ reviewOWM:'Disabling collection also stops rain forecast updates. Existing fresh data remains usable until normal expiry; history and the saved key are retained.',
+ reviewCollect:'Configure the shared connection under System > API > HA. Collect mapped weather readings every five minutes, independently of the selected display source. Connection health is checked separately.',
+ reviewRadar:'Enable collection when this provider is selected for Main or Overview. Disabled providers make no background requests. Saved configuration and retained history remain available.',
   "29": "Restart and shutdown require the optional Device Power helper on your host. Select either button for setup guidance if it is not configured. Settings PIN protection is optional.",
   30: 'Local counter; other apps using your account are not included.',
   "27": "Flow shows where the wind is going. Meteorological shows where it comes from. Both the arrow and the reading follow your choice.",
@@ -15,8 +21,8 @@ export const helpText = {
   "11": "Hides the radar controls after 15 seconds without interaction. Tap to reveal them, including when screen controls are locked. Applies only to this display.",
   "12": "Wind gusts are not reported with every update. Keeps the last reported gust visible for this long after its observation time. Older retained readings appear amber; expired readings become a dash. Set to 0 (Off) to disable caching on this display; current gust readings still appear.",
   "13": "Requires a six-digit PIN to open Settings on any connected display. Dashboard controls remain usable unless UI lock is enabled separately.",
-  "14": "Applies to temperature, feels-like and dew point on this display. Wind units are chosen separately.",
-  "15": "Applies to wind speed and gusts on this display. Temperature units are chosen separately.",
+  "14": "Applies to temperature, feels-like and dew point on every screen. Archive uses historical units. Wind units are chosen separately.",
+  "15": "Applies to wind speed and gusts on every screen. HA readings must match. Temperature units are chosen separately.",
   "16": "Choose which readings appear in this display’s top dock and drag to reorder them. Changes apply only to this display. Hiding a reading does not change weather collection.",
   "17": "An estimate of how warm or cold the air feels, accounting for conditions such as wind and humidity.",
   "18": "Shows relative humidity: how close the air is to saturation at its current temperature. It is not the chance of rain.",
@@ -31,13 +37,17 @@ export const helpText = {
 };
 
 export function setupSettingsHelp(dialog) {
-  dialog.querySelector('#map-settings-intro').textContent = `${helpText[1]} ${helpText[7]}`;
+  dialog.querySelector('#map-settings-intro').hidden = true;
   const bubble = document.createElement('div');
   bubble.id = 'settings-help-bubble'; bubble.className = 'settings-help-bubble';
   bubble.setAttribute('role', 'note'); bubble.hidden = true; dialog.append(bubble);
   let active;
   function close() { active?.setAttribute('aria-expanded', 'false'); active?.removeAttribute('aria-describedby'); active = null; bubble.hidden = true; }
   const targets = [
+ ['label[for="review-weather-source"]','reviewSource'],
+ ['#review-map-warning','reviewMap'],['label[for="review-ha-url"]','reviewHA'],
+ ['label[for="review-owm-collect"]','reviewOWM'],['label[for="review-ha-collect"]','reviewCollect'],
+ ['label[for="review-rainviewer-collect"]','reviewRadar'],['label[for="review-rainbow-collect"]','reviewRadar'],
     ['#device-power-title',29],
     ['label[for="rainbow-key"]',9], ['label[for="rainbow-cap"]',30],
     ['label[for="direction-convention"]',27], ['label[for="reading-gust"]',28],
@@ -69,7 +79,7 @@ export function setupSettingsHelp(dialog) {
       event.preventDefault(); event.stopPropagation();
       if (active === button) { close(); return; }
       close(); active = button; button.setAttribute('aria-expanded','true'); button.setAttribute('aria-describedby', bubble.id);
-      bubble.textContent = helpText[key]; bubble.hidden = false;
+      bubble.textContent = helpText[key]; if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
       const rect = button.getBoundingClientRect(), bounds = dialog.getBoundingClientRect();
       bubble.style.width = `${Math.min(320, bounds.width - 32)}px`;
       bubble.style.left = `${Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - bubble.offsetWidth - 8))}px`;

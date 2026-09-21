@@ -55,6 +55,13 @@ function render() {
     row(weatherInfo,'Next check',weather.nextAttemptAt ? clock(weather.nextAttemptAt) : 'Due');
   }
   weatherColumn.append(weatherInfo);grid.append(weatherColumn);
+  const cameraColumn=element('div',''),cameraInfo=element('dl',''),camera=s.camera;
+  cameraColumn.append(element('strong','Camera'));
+  row(cameraInfo,'Acquisition',s.stale?'Last received':camera?.state??'Unavailable');
+  row(cameraInfo,'Last collection',clock(camera?.lastSuccess));row(cameraInfo,'Next collection',clock(camera?.nextCollection));
+  cameraColumn.append(cameraInfo,element('h4',s.windowLabel));
+  const cameraWindow=element('dl','');row(cameraWindow,'Timestamps · Metadata / Acquisition',s.cameraCounts?`${s.cameraCounts.metadata} / ${s.cameraCounts.acquisition}`:'Unavailable');
+  cameraColumn.append(cameraWindow);grid.append(cameraColumn);
   data.replaceChildren(grid);
 }
 setupFloatingWidget({id:'stats',storageKey:'radar-stats',width:620,minWidth:560,height:600,maxHeight:640,minHeight:220,startX:80,startY:160,onVisibility(value){visible=value;render();}});

@@ -1,3 +1,6 @@
+import {saveWeatherHistory,weatherContext} from '../src/weather-history.js';
+import {createDevCamera} from './dev-camera.mjs';
+import {createHistoryStore} from '../src/history-store.js';
 import {createDiagnostics} from '../src/diagnostics.js';
 import {createHealthEvents} from '../src/health-events.js';
 import { scenarios as scenarioCatalog, controlsPage } from './dev-scenarios.mjs';
@@ -18,13 +21,23 @@ await mkdir(join(directory,'settings'));
 await writeFile(join(directory,'settings/embed.json'),JSON.stringify({enabled:true,origins:['http://127.0.0.1:3091'],hours:2,speed:1,theme:'dark'}));
 await writeFile(join(directory,'settings/map.json'),JSON.stringify({...defaultSettings,name:'DEV · Synthetic radar'}));
 await writeFile(join(directory,'settings/radar.json'),JSON.stringify({waitForSettle:false,main:'rainviewer',overview:'rainbow',monthlyLimit:null}));
+const seedStore=await createHistoryStore(directory);
+await seedStore.put([{kind:'transition',receivedAt:Date.now(),source:'selection',context:hash(defaultViews),time:Date.now()-86400000,data:{main:'rainviewer',overview:'rainbow'}}]);
 const end=Math.floor(Date.now()/600000)*600;
 for(let i=0;i<=144;i++)for(const [view,key] of [[defaultViews.view,defaultViews.viewKey],[defaultViews.overviewView,hash({source:'rainbow',originalKey:defaultViews.overviewKey})]]) {
   // Scale motion to each viewport so the smaller Overview always shows rain too.
   const x=view.width*(.5+Math.sin(i/10)*.3),y=view.height*(.5+Math.sin(i/8)*.2);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${view.width}" height="${view.height}"><g opacity=".8"><ellipse cx="${x}" cy="${y}" rx="${view.width*.16}" ry="${view.height*.18}" fill="#55b6bb"/><ellipse cx="${x-25}" cy="${y-10}" rx="${view.width*.08}" ry="${view.height*.09}" fill="#388ac7"/><ellipse cx="${x-35}" cy="${y-18}" rx="${view.width*.035}" ry="${view.height*.04}" fill="#6760ab"/></g></svg>`;
-  await sharp(Buffer.from(svg)).png().toFile(join(directory,`${end-(144-i)*600}-${key}.png`));
+  const role=view===defaultViews.view?'main':'overview';
+  await seedStore.publish({kind:'radar',receivedAt:Date.now(),context:hash(defaultViews),source:role==='main'?'rainviewer':'rainbow',role,time:(end-(144-i)*600)*1000,data:{}},await sharp(Buffer.from(svg)).png().toBuffer());
 }
+for(let i=-20;i<=144;i++){
+  const time=end-(144-i)*600,center=30+24*Math.sin(i*.17),strength=Math.max(0,Math.sin(i*.085)+.3)*4;
+  const forecast=i>0&&i%37===19?null:Array.from({length:61},(_,m)=>({time:time+m*60,precipitation:Math.round(Math.max(0,strength*Math.exp(-(((m-center)/13)**2))-.13)*10)/10})).filter((_,m)=>!(i%11===4&&m>=22&&m<30));
+  const current={time,temperature:14+Math.sin(i/12)*4,feelsLike:12+Math.sin(i/12)*4,windMph:9+Math.sin(i/8)*5,humidity:Math.round(70+Math.sin(i/10)*12),windDirection:(i*5)%360,pressure:1012+Math.sin(i/15)*5,gustMph:15,dewPoint:8,visibility:10000,uvi:2};
+  await saveWeatherHistory(seedStore,{context:weatherContext(defaultSettings),current,forecast,receivedAt:time*1000+90000});
+}
+await seedStore.close();
 const reservation=net();reservation.listen(0,'127.0.0.1');await once(reservation,'listening');
 const internalPort=reservation.address().port;await new Promise(r=>reservation.close(r));
 const origin=`http://127.0.0.1:${internalPort}`;
@@ -33,15 +46,19 @@ child.stderr.on('data',data=>process.stderr.write(data));
 await new Promise((resolve,reject)=>{child.stdout.on('data',data=>{if(String(data).includes('listening on port'))resolve();});child.once('exit',()=>reject(Error('Fixture backend exited')));});
 const scenarios=scenarioCatalog.map(s=>s.id);
 let scenario='healthy',revision=1;
+const devCamera=await createDevCamera(directory,()=>scenario,origin,end*1000);
 const scenarioLog=createDiagnostics(),observeScenario=createHealthEvents(scenarioLog.record);
 scenarioLog.record('startup');
 let demoKey=false,demoRadar={waitForSettle:false,main:'rainviewer',overview:'rainbow',monthlyLimit:null};
 const controls=()=>controlsPage(scenario);
 function filterWindow(data) {
+  if(scenario==='archive-rollover'&&data.weatherHistory)data={...data,weatherHistory:{...data.weatherHistory,weather:data.weatherHistory.weather.filter(r=>r.time>=end-21600),forecasts:data.weatherHistory.forecasts.filter(r=>r.time>=end-21600)}};
+  if(scenario==='archive-rollover'&&Array.isArray(data.times))data={...data,times:data.times.filter(t=>t>=end-21600),oldest:Math.max(data.oldest??0,(end-21600)*1000)};
   if(!Array.isArray(data.frames))return data;
   // Production frames are immutable; regenerated fixtures must not reuse their browser cache.
   const imageUrl=url=>url?`${url}?simulation=${simulationId}`:url;
   let frames=data.frames.map(f=>({...f,url:imageUrl(f.url),overviewUrl:imageUrl(f.overviewUrl)}));
+  if(scenario==='archive-rollover')frames=frames.filter(f=>f.time>=end-21600);
   if(scenario==='gap-outstanding')frames=frames.map(f=>f.time===end-1800?{...f,overviewUrl:null,overviewSource:null,overviewTime:null}:f);
   if(scenario==='empty')frames=[];
   else if(scenario==='one')frames=frames.filter(f=>f.time===end);
@@ -68,7 +85,8 @@ function filterWindow(data) {
 const server=http(async(req,res)=>{
   try {
     const path=new URL(req.url,'http://127.0.0.1:3091');
-    const controlAssets={'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
+    if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
+    const controlAssets={'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
     if(controlAssets[path.pathname]) {const [file,type]=controlAssets[path.pathname];res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});return res.end(await readFile(new URL(file,import.meta.url)));}
     if(path.pathname==='/__dev'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(controls());}
     if(path.pathname==='/__embed'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end('<!doctype html><html><head><title>Embed review · synthetic radar</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="background:#142623;color:#e1eee7;font:16px system-ui"><h1>Embed review · synthetic radar</h1><p>Change scenarios in the studio; both cards follow. Only Main radar affects their LEDs.</p><iframe title="Small embed" src="/embed" width="320" height="180"></iframe><iframe title="Tall embed" src="/embed" width="240" height="360"></iframe><p><a style="color:inherit" href="/__dev">Scenario studio</a></p></body></html>');}
@@ -87,6 +105,14 @@ const server=http(async(req,res)=>{
       return res.end('Synthetic backend unavailable');
     }
     const send=data=>{res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
+    if(path.pathname==='/api/settings/camera'||path.pathname.startsWith('/api/settings/camera/'))return await devCamera.handle(req,res,path.pathname);
+    if(path.pathname==='/api/camera')return send(await devCamera.camera.live(Number(path.searchParams.get('hours')??2),path.searchParams.has('end')?Number(path.searchParams.get('end'))*1000:undefined));
+    if(/^\/archive\/media\/[a-f0-9-]+\/\d+\/\d+-[a-f0-9-]+\.(png|jpg|webp)$/.test(path.pathname)){
+      // Only generated camera assets use the fixture's separate managed store.
+      // Serve by immutable path, independent of the current history window.
+      try{const bytes=await readFile(join(directory,'camera-fixture',path.pathname));res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=31536000, immutable'});return res.end(bytes);}
+      catch(error){if(error.code!=='ENOENT')throw error;}
+    }
     if(path.pathname==='/api/settings/rainbow') {
       if(req.method==='POST'){let body='';for await(const chunk of req)body+=chunk;demoKey=!!JSON.parse(body).apiKey;}
       return send({configured:demoKey,usage:{tiles:0,requests:0},tilesPerView:{main:6,overview:6}});
@@ -110,7 +136,7 @@ const server=http(async(req,res)=>{
     if(path.pathname==='/api/settings/radar'&&req.method==='POST') {
       let body='';for await(const chunk of req)body+=chunk;demoRadar=JSON.parse(body);return send({status:200});
     }
-    if(['/api/settings/unlock','/api/settings/lock','/api/settings/activity','/api/settings/pin','/api/settings/embed'].includes(path.pathname)&&req.method==='POST') {
+    if(['/api/settings/unlock','/api/settings/lock','/api/settings/activity','/api/settings/pin','/api/settings/embed','/api/settings/storage'].includes(path.pathname)&&req.method==='POST') {
       let body='';for await(const chunk of req)body+=chunk;
       const response=await fetch(origin+req.url,{method:'POST',headers:{'Content-Type':'application/json',...(req.headers.authorization?{Authorization:req.headers.authorization}:{})},body});
       res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(await response.text());
@@ -122,9 +148,12 @@ const server=http(async(req,res)=>{
     if(path.pathname==='/api/status'||path.pathname==='/api/archive'){
       const data=filterWindow(await response.json());
       if(path.pathname==='/api/status'){
+        data.camera=devCamera.camera.status();
+        if(scenario==='archive-rollover'&&data.storage)data.storage={...data.storage,pressure:true,oldest:(end-21600)*1000};
         data.archiveRevision=`fixture-${revision}-${data.archiveRevision}`;
         if(data.sources)for(const source of Object.values(data.sources)){source.time=Math.floor(Date.now()/600000)*600;source.checkedAt=new Date(end*1000).toISOString();source.nextCheckAt=Math.ceil(Date.now()/300000)*300000;source.state=scenario==='source-error'?'warning':'ready';source.error=scenario==='source-error'?'Synthetic provider unavailable':null;}
       }
+      if(path.pathname==='/api/archive'&&path.searchParams.has('end'))data.cameraHistory=await devCamera.history(Number(path.searchParams.get('end'))*1000,Number(path.searchParams.get('hours')??2));
       if(path.pathname==='/api/status') {
         const now=Date.now(),minute=Math.floor(now/60000)*60;
         data.weather={configured:true,fetchedAt:now,forecastFetchedAt:now,failures:0,data:{current:{time:minute,temperature:14,feelsLike:12,windMph:9,humidity:72,windDirection:245},minutely:Array.from({length:60},(_,i)=>({time:minute+i*60,precipitation:i>15&&i<35?1:0}))}};
@@ -151,4 +180,4 @@ const server=http(async(req,res)=>{
 });
 server.listen(3091,'127.0.0.1',()=>console.log(JSON.stringify({preview:'http://127.0.0.1:3091',controls:'http://127.0.0.1:3091/__dev',directory,backendPid:child.pid,pid:process.pid})));
 server.on('error',error=>{console.error(error.message);child.kill();process.exitCode=1;});
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{child.kill();server.close(()=>process.exit(0));});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{child.kill();server.close(async()=>{await devCamera.close();process.exit(0);});});

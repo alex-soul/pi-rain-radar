@@ -9,6 +9,13 @@ import { createRainbow } from '../src/rainbow.js';
 const key = 'synthetic-rainbow-key-only';
 const clock = Date.UTC(2026,8,17,12);
 const png = await sharp({create:{width:256,height:256,channels:4,background:'#238abf'}}).png().toBuffer();
+test('disabled collection permits explicit key validation but cancels queued background dispatch',async t=>{
+  let enabled=false,disableOnWait=false;
+  const f=await setup(t,{enabled:()=>enabled,sleep:async()=>{if(disableOnWait)enabled=false;}});
+  assert.equal((await f.client.configure(key)).status,200);assert.equal(f.calls.length,2);
+  await assert.rejects(f.client.getHistory(),/disabled/);assert.equal(f.calls.length,2);
+  enabled=true;disableOnWait=true;await assert.rejects(f.client.getHistory(),/disabled/);assert.equal(f.calls.length,2);
+});
 async function setup(t, extra = {}) {
   const dir = await mkdtemp(join(tmpdir(),'rainbow-test-')); t.after(()=>rm(dir,{recursive:true,force:true}));
   const calls=[];

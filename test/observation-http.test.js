@@ -8,18 +8,23 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { defaultViews } from '../src/map.js';
+import {createHistoryStore} from '../src/history-store.js';
+import { defaultViews,hash } from '../src/map.js';
 
 test('HTTP Archive accepts 1–24 while Live remains 2/4/6, with truthful per-map availability', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'radar-http-observations-'));
+  const store=await createHistoryStore(dir);
   const end = Math.floor(Date.now() / 600000) * 600;
   for (const [view, key] of [[defaultViews.view, defaultViews.viewKey], [defaultViews.overviewView, defaultViews.overviewKey]]) {
     const image = await sharp({ create: { width: view.width, height: view.height, channels: 4, background: '#00000000' } }).png().toBuffer();
     for (let i = 0; i <= 12; i++) {
       if (key === defaultViews.overviewKey && i === 1) continue;
-      await writeFile(join(dir, `${end - i * 600}-${key}.png`), image);
+      await store.publish({kind:'radar',context:hash(defaultViews),source:'rainviewer',role:key===defaultViews.viewKey?'main':'overview',time:(end-i*600)*1000,receivedAt:Date.now(),data:{}},image);
     }
   }
+  const cameraBytes=await sharp({create:{width:32,height:24,channels:3,background:'#123456'}}).jpeg().toBuffer();
+  await store.publish({kind:'camera',source:'previous-camera',context:'previous-camera',time:(end-300)*1000,receivedAt:Date.now(),basis:'metadata',data:{name:'Previous camera'}},cameraBytes);
+  await store.close();
   const reservation = createServer(); reservation.listen(0, '127.0.0.1'); await once(reservation, 'listening');
   const port = reservation.address().port; await new Promise(resolve => reservation.close(resolve));
   const child = spawn(process.execPath, ['src/server.js'], { cwd: fileURLToPath(new URL('..', import.meta.url)),
@@ -73,6 +78,9 @@ test('HTTP Archive accepts 1–24 while Live remains 2/4/6, with truthful per-ma
     assert.equal(result.playable, Math.min(hours * 6 + 1, 13));
     assert.equal(result.complete, false);
     assert.equal(result.frames.find(f => f.time === end - 600).overviewUrl, null);
+    assert.equal(result.cameraHistory.records[0].time,(end-300)*1000);
+    assert.deepEqual(result.cameraHistory.counts,{metadata:1,acquisition:0});
+    assert.equal((await get(result.cameraHistory.records[0].asset)).status,200);
   }
   for (const hours of ['0', '25', '1.5', '02', 'NaN']) assert.equal((await get(`/api/archive?hours=${hours}`)).status, 404);
   for (const hours of [2, 4, 6]) {
@@ -82,6 +90,13 @@ test('HTTP Archive accepts 1–24 while Live remains 2/4/6, with truthful per-ma
     assert.equal(status.sources.main.nextCheckAt, null);
     assert.ok(!JSON.stringify(status).includes('apiKey'));
   }
+  const status=await (await get('/api/status')).json();
+  assert.equal((await get(status.frames[0].url)).status,200);
+  assert.ok(status.storage.availableBytes>0);
+  const save=days=>fetch(`http://127.0.0.1:${port}/api/settings/storage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({days})});
+  assert.equal((await save(0)).status,400);assert.equal((await save(null)).status,200);
+  assert.equal((await (await get('/api/settings/storage')).json()).retentionDays,null);
+  assert.equal((await save(7)).status,200);
   assert.equal((await get('/api/status?hours=24')).status, 400);
   assert.equal((await get('/api/archive?map=other')).status, 409);
   assert.ok((await (await get('/api/archive')).json()).times.includes(end));

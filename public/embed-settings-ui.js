@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
 export function setupEmbedSettings(canEdit,request) {
+  if($('embed-address'))$('embed-address').textContent=new URL('/embed',location.href).href;
   let epoch=0,busy=false,pending=null,saved=null,desired=null;
   const visibility=()=>{$('embed-fields').hidden=!$('embed-enabled').checked;};
   $('embed-enabled').addEventListener('change',()=>{visibility();queue('enabled',$('embed-enabled').checked);});

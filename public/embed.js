@@ -2,6 +2,7 @@ import {createFrameLoader} from './frame-loader.js';
 import {mapObservation,playbackState,frameProvider} from './playback.js';
 import {radarSourceHealth} from './health.js';
 import {liveDueThrough} from './live-window.js';
+import {formatTime} from './time.js';
 
 const meta=name=>document.querySelector(`meta[name="${name}"]`).content;
 const hours=Number(meta('embed-hours')),speed=Number(meta('embed-speed'));
@@ -13,8 +14,8 @@ function health() {
   led.dataset.health=level;led.title=label;led.setAttribute('aria-label',label);
 }
 function credit() {
-  const providers=new Set([...frames,...(frames.borrowFrames??[])].map(f=>frameProvider(f,'main')).filter(Boolean));
-  if(status?.sources?.main?.source)providers.add(status.sources.main.source);
+  const source=mapObservation(frames,index,'main')?.source??frameProvider(frames[index],'main')??status?.sources?.main?.source;
+  const providers=new Set(source?[source]:[]);
   const nodes=[];
   for(const [id,name,url] of [['rainviewer','RainViewer','https://www.rainviewer.com/'],['rainbow','Rainbow','https://rainbow.ai/']])if(providers.has(id)) {
     if(nodes.length)nodes.push(document.createTextNode(' & '));
@@ -24,12 +25,13 @@ function credit() {
 }
 function show() {
   const epoch=++revision,observation=mapObservation(frames,index,'main');
+  credit();const time=document.getElementById('embed-time');time.textContent='—';time.removeAttribute('datetime');
   if(!observation){radar.removeAttribute('href');return;}
   if(radar.getAttribute('href')!==observation.url)radar.style.visibility='hidden';
   void loader.prepare(observation.url).then(image=>{
     if(epoch!==revision)return;
     radar.style.visibility=image?'visible':'hidden';
-    if(image)radar.setAttribute('href',observation.url);else radar.removeAttribute('href');
+    if(image){radar.setAttribute('href',observation.url);time.textContent=formatTime(observation.time,{hour:'2-digit',minute:'2-digit'},meta('time-zone'));time.dateTime=new Date(observation.time*1000).toISOString();}else radar.removeAttribute('href');
   });
   for(let offset=1;offset<=2;offset++) {
     const next=mapObservation(frames,(index+offset)%frames.length,'main');

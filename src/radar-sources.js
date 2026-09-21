@@ -1,32 +1,14 @@
+import {createRadarHistory,radarPersistence} from './radar-history.js';
 import { createRadar } from './radar.js';
-import { cleanupCaptured } from './captured-archive.js';
-import { createObservationArchive } from './observation-archive.js';
 import { hash } from './map.js';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
 export async function createRadarSources(directory, providers, {
-  views, now = Date.now, waitForSettle, selection, onEvent = ()=>{}, historyDepth=13, nextRefreshAt = () => now() + 300000,
+  store, views, now = Date.now, waitForSettle, selection, enabled=()=>true, onEvent = ()=>{}, historyDepth=13, nextRefreshAt = () => now() + 300000,
 } = {}) {
-  const archive=await createObservationArchive(directory,views,{now,selection:selection()});
+  const archive=await createRadarHistory(store,views,{now,selection:selection()});
   const workers=new Map();let busy=false,changing=false,storageError=null,capturing=Promise.resolve();
   const providerSeen=new Map();
-  // Restore the earliest observation across both views, including inactive ones.
-  // A successfully composed frame has already passed that provider's settling gate.
-  for(const source of ['rainviewer','rainbow']) {
-    const seen=new Map();providerSeen.set(source,seen);
-    for(const originalKey of [views.viewKey,views.overviewKey]) {
-      const key=source==='rainviewer'?originalKey:hash({source,originalKey});
-      try {
-        const pending=JSON.parse(await readFile(join(directory,`settling-${source}-${key}.json`),'utf8'));
-        for(const [time,at] of pending)if(Number.isSafeInteger(time)&&Number.isFinite(at)&&at<=now())seen.set(time,Math.min(seen.get(time)??Infinity,at));
-      }catch{/* Missing or invalid state starts a fresh settling period. */}
-      try {
-        const saved=JSON.parse(await readFile(join(directory,`history-${source}-${key}.json`),'utf8'));
-        if(saved.viewKey===key)for(const frame of saved.frames)if(Number.isSafeInteger(frame.time))seen.set(frame.time,Math.min(seen.get(frame.time)??Infinity,now()-300000));
-      }catch{/* A missing view cache does not block the other view. */}
-    }
-  }
+  for(const source of ['rainviewer','rainbow'])providerSeen.set(source,new Map());
   let current={...selection()}, activeWorkers={};
   const resolved=s=>({main:s.main,overview:s.overview==='same'?s.main:s.overview});
   // Share a manifest and bounded tile promises across the two views per cycle.
@@ -36,10 +18,11 @@ export async function createRadarSources(directory, providers, {
     const target=slot==='main'?views.view:views.overviewView;
     const originalKey=slot==='main'?views.viewKey:views.overviewKey;
     const key=source==='rainviewer'?originalKey:hash({source,originalKey});
-    const id=`${source}-${key}`;
+    const id=`${source}-${key}-${slot}`;
     if(!workers.has(id)) {
       const provider={
         getHistory(){
+          if(!enabled(source))return Promise.resolve([]);
           if(!metadata.has(source))metadata.set(source,Promise.resolve().then(()=>providers[source].getHistory()).then(frames=>{
             const seen=providerSeen.get(source),observedAt=now(),selected=frames.slice(-historyDepth);
             const listed=new Set(selected.map(frame=>frame.time));
@@ -50,12 +33,15 @@ export async function createRadarSources(directory, providers, {
           return metadata.get(source);
         },
         getTile(frame,tile){
+          if(!enabled(source))throw Error('Radar collection disabled');
           const tileKey=`${source}:${frame.time}:${tile.zoom}:${tile.x}:${tile.y}`;
           if(!tiles.has(tileKey))tiles.set(tileKey,Promise.resolve().then(()=>providers[source].getTile(frame,tile)));
           return tiles.get(tileKey);
         },
       };
-      workers.set(id,await createRadar(directory,provider,{now,waitForSettle,nextRefreshAt,manageCleanup:false,onEvent:code=>{if(code==='radar-error'||code==='radar-recovered')onEvent(code);},onObservation:r=>archive.add([{...r,source,key}]),storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
+      const persistence=await radarPersistence(store,directory,{context:archive.context,source,role:slot,now});
+      if(persistence)for(const [time,at] of persistence.settling)providerSeen.get(source).set(time,Math.min(providerSeen.get(source).get(time)??Infinity,at));
+      workers.set(id,await createRadar(directory,provider,{persistence,now,waitForSettle,nextRefreshAt,manageCleanup:false,onEvent:code=>{if(code==='radar-error'||code==='radar-recovered')onEvent(code);},onObservation:r=>archive.add([{...r,source,key}]),storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
     }
     return workers.get(id);
   }
@@ -76,20 +62,21 @@ export async function createRadarSources(directory, providers, {
   function sourceStatus(slot) {
     const source=resolved(current)[slot],state=activeWorkers[slot].status(),provider=providers[source].status?.();
     const frame=state.frame;
-    const error=provider?.error||state.error;
+    const error=enabled(source)?provider?.error||state.error:null;
     return {source,time:frame?.time??null,checkedAt:state.checkedAt,nextCheckAt:nextRefreshAt(),nextUpdate:state.nextUpdate,fetching:state.fetching,error,
-      state:error?'warning':!frame?'waiting':frame.time<now()/1000-1800?'stale':'ready'};
+      enabled:enabled(source),state:!enabled(source)?'disabled':error?'warning':!frame?'waiting':frame.time<now()/1000-1800?'stale':'ready'};
   }
   return {
     archive,
+    protection:()=>({context:archive.context,...resolved(current)}),
     observe: () => archive.observe().catch(()=>{storageError='Could not save radar history.';onEvent('storage-error');}),
     async refresh() {
       if(busy||changing)return;busy=true;resetRequests();
       try {
         // A view publishes independently as soon as its own acquisition finishes.
-        await Promise.all(Object.entries(activeWorkers).map(async([,worker])=>{await worker.refresh();await capture();}));
+        await Promise.all(Object.entries(activeWorkers).map(async([slot,worker])=>{if(enabled(resolved(current)[slot]))await worker.refresh();await capture();}));
         await capture();
-        storageError=null;await cleanupCaptured(directory,now);
+        storageError=null;
       } catch {storageError='Could not save radar history.';onEvent('storage-error');}
       finally {busy=false;tiles.clear();}
     },
@@ -97,14 +84,21 @@ export async function createRadarSources(directory, providers, {
       if(busy||changing)return {status:409,error:'Radar is updating. Please try again shortly.'};
       changing=true;resetRequests();
       try {
+        // Keep both selections playable until the settings commit finishes.
+        // Pressure may run inside another collector's write during this await.
+        await store.protect([{context:archive.context,...resolved(current)},{context:archive.context,...resolved(next)}]);
         const candidate=await prepare(next);
-        await Promise.all(Object.values(candidate).map(w=>w.refresh()));
-        if(Object.values(candidate).some(w=>!w.status().frame||w.status().error))return {status:503,error:'The selected sources are not ready. Your previous sources remain active; try again shortly.'};
+        await Promise.all(Object.entries(candidate).map(([slot,w])=>enabled(resolved(next)[slot])?w.refresh():null));
+        if(Object.entries(candidate).some(([slot,w])=>enabled(resolved(next)[slot])&&(!w.status().frame||w.status().error)))return {status:503,error:'The selected sources are not ready. Your previous sources remain active; try again shortly.'};
         await commit();current={...next};activeWorkers=candidate;
         try{await capture();}catch{storageError='Could not save radar history.';onEvent('storage-error');}
         return {status:200};
       }catch{return {status:503,error:'Could not apply radar sources. Check Status and try again.'};}
-      finally{changing=false;tiles.clear();}
+      finally{
+        try{await store.protect([{context:archive.context,...resolved(current)}]);}
+        catch{storageError='Could not save radar history.';onEvent('storage-error');}
+        changing=false;tiles.clear();
+      }
     },
     healthSources: () => ({main:sourceStatus('main'),overview:sourceStatus('overview')}),
     status(hours=2) {

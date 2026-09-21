@@ -1,3 +1,4 @@
+import {shared,change} from './integrations-state.js';
 import { defaultReadings, readingNames, windUnits, playbackSpeeds, weatherOptions } from './weather-format.js';
 const gustChoices = [0, 15, 30, 45, 60, 90, 120, 180];
 function normalizeGust(value) {
@@ -21,7 +22,7 @@ try {
 } catch { /* Defaults also work without browser storage. */ }
 
 export function gustCacheMinutes() { return preferences.gustCacheMinutes; }
-export function weatherPreferences() { return { temperatureUnit: preferences.temperatureUnit, windUnit: preferences.windUnit, readings: [...preferences.readings], ...Object.fromEntries(Object.keys(weatherOptions).map(key => [key, preferences[key]])) }; }
+export function weatherPreferences() { return { temperatureUnit: preferences.temperatureUnit, windUnit: preferences.windUnit, readings: [...preferences.readings], ...Object.fromEntries(Object.keys(weatherOptions).map(key => [key, preferences[key]])), ...(shared.initialized?shared.units:{}) }; }
 export function playbackSpeed() { return preferences.playbackSpeed; }
 export function playbackHours() { return preferences.playbackHours; }
 
@@ -86,9 +87,9 @@ export function widgetBottom() {
 
 export function setupWidgetLayer(panel) {
   const raise = () => {
-    for (const id of ['overview', 'rain-forecast', 'stats']) {
+    for (const id of ['overview', 'rain-forecast', 'stats', 'camera']) {
       const widget = document.getElementById(id);
-      widget.classList.toggle('widget-front', widget === panel);
+      widget?.classList.toggle('widget-front', widget === panel);
     }
   };
   // Change stacking without disturbing position, focus or pointer capture.
@@ -120,6 +121,7 @@ export function setupDisplaySettings(canEdit) {
     hours.value = String(preferences.playbackHours);
   });
   function applyWeatherChoices() {
+    if(shared.initialized)Object.assign(preferences,shared.units);
     tempUnit.value = preferences.temperatureUnit;
     windUnit.value = preferences.windUnit;
     for (const [input,key] of extraUnits) input.value = preferences[key];
@@ -134,7 +136,7 @@ export function setupDisplaySettings(canEdit) {
   }
   window.addEventListener('radar-reading-order', applyWeatherChoices);
   for (const [input, key, valid] of [[tempUnit, 'temperatureUnit', ['C','F']], [windUnit, 'windUnit', Object.keys(windUnits)], ...extraUnits]) input.addEventListener('change', () => {
-    if (canEdit() && valid.includes(input.value)) { preferences[key] = input.value; persist(); }
+    if (canEdit() && valid.includes(input.value)) { const previous=preferences[key];preferences[key] = input.value;persist();if(shared.initialized&&Object.hasOwn(shared.units,key)){input.disabled=true;void change({action:'settings',units:{[key]:input.value}}).catch(e=>{preferences[key]=previous;input.value=previous;document.getElementById('shared-unit-note').textContent=e.message;persist();}).finally(()=>{input.disabled=false;});} }
     applyWeatherChoices();
   });
   for (const input of readings) input.addEventListener('change', () => {
@@ -152,6 +154,7 @@ export function setupDisplaySettings(canEdit) {
     applySpeed();
   });
   applyWeatherChoices(); applySpeed();
+  window.addEventListener('integration-change',applyWeatherChoices);
   const gear = document.getElementById('settings-toggle');
   const footerToggle = document.getElementById('footer-toggle');
   const content = [...footer.querySelectorAll('.observation, .playback')];

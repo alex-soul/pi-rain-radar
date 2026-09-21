@@ -87,3 +87,15 @@ test('weather severity preserves one-poll grace, independent forecast failure, s
   f.paint({configured:false},now);assert.equal(health(),'unconfigured');
   f.paint(s,now);assert.equal(health(),'ready');
 });
+
+test('historical readings use selected-time freshness while health remains current',()=>{
+  const f=fixture(),live=state(),clock=Date.now();live.fetchedAt=clock;live.data.current.time=clock/1000;
+  const old=state();f.paint(old,now,{historical:true,operational:live});
+  assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
+  f.paint(old,now+1800000,{historical:true,operational:live});
+  assert.equal(f.nodes.get('weather-temperature').textContent,'—');
+  assert.equal(f.nodes.get('settings-api-status').textContent,'OpenWeatherMap · Connected');
+  f.paint({...old,data:{...old.data,current:{...old.data.current,time:now/1000+1}}},now,{historical:true,operational:live});
+  assert.equal(f.nodes.get('weather-temperature').textContent,'—');
+});

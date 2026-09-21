@@ -4,12 +4,15 @@ import {mkdtemp,rm,writeFile,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import sharp from 'sharp';
-import {createRadarSources} from '../src/radar-sources.js';
+import {createRadarSources as createSources} from '../src/radar-sources.js';
+import {createHistoryStore} from '../src/history-store.js';
+const stores=new Map();
+async function createRadarSources(dir,providers,options){if(!stores.has(dir))stores.set(dir,await createHistoryStore(dir,{now:options.now()+2*86400000}));return createSources(dir,providers,{...options,store:stores.get(dir)});}
 import {createCapturedArchive,cleanupCaptured} from '../src/captured-archive.js';
 import {createRadarSettings} from '../src/radar-settings.js';
 const png=await sharp({create:{width:256,height:256,channels:4,background:'#329db3'}}).png().toBuffer();
 const views={view:{lat:0,lon:0,zoom:0,radarZoom:0,width:128,height:128},viewKey:'111111111111',overviewView:{lat:0,lon:0,zoom:1,radarZoom:1,width:128,height:128},overviewKey:'222222222222'};
-async function directory(t){const dir=await mkdtemp(join(tmpdir(),'radar-source-test-'));t.after(()=>rm(dir,{recursive:true,force:true}));return dir;}
+async function directory(t){const dir=await mkdtemp(join(tmpdir(),'radar-source-test-'));t.after(async()=>{await stores.get(dir)?.close();stores.delete(dir);await rm(dir,{recursive:true,force:true});});return dir;}
 
 test('routine incomplete history stays out of Log while failed acquisition is recorded',async t=>{
  const dir=await directory(t),time=Date.UTC(2026,8,19,12),events=[];let failed=false;
@@ -63,8 +66,8 @@ test('one provider failure leaves an observation gap while another advances; pro
  assert.notEqual(next.url,first.url);assert.equal(next.overviewUrl,null);assert.equal(radar.status().sources.overview.state,'warning');
  failed=false;const replacement={main:'rainbow',overview:'rainviewer'};
  const result=await radar.configure(replacement,async()=>{selected=replacement;});assert.equal(result.status,200);
- assert.equal(radar.archive.window(first.time).frames.at(-1).source,'rainviewer');
- const resumed=await createRadarSources(dir,providers,options);assert.equal(resumed.archive.window(first.time).frames.at(-1).overviewSource,'rainbow');
+ assert.equal((await radar.archive.window(first.time)).frames.at(-1).source,'rainviewer');
+ const resumed=await createRadarSources(dir,providers,options);assert.equal((await resumed.archive.window(first.time)).frames.at(-1).overviewSource,'rainbow');
 });
 test('each provider settles separately and failed source switch does not commit configuration',async t=>{
  const dir=await directory(t);const start=Date.UTC(2026,8,17,12);let time=start,committed=false,fail=true;

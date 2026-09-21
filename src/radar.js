@@ -16,13 +16,13 @@ import { getHistory, getTile } from "./provider.js";
 export async function createRadar(
   directory,
   provider = { getHistory, getTile },
-  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, views = defaultViews, storageKey = '', manageCleanup = true, onObservation = async()=>{} } = {},
+  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, persistence = null, views = defaultViews, storageKey = '', manageCleanup = true, onObservation = async()=>{} } = {},
 ) {
   const {view, viewKey, overviewView, overviewKey} = views;
   const historyFile = storageKey ? `history-${storageKey}.json` : 'history.json';
   const settlingFile = storageKey ? `settling-${storageKey}.json` : 'settling.json';
   await mkdir(directory, { recursive: true });
-  const archive = await createArchive(directory, viewKey, overviewKey, now);
+  const archive = persistence ? {add(){},cutoff:()=>now()/1000-10800} : await createArchive(directory, viewKey, overviewKey, now);
   let frames = [],
     error = null,
     checkedAt = null,
@@ -32,6 +32,7 @@ export async function createRadar(
   async function cachedImage(time, target, key) {
     if (!Number.isSafeInteger(time) || time <= 0)
       throw new Error("Invalid cached time");
+    if(persistence)return persistence.read(time);
     const file = filename(time, key);
     const data = await readFile(join(directory, file));
     const info = await sharp(data).metadata();
@@ -45,7 +46,8 @@ export async function createRadar(
     const overviewFile = await cachedImage(time, overviewView, overviewKey);
     return { time, file, viewKey, overviewFile, overviewKey };
   }
-  try {
+  if(persistence){for(const time of persistence.frames){try{frames.push(await cached(time));}catch{error="Some cached radar frames are unavailable";}}}
+  else try {
     let saved;
     try {
       saved = JSON.parse(
@@ -110,6 +112,7 @@ export async function createRadar(
       .composite(overlays)
       .png()
       .toBuffer();
+    if(persistence)return persistence.publish(frame.time,result);
     const next = { time: frame.time, file: filename(frame.time, key), viewKey: key };
     await writeFile(join(directory, `${next.file}.tmp`), result);
     await rename(
@@ -124,8 +127,8 @@ export async function createRadar(
     return { time: frame.time, file, viewKey, overviewFile, overviewKey, arrivedAt: now() };
   }
   // Persist only the bounded first-seen times, not another image cache.
-  let firstSeen = new Map();
-  try {
+  let firstSeen = new Map(persistence?.settling??[]);
+  if(!persistence)try {
     const saved = JSON.parse(await readFile(join(directory, settlingFile), "utf8"));
     if (Array.isArray(saved)) firstSeen = new Map(saved.filter(entry =>
       Array.isArray(entry) && Number.isSafeInteger(entry[0]) && entry[0] > 0 &&
@@ -143,13 +146,15 @@ export async function createRadar(
     let previous = [];
     try {
       checkedAt = new Date(now()).toISOString();
-      const available = await provider.getHistory();
+      let available = await provider.getHistory();
       if (
         !Array.isArray(available) ||
         !available.length ||
         available.length > 13
       )
         throw new Error("No usable radar history");
+      if(persistence?.filterHistory)available=await persistence.filterHistory(available);
+      if(persistence?.has)frames=frames.filter(frame=>persistence.has(frame.time));
       if (frames.length && available.at(-1).time < frames.at(-1).time)
         throw new Error("Provider history is older than cached history");
       const observedAt = now();
@@ -167,8 +172,9 @@ export async function createRadar(
             firstSeen.set(frame.time,Math.min(firstSeen.get(frame.time),frame.firstSeenAt));
         }
       }
-      await writeFile(join(directory, `${settlingFile}.tmp`), JSON.stringify([...firstSeen]));
-      await rename(join(directory, `${settlingFile}.tmp`), join(directory, settlingFile));
+      if(persistence)await persistence.saveSettling([...firstSeen]);
+      else {await writeFile(join(directory, `${settlingFile}.tmp`), JSON.stringify([...firstSeen]));
+      await rename(join(directory, `${settlingFile}.tmp`), join(directory, settlingFile));}
       const eligible = available.filter(frame => known.has(frame.time) || observedAt - firstSeen.get(frame.time) >= delay);
       const currentLatest = frames.at(-1)?.time ?? 0;
       if (!eligible.some(frame => !known.has(frame.time) && frame.time >= currentLatest - 7200)) {
@@ -202,7 +208,7 @@ export async function createRadar(
       if (!next.length) throw new Error("No complete radar frames available");
       const publishedLatest = next.at(-1).time;
       const published = next.filter(frame => frame.time >= publishedLatest - 7200).slice(-13);
-      await writeFile(
+      if(!persistence){await writeFile(
         join(directory, `${historyFile}.tmp`),
         JSON.stringify({ viewKey, frames: published }),
       );
@@ -210,6 +216,7 @@ export async function createRadar(
         join(directory, `${historyFile}.tmp`),
         join(directory, historyFile),
       );
+      }
       previous = frames;
       frames = published;
       error = incomplete || publishedLatest < latest ? "New radar data temporarily unavailable" : null;
@@ -233,7 +240,7 @@ export async function createRadar(
       lastFailed = acquisitionFailed;
       if (!lastFailed) connectionReady = true;
       try {
-        if (manageCleanup) {
+        if (manageCleanup && !persistence) {
         // Bound partial progress even during repeated failures, retaining last-good history.
         const all = await readdir(directory);
         const files = all

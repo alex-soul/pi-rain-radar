@@ -16,7 +16,7 @@ export class RainbowError extends Error {
 export async function createRainbow(directory, {
   request = fetch, now = Date.now, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
   testRequestLimit = null, monthlyLimit = () => null, inUse = () => false,
-  onEvent = () => {}, validationTile = { zoom: 0, x: 0, y: 0 },
+  onEvent = () => {}, enabled=()=>true, onNewKey=async()=>{}, validationTile = { zoom: 0, x: 0, y: 0 },
 } = {}) {
   if (testRequestLimit !== null && (!Number.isSafeInteger(testRequestLimit) || testRequestLimit < 1)) throw new Error('Invalid Rainbow test request limit');
   const folder = join(directory, 'settings');
@@ -50,6 +50,7 @@ export async function createRainbow(directory, {
   }
   async function call(path, apiKey, tile = false) {
     return serial(async () => {
+      if(!enabled()&&!configuring)throw new RainbowError('disabled','Rainbow collection disabled.');
       if (!apiKey) throw new RainbowError('key', 'Configure a Rainbow API key first.');
       if (now() < ledger.retryAt) throw new RainbowError('rate', 'Rainbow requested a pause. Try again shortly.');
       const limit = monthlyLimit();
@@ -59,8 +60,10 @@ export async function createRainbow(directory, {
       const requests = ledger.month === currentMonth ? ledger.requests : 0;
       if (limit !== null && requests >= limit) throw new RainbowError('limit', 'Monthly API-request limit reached. Updates are paused.');
       await sleep(Math.max(0, lastRequest + 850 - now()));
+      if(!enabled()&&!configuring)throw new RainbowError('disabled','Rainbow collection disabled.');
       const reserved = { ...ledger, month: currentMonth, tiles: tiles + Number(tile), requests: requests + 1, total: ledger.total + 1 };
       await save(usageFile, reserved); ledger = reserved; lastRequest = now();
+      if(!enabled()&&!configuring)throw new RainbowError('disabled','Rainbow collection disabled.');
       let response;
       try {
         response = await request(origin + path, { headers: { 'Ocp-Apim-Subscription-Key': apiKey }, signal: AbortSignal.timeout(20000), redirect: 'error' });
@@ -123,6 +126,7 @@ export async function createRainbow(directory, {
       try {
         let checkedSnapshot = null;
         if (value) { checkedSnapshot = await snapshot(value); await tileAt(checkedSnapshot, validationTile, value); }
+        if(!key||!value)await onNewKey();
         await save(keyFile, { apiKey: value }); key = value; error = null; onEvent('rainbow-key');
         return { status: 200, configured: !!key, checkedSnapshot, usage: usage() };
       } catch (e) {

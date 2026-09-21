@@ -1,5 +1,9 @@
 // Only fixed, trusted messages enter this user-facing log. Never accept provider text.
 const messages = {
+  'camera-collected': ['Camera', 'info', 'Camera snapshot stored.'],
+  'camera-unchanged': ['Camera', 'info', 'Camera image unchanged. Keeping its original timestamp.'],
+  'camera-stale': ['Camera', 'warning', 'Camera returned a snapshot more than ten minutes old.'],
+  'camera-error': ['Camera', 'warning', 'Camera collection failed. Check Camera in Status; retrying on the next five-minute poll.'],
   'main-unavailable': ['Main radar', 'error', 'Radar observations unavailable or at least 30 minutes old.'],
   'main-available': ['Main radar', 'info', 'Usable data available again.'],
   'overview-unavailable': ['Overview radar', 'error', 'Radar observations unavailable or at least 30 minutes old.'],

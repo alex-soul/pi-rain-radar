@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="map-id" content="{{MAP_ID}}"><meta name="app-version" content="{{APP_VERSION}}">
+  <meta name="time-zone" content="{{TIME_ZONE}}">
   <meta name="embed-hours" content="{{EMBED_HOURS}}"><meta name="embed-speed" content="{{EMBED_SPEED}}">
   <title>Pi Rain Radar · Embed</title>
   <link rel="stylesheet" href="/embed.css"><script type="module" src="/embed.js"></script>
@@ -13,6 +14,6 @@
     <image id="radar" width="1280" height="720" opacity=".8"/>
   </svg>
   <span id="embed-status" role="status" aria-label="Waiting for radar" title="Waiting for radar" data-health="warning"></span>
-  <div class="credits"><span id="radar-credit"></span><span> · Map: </span><a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a></div>
+  <div class="embed-footer"><time id="embed-time">—</time><div class="credits">Radar by <span id="radar-credit"></span><span> · Map by </span><a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a></div></div>
 </body>
 </html>

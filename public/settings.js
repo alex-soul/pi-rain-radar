@@ -1,3 +1,10 @@
+import './settings-layout.js';
+import {setupReviewRadar} from './settings-layout-details.js';
+import {bindIntegrationSettings,refresh as refreshIntegrations} from './integrations-state.js';
+import {loadIntegrationChoices} from './settings-layout.js';
+import {connectionSaved} from './integration-onboarding.js';
+import {setupCameraSettings} from './camera-settings-ui.js';
+import {setupStorageSettings} from './storage-ui.js';
 import { setupScreenLock } from './screen-lock.js';
 import { setupReleaseInfo } from './release-ui.js';
 import { setupEmbedSettings } from './embed-settings-ui.js';
@@ -12,7 +19,7 @@ import { setupRadarSettings } from './radar-settings-ui.js';
 import { setupDevicePower } from './device-power.js';
 const $ = (id) => document.getElementById(id);
 const dialog = $('settings-dialog');
-setupSettingsHelp(dialog);
+
 setupReleaseInfo(dialog);
 const pinIdle = setupPinIdle(dialog, $('pin-panel'));
 const confirmPinEntry = setupPinEntry($('settings-confirm-pin'), () => $('settings-pin-save').focus());
@@ -36,12 +43,15 @@ const settingsIdle = setupSettingsIdle({
 for (const name of ['pointerdown','pointermove','keydown','input','change','click','scroll']) {
   document.addEventListener(name, event => {
     if (!event.isTrusted || (name === 'pointermove' && !event.buttons)) return;
-    if (event.target.closest?.('#settings-dialog, #map-preview-dialog, #power-dialog, #radar-confirm-dialog, #external-dialog')) settingsIdle.activity();
+    if (event.target.closest?.('#settings-dialog, #map-preview-dialog, #power-dialog, #radar-confirm-dialog, #external-dialog, #review-camera-dialog, #review-preview-dialog, #review-saved-dialog')) settingsIdle.activity();
   }, true);
 }
 function canEdit() { return (!configured || (!!token && Date.now() < unlockedUntil)) && dialog.open && !$('settings-fields').hidden; }
-const radarUI=setupRadarSettings(canEdit,request);
+bindIntegrationSettings(canEdit,request);
+const radarUI=setupRadarSettings(canEdit,request);setupReviewRadar();setupSettingsHelp(dialog);
 const embedUI=setupEmbedSettings(canEdit,request);
+const storageUI=setupStorageSettings(canEdit,request);
+const cameraUI=setupCameraSettings(canEdit,request);
 const powerUI=setupDevicePower(canEdit,request);
 const resetButtons = setupControlEditor(canEdit);
 const resetReadings = setupReadingEditor(canEdit);
@@ -73,7 +83,7 @@ for (const tablist of dialog.querySelectorAll('[role="tablist"]')) {
   const tabs = [...tablist.querySelectorAll('[role="tab"]')];
   function selectTab(selected) {
     resetControlEditor();
-    if (selected.id === 'settings-tab-api') $('api-tab-map').click();
+    if (selected.id === 'settings-tab-api') $('api-tab-weather').click();
     for (const tab of tabs) {
       const active = tab === selected;
       tab.setAttribute('aria-selected', String(active));
@@ -107,7 +117,7 @@ async function request(path, data, bearer = token) {
     method: data === undefined ? 'GET' : 'POST',
     headers: { ...(data === undefined ? {} : { 'Content-Type': 'application/json' }), ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
     body: data === undefined ? undefined : JSON.stringify(data),
-    cache: 'no-store', signal: AbortSignal.timeout(path==='/map/preview'?60_000:path==='/radar'?180_000:path==='/rainbow'?50_000:10_000),
+    cache: 'no-store', signal: AbortSignal.timeout(path.startsWith('/camera/')?30_000:path==='/map/preview'?60_000:path==='/radar'?180_000:path==='/rainbow'?50_000:10_000),
   });
 }
 function discard(bearer) { if (bearer) void request('/lock', {}, bearer).catch(() => {}); }
@@ -133,6 +143,7 @@ $('radar-settling').addEventListener('change', async () => {
   } finally { savingRadar = false; field.disabled = false; }
 });
 function lock() {
+  cameraUI.reset();
   embedUI.clear();
   powerUI.clear();
   radarUI.clear();
@@ -204,6 +215,8 @@ async function showSettings(current) {
     $('radar-settling-note').textContent = '';
     void radarUI.load(keyState.radar);
     void embedUI.load();
+    void storageUI.load();
+    void cameraUI.load();void refreshIntegrations().then(loadIntegrationChoices);
     if (keyState.map) for (const [key,value] of Object.entries(keyState.map)) {
       const field=$(`map-${key}`);
       field.value=key==='overviewZoom'?Number(value.toFixed(2)):value;
@@ -256,7 +269,7 @@ async function saveWeatherKey(remove = false) {
     if (response.status === 401) { dialog.close(); return; }
     const result = await response.json();
     if (epoch !== generation) return;
-    if (response.ok) { weatherKeyConfigured = !!result.apiKeyConfigured; weatherKeyButtons(); }
+    if (response.ok) { weatherKeyConfigured = !!result.apiKeyConfigured; weatherKeyButtons(); if(!remove)void connectionSaved("owm"); }
     $('settings-api-note').textContent = response.ok ? (weatherKeyConfigured ? 'Configured.' : 'Not configured.') : result.error || 'Could not save the key. Try again.';
   } catch { if (epoch === generation) $('settings-api-note').textContent = 'Save could not be confirmed. Reopen settings to check.'; }
   finally { if (epoch === generation) { $('weather-key-save').disabled = false; $('weather-key-remove').disabled = !weatherKeyConfigured; } }

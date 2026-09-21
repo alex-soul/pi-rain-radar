@@ -1,5 +1,17 @@
 # Upgrades and migration
 
+## 0.7.0: new archive and shared integrations
+
+**Upgrading from 0.6.0 or earlier removes up to seven days of old rolling history.** The new SQLite archive starts fresh; no migration, mixed legacy archive or import is supported. [Back up the complete app data first](archive-backup.md) and retain the matching old image if you need to replay it later.
+
+Keep the existing Compose project, volume, browser origin/profile and optional Device Power override. Keys, PIN, map and browser preferences remain. Live rebuilds its recent two hours from available provider observations; saved four/six-hour windows retain ordinary gaps until enough new history exists. Archive becomes available as new matching radar is collected. Compatible 0.7.0 release candidates preserve their archive without another reset.
+
+Confirm the initial appliance-wide units under **Interface → Weather → Units**. This fixes the baseline for history predating shared-unit tracking; old browser-specific changes cannot be reconstructed. Later Archive playback uses recorded units; Live uses current Settings. Existing configured OWM/Rainbow collectors remain enabled, RainViewer defaults enabled, and new HA weather collection requires setup. Saving new credentials alone does not enable a feed. RC2 HA camera credentials move to shared HA settings without changing camera identity.
+
+Retention defaults to seven days and is shared across streams. Configure it under **System → Storage**. Storage pressure can roll history sooner to protect Live; Status reports usage and warnings. Corruption recovery preserves the failed database and starts a new archive, with safeguards against repeated resets and recovery copies exhausting storage. Operational preferences and credentials remain separate from historical content.
+
+Downgrading across the storage change requires the matching old image **and a restored old backup**, in a separate volume. Keep newer data separately. Never point older software at the new archive or delete the live volume to roll back.
+
 ## 0.6.0: embedding and diagnostics
 
 Embedding defaults to disabled and preserves normal browser preferences. Shared embed settings and release-check metadata use the existing data volume. HTTPS remains optional host configuration.

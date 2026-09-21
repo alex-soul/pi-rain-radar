@@ -1,5 +1,14 @@
 # Validation and remaining work
 
+## 0.7.0 candidate acceptance — 21 September 2026
+
+I tested RC3 on my Pi 4 / 2 GB and accepted it for release: no major problems found, and everything is working. Non-blocking UI observations will be assessed separately. Prolonged soak remains outstanding.
+
+275 local tests passed. Native ARM64 ran the same suite: 274 passed and one existing cleanup test assumed immediate deletion despite the maintenance time budget. After correcting it to allow bounded maintenance turns, all 24 archive-store tests passed natively; no runtime change was required. Native fresh start/restart, consistent RC2 backup restore and isolated RC3 upgrade/restart passed. Live upgrade retained archive generation, camera identity, credentials and settings.
+
+A synthetic five-year metadata fixture (262,801 records) completed 100 indexed queries in 505 ms with caller event-loop progress; this is not a media-scale benchmark. A short deployed health sample took 4.44–7.78 ms, with 926 MiB available RAM, 61.3°C and no throttling. One sample showed 40 KiB/s swap-in; no swap-out was observed. These are bounded observations, not a no-performance-impact guarantee. Image CI separately verifies AMD64/ARM64 startup and persistence.
+
+
 ## v0.6.0 candidate acceptance — 20 September 2026
 
 - 188 tests passed locally and on native ARM64, plus isolated fresh startup/restart checks. A protected data/browser/host backup was restored into isolated copies; candidate → 0.5.0 → candidate opened retained history with 1,337 protected settings/capture/history files unchanged. Older writers may discard new incident counters; retain the backup for rollback.

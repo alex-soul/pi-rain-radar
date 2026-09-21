@@ -1,3 +1,4 @@
+import {saveWeatherHistory} from './weather-history.js';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -39,34 +40,46 @@ async function save(file, value) {
   await writeFile(temp, JSON.stringify(value), {mode:0o600});
   await rename(temp, file);
 }
-export async function createWeather(directory, { now = Date.now, request = fetch, location = view, onEvent = () => {} } = {}) {
+export async function createWeather(directory, { store = null, now = Date.now, request = fetch, location = view, onEvent = () => {}, enabled=()=>true, onNewKey=async()=>{}, onData=async()=>{} } = {}) {
   const folder = join(directory, 'settings');
   await mkdir(folder, {recursive:true,mode:0o700});
   const credentialsFile = join(folder, 'openweather.json');
-  const cacheFile = join(directory, 'weather.json');
+  const cacheFile = store ? join(folder,'weather-operational.json') : join(directory, 'weather.json');
   let locationKey = `${location.lat},${location.lon}`;
   const storedKey = (await read(credentialsFile))?.apiKey;
   let key = typeof storedKey === 'string' && /^[a-f0-9]{32}$/i.test(storedKey) ? storedKey : '';
   let cache = await read(cacheFile);
+  if(store){
+    const saved=await store.weatherState('openweather');
+    cache={...(saved?.location===locationKey?saved:{}),...cache};
+  }
   if (cache?.location !== locationKey || (cache.data && !Array.isArray(cache.data.minutely))) cache = null;
   const validGust = gust => number(gust?.mph, 0, 200 * 2.2369362921) && Number.isSafeInteger(gust.time) && gust.time > 0 && gust.time <= now() / 1000 + 300;
   const currentGust = data => ({mph:data?.current?.gustMph, time:data?.current?.time});
   // Migrate the previous cache using the observation time, never the fetch time.
   const storedGust = cache?.gust ?? currentGust(cache?.data);
   let gust = key && validGust(storedGust) ? storedGust : null;
-  let busy = false, configuring = false, generation = 0;
+  let busy = false, configuring = false, generation = 0, controller=null, collectionEnabled=enabled();
   let nextAttemptAt = number(cache?.nextAttemptAt,0,now()+WEATHER_INTERVAL) ? cache.nextAttemptAt : 0;
   let nextSetupAt = number(cache?.nextSetupAt,0,now()+SETUP_COOLDOWN) ? cache.nextSetupAt : 0;
   let failures = Number.isInteger(cache?.failures) ? Math.max(0, Math.min(2, cache.failures)) : 0;
   let error = failures && typeof cache?.error === 'string' ? cache.error : null;
   let forecastError = typeof cache?.forecastError === 'string' ? cache.forecastError : null;
   let forecastFetchedAt = cache?.forecastFetchedAt ?? cache?.fetchedAt ?? null;
-  async function persist() { await save(cacheFile, {location:locationKey, data:cache?.data || null, fetchedAt:cache?.fetchedAt || null, forecastFetchedAt, gust, failures, error, forecastError, nextAttemptAt, nextSetupAt}); }
+  async function persist() {
+    const operational={location:locationKey,failures,error,forecastError,nextAttemptAt,nextSetupAt};
+    const current={data:cache?.data||null,fetchedAt:cache?.fetchedAt||null,forecastFetchedAt,gust};
+    await save(cacheFile,store?operational:{...operational,...current});
+    // One bounded latest operational value, separate from immutable historical
+    // forecasts. A later same-anchor response may update Live, never history.
+    if(store)await store.saveWeatherState('openweather',{location:locationKey,...current});
+
+  }
   async function fetchPart(path, normalize, coordinates, apiKey) {
     try {
       const url = new URL(`https://api.openweathermap.org/data/4.0/onecall/${path}`);
       url.search = new URLSearchParams({lat:String(coordinates.lat),lon:String(coordinates.lon),units:'metric',appid:apiKey});
-      const response = await request(url, {signal:AbortSignal.timeout(15000),redirect:'error'});
+      const response = await request(url, {signal:AbortSignal.any([AbortSignal.timeout(15000),controller.signal]),redirect:'error'});
       if (!response.ok) {
         await response.body?.cancel();
         const message = response.status === 401 || response.status === 403 ? 'OpenWeather rejected the key or One Call 4.0 access. Activate a One Call 4.0 subscription.' : response.status === 429 ? 'OpenWeather request limit reached.' : 'OpenWeather temporarily unavailable.';
@@ -85,9 +98,10 @@ export async function createWeather(directory, { now = Date.now, request = fetch
   }
   let connectionStarted = false, connectionReady = false, lastFailed = false;
   async function refresh() {
-    if (!key || busy || configuring || now() < nextAttemptAt) return;
+    if (!enabled() || !key || busy || configuring || now() < nextAttemptAt) return;
     if (!connectionStarted) { onEvent('weather-start'); connectionStarted = true; }
     busy = true;
+    controller=new AbortController();
     const epoch = generation;
     let diagnostic = 'weather-error', currentDiagnostic = 'weather-error';
     nextAttemptAt = now() + WEATHER_INTERVAL;
@@ -97,7 +111,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
         fetchPart('current', normalizeCurrent, location, key),
         fetchPart('timeline/1min', normalizeMinutely, location, key),
       ]);
-      if (epoch !== generation) return;
+      if (epoch !== generation || !enabled()) return;
       error = current.error || null;
       forecastError = forecast.error || null;
       diagnostic = current.diagnostic || forecast.diagnostic || diagnostic;
@@ -108,6 +122,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
         if (forecast.data) forecastFetchedAt = now();
         const candidate = currentGust(cache.data);
         if (current.data && validGust(candidate) && (!gust || candidate.time > gust.time || (candidate.time === gust.time && candidate.mph !== gust.mph))) gust = {...candidate, fetchedAt:now()};
+        if(store)try{await saveWeatherHistory(store,{context:locationKey,current:current.data,forecast:forecast.data,gust,receivedAt:now()});}catch{onEvent('storage-error');}
       }
     } catch {
       if (epoch === generation) { failures = Math.min(2, failures + 1); error = forecastError = 'Weather refresh failed; will retry automatically.'; }
@@ -125,10 +140,13 @@ export async function createWeather(directory, { now = Date.now, request = fetch
         try { await persist(); } catch { onEvent('storage-error'); }
       }
       busy = false;
+      controller=null;
+      if(epoch===generation)await onData();
     }
   }
   return {
     refresh,
+    collectionChanged(){const next=enabled();if(next!==collectionEnabled){collectionEnabled=next;generation++;controller?.abort();}void refresh();},
     async setLocation(value) {
       const nextKey = `${value.lat},${value.lon}`;
       if (nextKey === locationKey) return;
@@ -147,6 +165,7 @@ export async function createWeather(directory, { now = Date.now, request = fetch
       }
       configuring = true;
       try {
+        if(!key||!value)await onNewKey();
         await save(credentialsFile,{apiKey:value});
         onEvent('weather-key');
         generation++; key=value; error=null; forecastError=null;
@@ -154,12 +173,12 @@ export async function createWeather(directory, { now = Date.now, request = fetch
         // Explicit setup checks have a short, persistent cooldown; background polling keeps its normal interval.
         if (key) { nextAttemptAt = 0; nextSetupAt = now() + SETUP_COOLDOWN; }
         await persist();
-        return {status:200,apiKeyConfigured:!!key,checking:!!key};
+        return {status:200,apiKeyConfigured:!!key,checking:!!key&&enabled()};
       } finally { configuring=false; void refresh(); }
     },
     status() {
       const data = key ? cache?.data : null;
-      return {configured:!!key, data:data || null, gust:key ? gust : null, fetchedAt:data ? cache.fetchedAt : null, forecastFetchedAt:key ? forecastFetchedAt : null, failures, error, forecastError, fetching:busy, nextAttemptAt:key ? nextAttemptAt : null};
+      return {configured:!!key, enabled:enabled(), data:data || null, gust:key ? gust : null, fetchedAt:data ? cache.fetchedAt : null, forecastFetchedAt:key ? forecastFetchedAt : null, failures, error, forecastError, fetching:busy, nextAttemptAt:key&&enabled() ? nextAttemptAt : null};
     },
   };
 }

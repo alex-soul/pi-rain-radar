@@ -56,8 +56,8 @@ test('history picker retains distinct epoch values for repeated local clock time
   const start=app.indexOf('const dayKey =');
   const end=app.indexOf("$('archive-day').addEventListener",start);
   const times=['2026-11-01T05:30:00Z','2026-11-01T06:30:00Z'].map(iso=>Date.parse(iso)/1000);
-  const day={value:'01/11/2026'},select={replaceChildren(...options){this.options=options;}};
-  const context=vm.createContext({archiveTimes:times,$:id=>id==='archive-day'?day:select,
+  const day={value:'2026-11-01'},select={replaceChildren(...options){this.options=options;}};
+  const context=vm.createContext({timeZone:'America/New_York',archiveTimes:times,$:id=>id==='archive-day'?day:select,
     format:(time,options)=>formatTime(time,options,'America/New_York'),
     Option:function(label,value){this.label=label;this.value=value;}});
   vm.runInContext(app.slice(start,end)+'\npopulateTimes();',context);

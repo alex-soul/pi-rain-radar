@@ -26,11 +26,13 @@ function place(x, y) {
   panel.style.left = `${position.x}px`;
   panel.style.top = `${position.y}px`;
 }
+function aspect(){const image=id==='camera'?panel.querySelector('img'):null;return image&&!image.hidden&&image.naturalWidth?image.naturalWidth/image.naturalHeight:null;}
 function layout() {
   if (!visible) return;
   const footerTop = widgetBottom();
   panel.style.width = `${Math.max(20, Math.min(preferredWidth, innerWidth - 16))}px`;
   panel.style.height = `${Math.max(20, Math.min(preferredHeight, footerTop - 16))}px`;
+  const ratio=aspect();if(ratio){const extra=panel.querySelector('.camera-caption').offsetHeight+2;const w=Math.min(preferredWidth,innerWidth-16,Math.max(20,footerTop-16-extra)*ratio+2,640,(maxHeight-extra)*ratio+2);panel.style.width=w+'px';panel.style.height=((w-2)/ratio+extra)+'px';}
   place(position?.x ?? startX, position?.y ?? startY);
 }
 function paint() {
@@ -73,6 +75,7 @@ handle.addEventListener("keydown", event => {
 });
 new ResizeObserver(layout).observe(document.querySelector("footer"));
 window.addEventListener("resize", layout);
+panel.addEventListener("snapshot-size",layout);
 window.addEventListener("radar-display-change", layout);
 
 let resizing = null;
@@ -83,6 +86,7 @@ resizeHandle.addEventListener("pointerdown", event => {
   event.preventDefault();
 });
 function resizeTo(width, height) {
+  const ratio=aspect();if(ratio&&Math.abs(height-panel.offsetHeight)>Math.abs(width-panel.offsetWidth))width=(height-panel.querySelector('.camera-caption').offsetHeight-2)*ratio;
   preferredWidth = Math.max(minWidth, Math.min(640, width));
   preferredHeight = Math.max(minHeight, Math.min(maxHeight, height));
   layout();

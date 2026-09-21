@@ -5,9 +5,12 @@
 | **Live** | Latest 2, 4 or 6 hours of observations; not instantaneous radar. |
 | **Archive** | A selected older period, with a temporary 1–24-hour window. |
 | **Playback** | Animation and controls in either mode. |
-| **History** | Stored observations, retained for seven days. |
-| **Provider frame / observation** | One provider's radar at its original observation time. |
-| **Capture** | A paired position in playback; it may have one or both provider frames. Legacy captures could repeat older observations. |
+| **History** | Stored observations, with shared rolling retention (seven days by default). |
+| **Radar frame / observation** | One provider's radar at its original observation time. |
+| **Capture** | A playback position combining available radar frames and associated weather/camera data. |
+| **Camera snapshot** | One still image collected from the configured camera. |
+| **Camera collection** | Backend acquisition of camera snapshots, independent of showing the widget. |
+| **Screenshot** | An image of the rendered screen. |
 
 ## Observation-time playback
 
@@ -23,6 +26,8 @@ Live may borrow a compatible earlier observation for a missing map for up to 30 
 
 ## Archive
 
-Archive never borrows: a missing frame leaves that map's basemap visible and its timeline half missing. Late arrivals can fill gaps. Zero/one playable position cannot animate. The temporary duration and provider-name switch reset on return to Live; current weather and Rain forecast remain current.
+Archive never borrows: a missing frame leaves that map's basemap visible and its timeline half missing. Late arrivals can fill gaps. Zero/one playable position cannot animate. The temporary duration and provider-name switch reset on return to Live; weather, Rain forecast and camera snapshots follow the historical position. Manual Live scrubbing changes radar only; Live widgets stay current.
 
-Source changes retain provenance and geometry isolation. No automatic provider failover, extra API entitlement or unlimited retention is implied. See [upgrade notes](upgrading.md) for legacy conversion limits.
+Source changes retain provenance and geometry isolation. Radar has no automatic provider failover. HA-assigned weather readings can use optional OpenWeather fallback. Retention remains bounded by available storage. See [upgrade notes](upgrading.md) for the fresh-archive boundary.
+
+Rain forecast and camera matching look back at most ten minutes, never ahead. Missing matches stay gaps; attribution still applies to expected missing data. Qualify provider-specific uses such as a Rainbow API snapshot or forecast snapshot; do not call a camera snapshot a screen capture.

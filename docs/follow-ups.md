@@ -1,12 +1,16 @@
 # Release follow-ups
 
-## Known fixes for a future release
+## After 0.7.0
 
-- **Embed address example:** derive the example from the actual radar address instead of only showing a generic hostname. Retain the distinction between the radar URL and trusted dashboard origins.
-- **RainViewer embed attribution:** add the missing “Radar by” wording while preserving the working credit link.
-- **Embed frame time:** show the displayed observation's `HH:mm` in the bottom-left corner, advancing with the ten-minute playback sequence. Use frame time, not the current wall clock; skip unavailable observations honestly. A green LED indicates health, not which capture is on screen.
+I tested RC3 on my Pi: no major problems found, and everything is working. A few non-blocking UI tweaks will be recorded here once the observations have been fully reviewed and assessed. No individual changes are scoped yet.
 
-These are non-blocking improvements requested for the release after 0.6.0.
+- Multiple-camera collection remains a future decision; this release supports one camera.
+- Direct Tempest integration remains deferred pending provider clarification. OAuth, including callbacks for independently hosted installations, belongs to that future work. Generic HA sensor mapping is available now; it does not override upstream terms.
+
+## Delivered in 0.7.0
+
+Rolling SQLite archive, shared retention and storage status; historical weather/forecast/camera replay; one camera with direct/HA onboarding; shared HA and generic sensor mappings; source/unit/fallback provenance; collection controls; reorganized Settings and dynamic attribution. The earlier embed address example, RainViewer credit wording and displayed-frame time items are implemented.
+
 ## Remaining validation
 
 - **Prolonged Pi soak:** remains deferred after 0.6.0. Observe several-hour/overnight split-provider playback, memory growth, swap, recovery, retained history and request counters. Short successful checks are not a soak.

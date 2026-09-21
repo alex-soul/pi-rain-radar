@@ -3,6 +3,8 @@ import { promisify } from 'node:util';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeViews, radarTiles } from './map.js';
+import {cameraMessages} from './camera.js';
+import {haMessages} from './home-assistant.js';
 
 const scrypt = promisify(derive);
 export const SESSION_MS = 5 * 60_000;
@@ -100,7 +102,7 @@ export function createSettingsAuth(directory, now = Date.now) {
   };
 }
 
-export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, embed } = {}) {
+export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, embed, storage, camera, ha, weatherSettings } = {}) {
   return async (req, res, path) => {
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -128,6 +130,49 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
           if (result.retryAfter) res.setHeader('Retry-After', String(result.retryAfter));
           return send(result.status, result);
         }
+      }
+      if(['/api/settings/home-assistant','/api/settings/home-assistant/entities','/api/settings/weather'].includes(path)){
+        if(!await auth.authorized(token))return send(401,{});
+        if(!ha||!weatherSettings)return send(503,{});
+        if(req.method==='GET')return send(200,path.endsWith('/entities')?{entities:await ha.discover()}:path.endsWith('/weather')?weatherSettings.current():ha.status());
+        if(req.method!=='POST'||path.endsWith('/entities'))return send(405,{});
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>8192)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        try{
+          if(path.endsWith('/weather')){
+            if((input?.haCollect||input?.source==='ha')&&!ha.status().configured)return send(400,{error:'Configure Home Assistant in System > API first.'});
+            if(input?.owmCollect&&!weather?.configured())return send(400,{error:'Configure OpenWeather in System > API first.'});
+            if(input?.rainbowCollect&&!rainbow?.configured())return send(400,{error:'Configure Rainbow in System > API first.'});
+            const result=await weatherSettings.configure(input);return send(result.status,result);
+          }
+          return send(200,await ha.configure(input));
+        }catch(e){return send(e.code==='HA_BUSY'?409:400,{error:haMessages[e.code]??'Settings could not be saved.'});}
+      }
+      if(['/api/settings/camera','/api/settings/camera/test','/api/settings/camera/discover','/api/settings/camera/preview','/api/settings/camera/thumbnail'].includes(path)) {
+        if(!await auth.authorized(token))return send(401,{});
+        if(!camera)return send(503,{});
+        if(req.method==='GET'&&(path.endsWith('/preview')||path.endsWith('/thumbnail'))){
+          const bytes=path.endsWith('/thumbnail')?camera.thumbnail():camera.preview(new URL(req.url,'http://localhost').searchParams.get('ticket'));
+          if(!bytes)return send(404,{});
+          res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});return res.end(bytes);
+        }
+        if(req.method==='GET'&&path==='/api/settings/camera')return send(200,camera.status());
+        if(req.method!=='POST'||path.endsWith('/preview')||path.endsWith('/thumbnail'))return send(405,{});
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>8192)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        try{
+          const result=path.endsWith('/test')?await camera.test(input):path.endsWith('/discover')?{cameras:await camera.discover(input)}:await camera.configure(input);
+          return send(200,result);
+        }catch(e){return send(e.code==='CAMERA_BUSY'?409:400,{error:cameraMessages[e.code]??'Camera settings could not be saved.'});}
+      }
+      if(path==='/api/settings/storage'&&(req.method==='GET'||req.method==='POST')) {
+        if(!await auth.authorized(token))return send(401,{});
+        if(!storage)return send(503,{});
+        if(req.method==='GET')return send(200,storage.status());
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>256)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        if(input?.days!==null&&(!Number.isSafeInteger(input?.days)||input.days<1||!Number.isSafeInteger(input.days*86400000)))return send(400,{error:'Choose a positive number of whole days.'});
+        await storage.setRetention(input.days);return send(200,storage.status());
       }
       if(path==='/api/settings/embed'&&(req.method==='GET'||req.method==='POST')) {
         if(!await auth.authorized(token))return send(401,{});

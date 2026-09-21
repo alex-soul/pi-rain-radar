@@ -1,0 +1,105 @@
+#review-banner {position:fixed;bottom:0;left:80px;right:0;z-index:25;display:flex;align-items:center;gap:16px;padding:5px 12px;background:#192e2bea;color:#e0ece8;font:12px system-ui;border-top:1px solid #698c82;}
+#review-banner button,#review-banner a {font:inherit;color:inherit;background:none;border:0;text-decoration:underline;cursor:pointer;}
+#review-cases {position:fixed;bottom:34px;right:10px;width:min(340px,calc(100vw - 40px));z-index:26;padding:18px;background:#203b35;color:#e4efeb;border:1px solid #789e90;border-radius:10px;font:14px system-ui;box-shadow:0 10px 30px #0008;}
+#review-cases select {width:100%;padding:8px;background:#203b35;color:inherit;}
+#review-cases[hidden], [id^="review-"][hidden] {display:none!important;}
+.review-muted {font-size:12px;opacity:.75;line-height:1.45;}
+.review-help {border:0;background:transparent;color:inherit;padding:4px;cursor:pointer;}
+.review-weather-source {padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #809c8d66;}
+.review-weather-source label:not(.misc-option), #api-ha label:not(.misc-option),#review-camera-dialog label {display:block;margin:12px 0 6px;}
+.review-weather-source select,#api-ha input:not([type="checkbox"]),#review-camera-dialog input,#review-camera-dialog select {box-sizing:border-box;width:100%;}
+.review-weather-source small {display:block;color:#bc8a34;line-height:1.4;margin-top:6px;}
+.review-camera-row {display:grid;grid-template-columns:88px 1fr;gap:14px;align-items:center;padding:14px;border:1px solid #809c8d66;border-radius:8px;margin:16px 0;}
+.review-camera-row img {width:88px;height:60px;object-fit:contain;border-radius:4px;}
+.review-camera-row .weather-key-actions {grid-column:1/-1;}
+#review-camera-dialog,#review-preview-dialog {width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;background:#1d302a;color:#e2eae5;border:1px solid #718b80;border-radius:12px;padding:18px;}
+:root[data-theme="light"] #review-camera-dialog,:root[data-theme="light"] #review-preview-dialog {background:#e3ece6;color:#183329;}
+#review-preview-image {display:block;max-width:100%;max-height:60vh;margin:16px auto;}
+#review-camera-dialog button,#review-preview-dialog button {padding:9px 15px;border:1px solid #709e90;border-radius:7px;background:#368f83;color:white;cursor:pointer;}
+#review-camera-dialog input,#review-camera-dialog select {padding:9px;border:1px solid #77988b;border-radius:7px;background:transparent;color:inherit;}
+#review-camera-dialog option {color:#16362b;}
+#review-camera-dialog button:disabled {opacity:.45;cursor:default;}
+.review-archive-source {margin:12px 0;}
+.review-archive-source select {width:100%;}
+#review-map-regional {padding:12px 0;}
+#review-map-regional input {width:100%;box-sizing:border-box;}
+#review-storage-short {font-size:12px;line-height:1.5;}
+[id^="review-"][data-health]::before {content:'';}
+[id^="review-"][data-health="neutral"]::before {background:#8e9b96;}
+[id^="review-"][data-health="error"]::before {background:#c77777;}
+[id^="review-"][data-health="warning"]::before {background:#c49343;}
+#control-list {display:grid;grid-template-rows:repeat(4,auto);grid-auto-flow:column;grid-template-columns:repeat(2,minmax(0,1fr));}
+#control-list li {min-width:0;}
+#control-list label {overflow-wrap:anywhere;}
+.camera-caption {align-items:center;box-sizing:border-box;flex:none;}
+#camera-time {order:0;}
+#camera-source {order:1;text-align:right;margin-left:auto;}
+@media(max-width:400px){#review-banner{gap:8px;font-size:10px;}#control-list li{gap:4px;padding:6px;}#control-list .control-handle{width:20px;}}
+
+#review-map-warning {grid-column:1/-1;margin:4px 0;font-size:12px;line-height:1.5;}
+#review-weather-sources {border:0;padding-top:12px;}
+#review-weather-units {padding-top:12px;}
+.review-collection {margin-top:20px;}
+.review-collection h3 {margin:0 0 10px;font-size:14px;}
+#settings-panel-storage > label[for="storage-days"] {display:block;margin-top:18px;}
+.review-retention-help {margin:0 0 18px!important;}
+.review-retention-help summary h3 {margin:0;}
+#review-camera-add.review-fixed-button {display:inline-block;width:auto;flex:none;padding:10px 18px;margin-top:12px;border:1px solid #709e90;border-radius:7px;background:#368f83;color:white;font:inherit;cursor:pointer;}
+#review-preview-dialog {text-align:center;}
+#review-preview-image {margin:0 auto 16px;}
+#api-ha .api-key-heading label {margin:0;}
+#api-ha .api-key-heading {align-items:center;}
+#rainviewer-config[hidden],#rainbow-config[data-review-configured="true"][hidden] {display:block!important;}
+#rainbow-config[data-review-configured="false"] {display:none!important;}
+
+#review-map-location .map-identity {margin-top:18px;}
+#review-weather-sources .review-collection > .misc-option {margin-top:14px;}
+#review-rainviewer-note:empty,#review-rainbow-note:empty {display:none;}
+
+#api-weather #openweather-config {width:100%;box-sizing:border-box;}
+
+#api-radar label[for="radar-settling"] {margin-top:18px;}
+#review-ha-mappings label[for="review-fallback"] {margin-top:20px;}
+#review-ha-mappings label[for="review-fallback"]:has(input:disabled) {opacity:.45;}
+#review-weather-collection > .misc-option {margin:16px 0;}
+
+#api-radar .radar-source-column > .weather-key-actions {display:block;width:100%;}
+#api-radar #radar-apply {display:block;width:100%;box-sizing:border-box;}
+.review-radar-providers {min-width:0;display:flex;flex-direction:column;gap:16px;}
+#api-radar .review-radar-providers > div {width:100%;box-sizing:border-box;margin:0;}
+
+#api-radar .review-radar-selection {margin:0;min-width:0;box-sizing:border-box;}
+#api-radar .review-settling {margin:0;}
+#api-radar .review-settling label[for="radar-settling"] {margin:0;}
+#settings-panel-diagnostics .status-groups {gap:12px;}
+#settings-panel-diagnostics .settings-group {min-width:0;padding:12px;margin:0;}
+#settings-panel-diagnostics .settings-group-title {margin:0 0 8px;}
+#settings-panel-diagnostics .source-status-row {gap:10px;line-height:1.35;font-size:12px;padding:4px 0;}
+#settings-panel-diagnostics .source-status-row > :first-child {flex-shrink:1;min-width:0;}
+#settings-panel-diagnostics .source-status-row > :last-child {min-width:0;text-align:right;overflow-wrap:anywhere;}
+#settings-panel-diagnostics #review-storage-short {font-size:12px;margin:8px 0 0;}
+#settings-panel-diagnostics #provider-status-title {margin:12px 0 6px;}
+#settings-panel-diagnostics .provider-links {gap:10px;}
+#review-saved-dialog {box-sizing:border-box;width:min(420px,calc(100vw - 32px));padding:24px;border:1px solid #718b80;border-radius:12px;background:#1d302a;color:#e2eae5;}
+:root[data-theme="light"] #review-saved-dialog {background:#e3ece6;color:#183329;}
+#review-saved-dialog h2 {margin:0 0 14px;font-size:20px;}
+#review-saved-dialog p {line-height:1.5;}
+#review-saved-links {display:grid;gap:14px;margin:18px 0;}
+#review-saved-links a {color:inherit;text-underline-offset:3px;}
+#review-saved-close {padding:9px 18px;border:1px solid #709e90;border-radius:7px;background:#368f83;color:white;font:inherit;cursor:pointer;}
+
+/* Compact rows with aligned outlines in a shared two-column grid. */
+#settings-panel-diagnostics .status-groups {align-items:stretch;gap:12px;}
+
+#settings-panel-diagnostics .source-status-row {display:grid;grid-template-columns:minmax(76px,.8fr) minmax(0,1.35fr);align-items:start;gap:8px;padding:6px 0;font-size:13px;line-height:1.4;}
+#settings-panel-diagnostics .source-status-row + .source-status-row {border-top:1px solid #809c8d25;}
+#settings-panel-diagnostics .settings-group {padding:12px 14px;}
+#settings-panel-diagnostics .settings-group-title {margin-bottom:6px;}
+#settings-panel-diagnostics .source-status-row > :last-child {text-align:left;}
+#settings-panel-diagnostics .provider-links a {padding:8px 12px;}
+#settings-panel-diagnostics .provider-links small {display:inline;margin-left:6px;font-size:11px;}
+@media(max-width:759px){#settings-panel-diagnostics .status-groups {grid-template-columns:1fr;} }
+
+#settings-panel-diagnostics .review-provider-group {margin-top:12px;}
+#settings-panel-diagnostics .review-provider-group #provider-status-title {margin:0 0 8px;font-size:14px;}
+#settings-panel-diagnostics .review-provider-group .provider-links a {border:0;padding:4px 0;border-radius:0;}

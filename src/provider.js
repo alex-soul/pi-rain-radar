@@ -43,8 +43,10 @@ function throttle() {
   requestQueue = turn.catch(() => {});
   return turn;
 }
-export async function getHistory() {
+export async function getHistory({enabled=()=>true}={}) {
+  if(!enabled())throw Error('RainViewer collection disabled');
   await throttle();
+  if(!enabled())throw Error('RainViewer collection disabled');
   const response = await fetch(endpoint, {
     signal: AbortSignal.timeout(20000),
     headers: { "User-Agent": "PiRainRadar/0.1 (personal home display)" },
@@ -52,8 +54,10 @@ export async function getHistory() {
   if (!response.ok) throw new Error(`Radar metadata HTTP ${response.status}`);
   return pastObservations(await response.json());
 }
-export async function getTile(frame, tile) {
+export async function getTile(frame, tile, {enabled=()=>true}={}) {
+  if(!enabled())throw Error('RainViewer collection disabled');
   await throttle();
+  if(!enabled())throw Error('RainViewer collection disabled');
   const url = `${frame.host}${frame.path}/256/${tile.zoom}/${tile.x}/${tile.y}/2/1_0.png`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(20000),

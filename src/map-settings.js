@@ -6,7 +6,7 @@ import {renderMapPreview} from './map-preview.js';
 import {createRadar} from './radar.js';
 
 export const mapId = settings => !settings.timeZone || settings.timeZone===defaultSettings.timeZone ? mapAssetId(settings) : hash({version:1,settings});
-export async function createMapSettings(directory,{prepare=prepareMapAssets,radarFactory=createRadar,nextRefreshAt,waitForSettle,onEvent,onChange=async()=>{}}={}) {
+export async function createMapSettings(directory,{prepare=prepareMapAssets,radarFactory=createRadar,nextRefreshAt,waitForSettle,onEvent,onChange=async()=>{},protectRadar=async()=>{}}={}) {
   const settingsFile=join(directory,'settings','map.json');
   await mkdir(join(directory,'settings'),{recursive:true,mode:0o700});
   let settings=defaultSettings;
@@ -46,6 +46,7 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
       const candidate=sameViews?radar:await makeRadar(value);
       if(!sameViews) {
         candidateRadar=candidate;
+        await protectRadar([radar,candidate]);
         await candidate.refresh();
         if(!candidate.status().frames.length) throw new Error('No complete radar frames for the new view. Existing map kept; try again later.');
       }
@@ -55,7 +56,11 @@ export async function createMapSettings(directory,{prepare=prepareMapAssets,rada
       published=true;
       await onChange(value);
     } catch(e) { error=published?'Map applied; weather update is unavailable.':e.message.startsWith('No complete radar')?e.message:'Map preparation failed. Existing map kept; try again.'; }
-    finally { busy=false;applying=false;candidateRadar=null; }
+    finally {
+      try{if(candidateRadar)await protectRadar([radar]);}
+      catch{error??='Could not update radar storage protection. Check Status.';}
+      busy=false;applying=false;candidateRadar=null;
+    }
   }
   return {
     current:()=>({settings,radar,id:mapId(settings)}),

@@ -5,6 +5,8 @@ body {background:inherit;color:inherit;}
 #embed-status {position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;background:#99c9ad;box-shadow:0 0 0 1px #0002;}
 #embed-status[data-health="warning"] {background:#c3a16b;}
 #embed-status[data-health="error"] {background:#c27878;}
-.credits {position:absolute;right:3px;bottom:2px;max-width:calc(100% - 6px);padding:1px 3px;background:#edf4eedb;text-align:right;}
-:root[data-theme="dark"] .credits {background:#142623db;}
+.embed-footer {position:absolute;bottom:2px;left:3px;right:3px;display:flex;gap:6px;align-items:flex-end;justify-content:space-between;}
+.credits {padding:1px 3px;background:#edf4eedb;text-align:right;min-width:0;}
+#embed-time {flex-shrink:0;padding:1px 3px;background:#edf4eedb;}
+:root[data-theme="dark"] .credits,:root[data-theme="dark"] #embed-time {background:#142623db;}
 a {color:inherit;} a:focus-visible {outline:2px solid currentColor;}

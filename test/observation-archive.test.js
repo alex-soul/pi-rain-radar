@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import sharp from 'sharp';
 import { createObservationArchive } from '../src/observation-archive.js';
 import { createCapturedArchive, cleanupCaptured } from '../src/captured-archive.js';
+import {createHistoryStore} from '../src/history-store.js';
 import { createRadarSources } from '../src/radar-sources.js';
 import { hash } from '../src/map.js';
 import { HISTORY_SECONDS } from '../src/archive.js';
@@ -181,23 +182,24 @@ test('cleanup preserves original capture evidence and active observation referen
 });
 
 test('late provider recovery fills original gaps; status ages on outage; 24-hour reads add no upstream calls', async t => {
-  const dir = await fixture(t); let clock = end * 1000, failure = true, checks = 0, calls = 0;
+  const dir = await mkdtemp(join(tmpdir(),'radar-sqlite-observations-')); let clock = end * 1000, failure = true, checks = 0, calls = 0;
   const provider = source => ({
     getHistory: async () => { checks++; return [{ time: end - 600 }, { time: end }]; },
     getTile: async frame => { calls++; if (source === 'rainbow' && failure && frame.time === end - 600) throw Error('synthetic missing'); return tile; },
   });
+  const store=await createHistoryStore(dir,{now:clock+86400000});t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
   const a = await createRadarSources(dir, { rainviewer: provider('rainviewer'), rainbow: provider('rainbow') }, {
-    views, now: () => clock, waitForSettle: () => false, selection: () => selection, nextRefreshAt: () => clock + 123000,
+    store, views, now: () => clock, waitForSettle: () => false, selection: () => selection, nextRefreshAt: () => clock + 123000,
   });
   await a.refresh();
-  assert.equal(a.archive.window(end).frames[0].overviewUrl, null);
+  assert.equal((await a.archive.window(end)).frames[0].overviewUrl, null);
   assert.equal(a.status().sources.main.nextCheckAt, clock + 123000);
   assert.equal(a.status().sources.main.checkedAt, new Date(clock).toISOString());
   failure = false; clock += 300000; await a.refresh();
-  assert.ok(a.archive.window(end).frames[0].overviewUrl);
-  assert.equal(a.archive.window(end).frames.length, 2);
+  assert.ok((await a.archive.window(end)).frames[0].overviewUrl);
+  assert.equal((await a.archive.window(end)).frames.length, 2);
   const before = { checks, calls };
-  for (let i = 0; i < 10; i++) a.archive.window(end, 24);
+  for (let i = 0; i < 10; i++) await a.archive.window(end, 24);
   assert.deepEqual({ checks, calls }, before);
   clock += 8 * 3600000; assert.equal(a.status(6).frames.length, 0);
   assert.equal(a.status().frame, null);

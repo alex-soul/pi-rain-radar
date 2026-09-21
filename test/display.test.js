@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const formatSource = (await readFile(new URL('../public/weather-format.js', import.meta.url), 'utf8')).replaceAll('export ', '');
 const floatingSource = (await readFile(new URL('../public/floating-widget.js', import.meta.url), 'utf8')).replace(/^import[^\n]+\n/,'').replace('export function','function');
-const source = formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
+const source = 'const shared={initialized:false,units:{}};\n' + formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
 test('display preferences suspend idle hiding during interaction and dialogs, and recover on tap', () => {
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
   let timer, open = false, observer, editable = true, saved;

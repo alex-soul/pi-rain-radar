@@ -16,7 +16,8 @@
     <script type="module" src="/settings.js"></script>
     <script type="module" src="/overview.js"></script>
     <script type="module" src="/rain-forecast.js"></script>
-  </head>
+  <link rel="stylesheet" href="/integrations.css">
+</head>
   <body>
     <main aria-label="Rain radar centred on {{LOCATION}}">
       <div class="map">
@@ -100,6 +101,7 @@
         <button id="overview-toggle" type="button" aria-label="Show map overview" aria-pressed="false" aria-controls="overview">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </button>
+        <button id="camera-toggle" type="button" data-widget-name="Camera" aria-label="Show Camera" aria-pressed="false" aria-controls="camera"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg></button>
         <button id="rain-forecast-toggle" type="button" aria-label="Show Rain forecast" aria-pressed="false" aria-controls="rain-forecast">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M5 11a4 4 0 0 1 1-7 5 5 0 0 1 9 1 3 3 0 0 1 3 6H5M5 17v3m5-6v6m5-4v4m5-6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -109,12 +111,20 @@
       </header>
       <dialog id="archive-dialog" aria-labelledby="archive-title">
         <div class="archive-heading"><h2 id="archive-title">Archive</h2><button id="archive-close" type="button" aria-label="Close Archive">×</button></div>
-        <div class="archive-fields"><label>Date <select id="archive-day"></select></label>
-        <label>Time <select id="archive-time"></select></label></div>
+        <div class="archive-fields"><label>Date <input id="archive-day" type="hidden"><button id="archive-date-toggle" type="button" aria-expanded="false" aria-controls="archive-calendar">Choose date</button></label>
+        <label>Time <select id="archive-time"></select></label>
+        <section id="archive-calendar" aria-label="Choose archive date" hidden>
+          <div class="archive-calendar-heading"><button id="archive-calendar-prev" type="button" aria-label="Previous month">‹</button><strong id="archive-calendar-month" aria-live="polite"></strong><button id="archive-calendar-next" type="button" aria-label="Next month">›</button><button id="archive-calendar-close" type="button" aria-label="Close calendar">×</button></div>
+          <div class="archive-calendar-week" aria-hidden="true"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+          <div id="archive-calendar-days" role="group" aria-label="Available dates"></div><p id="archive-calendar-note" role="status"></p>
+        </section></div>
         <label for="archive-hours">Playback window <output id="archive-hours-value" for="archive-hours">2 h</output></label>
         <input id="archive-hours" type="range" min="1" max="24" step="1" value="2" aria-label="Archive playback window in hours">
+        <label for="archive-comparison">Forecast comparison <output id="archive-comparison-value" for="archive-comparison">None</output></label>
+        <input id="archive-comparison" type="range" min="0" max="60" step="10" value="0" dir="rtl" aria-label="Forecast comparison in minutes">
         <label class="archive-provider-option" for="archive-provider">Show map providers<input id="archive-provider" type="checkbox" class="control-switch" role="switch"></label>
         <p id="archive-feedback" role="status"></p>
+
         <div class="archive-actions"><button id="archive-show" type="button">Show</button></div>
       </dialog>
       <dialog id="settings-dialog" aria-labelledby="settings-title">
@@ -209,20 +219,46 @@
           <section id="settings-panel-system" class="settings-parent settings-tab-panel" role="region" aria-label="System" tabindex="0" hidden>
           <div class="settings-tabs settings-subtabs" role="tablist" aria-label="System categories">
             <button id="settings-tab-diagnostics" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-diagnostics" tabindex="0">Status</button>
+            <button id="settings-tab-storage" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-storage" tabindex="-1">Storage</button>
             <button id="settings-tab-api" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-api" tabindex="-1">API</button>
             <button id="settings-tab-pin" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-pin" tabindex="-1">PIN</button>
             <button id="settings-tab-log" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-log" tabindex="-1">Log</button>
           </div>
+          <section id="settings-panel-storage" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-storage" tabindex="0" hidden>
+            <h3>Archive retention</h3>
+            <label for="storage-mode">Keep history</label><select id="storage-mode"><option value="days">For a number of days</option><option value="storage">Until storage is needed</option></select>
+            <label for="storage-days">Days</label><input id="storage-days" type="number" min="1" step="1" value="7">
+            <p id="storage-summary" class="storage-summary"></p>
+            <p>Reducing retention permanently removes older history when you save. Storage pressure may roll history sooner to keep Live running.</p>
+            <div class="weather-key-actions"><button id="storage-save" type="button">Save retention</button></div><p id="storage-feedback" role="status"></p>
+          </section>
           <section id="settings-panel-api" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-api" tabindex="0" hidden>
 
-            <div class="settings-tabs preview-api-tabs" role="tablist" aria-label="API categories"><button id="api-tab-map" type="button" role="tab" aria-selected="true" aria-controls="api-map" tabindex="0">Map</button><button id="api-tab-radar" type="button" role="tab" aria-selected="false" aria-controls="api-radar" tabindex="-1">Radar</button><button id="api-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="api-weather" tabindex="-1">Weather</button></div><div id="api-map" role="tabpanel" aria-labelledby="api-tab-map"><div class="api-map-info"><strong>Built-in base map</strong><p>The base map is included with Pi Rain Radar and uses Natural Earth map data. No API key or external map-service requests are needed to display it.</p></div></div><div id="api-radar" role="tabpanel" aria-labelledby="api-tab-radar" hidden><div class="units-grid"><div><label for="radar-main-source">Main map</label><select id="radar-main-source"><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div><div><label for="radar-overview-source">Overview map</label><select id="radar-overview-source"><option value="same">Same as main</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div></div><label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
+            <div class="settings-tabs preview-api-tabs" role="tablist" aria-label="API categories"><button id="api-tab-map" type="button" role="tab" aria-selected="true" aria-controls="api-map" tabindex="0">Map</button><button id="api-tab-radar" type="button" role="tab" aria-selected="false" aria-controls="api-radar" tabindex="-1">Radar</button><button id="api-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="api-weather" tabindex="-1">Weather</button><button id="api-tab-camera" type="button" role="tab" aria-selected="false" aria-controls="api-camera" tabindex="-1">Camera</button></div><div id="api-map" role="tabpanel" aria-labelledby="api-tab-map"><div class="api-map-info"><strong>Built-in base map</strong><p>The base map is included with Pi Rain Radar and uses Natural Earth map data. No API key or external map-service requests are needed to display it.</p></div></div><div id="api-radar" role="tabpanel" aria-labelledby="api-tab-radar" hidden><div class="units-grid"><div><label for="radar-main-source">Main map</label><select id="radar-main-source"><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div><div><label for="radar-overview-source">Overview map</label><select id="radar-overview-source"><option value="same">Same as main</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div></div><label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
             <p id="radar-settling-note" role="status"></p><div id="rainbow-config"><div class="api-key-heading"><label for="rainbow-key">Rainbow API key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div><input id="rainbow-key" type="password" autocomplete="off" placeholder="Enter your Rainbow key"><div class="weather-key-actions"><button id="rainbow-save">Save key</button><button id="rainbow-remove">Remove key</button></div><p id="rainbow-key-note" role="status">Not configured.</p><label class="misc-option" for="rainbow-cap">Limit monthly usage<input id="rainbow-cap" type="checkbox" class="control-switch" role="switch"></label><div id="rainbow-limit-fields" hidden><label for="rainbow-limit">Maximum API requests</label><input id="rainbow-limit" type="number" min="1" max="10000000" value="28000"></div><details id="rainbow-estimates" class="estimate-drawer"><summary>Estimates</summary><div class="usage-card"><strong id="rainbow-estimate"></strong><div id="rainbow-usage"></div><small>Based on the selected maps running continuously. Repeated map changes can use more; the suggested limit does not guarantee zero charges.</small></div></details></div><div class="weather-key-actions"><button id="radar-apply">Save and apply sources</button></div><p id="radar-source-note" role="status"></p></div><div id="api-weather" role="tabpanel" aria-labelledby="api-tab-weather" hidden><div id="openweather-config" class="api-provider-config"><div class="api-key-heading"><label for="settings-api-key">OpenWeather API Key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div>
             <input id="settings-api-key" type="password" placeholder="Enter OpenWeather key" autocomplete="off" spellcheck="false" maxlength="32" aria-describedby="settings-api-note" /><p id="settings-api-note" role="status"></p>
             <div class="weather-key-actions"><button id="weather-key-save" type="button">Save key</button><button id="weather-key-remove" type="button">Remove key</button></div>
             </div>
 
             </div>
-                    </section>
+                    <div id="api-camera" role="tabpanel" aria-labelledby="api-tab-camera" hidden>
+              <div id="camera-config" class="camera-settings">
+                <p id="camera-current" class="camera-summary" role="status">Not configured</p>
+                <label class="misc-option" for="camera-enabled">Enable camera collection <input id="camera-enabled" class="control-switch" type="checkbox" role="switch" /></label>
+                <div class="weather-key-actions"><button id="camera-enable-save" type="button" disabled>Save collection setting</button></div>
+                <hr />
+                <label for="camera-name">Camera name</label><input id="camera-name" maxlength="80" value="Camera" autocomplete="off" />
+                <label for="camera-mode">Source</label><select id="camera-mode"><option value="direct">Direct snapshot</option><option value="ha">Home Assistant</option></select>
+                <label id="camera-url-label" for="camera-url">Snapshot URL</label><input id="camera-url" type="password" autocomplete="off" spellcheck="false" maxlength="4096" placeholder="Enter full address" />
+                <div id="camera-auth-fields"><label for="camera-auth">Authentication</label><select id="camera-auth"><option value="none">None / credentials in URL</option><option value="basic">Basic</option><option value="digest">Digest</option><option value="bearer">Bearer token</option></select></div>
+                <div id="camera-user-fields" hidden><label for="camera-username">Username</label><input id="camera-username" autocomplete="off" maxlength="1024" /><label for="camera-password">Password</label><input id="camera-password" type="password" autocomplete="off" maxlength="1024" /></div>
+                <div id="camera-token-fields" hidden><label for="camera-token">Access token</label><input id="camera-token" type="password" autocomplete="off" maxlength="2048" spellcheck="false" /></div>
+                <div id="camera-ha-fields" hidden><div class="weather-key-actions"><button id="camera-discover" type="button">Find cameras</button></div><label for="camera-entity">Camera</label><select id="camera-entity"></select></div>
+                <div class="weather-key-actions"><button id="camera-test" type="button">Test camera</button><button id="camera-save" type="button" disabled>Save camera</button></div>
+                <p id="camera-note" role="status"></p><img id="camera-preview" alt="Camera snapshot preview" hidden /><p id="camera-preview-time"></p>
+              </div>
+            </div>
+            </section>
           <section id="settings-panel-pin" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-pin" tabindex="0" hidden>
 
             <form id="settings-pin-form">
@@ -256,11 +292,13 @@
             </form>
                     </section>
           <section id="settings-panel-diagnostics" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-diagnostics" tabindex="0">
+<h3>Storage</h3><p id="status-storage" class="storage-summary"></p>
 <div class="settings-columns status-groups"><div class="settings-group">            <h3 class="settings-group-title">Radar sources</h3>
             <div id="settings-radar-sources"><div class="source-status-row"><span>Main map</span><span id="settings-main-status" data-health="warning">RainViewer · Waiting for data</span></div><div class="source-status-row"><span>Overview map</span><span id="settings-overview-status" data-health="warning">RainViewer · Waiting for data</span></div></div>
 </div><div class="settings-group">            <h3 class="settings-group-title">Weather sources</h3>
             <div class="source-status-row"><span>Top dock stats</span><span id="settings-api-status" role="status" data-health="warning">OpenWeatherMap · Waiting for data</span></div>
 </div></div>
+            <h3 class="settings-group-title">Camera</h3><p id="status-camera" class="camera-summary">Not configured</p>
             <h3 id="provider-status-title" class="settings-group-title provider-status-title">Provider status</h3>
             <div class="provider-links"><a href="https://status.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer <small>Official status</small></a><a href="https://probecast.io/status/openweathermap-api" target="_blank" rel="noopener noreferrer">OpenWeather <small>Independent monitor</small></a></div>
           <h3 id="device-power-title" class="settings-group-title">Device Power</h3>
@@ -289,7 +327,7 @@
               <div><label for="embed-speed">Speed</label><select id="embed-speed"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div>
               <div><label for="embed-theme">Theme</label><select id="embed-theme"><option value="dark">Dark</option><option value="light">Light</option></select></div>
             </div>
-            <div class="embed-url-group"><strong>Embed URL</strong><p>Use your radar’s address followed by <code>/embed</code>:<br><code>http://pi-rain-radar.local:3080/embed</code><br><code>https://pi-rain-radar/embed</code></p></div>
+            <div class="embed-url-group"><strong>Embed URL</strong><p>Use your radar’s address followed by <code>/embed</code>:<br><code id="embed-address"></code></p></div>
             </div>
             <p id="embed-note" role="status"></p>
           </section>
@@ -335,6 +373,11 @@
         <div class="stats-content"><div id="stats-data"></div></div>
         <button id="stats-resize" type="button" aria-label="Resize Stats for nerds. Drag or use arrow keys." title="Resize Stats for nerds">◢</button>
       </aside>
+      <aside id="camera" tabindex="0" aria-label="Camera snapshot" aria-description="Drag to move, or use arrow keys when focused." hidden>
+        <div class="camera-picture"><img id="camera-image" alt="Camera snapshot" draggable="false" hidden /></div>
+        <div class="camera-caption"><span id="camera-source"></span><time id="camera-time"></time></div>
+        <button id="camera-resize" type="button" aria-label="Resize Camera snapshot. Drag or use arrow keys." title="Resize Camera snapshot">◢</button>
+      </aside>
       <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="overview" aria-label="Overview map and observed precipitation" hidden>
         <svg class="overview-map" viewBox="0 0 390 280" role="img" aria-label="Rain overview centred on {{LOCATION}}, with local map extent outlined">
           <image class="basemap-light" href="/overview.svg" width="390" height="280" />
@@ -346,7 +389,7 @@
         <button id="overview-resize" type="button" aria-label="Resize map overview. Drag or use arrow keys." title="Resize map overview">◢</button>
       </aside>
       <aside tabindex="0" aria-description="Drag to move, or use arrow keys when focused." id="rain-forecast" aria-label="Current minute precipitation forecast" hidden>
-        <div class="minute-content">
+        <div class="minute-content"><div id="forecast-caption" hidden></div>
           <svg id="minute-chart" viewBox="0 0 360 100" preserveAspectRatio="none" role="img" aria-label="Forecast unavailable">
             <path d="M0 25H360M0 55H360M0 85H360" class="minute-grid"/>
             <g id="minute-bars"></g>
@@ -417,7 +460,7 @@
         </div>
       </footer>
         <div class="source">
-          <p>Radar by <span id="radar-credit"><a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></span> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span></p>
+          <p>Radar by <span id="radar-credit"><a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></span> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span><span id="ha-credit"></span></p>
         </div>
     </main>
   </body>

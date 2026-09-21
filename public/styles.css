@@ -170,8 +170,8 @@ body.footer-hidden { --footer-visible-height: 0px; }
   transition: bottom 180ms ease;
 }
 .map-scale[hidden] { display: none; }
-#overview, :is(#rain-forecast, #stats) { z-index: 0; }
-#overview.widget-front, :is(#rain-forecast, #stats).widget-front { z-index: 1; }
+#overview, :is(#rain-forecast, #stats, #camera) { z-index: 0; }
+#overview.widget-front, :is(#rain-forecast, #stats, #camera).widget-front { z-index: 1; }
 .footer-hidden footer { transform: translateY(100%); }
 .footer-hidden footer > :is(.observation, .playback) { visibility: hidden; }
 .settings-content .misc-option { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
@@ -513,21 +513,21 @@ footer .eyebrow {
 :root[data-theme="dark"] #overview-markers circle { stroke: #111d26; }
 
 /* Rain forecast widget. */
-:is(#rain-forecast-toggle, #stats-toggle) { pointer-events: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d2ddd4; border-radius: 22px; background: #ffffffc9; color: #243c3c; cursor: pointer; }
-:is(#rain-forecast-toggle, #stats-toggle)[aria-pressed="true"] { border-color: #389488; box-shadow: inset 0 0 0 1px #389488; }
-:is(#rain-forecast, #stats) { display: flex; flex-direction: column; height: 138px; position: absolute; width: min(410px, calc(100vw - 16px)); top: 230px; left: 18px; border: 1px solid #a6bfb5; border-radius: 10px; overflow: hidden; background: #edf4ee; color: #284d47; box-shadow: 0 4px 18px #0003; }
-:is(#rain-forecast, #stats)[hidden] { display: none; }
-:is(#rain-forecast-toggle, #stats-toggle):focus-visible, :is(#rain-forecast, #stats):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
+:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle) { pointer-events: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d2ddd4; border-radius: 22px; background: #ffffffc9; color: #243c3c; cursor: pointer; }
+:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle)[aria-pressed="true"] { border-color: #389488; box-shadow: inset 0 0 0 1px #389488; }
+:is(#rain-forecast, #stats, #camera) { display: flex; flex-direction: column; height: 138px; position: absolute; width: min(410px, calc(100vw - 16px)); top: 230px; left: 18px; border: 1px solid #a6bfb5; border-radius: 10px; overflow: hidden; background: #edf4ee; color: #284d47; box-shadow: 0 4px 18px #0003; }
+:is(#rain-forecast, #stats, #camera)[hidden] { display: none; }
+:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle):focus-visible, :is(#rain-forecast, #stats, #camera):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
 .minute-content { padding: 14px 20px 24px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #minute-chart { display: block; width: 100%; flex: 1; min-height: 0; }
 .minute-grid { stroke: currentColor; stroke-opacity: .12; fill: none; }
 .minute-axis { margin-top: 8px; flex-shrink: 0; display: flex; justify-content: space-between; font-size: 9px; opacity: .75; font-variant-numeric: tabular-nums; }
-:root[data-theme="dark"] :is(#rain-forecast, #stats) { background: #142623; color: #e1eee7; border-color: #455b51; }
-:root[data-theme="dark"] :is(#rain-forecast-toggle, #stats-toggle) { background: #1d2b29e8; color: #e1eee7; }
+:root[data-theme="dark"] :is(#rain-forecast, #stats, #camera) { background: #142623; color: #e1eee7; border-color: #455b51; }
+:root[data-theme="dark"] :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle) { background: #1d2b29e8; color: #e1eee7; }
 
-:is(#rain-forecast-resize, #stats-resize) { position: absolute; right: 0; bottom: 0; width: 32px; height: 32px; padding: 5px; border: 0; background: transparent; color: inherit; font-size: 20px; cursor: nwse-resize; touch-action: none; opacity: .4; }
-:is(#rain-forecast-resize, #stats-resize):hover, :is(#rain-forecast-resize, #stats-resize):focus-visible { opacity: .8; }
-:is(#rain-forecast-resize, #stats-resize):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
+:is(#rain-forecast-resize, #stats-resize, #camera-resize) { position: absolute; right: 0; bottom: 0; width: 32px; height: 32px; padding: 5px; border: 0; background: transparent; color: inherit; font-size: 20px; cursor: nwse-resize; touch-action: none; opacity: .4; }
+:is(#rain-forecast-resize, #stats-resize, #camera-resize):hover, :is(#rain-forecast-resize, #stats-resize, #camera-resize):focus-visible { opacity: .8; }
+:is(#rain-forecast-resize, #stats-resize, #camera-resize):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
 
 #play { display: grid; place-items: center; padding: 0; }
 #play .play-icon, #play[data-paused="true"] .pause-icon { display: none; }
@@ -565,7 +565,7 @@ footer .eyebrow {
 #pin-keypad button:focus-visible { outline: 2px solid #389488; outline-offset: 2px; }
 :root[data-theme="dark"] #pin-keypad button { background: #1d2b29; }
 
-#clock-toggle[hidden], #theme-toggle[hidden], #overview-toggle[hidden], :is(#rain-forecast-toggle, #stats-toggle)[hidden] { display: none; }
+#clock-toggle[hidden], #theme-toggle[hidden], #overview-toggle[hidden], :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle)[hidden] { display: none; }
 #control-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
 #control-list li { display: flex; align-items: center; gap: 12px; padding: 5px 12px 5px 4px; border: 1px solid #a6bfb560; border-radius: 9px; min-height: 54px; font-size: 14px; }
 #control-list li.dragging { background: #38948825; border-color: #389488; }
@@ -646,14 +646,14 @@ header { display: grid; grid-template-columns: minmax(0, 1fr); }
 #archive-show { width: 100%; }
 .archive-heading h2 { font-size: 20px; margin: 0 0 14px; }
 #archive-dialog label { display: grid; gap: 6px; margin: 12px 0; font-size: 14px; }
-#archive-dialog select, #archive-dialog button { font: inherit; color: inherit; background: transparent; border: 1px solid #91ada3; border-radius: 8px; padding: 10px; min-height: 44px; }
-#archive-dialog select { min-width: 0; box-sizing: border-box; width: 100%; background: #edf4ee; }
+#archive-dialog select, #archive-dialog input[type="date"], #archive-dialog button { font: inherit; color: inherit; background: transparent; border: 1px solid #91ada3; border-radius: 8px; padding: 10px; min-height: 44px; }
+#archive-dialog select, #archive-dialog input[type="date"] { min-width: 0; box-sizing: border-box; width: 100%; background: #edf4ee; }
 #archive-close { border: 0 !important; font-size: 24px !important; }
 #archive-feedback { font-size: 13px; line-height: 1.5; opacity: .8; }
 #archive-show { background: #389488 !important; color: white !important; }
 #archive-dialog button { cursor: pointer; }
 #archive-dialog button:disabled { opacity: .5; cursor: wait; }
-:root[data-theme="dark"] #history-toggle, :root[data-theme="dark"] #archive-dialog, :root[data-theme="dark"] #archive-dialog select { background: #1d2b29; color: #e1eee7; }
+:root[data-theme="dark"] #history-toggle, :root[data-theme="dark"] #archive-dialog, :root[data-theme="dark"] #archive-dialog select, :root[data-theme="dark"] #archive-dialog input[type="date"] { background: #1d2b29; color: #e1eee7; }
 #archive-feedback:empty { display: none; }
 @media (max-width: 520px) {
   #history-toggle time { font-size: 16px; }
@@ -732,8 +732,8 @@ footer::before { content: ""; position: absolute; top: -1px; left: 0; right: 0; 
   box-shadow: inset 0 1px 0 #ffffff40, inset 0 -1px 0 #00000030, 0 0 4px 1px color-mix(in srgb, var(--grip-color) 35%, transparent);
 }
 
-#overview, :is(#rain-forecast, #stats) { cursor: grab; touch-action: none; user-select: none; }
-#overview:active, :is(#rain-forecast, #stats):active { cursor: grabbing; }
+#overview, :is(#rain-forecast, #stats, #camera) { cursor: grab; touch-action: none; user-select: none; }
+#overview:active, :is(#rain-forecast, #stats, #camera):active { cursor: grabbing; }
 
 /* The handle occupies the transparent border gap: do not double-paint its join. */
 :root[data-theme] footer { background-clip: padding-box; }
@@ -757,12 +757,12 @@ footer::before { content: ""; position: absolute; top: -1px; left: 0; right: 0; 
 :root[data-theme="light"] #history-toggle[data-expanded="true"] { background: #dce6dfad; color: #293630; }
 
 /* Background alpha only: precipitation bars retain their own solid fills. */
-:root[data-theme="light"] :is(#rain-forecast, #stats) { background-color: #dce6dfad; }
+:root[data-theme="light"] :is(#rain-forecast, #stats, #camera) { background-color: #dce6dfad; }
 
 /* Expanded controls and Rain forecast share the dark dock surface. */
 :root[data-theme="dark"] #clock-toggle[aria-expanded="true"],
 :root[data-theme="dark"] #history-toggle[data-expanded="true"],
-:root[data-theme="dark"] :is(#rain-forecast, #stats) { background-color: #071410ad; }
+:root[data-theme="dark"] :is(#rain-forecast, #stats, #camera) { background-color: #071410ad; }
 
 /* Missing slots stay amber on both the played and unplayed track. */
 #timeline { appearance: none; -webkit-appearance: none; background: transparent; --timeline-fill: #e8f7ef; --timeline-rest: #ffffff30; --timeline-gap: #ae925d; --timeline-progress: 0%; --timeline-gaps: linear-gradient(transparent, transparent); }
@@ -979,8 +979,8 @@ footer .mini-legend { grid-column: 3; grid-row: 1; margin: 0; white-space: nowra
 #play .wait-pause { position: absolute; right: -5px; bottom: -2px; }
 #play[data-state="waiting"] .play-icon, #play[data-state="waiting"] .pause-icon { display: none; }
 #play[data-state="waiting"] .wait-icon { display: block; }
-#archive-hours { width: 100%; min-height: 32px; margin: 0; accent-color: #389488; }
-#archive-dialog label[for="archive-hours"] { display:flex; justify-content:space-between; }
+#archive-hours, #archive-comparison { width: 100%; min-height: 32px; margin: 0; accent-color: #389488; }
+#archive-dialog label[for="archive-hours"], #archive-dialog label[for="archive-comparison"] { display:flex; justify-content:space-between; }
 #archive-dialog .archive-provider-option { display:flex; align-items:center; justify-content:space-between; min-height:44px; gap:12px; }
 .map-provider { position:absolute; right:12px; top:12px; padding:6px 10px; border-radius:6px; color:#284d47; background:#edf4eecc; font-size:16px; pointer-events:none; z-index:1; }
 .map-provider[hidden] { display:none; }
@@ -1119,3 +1119,50 @@ body:not(.footer-hidden) .source { z-index: 5; }
 #weather-dock[data-health="error"] .weather-grip,
 #footer-toggle[data-health="error"] .footer-grip { --grip-color: #c27878; }
 .source-status-row [data-health="error"]::before { background: #c27878; }
+
+.storage-summary { white-space: pre-line; line-height: 1.6; overflow-wrap: anywhere; }
+
+#archive-day { color-scheme: light; }
+:root[data-theme="dark"] #archive-day { color-scheme: dark; }
+
+:root { --forecast-comparison: #8d4ca6; }
+:root[data-theme="dark"] { --forecast-comparison: #edc0ff; }
+#forecast-caption { font-size: 11px; margin-bottom: 6px; flex-shrink: 0; }
+#forecast-caption[hidden] { display: none; }
+
+/* The calendar belongs to the app, so its popup follows the same theme as Time. */
+.archive-fields { position: relative; }
+#archive-date-toggle { width:100%; text-align:left; }
+#archive-calendar { position:absolute; top:calc(100% - 8px); left:0; right:0; z-index:10; padding:10px; border:1px solid #91ada3; border-radius:8px; background:#edf4ee; color:#284d47; box-shadow:0 6px 24px #0005; }
+#archive-calendar[hidden] { display:none; }
+:root[data-theme="dark"] #archive-calendar { background:#1d2b29; color:#e1eee7; }
+.archive-calendar-heading { display:grid; grid-template-columns:36px 1fr 36px 36px; align-items:center; gap:2px; text-align:center; }
+#archive-dialog .archive-calendar-heading button { padding:0; border:0; font-size:22px; }
+.archive-calendar-week, #archive-calendar-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; text-align:center; }
+.archive-calendar-week { font-size:12px; padding:8px 0; }
+#archive-dialog #archive-calendar-days button { min-height:38px; padding:0; border-color:transparent; }
+#archive-dialog #archive-calendar button:disabled { opacity:.3; cursor:default; }
+#archive-dialog #archive-calendar-days button[aria-pressed="true"]:not(:disabled) { background:#389488; color:white; }
+#archive-calendar button:not(:disabled):hover, #archive-calendar button:focus-visible { outline:2px solid #389488; outline-offset:-2px; }
+#archive-calendar-note { font-size:13px; margin:6px 0 0; }
+#archive-calendar-note:empty { display:none; }
+#archive-dialog:has(#archive-calendar:not([hidden])) { overflow: visible; }
+#archive-calendar { max-height: calc(100dvh - 200px); overflow-y: auto; }
+
+.camera-summary { white-space: pre-line; overflow-wrap: anywhere; }
+.camera-settings { display: grid; gap: 10px; }
+.camera-settings [hidden] { display: none; }
+.camera-settings label { display: block; margin-bottom: 5px; }
+.camera-settings input:not([type="checkbox"]), .camera-settings select { width: 100%; box-sizing: border-box; }
+.camera-settings hr { width: 100%; border: 0; border-top: 1px solid #a6bfb580; }
+#camera-preview { width: 100%; max-height: 320px; object-fit: contain; }
+
+.camera-settings label.misc-option { display: flex; align-items: center; }
+
+.camera-picture { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#camera-image { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+#camera-image[hidden] { display: none; }
+.camera-caption { display: flex; gap: 10px; justify-content: space-between; padding: 5px 30px 5px 10px; font-size: 11px; min-height: 15px; }
+#camera-source { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#camera-time { flex-shrink: 0; }
+#embed-address { overflow-wrap: anywhere; }

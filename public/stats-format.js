@@ -1,4 +1,4 @@
-export function statsSnapshot({status, reachable, receivedAt, selected, hours, loading}, now = Date.now()) {
+export function statsSnapshot({status, reachable, receivedAt, selected, hours, loading, cameraCounts}, now = Date.now()) {
   const stale = !reachable || !receivedAt || now - receivedAt > 45000;
   return {
     stale,
@@ -9,6 +9,8 @@ export function statsSnapshot({status, reachable, receivedAt, selected, hours, l
     counts: (selected ?? status)?.counts,
     rainbow: status?.stats?.rainbow,
     weather: status?.weather,
+    camera:status?.camera,
+    cameraCounts,
     now: (status?.serverTime ?? receivedAt ?? now) + Math.max(0, now - (receivedAt ?? now)),
   };
 }

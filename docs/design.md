@@ -4,7 +4,7 @@ Runtime source is authoritative. User-facing colour and symbol meanings are main
 
 ## Backend-prepared maps
 
-Node.js 24 and Sharp prepare raster radar frames over locally bundled Natural Earth geography. The browser plays images; it does not render provider tiles or hold API keys. Map geometry, zoom and time zone are shared installation settings. Each browser stores its own layout, units, readings and playback preferences in localStorage. Different origins/profiles have separate preferences.
+Node.js 24 and Sharp prepare raster radar frames over locally bundled Natural Earth geography. The browser plays images; it does not render provider tiles or hold API keys. Map geometry, zoom and time zone are shared installation settings. Weather units/source/collection are shared appliance settings. Each browser stores its own layout, reading visibility and playback preferences in localStorage. Different origins/profiles have separate preferences.
 
 Geography is pinned in assets and rendered locally by a short-lived worker. Map Preview makes no provider requests; Apply prepares candidate maps and radar before committing. Location changes invalidate point weather. Name/time-zone changes preserve geometry and history. Keep the same data volume across upgrades.
 
@@ -18,15 +18,15 @@ src/rainbow.js confines outbound requests to the fixed provider host, uses heade
 
 ## Captures and playback
 
-src/observation-archive.js indexes usable images by original observation time, provider and map geometry. Legacy capture indexes provide provenance where valid and are retained. Seven-day cleanup protects retained references. New or changed images are decoded; unchanged images reuse persisted validation only after matching content hashes and dimensions.
+`src/history-store.js` owns a dedicated SQLite worker with indexed, bounded queries and shared retention. Validated images live in immutable files referenced by SQLite. Seven days is the default, configurable up to available storage; pressure rolls history sooner. Cleanup yields in small batches and protects bounded last-good Live radar. Legacy history is reset once, not imported. Corruption preserves recovery evidence with space accounting and repeated-recovery guards.
 
-Live and Archive follow the [playback rules](playback-conventions.md), including per-map gaps, immediate late-data placement, Live endpoint grace and bounded borrowing. Archive offers 1–24 hours of locally retained data without extra acquisition requests. Current weather and Rain forecast stay current, and Archive returns to Live after ten minutes.
+Archive offers 1–24-hour windows with historical weather, forecast and camera content and returns to Live after ten minutes. Weather policy transitions preserve units/source/fallback. Operational policy also has an atomic settings file so archive recovery does not reset collection preferences. See [playback rules](playback-conventions.md).
 
 The frontend polls local status and uses bounded decoding, cancellation and reuse. Pausing and scrubbing do not pause acquisition. Experimental Stats for nerds reports current acquisition separately from selected playback coverage.
 
 ## Weather
 
-OpenWeather One Call 4.0 current and minute-forecast endpoints update independently on the existing schedule. weather.json retains normalized data, request budgets, errors and one last valid gust with its original observation time. Credentials are stored separately. Failed responses do not renew data age. Ten optional readings share these responses; adding visibility, pressure or UV adds no request.
+OpenWeather One Call 4.0 current and minute-forecast endpoints update independently on the existing schedule. SQLite retains normalized data, request budgets, errors and one last valid gust with its original observation time. Credentials are stored separately. Failed responses do not renew data age. Ten optional readings share these responses; adding visibility, pressure or UV adds no request.
 
 Browser formatting handles temperature, wind, visibility and pressure units, compass/degrees, and Flow/Meteorological wind convention. Current weather can retain one failed poll within its age limit; gust lifetime is independently configurable. Rain forecast shows a red baseline on forecast failure/expiry, independently of the current-weather dock handle. Rendering details and all signal meanings belong in [indicators](indicators.md).
 
@@ -34,7 +34,9 @@ Browser formatting handles temperature, wind, visibility and pressure units, com
 
 Settings changes use same-origin/CSRF checks and the optional six-digit PIN/session boundary. New installations do not require a PIN. Browser UI lock is a separate convenience feature, not an operating-system security boundary. Provider credits stay active; only explicit kiosk mode requests navigation confirmation. All HTTP(S) anchors receive destination tooltips, including dynamically inserted/changed links.
 
-System opens on Status; API has Radar and Weather sub-tabs. Reopening a section resets its nested tab to the first. Keys are validated before replacement and never returned to the browser. Initial Rainbow key configuration with pending provider changes offers a Save and Apply confirmation; otherwise saving the key does not apply source selection.
+System opens on Status; API stores OpenWeather, Rainbow and shared HA credentials. Interface separates Radar, Weather and Camera. Weather has Readings, Units, Source and Collection tabs. Saving credentials does not silently enable new collectors; existing configured collectors remain enabled on upgrade. Keys are validated before replacement and never returned to the browser.
+
+Shared HA transport uses bounded requests and address validation. Independent connection health and up to four mapped sensors poll every five minutes. HA report times do not prove a physical-device measurement; stale/unavailable/mismatched readings become gaps or explicit amber OWM fallback. No HA value conversion is performed. One direct or HA camera is polled every five minutes and decoded in an image worker. Camera images are visible to app viewers: network access is the viewing boundary; the optional Settings PIN protects configuration, not dashboard content.
 
 The optional [Device Power helper](device-power.md) uses a root-owned systemd service, Unix socket, fixed restart/shutdown operations, signed short-lived requests, persistent replay protection and a cooldown. The unprivileged container receives only read-only token/socket-directory mounts and the supplementary group. It receives no Docker socket or privileged mode. Power operations require UI confirmation and inherit optional PIN protection.
 

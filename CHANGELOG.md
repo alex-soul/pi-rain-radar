@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0 — 21 September 2026
+
+- SQLite-backed archive with shared rolling retention, storage usage/estimates and automatic pressure cleanup. Seven days is the default; choose retention according to available storage.
+- Historical weather, Rain forecast and camera replay. As recorded preserves source, units and temporary fallback colour; OpenWeather and earlier-forecast comparisons retain honest gaps.
+- One direct or Home Assistant camera, with Preview/Add/Edit/Delete, separate collection/display controls and aspect-ratio resizing.
+- Shared HA credentials and independent health; four generic weather sensor mappings, unit validation and optional per-reading OpenWeather fallback. Other readings use OpenWeather normally.
+- Appliance-wide units, source and collection controls; API tabs manage credentials, while Interface manages Radar, Weather and Camera. Compact Status, dedicated Power, Map sub-tabs and dynamic attribution.
+- Embed address, radar attribution and displayed-frame time improvements; expanded synthetic DEV scenarios.
+
+**Breaking archive change:** upgrading from 0.6.0 or earlier removes the old rolling archive and rebuilds Live. No migration/import. Back up the complete data directory and retain compatible old software to replay that history. Existing 0.7.0 RC archives are preserved. [Upgrade and backup guide](docs/upgrading.md#070-new-archive-and-shared-integrations).
+
+I tested RC3 on my Pi: no major problems found, and everything is working. Non-blocking UI observations will be reviewed and recorded in [follow-ups](docs/follow-ups.md). Prolonged soak remains outstanding.
+
 ## 0.6.0 — 20 September 2026
 
 - Optional Embedded Radar: main radar, status LED and credits only, with trusted dashboard origins, shared window/speed/theme settings and no admin controls. I tested Pi-hosted embedding through Home Assistant on LAN and through Nabu Casa on mobile data with Tailscale HTTPS.

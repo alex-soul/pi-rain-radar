@@ -1,3 +1,5 @@
+import {acceptIntegrationStatus} from '../public/integrations-state.js';
+import {cameraSummary} from '../public/camera-settings-ui.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -8,7 +10,7 @@ const pollCode=app.slice(app.indexOf("window.addEventListener('radar-playback-wi
 const frames=(end,hours)=>Array.from({length:hours*6+1},(_,i)=>({time:end-(hours*6-i)*600,url:`/${end-(hours*6-i)*600}`,overviewUrl:`/o${end-(hours*6-i)*600}`}));
 function harness() {
   let hours=2,end=60000,decodeGate=null;const events={},requests=[],adoptions=[],nodes={};
-  const c=vm.createContext({recordConnection(){},generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
+  const c=vm.createContext({acceptIntegrationStatus,cameraSummary,timeZone:'Europe/London',storageSummary:()=>"Storage",recordConnection(){},generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
     sequence:Object.assign(frames(end,2),{dueThrough:liveDueThrough(end)}),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
     playbackHours:()=>hours,mapIdentity:'map',appVersion:'test',AbortSignal,liveDueThrough,ageLiveCoverage,
     $:id=>nodes[id]??={textContent:'',dataset:{}},window:{addEventListener:(name,fn)=>events[name]=fn},frameLoader:{cancel(){}},
@@ -42,4 +44,8 @@ test('saved Live duration changes leave an active Archive visit alone',()=>{
   assert.deepEqual(loads,[]);
   h.c.historyLoading=true;h.c.historyTargetEnd=20000;h.change(4);
   assert.deepEqual(loads,[]);
+});
+
+test('archive pruning revisions never reload a selected window',async()=>{
+ const h=harness();let loads=0;h.c.loadHistory=()=>loads++;h.c.historyWindow={end:10000};h.c.archiveRevision='old';await h.c.poll();assert.equal(loads,0);assert.equal(h.c.historyWindow.end,10000);
 });

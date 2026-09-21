@@ -1,6 +1,6 @@
 # Embedded Radar
 
-Enable **Settings → Embed** to display the main radar inside an iframe, such as a Home Assistant Webpage card. It fills the frame and contains only radar, a small status light and clickable credits. There are no labels, location marker, buttons, docks, widgets or Settings. Window, speed and theme are shared embed settings; there are no display profiles.
+Enable **Settings → Map → Embed** to display the main radar inside an iframe, such as a Home Assistant Webpage card. It fills the frame and contains only radar, a small status light and clickable credits. There are no labels, location marker, buttons, docks, widgets or Settings. Window, speed and theme are shared embed settings; there are no display profiles.
 
 ## Setup and addresses
 

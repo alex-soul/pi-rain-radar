@@ -1,6 +1,6 @@
 # Device Power
 
-Restart or shut down the host from **Settings → System → Status → Device Power**. This is optional: radar works normally without it. Grey buttons open setup guidance; once configured, each action asks for confirmation. A Settings PIN protects these actions if you enable one. Without a PIN, anyone who can access your app can request device power actions.
+Restart or shut down the host from **Settings → Power**. This is optional: radar works normally without it. Grey buttons open setup guidance; once configured, each action asks for confirmation. A Settings PIN protects these actions if you enable one. Without a PIN, anyone who can access your app can request device power actions.
 
 ## Enable
 
