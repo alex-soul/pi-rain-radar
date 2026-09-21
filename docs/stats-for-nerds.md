@@ -43,7 +43,7 @@ A position can have Main available and Overview missing, or vice versa. Live's b
 
 The widget shows the last successful current-weather and forecast fetch times separately, the next attempt, and a Fetching/Problem/Ready summary. No key produces Not configured.
 
-Fetch time is not observation time. The current summary primarily reflects fetching/errors; it is not a complete field-by-field freshness assessment. Use the [weather indicator guide](indicators.md#1-top-dock-indicator) and visible readings/forecast alongside it. Current weather and Rain forecast remain current during Archive playback.
+Fetch time is not observation time. The current summary primarily reflects fetching/errors; it is not a complete field-by-field freshness assessment. Use the [weather indicator guide](indicators.md#1-top-dock-indicator) and visible readings/forecast alongside it. These acquisition metrics remain current during Archive playback; the weather and Rain forecast widgets replay their historical content.
 
 ### Rainbow local monthly counts
 
@@ -66,7 +66,7 @@ For a 21:00 observation with a normal 21:10 deadline:
 
 The counters overlap; do not add them together as a total. The display reports them separately for Main/Overview with provider context, alongside availability in the selected window. Each slot counts once regardless of repeated checks, animation loops or open browsers. Counts leave a rolling window when their observation timestamps leave it.
 
-Tracking runs in the backend without a browser left open and retains evidence across ordinary restarts within the seven-day history. It begins for new observations after tracking/provider activation; imported history and unobserved downtime are not assumed clean. Incident tracking reports tracked slots and marks partial coverage or Untracked. Existing observations without reliable arrival/gap evidence cannot be retrospectively classified as on-time or late. Archive coverage can report only evidence actually retained; opening an old window must not manufacture gap events.
+Tracking runs in the backend without a browser left open and retains evidence across ordinary restarts within the configured shared retention (seven days by default). It begins for new observations after tracking/provider activation; imported history and unobserved downtime are not assumed clean. Incident tracking reports tracked slots and marks partial coverage or Untracked. Existing observations without reliable arrival/gap evidence cannot be retrospectively classified as on-time or late. Archive coverage can report only evidence actually retained; opening an old window must not manufacture gap events.
 
 These measure local availability, not provider fault. Provider publication timing, polling, connectivity and deliberate settling can all contribute to when a frame becomes usable.
 

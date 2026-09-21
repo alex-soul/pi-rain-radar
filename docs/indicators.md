@@ -8,7 +8,7 @@ This page is the single reference for status colours and symbols. For setup and 
 
 ![History showing an amber frame total, a timeline gap and the return-to-live countdown](images/indicators-history-numbered-0.4.0.png)
 
-*The same Pi in History: **4** marks the amber total of 12 available frames, **5** the missing timeline position, and **6** the countdown around the History control. This two-hour window is incomplete: a full window has 13 frames. Weather and Rain forecast remain current while radar replays the selected past window. Provider credits are visible along the bottom.*
+*The same Pi in History: **4** marks the amber total of 12 available frames, **5** the missing timeline position, and **6** the countdown around the History control. This two-hour window is incomplete: a full window has 13 frames. This historical screenshot predates 0.7.0: current releases replay saved weather and Rain forecast with the Archive window. Provider credits are visible along the bottom.*
 
 ## 1. Top dock indicator
 
@@ -59,3 +59,11 @@ In Status, green means connected/ready; warning states identify the affected sou
 Weather numbers use muted amber for retained readings; a dash means no usable value. Current readings can survive one failed poll within 30 minutes; gusts use the chosen cache duration. Hover for the full reading, units and acquisition timestamp.
 
 Toolbar outlines indicate an expanded control or open widget, not API health. The rain-intensity strip describes lighter to heavier rain. Clear map areas do not prove dry weather: coverage and missing tiles can leave gaps.
+
+## 0.7.0 integrations and storage
+
+HA weather health is separate from HA connection health. A green HA connection does not prove each mapped sensor is reporting. An unusable HA-assigned reading shows a gap or, with optional fresh OpenWeather fallback enabled, an amber substituted value. Ordinary OpenWeather supplementation for other readings is not fallback. **Unit mismatch** means the HA sensor unit and shared app setting differ; correct either side. Values are not converted from HA.
+
+Archive **As recorded** retains historical source, units and fallback presentation. Operational acquisition/connection indicators stay current. Camera may be unconfigured, disabled, waiting, fresh, stale or unavailable; hiding its button does not stop collection. Storage pressure warnings mean history may roll before the selected retention target. Refer to the [manual](manual.md#archive-storage) and [backup guide](archive-backup.md).
+
+Attribution stays at its existing bottom position, follows visible weather/forecast content in Live and Archive, and remains applicable when expected data is missing.

@@ -71,3 +71,13 @@ The map configuration, OpenWeather key and radar archive are preserved. Do not d
 
 
 See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.
+
+## Archive, collection and HA/camera checks
+
+- **API saved but no new data:** credentials and collection are separate. Check Interface → Radar or Weather → Collection, or Interface → Camera. Disabled feeds retain stored data but make no background acquisitions. Status distinguishes configuration, enabled state and health.
+- **HA connected but no weather reading:** check the entity mapping, reported unit and `last_reported` freshness. HA values must match shared app units; changing HA units later is detected on subsequent polls. Connection health alone cannot establish entity freshness.
+- **HA connected but camera unavailable:** confirm the camera works inside HA and the selected entity still exists. HA can return HTTP500 for its image endpoint while `/api/` remains healthy. In0.7.0 some camera transport failures use the imprecise message “Could not read the Home Assistant camera list.” Do not assume a token is wrong solely from that message. Never post credentials or a credential-bearing camera URL in an issue.
+- **Older Archive choice will not load:** rolling retention or storage pressure may have removed it after the picker opened. Reopen the picker and choose available history. A browser may continue replaying frames already in memory; this does not mean the server still retains them.
+- **Archive unexpectedly starts over:** pre-0.7.0 upgrades intentionally start fresh. Confirmed database corruption may also create a fresh archive while preserving failed evidence. Check Storage/Status and logs; keep the whole data directory for diagnosis. Do not repeatedly delete the DB or edit schema versions. Use the [backup/restore guide](archive-backup.md).
+
+Camera images are visible to people who can access the dashboard. The optional Settings PIN protects configuration, not viewing; use the installation's network-access controls for privacy.

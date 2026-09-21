@@ -76,7 +76,7 @@ Apply validates the whole configuration, prepares local SVG assets in a temporar
 
 The location name, centre marker, place labels, scale and overview rectangle are rendered from configuration. OpenWeather discards conditions from the previous location and refreshes at the next eligible acquisition attempt; its normal request budget is retained. Changing zoom alone does not invalidate current point weather.
 
-Radar PNG identities include their viewport geometry; archive lookups expose only matching main/overview pairs. Old images remain subject to the normal seven-day retention plus buffer and may be reused when returning to the same geometry. Basemap assets live under `maps/<configuration-id>/` and are reused on restart. These small per-configuration asset directories remain on disk for reuse; frequent experimental changes add storage. The original default history manifest stays compatible; other geometries have separately keyed history/settling manifests. Do not delete the volume to change location.
+Radar PNG identities include their viewport geometry; archive lookups expose only matching main/overview pairs. Old images remain subject to shared configurable retention (seven days by default), without an Archive grace period and may be reused when returning to the same geometry. Basemap assets live under `maps/<configuration-id>/` and are reused on restart. These small per-configuration asset directories remain on disk for reuse; frequent experimental changes add storage. SQLite lookups isolate map geometry and retain source provenance. Legacy manifests are not the current archive contract. Do not delete the volume to change location.
 
 ## Regenerate the bundled map
 
@@ -102,7 +102,7 @@ Use a disposable data directory and synthetic provider responses when testing PI
 
 ## Weather cache and failure checks
 
-`weather.json` retains normalized current/minutely data, the last valid gust with its own provider observation timestamp, request budgets, and a current-conditions failure count capped at two with a safe error message. One Call 4.0 uses two requests per eligible refresh (`current` and `timeline/1min`); each endpoint updates independently. `fetchedAt`/`error` describe current conditions, while `forecastFetchedAt`/`forecastError` describe Rain forecast. Existing normalized caches retain their original ages and request budgets on upgrade. Credentials stay separately in `settings/openweather.json`. Current readings permit one failed poll until the 30-minute age limit, then become unavailable on the second failure; recovery resets the count. Gust lifetime is a browser-local Interface → Weather preference, default 60 minutes. Location changes/key removal clear retained values. The browser presentation is specified in [indicators](indicators.md).
+SQLite weather state and historical records retain normalized current/minutely data, the last valid gust with its own provider observation timestamp, request budgets, and a current-conditions failure count capped at two with a safe error message. One Call 4.0 uses two requests per eligible refresh (`current` and `timeline/1min`); each endpoint updates independently. `fetchedAt`/`error` describe current conditions, while `forecastFetchedAt`/`forecastError` describe Rain forecast. The first upgrade from pre-0.7.0 resets historical content while preserving operational cooldowns; compatible 0.7.0 upgrades retain the new archive. Credentials stay separately in `settings/openweather.json`. Current readings permit one failed poll until the 30-minute age limit, then become unavailable on the second failure; recovery resets the count. Gust lifetime is a browser-local Interface → Weather preference, default 60 minutes. Location changes/key removal clear retained values. The browser presentation is specified in [indicators](indicators.md).
 
 For a visual failure test, inject synthetic responses into `createWeather` with a disposable data directory and clock. Exercise fresh, one failure, two failures, expired current data, missing gust only, and recovery in both themes. Keep the test server on a separate loopback port and out of production routes; do not cause real provider failures or read/change the active PIN/key. Tests must preserve observation timestamps rather than refreshing cache age on every request. Remove the temporary test server, script and generated data after review.
 
@@ -129,7 +129,7 @@ Publishing a GitHub release runs .github/workflows/release-image.yml. The workfl
 | Location | Responsibility |
 | --- | --- |
 | `src/server.js` | HTTP routes, provider scheduling, active map and version status |
-| `src/radar.js`, `src/archive.js`, `src/provider.js` | Acquisition, paired frames, history and provider boundaries |
+| `src/radar.js`, `src/radar-history.js`, `src/history-store.js`, `src/provider.js` | Acquisition, indexed archive, playback and provider boundaries |
 | `src/map*.js` | Projection, offline assets, preview, atomic map configuration and HTML |
 | `src/weather.js` | Shared OpenWeather response, request budgets and retained readings |
 | `src/settings-auth.js`, `src/setup-pin.js` | Optional PIN, settings routes and host recovery |
@@ -143,9 +143,9 @@ The runnable app is authoritative when prose drifts. Keep personal machine detai
 See [validation and remaining work](validation.md) before describing a behaviour as tested on hardware. Full browser visual checks remain separate from VM-based logic tests. The older private development repository is not an active development target.
 ## Development-to-release workflow
 
-The scenario studio also serves `/__embed`, with small and tall cards running the real optional embed page. The disposable fixture enables embedding for its loopback review origin; add your own HA test origins through Settings; production still defaults to disabled. Edit its presentation through normal Settings → Embed, then reload the cards. Main radar and backend-loss scenarios affect the LED; Overview and weather failures do not.
+The scenario studio also serves `/__embed`, with small and tall cards running the real optional embed page. The disposable fixture enables embedding for its loopback review origin; add your own HA test origins through Settings; production still defaults to disabled. Edit its presentation through normal Settings → Map → Embed, then reload the cards. Main radar and backend-loss scenarios affect the LED; Overview and weather failures do not.
 
-Device Power in this studio is also synthetic: Settings → System → Status → Restart/Shutdown returns an accepted response and displays the normal acknowledgement without executing any host action. Backend unavailable still blocks these requests. Use the UI tests for rejected/interrupted responses. This fixture never forwards power actions to the backend helper.
+Device Power in this studio is also synthetic: Settings → Power → Restart/Shutdown returns an accepted response and displays the normal acknowledgement without executing any host action. Backend unavailable still blocks these requests. Use the UI tests for rejected/interrupted responses. This fixture never forwards power actions to the backend helper.
 
 For an explicit LAN review, run `node scripts/dev-embed-lan.mjs <local-LAN-IP>` alongside the studio. It serves the synthetic embed at `http://<local-LAN-IP>:3092/embed`, forwarding only embed assets, frames and status to loopback port 3091. Settings and the scenario console are not exposed through this transport. Set exact trusted HA origins in the fixture's normal Embed settings. This is an experimental HTTP/LAN review: an HTTPS HA dashboard cannot frame the HTTP URL. Stop this optional process after review. Never use this development proxy against a production backend.
 
@@ -164,3 +164,11 @@ Development builds should use identifiable local tags (for example `dev-<commit>
 See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.
 
 The Archive weather playground includes **Forecast vs now** in the existing chart: select 10, 20, 30, 40, 50 or 60 minutes earlier to overlay one prediction line on historical now-estimate bars (rolling two hours, ten-minute samples). None restores the saved next-hour forecast. All choices reuse the same synthetic snapshots and match valid timestamps exactly; missing samples remain amber without interpolating across gaps. These are provider-estimate comparisons, not measured rainfall accuracy. The POC loads four six-hour archive windows once, deduplicates boundaries, and then scrubs locally.
+
+## 0.7.0 integration testing and temporary data
+
+The shipped implementation is `src/` plus `public/`. `scripts/rc3-review/` is a historical synthetic design adapter, not a current backend contract; its review states do not prove collection, credentials or persistence. Prefer the ordinary scenario studio for new UI work and real product-module tests for backend changes. The Archive weather POC is retained as an explicitly exploratory fixture.
+
+`src/home-assistant.js` owns shared credentials and health; `src/ha-weather.js` polls mapped sensor states; `src/weather-settings.js` owns durable shared policy and SQLite transition history. Camera transport and decode use `src/camera-http.js` and the image worker. Provider collection gates are independent of API credential storage. Tests use fake provider responses; do not mix real secrets into synthetic scenarios.
+
+Stop the specific DEV supervisor and its backend child after review, plus any optional review/fixture server. Disposable session data uses `pi-rain-radar-next-release-preview-*`, `pi-rain-radar-rc3-ui-review` and `pi-rain-radar-rc3-integration-preview` beneath the OS temporary directory. Verify exact paths and stopped processes before deleting a session's data. Keep source, release evidence and real deployment backups. The optional LAN embed adapter and historical RC3 review both use3092 and cannot run together.
