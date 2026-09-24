@@ -6,11 +6,11 @@ function normalizeGust(value) {
   if (!Number.isInteger(value) || value < 1) return 60;
   return gustChoices.slice(1).reduce((best, pick) => Math.abs(pick-value) < Math.abs(best-value) ? pick : best, 15);
 }
-const preferences = { showScale: true, autoHide: false, autoHideWeather: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
+const preferences = { showScale: true, autoHide: false, autoHideWeather: false, autoHideButtons: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
 preferences.readingOrder = Object.keys(readingNames);
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));
-  for (const key of ['showScale', 'autoHide', 'autoHideWeather']) if (typeof saved?.[key] === 'boolean') preferences[key] = saved[key];
+  for (const key of ['showScale', 'autoHide', 'autoHideWeather', 'autoHideButtons']) if (typeof saved?.[key] === 'boolean') preferences[key] = saved[key];
   preferences.gustCacheMinutes = normalizeGust(saved?.gustCacheMinutes);
   if (['C', 'F'].includes(saved?.temperatureUnit)) preferences.temperatureUnit = saved.temperatureUnit;
   for (const [key, values] of Object.entries(weatherOptions)) if (values.includes(saved?.[key])) preferences[key] = saved[key];
@@ -87,9 +87,12 @@ export function widgetBottom() {
   return innerHeight;
 }
 
+const extraWidgetLayers=new Set();
 export function setupWidgetLayer(panel) {
+  extraWidgetLayers.add(panel);
   const raise = () => {
-    for (const id of ['overview', 'rain-forecast', 'stats', 'camera']) {
+    for(const widget of extraWidgetLayers)widget.classList.toggle('widget-front',widget===panel);
+    for (const id of ['overview', 'rain-forecast', 'stats', 'camera', 'weather-trends']) {
       const widget = document.getElementById(id);
       widget?.classList.toggle('widget-front', widget === panel);
     }
@@ -105,6 +108,9 @@ export function setupDisplaySettings(canEdit) {
   const scale = document.getElementById('map-scale');
   const showScale = document.getElementById('show-map-scale');
   const autoHide = document.getElementById('auto-hide-footer');
+  const autoButtons=document.getElementById('auto-hide-buttons');
+  const toolbar=document.querySelector('.map-controls');
+  const layers=document.getElementById('layers-toggle');
   const autoWeather = document.getElementById('auto-hide-weather');
   const gustMinutes = document.getElementById('gust-cache-minutes');
   const tempUnit = document.getElementById('temperature-unit');
@@ -176,18 +182,20 @@ export function setupDisplaySettings(canEdit) {
   }
   function schedule() {
     clearTimeout(timer);
-    if (document.hidden || pointers.size || document.querySelector('dialog[open]')) return;
+    if (document.hidden || pointers.size || document.querySelector('dialog[open]') || document.getElementById('layers-panel')?.hidden===false) return;
     timer = setTimeout(() => {
-      gear.hidden = true;
+      gear.hidden = true;if(layers)layers.hidden=true;document.body.classList.add('controls-asleep');
+      if(preferences.autoHideButtons){toolbar.classList.add('auto-hidden');for(const button of toolbar.children)button.inert=!(button.id==='clock-toggle'&&button.getAttribute('aria-expanded')==='true');}
       if (preferences.autoHide) hidden(true);
-      if (preferences.autoHideWeather&&!document.getElementById('weather-dock').contains(document.activeElement)) weatherExpanded(false);
+      if (preferences.autoHideWeather) weatherExpanded(false);
     }, 15_000);
   }
   function weatherExpanded(expanded) {
     window.dispatchEvent(new CustomEvent('radar-weather-expanded', { detail: expanded }));
   }
   function wake(event) {
-    gear.hidden = false;
+    gear.hidden = false;if(layers)layers.hidden=false;
+    document.body.classList.remove('controls-asleep');for(const button of toolbar.children)button.inert=false;toolbar.inert=document.body.classList.contains('screen-locked');toolbar.classList.remove('auto-hidden');
     if (preferences.autoHide && !event?.target?.closest?.('#footer-toggle')) hidden(false);
     if (preferences.autoHideWeather && !event?.target?.closest?.('#weather-dock')) weatherExpanded(true);
     schedule();
@@ -197,14 +205,15 @@ export function setupDisplaySettings(canEdit) {
     scale.toggleAttribute('hidden', !preferences.showScale);
     showScale.checked = preferences.showScale;
     autoHide.checked = preferences.autoHide;
-    autoWeather.checked = preferences.autoHideWeather;
+    autoWeather.checked = preferences.autoHideWeather;autoButtons.checked=preferences.autoHideButtons;
+    document.body.classList.remove('controls-asleep');for(const button of toolbar.children)button.inert=false;toolbar.inert=document.body.classList.contains('screen-locked');toolbar.classList.remove('auto-hidden');
     gustMinutes.value = preferences.gustCacheMinutes;
     hidden(false);
     if (preferences.autoHideWeather) weatherExpanded(true);
     schedule();
     window.dispatchEvent(new Event('radar-display-change'));
   }
-  for (const [input, key] of [[showScale, 'showScale'], [autoHide, 'autoHide'], [autoWeather, 'autoHideWeather']]) {
+  for (const [input, key] of [[showScale, 'showScale'], [autoHide, 'autoHide'], [autoWeather, 'autoHideWeather'], [autoButtons, 'autoHideButtons']]) {
     input.addEventListener('change', () => {
       if (canEdit()) {
         preferences[key] = input.checked;
@@ -224,6 +233,7 @@ export function setupDisplaySettings(canEdit) {
   // Wake after the tap target is resolved, so attached controls cannot move away mid-tap.
   document.addEventListener('click', wake, true);
   document.addEventListener('keydown', wake, true);
+  document.addEventListener('pointermove',event=>{if(event.pointerType==='mouse')wake(event);},{passive:true});
   window.addEventListener('radar-settings-wake', wake);
   document.addEventListener('pointerdown', event => { pointers.add(event.pointerId); clearTimeout(timer); }, true);
   for (const name of ['pointerup', 'pointercancel']) document.addEventListener(name, event => {

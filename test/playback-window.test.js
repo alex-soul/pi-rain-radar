@@ -11,10 +11,10 @@ const frames=(end,hours)=>Array.from({length:hours*6+1},(_,i)=>({time:end-(hours
 function harness() {
   let hours=2,end=60000,decodeGate=null;const events={},requests=[],adoptions=[],nodes={};
   const c=vm.createContext({updateCloudSettings(){},acceptIntegrationStatus,cameraSummary,timeZone:'Europe/London',storageSummary:()=>"Storage",recordConnection(){},generation:0,historyWindow:null,historyLoading:false,returningLive:false,status:null,serverReachable:true,
-    sequence:Object.assign(frames(end,2),{dueThrough:liveDueThrough(end)}),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
+    sequence:Object.assign(frames(end,2),{dueThrough:liveDueThrough(end+300)}),sequenceHours:2,pending:null,displayed:{time:end},playing:false,liveRequestKey:'',mapUpdateVisible:false,serverClock:null,sequenceEnd:end,archiveRevision:null,performance,
     playbackHours:()=>hours,mapIdentity:'map',appVersion:'test',AbortSignal,liveDueThrough,ageLiveCoverage,
     $:id=>nodes[id]??={textContent:'',dataset:{}},window:{addEventListener:(name,fn)=>events[name]=fn},frameLoader:{cancel(){}},
-    fetch:async url=>{requests.push(url);return {ok:true,json:async()=>({mapId:'map',end,dueThrough:liveDueThrough(end),serverTime:end*1000,frames:frames(end,hours)})};},
+    fetch:async url=>{requests.push(url);return {ok:true,json:async()=>({mapId:'map',end,dueThrough:liveDueThrough(end+300),serverTime:(end+300)*1000,frames:frames(end,hours)})};},
     decodeFrames:async offered=>{if(decodeGate)await decodeGate;return offered;},
     adopt(next,preserve){adoptions.push({next,preserve});c.sequence=next;c.sequenceHours=next.windowHours;c.sequenceEnd=next.windowEnd;},
     paintHistory(){},paintStatus(){},paintMapUpdate(){},location:{reload(){throw Error('unexpected reload');}}});

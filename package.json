@@ -1,6 +1,6 @@
 {
   "name": "pi-rain-radar",
-  "version": "0.8.0-rc.2",
+  "version": "0.8.0-rc.3",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "semver": "7.8.5",
-    "sharp": "0.35.4"
+    "sharp": "0.35.4",
+    "suncalc": "2.0.2"
   }
 }

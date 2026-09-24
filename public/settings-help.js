@@ -1,4 +1,5 @@
 export const helpText = {
+ astronomy:'Calculated locally from the map location using SunCalc. Live follows now; Archive follows the selected frame. In Units, choose the next rise (r), highest point/peak (p) or set (s), or altitude above the horizon and compass direction. A negative altitude is below the horizon. Hiding this Dock reading does not hide the Sun/Moon widget. Format and visibility are saved on this screen.',
  dewPointDepression:'T−Td is called dew point depression: air temperature (T) minus dew point (Td). A smaller difference means the air is closer to saturation; zero means the two temperatures are equal. It is a temperature difference, not a rain measurement. It uses the sources selected under Readings for Temperature and Dew point, even when Dew point is hidden from the dock.',
  lastFrameHold:'Multiplies the final frame duration before playback loops. 1× adds no extra hold; the default is 2.4× (1560 ms at playback speed 1×). Playback speed scales both ordinary and final frame durations.',
  reviewFallback:'Use OpenWeather when a Home Assistant reading is unavailable. Requires OpenWeather current-weather collection. Borrowed readings show amber and identify OpenWeather as the fallback source.',
@@ -58,7 +59,7 @@ export function setupSettingsHelp(dialog) {
     ['label[for="radar-settling"]',22], ['#diagnostic-title',23],
     ['label[for="map-name"]',2], ['#map-lat',3], ['#map-lon',3], ['#map-zoom',4], ['#map-overviewZoom',5],
     ['label[for="map-timeZone"]',6], ['label[for="settings-api-key"]',9],
-    ['label[for="auto-hide-weather"]',10], ['label[for="auto-hide-footer"]',11], ['label[for="gust-cache-minutes"]',12], ['label[for="settings-pin-enabled"]',13],
+    ['label[for="reading-sun"]','astronomy'], ['label[for="reading-moon"]','astronomy'], ['label[for="astro-sun-mode"]','astronomy'], ['label[for="astro-moon-mode"]','astronomy'], ['label[for="auto-hide-weather"]',10], ['label[for="auto-hide-footer"]',11], ['label[for="gust-cache-minutes"]',12], ['label[for="settings-pin-enabled"]',13],
     ['label[for="screen-lock"]',21], ['#provider-status-title',24], ['label[for="temperature-unit"]',14], ['label[for="wind-unit"]',15], ['label[for="reading-feels"]',17],
     ['label[for="reading-depression"]','dewPointDepression'], ['label[for="reading-humidity"]',18], ['label[for="reading-dew"]',19], ['label[for="reading-direction"]',20], ['label[for="playback-speed"]',25],
   ];
@@ -83,7 +84,7 @@ export function setupSettingsHelp(dialog) {
       event.preventDefault(); event.stopPropagation();
       if (active === button) { close(); return; }
       close(); active = button; button.setAttribute('aria-expanded','true'); button.setAttribute('aria-describedby', bubble.id);
-      bubble.textContent = helpText[key]; if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
+      bubble.textContent = helpText[key]; if(key==='astronomy'){for(const [title,url] of [['SunCalc source','https://github.com/mourner/suncalc'],['License','/suncalc-license.txt']]){const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent=title;bubble.append(document.createElement('br'),link);}} if(key==='dewPointDepression'){const link=document.createElement('a');link.href='/dew-point-depression.html';link.target='_blank';link.rel='noopener';link.textContent='Read about dew point depression';bubble.append(document.createElement('br'),link);} if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
       const rect = button.getBoundingClientRect(), bounds = dialog.getBoundingClientRect();
       bubble.style.width = `${Math.min(320, bounds.width - 32)}px`;
       bubble.style.left = `${Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - bubble.offsetWidth - 8))}px`;

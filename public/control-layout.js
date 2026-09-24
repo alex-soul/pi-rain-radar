@@ -1,7 +1,8 @@
 const controls = [
+  {id:'astronomy-toggle',label:'Sun and Moon'},
+  {id:'weather-trends-toggle',label:'Weather history'},
   { id: 'clock-toggle', label: 'Clock' },
   { id: 'overview-toggle', label: 'Overview' },
-  { id: 'cloud-toggle', label: 'Clouds' },
   { id: 'camera-toggle', label: 'Camera', visible: false },
   { id: 'rain-forecast-toggle', label: 'Rain forecast' },
   { id: 'history-toggle', label: 'Archive' },

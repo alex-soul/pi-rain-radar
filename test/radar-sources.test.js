@@ -17,7 +17,7 @@ async function directory(t){const dir=await mkdtemp(join(tmpdir(),'radar-source-
 test('routine incomplete history stays out of Log while failed acquisition is recorded',async t=>{
  const dir=await directory(t),time=Date.UTC(2026,8,19,12),events=[];let failed=false;
  const provider={getHistory:async()=>{if(failed)throw Error('offline');return [{time:time/1000-600},{time:time/1000}];},getTile:async frame=>{if(frame.time===time/1000-600)throw Error('missing old frame');return png;}};
- const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{views,now:()=>time,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'}),onEvent:code=>events.push(code)});
+ const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'}),onEvent:code=>events.push(code)});
  await radar.refresh();assert.ok(radar.status().frame);assert.equal(events.includes('radar-error'),false);
  failed=true;await radar.refresh();assert.ok(events.includes('radar-error'));
 });
@@ -26,7 +26,7 @@ test('cold startup publishes the fast map then seeds complete history after the 
  let release;const gate=new Promise(resolve=>{release=resolve;});
  const frames=Array.from({length:13},(_,i)=>({time:time/1000-(12-i)*600}));
  const providers={rainviewer:{getHistory:async()=>frames,getTile:async()=>png},rainbow:{getHistory:async()=>{await gate;return frames;},getTile:async()=>png}};
- const radar=await createRadarSources(dir,providers,{views,now:()=>time,waitForSettle:()=>false,selection:()=>({main:'rainbow',overview:'rainviewer'})});
+ const radar=await createRadarSources(dir,providers,{views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainbow',overview:'rainviewer'})});
  const pending=radar.refresh();
  try {
   for(let i=0;i<200&&!radar.status().frame;i++)await new Promise(resolve=>setTimeout(resolve,10));
@@ -59,7 +59,7 @@ test('one provider failure leaves an observation gap while another advances; pro
  const dir=await directory(t);let time=Date.UTC(2026,8,17,12),failed=false,selected={main:'rainviewer',overview:'rainbow'};
  const provider=source=>({getHistory:async()=>[{time:time/1000}],getTile:async()=>{if(source==='rainbow'&&failed)throw Error('offline');return png;}});
  const providers={rainviewer:provider('rainviewer'),rainbow:provider('rainbow')};
- const options={views,now:()=>time,waitForSettle:()=>false,selection:()=>selected};
+ const options={views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>selected};
  const radar=await createRadarSources(dir,providers,options);await radar.refresh();const first=radar.status().frame;
  assert.equal(first.source,'rainviewer');assert.equal(first.overviewSource,'rainbow');
  time+=600000;failed=true;await radar.refresh();const next=radar.status().frame;

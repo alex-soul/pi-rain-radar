@@ -76,7 +76,7 @@ async function poll() {
 setInterval(()=>{
   health();
   if(!clock)return;
-  const end=Math.max(liveDueThrough(now()/1000),frames.end??0),start=end-hours*3600;
+  const end=liveDueThrough(now()/1000),start=end-hours*3600;
   if(end===frames.end)return;
   const next=frames.filter(f=>f.time>=start&&f.time<=end);
   next.borrowFrames=[...(frames.borrowFrames??[]),...frames].filter(f=>f.time>=start-1800&&f.time<start);next.end=end;

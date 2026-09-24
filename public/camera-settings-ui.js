@@ -68,6 +68,7 @@ export function setupCameraSettings(canEdit,request){
  };
  $('review-camera-enabled').onchange=async()=>{const control=$('review-camera-enabled'),previous=shared.cameraEnabled;if(!canEdit()){control.checked=previous;return;}control.disabled=true;$('review-camera-note').textContent='Saving…';try{await change({action:'settings',cameraEnabled:control.checked});}catch{control.checked=previous;$('review-camera-note').textContent='Could not save. Please try again.';}finally{control.disabled=!shared.camera;}};
 
+ $('review-camera-interval').onchange=async()=>{if(!canEdit())return;try{await settingsRequest('/camera',{enabled:shared.cameraEnabled,intervalMinutes:Number($('review-camera-interval').value)});await refresh();}catch(e){$('review-camera-note').textContent=e.message;$('review-camera-interval').value=String(shared.camera?.intervalMinutes??5);}};
  $('review-camera-delete').onclick=async()=>{if(!canEdit())return;try{await change({action:'delete-camera'});$('review-camera-note').textContent='Camera removed. Recorded history is retained.';}catch(e){$('review-camera-note').textContent=e.message;}};
 
  return {load(){void refresh();void loadThumbnail();},reset(){editor.close();preview.close();if(blob)URL.revokeObjectURL(blob);blob=null;}};

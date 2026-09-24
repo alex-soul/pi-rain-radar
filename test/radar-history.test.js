@@ -18,7 +18,7 @@ async function fixture(t){const dir=await mkdtemp(join(tmpdir(),'sqlite-radar-')
 test('SQLite acquisition seeds two hours, preserves 4/6h gaps and survives restart without sidecars',async t=>{
   const {dir,store}=await fixture(t),time=Math.floor(Date.now()/600000)*600000;
   const provider={getHistory:async()=>Array.from({length:13},(_,i)=>({time:time/1000-(12-i)*600})),getTile:async()=>png};
-  const options={store,views,now:()=>time,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})};
+  const options={store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})};
   const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},options);
   await radar.refresh();
   assert.equal(radar.status().frames.length,13);assert.ok(radar.status().frames.every(f=>f.url.startsWith('/archive/media/')&&f.overviewUrl));
@@ -34,7 +34,7 @@ test('SQLite acquisition seeds two hours, preserves 4/6h gaps and survives resta
 test('shared pruning does not mutate a returned window and calendar exposes only surviving history',async t=>{
   const {store}=await fixture(t),time=Math.floor(Date.now()/600000)*600000,context=hash(views);
   for(const offset of [172800000,0])for(const role of ['main','overview'])await store.publish({kind:'radar',source:'rainviewer',context,role,time:time-offset,receivedAt:time,data:{}},png);
-  const archive=await createRadarHistory(store,views,{now:()=>time,selection:{main:'rainviewer',overview:'same'}});
+  const archive=await createRadarHistory(store,views,{now:()=>time+300000,selection:{main:'rainviewer',overview:'same'}});
   const old=await archive.window(time/1000-172800,2);assert.equal(old.frames.length,1);
   await store.protect([{context,main:'rainviewer',overview:'rainviewer'}]);await store.setRetention(1);
   assert.equal((await archive.window(time/1000-172800,2)),null);
@@ -49,7 +49,7 @@ test('pressure can roll beyond a stalled radar while bounded Live survives resta
   await store.protect([{context,main:'rainviewer',overview:'rainviewer'}]);
   for(const role of ['main','overview'])await store.publish({kind:'radar',source:'rainviewer',context,role,time:time-600000,receivedAt:time,data:{}},png);
   await store.put([{kind:'weather',source:'openweather',context:'here',time,receivedAt:time,data:{tempC:12}}]);
-  let archive=await createRadarHistory(store,views,{now:()=>time,selection:{main:'rainviewer',overview:'same'}});
+  let archive=await createRadarHistory(store,views,{now:()=>time+300000,selection:{main:'rainviewer',overview:'same'}});
   for(let i=0;i<10&&(await store.status()).cutoff<=time;i++)await store.maintain({space:{capacity:1024**3,available:0}});
   assert.ok((await store.status()).cutoff>time);
   assert.equal(await archive.window(time/1000-600,2),null);
@@ -57,7 +57,7 @@ test('pressure can roll beyond a stalled radar while bounded Live survives resta
   assert.ok(archive.live().frames[0].url&&archive.live().frames[0].overviewUrl);
   await store.close();store=await createHistoryStore(dir,{now:time});
   const requested=new Set(),provider={getHistory:async()=>Array.from({length:13},(_,i)=>({time:time/1000-(12-i)*600})),getTile:async frame=>{requested.add(frame.time);return png;}};
-  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})});
+  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})});
   assert.equal(radar.status().frames[0].time,time/1000-600);
   await radar.refresh();
   assert.deepEqual([...requested],[time/1000]);
@@ -70,7 +70,7 @@ test('switching back to an inactive source reacquires its pressure-pruned images
   const {dir,store}=await fixture(t),time=Math.floor(Date.now()/600000)*600000,context=hash(views);
   let calls=0,selected={main:'rainviewer',overview:'same'};
   const provider={getHistory:async()=>[{time:time/1000}],getTile:async()=>{calls++;return png;}};
-  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time,waitForSettle:()=>false,selection:()=>selected});
+  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>selected});
   await store.protect([{context,main:'rainviewer',overview:'rainviewer'}]);await radar.refresh();
   const next={main:'rainbow',overview:'same'};
   assert.equal((await radar.configure(next,async()=>{selected=next;})).status,200);
@@ -89,9 +89,9 @@ test('source transition interpretation survives pruning and rejects incompatible
   await store.put([{kind:'transition',source:'selection',context,time:time-172800000,receivedAt:time,data:{main:'rainbow',overview:'rainviewer'}}]);
   await store.publish({kind:'radar',source:'rainbow',context,role:'main',time:time-600000,receivedAt:time,data:{}},png);
   await store.setRetention(1);
-  const archive=await createRadarHistory(store,views,{now:()=>time,selection:{main:'rainbow',overview:'rainviewer'}});
+  const archive=await createRadarHistory(store,views,{now:()=>time+300000,selection:{main:'rainbow',overview:'rainviewer'}});
   assert.equal((await archive.window(time/1000-600,2)).frames[0].source,'rainbow');
-  const other=await createRadarHistory(store,{...views,viewKey:'333333333333'},{now:()=>time,selection:{main:'rainbow',overview:'rainviewer'}});
+  const other=await createRadarHistory(store,{...views,viewKey:'333333333333'},{now:()=>time+300000,selection:{main:'rainbow',overview:'rainviewer'}});
   assert.equal(await other.window(time/1000-600,2),null);
 });
 
@@ -100,7 +100,7 @@ test('pressure during source commit preserves new Live, survives restart, and re
   let store=await createHistoryStore(dir,{now:time}),selected={main:'rainviewer',overview:'same'};
   t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
   const provider={getHistory:async()=>[{time:time/1000}],getTile:async()=>png};
-  const options=()=>({store,views,now:()=>time,waitForSettle:()=>false,selection:()=>selected});
+  const options=()=>({store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>selected});
   let radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},options());
   await store.protect([radar.protection()]);await radar.refresh();await store.maintain({space:full});
   const next={main:'rainbow',overview:'same'};
@@ -122,7 +122,7 @@ test('map replacement protects both views during pressure and releases the old m
   const provider={getHistory:async()=>[{time:time/1000}],getTile:async()=>png};let interleave=false;
   const maps=await createMapSettings(dir,{prepare:async()=>{},
     radarFactory:async(_directory,_provider,options)=>{
-      const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{...options,store,now:()=>time,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})});
+      const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{...options,store,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})});
       const refresh=radar.refresh;radar.refresh=async()=>{await refresh();if(interleave)await store.maintain({space:full});};return radar;
     },protectRadar:radars=>store.protect(radars.map(radar=>radar.protection()))});
   await store.protect([maps.current().radar.protection()]);await maps.current().radar.refresh();await store.maintain({space:full});
@@ -157,20 +157,20 @@ test('fresh archive clears weather content while preserving operational cooldown
   await mkdir(join(dir,'settings'));await writeFile(join(dir,'settings','openweather.json'),JSON.stringify({apiKey:'a'.repeat(32)}));
   await writeFile(join(dir,'weather.json'),JSON.stringify({location:'1,2',nextAttemptAt:time+500000,nextSetupAt:time+20000,failures:1,error:'Retained warning',data:{current:{temperature:20},minutely:[]}}));
   const store=await createHistoryStore(dir);t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
-  let calls=0;const weather=await createWeather(dir,{store,now:()=>time,location,request:async()=>{calls++;throw Error('Should not poll');}});
+  let calls=0;const weather=await createWeather(dir,{store,now:()=>time+300000,location,request:async()=>{calls++;throw Error('Should not poll');}});
   assert.equal(weather.status().data,null);assert.equal(weather.status().nextAttemptAt,time+500000);
   await weather.refresh();assert.equal(calls,0);
   for(let i=0;i<50&&(await store.status()).legacyPending;i++)await store.maintain();
   assert.equal((await store.status()).legacyPending,false);
   assert.equal((await readdir(dir)).includes('weather.json'),false);
-  const restored=await createWeather(dir,{store,now:()=>time,location});assert.equal(restored.status().nextAttemptAt,time+500000);
+  const restored=await createWeather(dir,{store,now:()=>time+300000,location});assert.equal(restored.status().nextAttemptAt,time+500000);
 });
 
 test('generation reset retains only last-good Live manifests without inventing recovered Archive rows',async t=>{
   const {store}=await fixture(t),time=Math.floor(Date.now()/600000)*600000,context=hash(views);let reset=false;
   for(const role of ['main','overview'])await store.publish({kind:'radar',context,source:'rainviewer',role,time,receivedAt:time,data:{}},png);
   const proxy={...store,status:async()=>({...await store.status(),generation:reset?'replacement':'original'}),range:q=>reset?Promise.resolve({records:[],next:null}):store.range(q),contextBefore:q=>reset?Promise.resolve(null):store.contextBefore(q)};
-  const archive=await createRadarHistory(proxy,views,{now:()=>time,selection:{main:'rainviewer',overview:'same'}});
+  const archive=await createRadarHistory(proxy,views,{now:()=>time+300000,selection:{main:'rainviewer',overview:'same'}});
   reset=true;await archive.reload();
   assert.equal(archive.live().frames.length,1);assert.ok(archive.live().frames[0].url&&archive.live().frames[0].overviewUrl);
   assert.equal(await archive.window(time/1000,2),null);

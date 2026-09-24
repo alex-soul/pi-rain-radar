@@ -9,12 +9,12 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
   let timer, open = false, observer, editable = true, saved;
   const dispatched = [];
-  const node = id => nodes[id] ??= {replaceChildren(){},checked:false, hidden:true, classList:{toggle(){}}, contains(){return false;},closest(){return this;}, setAttribute(k,v){this[k]=v;}, attributes:new Set(), toggleAttribute(k,v){v?this.attributes.add(k):this.attributes.delete(k);}, style:{}, dataset:{width:214}, handlers:{}, addEventListener(k, fn){this.handlers[k]=fn;}};
+  const node = id => nodes[id] ??= {children:[],getAttribute(k){return this[k];},replaceChildren(){},checked:false, hidden:true, classList:{toggle(){},add(){},remove(){}}, contains(){return false;},closest(){return this;}, setAttribute(k,v){this[k]=v;}, attributes:new Set(), toggleAttribute(k,v){v?this.attributes.add(k):this.attributes.delete(k);}, style:{}, dataset:{width:214}, handlers:{}, addEventListener(k, fn){this.handlers[k]=fn;}};
   const footer = {offsetHeight:76, querySelectorAll:()=>content};
   vm.runInNewContext(source.replaceAll('export function', 'function')+'\nsetupDisplaySettings(canEdit);', {
     Option:class {constructor(text,value){this.text=text;this.value=value;}},canEdit:()=>editable,
-    document:{hidden:false, body:{style:{setProperty(){}},classList:{contains:k=>classes.has(k),toggle(k,v){v?classes.add(k):classes.delete(k);}}},
-      getElementById:node, querySelector:q=>q==='footer'?footer:open?{}:null, querySelectorAll:q=>q==='[data-reading-choice]'?[]:[{}], addEventListener:(k,fn)=>events[k]=fn},
+    document:{hidden:false, body:{style:{setProperty(){}},classList:{add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k),toggle(k,v){v?classes.add(k):classes.delete(k);}}},
+      getElementById:node, querySelector:q=>q==='footer'?footer:q==='.map-controls'?node('toolbar'):open?{}:null, querySelectorAll:q=>q==='[data-reading-choice]'?[]:[{}], addEventListener:(k,fn)=>events[k]=fn},
     window:{addEventListener:(k,fn)=>events[k]=fn,dispatchEvent(e){dispatched.push(e);}}, Event, CustomEvent, innerWidth:1280,innerHeight:720,
     localStorage:{getItem:()=>null,setItem:(k,v)=>saved=JSON.parse(v)},
     setTimeout:(fn,ms)=>{assert.equal(ms,15000);timer=fn;return 1;},clearTimeout:()=>timer=null,
@@ -35,6 +35,8 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   for(const value of ['1', '1.5', '-1', '1441']) {node('gust-cache-minutes').value=value;node('gust-cache-minutes').handlers.change();}
   assert.equal(invalid,4);assert.equal(saved.gustCacheMinutes,90);
 
+  node('clock-toggle').id='clock-toggle';node('clock-toggle')['aria-expanded']='true';node('toolbar').children=[node('clock-toggle'),node('other-button')];
+  node('auto-hide-buttons').checked=true;node('auto-hide-buttons').handlers.change();assert.equal(saved.autoHideButtons,true);
   events.click();assert.equal(node('settings-toggle').hidden,false);timer();assert.equal(node('settings-toggle').hidden,true);
   assert.equal(classes.has('footer-hidden'),false);
   node('footer-toggle').handlers.click();assert.equal(classes.has('footer-hidden'),true);
@@ -42,7 +44,7 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   node('footer-toggle').handlers.click();assert.equal(classes.has('footer-hidden'),false);
   assert.equal(node('map-scale').attributes.has('hidden'),false);
   node('auto-hide-footer').checked=true;node('auto-hide-footer').handlers.change();
-  assert.equal(saved.autoHide,true);timer();assert.ok(classes.has('footer-hidden'));assert.ok(content.every(x=>x.inert));
+  assert.equal(saved.autoHide,true);timer();assert.ok(classes.has('footer-hidden'));assert.ok(content.every(x=>x.inert));assert.equal(node('clock-toggle').inert,false);assert.equal(node('other-button').inert,true);assert.ok(classes.has('controls-asleep'));
   events.click();assert.ok(!classes.has('footer-hidden'));
   events.pointerdown({pointerId:1});assert.equal(timer,null);
   events.pointerup({pointerId:1});assert.equal(typeof timer,'function');
@@ -176,7 +178,7 @@ test('display choices restore independently and reject unsupported units and pla
 });
 
 test('reading editor saves reorder, preserves hidden readings, and cancels interrupted drags', () => {
-  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression'];
+  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression','sun','moon'];
   let children=[], saved, writes=0, editable=true;
   const list={get children(){return children;},append(row){children=children.filter(x=>x!==row);children.push(row);},insertBefore(row,before){children=children.filter(x=>x!==row);children.splice(children.indexOf(before),0,row);}};
   const rows=ids.map(id=>{
@@ -192,7 +194,7 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
   cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
-  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression']);
+  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression','sun','moon']);
   assert.deepEqual(saved.readings,['temperature','feels','wind','gust']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
 });

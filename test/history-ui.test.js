@@ -1,3 +1,4 @@
+import {playbackSpeeds,lastFrameMultipliers} from '../public/weather-format.js';
 import {createWeatherReplay} from '../public/history-weather-model.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +18,7 @@ async function harness() {
   const events = {};
   const context = vm.createContext({setupArchiveCalendar:()=>({sync(){},close(){}}),comparisonLead:0,weatherReplay:null,createWeatherReplay,resetHistoricalForecast(){},paintStatus(){},timeZone:'Europe/London',recordConnection(){},$, Date: class extends Date { static now() { return now; } }, setTimeout: () => 1, clearTimeout() {},
     document: {addEventListener: (event, fn) => events[event] = fn}, window: {addEventListener: (event, fn) => events[event] = fn},
-    playbackHours:()=>hours,
+    playbackHours:()=>hours,playbackSpeeds,lastFrameMultipliers,playbackSpeed:()=>1,lastFrameMultiplier:()=>2.4,archiveSpeed:null,archiveHold:null,schedulePlayback(){},
     fetch: async url => {requests.push(url);return {ok:true, json: async () => ({start:2000000-Number(new URL(url,'http://test').searchParams.get('hours')??hours)*3600,end:2000000,complete:true,times:[2000000],frames:[{time:2000000}]})};},
     ResizeObserver: class { observe() {} }, mapIdentity: "test-map", AbortSignal, encodeURIComponent, format: () => '', clock: () => '10:30', Option: class {},
     performance, serverClock:null, archiveHours:null, archiveRevision:null, providerOverlay:false, status:null, sequence:[], sequenceEnd:null, paintProviderLabels(){}, showFrame(){}, attachWindow(frames,result,hours){frames.windowHours=hours;frames.windowEnd=result.end;return frames;}, frameLoader:{cancel(){}}, liveRequestKey:'', decodeFrames: async frames => frames, adopt: frames => adopted = frames, poll: async () => {polls++;}
@@ -137,7 +138,7 @@ test('forecast comparison persists within a visit and resets on return to Live',
 
 
 test('comparison slider updates immediately and dismissal preserves paused playback',async()=>{
- const h=await harness();await h.$('archive-show').handlers.click();h.context.pause();
+ const h=await harness();await h.$('archive-show').handlers.click();assert.equal(h.context.inspect().playing,true);h.context.pause();
  const adopted=h.adopted(),deadline=h.context.inspect().historyWindow.deadline,count=h.requests.length;
  h.$('archive-comparison').value='40';h.$('archive-comparison').handlers.input();
  assert.equal(h.context.comparisonLead,40);assert.equal(h.$('archive-comparison-value').textContent,'−40 min');
@@ -150,7 +151,7 @@ test('comparison slider updates immediately and dismissal preserves paused playb
 
 
 test('Close retains pending date/window edits without loading or unpausing; Replay uses the window',async()=>{
- const h=await harness();await h.$('archive-show').handlers.click();h.context.pause();
+ const h=await harness();await h.$('archive-show').handlers.click();assert.equal(h.context.inspect().playing,true);h.context.pause();
  const requests=h.requests.length,window=h.context.inspect().historyWindow;
  h.$('archive-day').value='2026-09-23';h.$('archive-time').value='2000000';h.$('archive-hours').value='6';h.$('archive-hours').handlers.input();
  h.$('archive-close').handlers.click();h.$('archive-dialog').handlers.close();
@@ -158,3 +159,19 @@ test('Close retains pending date/window edits without loading or unpausing; Repl
  assert.equal(vm.runInContext('pendingArchiveSelection.hours',h.context),'6');assert.equal(vm.runInContext('pendingArchiveSelection.day',h.context),'2026-09-23');
  await h.$('archive-show').handlers.click();assert.match(h.requests.at(-1),/hours=6$/);assert.equal(h.context.inspect().playing,true);
 });
+
+ test('Archive speed and hold survive close and replay, then reset on Live',async()=>{
+ const h=await harness();
+ await h.$('history-action').handlers.click();
+ h.$('archive-speed').value=String(playbackSpeeds.indexOf(0.75));h.$('archive-speed').handlers.input();
+ h.$('archive-hold').value=String(lastFrameMultipliers.indexOf(1.4));h.$('archive-hold').handlers.input();
+ await h.$('archive-show').handlers.click();assert.equal(h.$('archive-dialog').open,true);assert.equal(h.context.inspect().playing,true);h.context.pause();
+ h.$('archive-close').handlers.click();
+ await h.$('history-range').handlers.click();
+ assert.equal(h.$('archive-speed').value,String(playbackSpeeds.indexOf(0.75)));assert.equal(h.$('archive-hold').value,String(lastFrameMultipliers.indexOf(1.4)));
+ assert.equal(h.context.inspect().playing,false);
+ await h.$('archive-show').handlers.click();
+ assert.equal(h.context.archiveSpeed,0.75);assert.equal(h.context.archiveHold,1.4);
+ await h.context.goNow();
+ assert.equal(h.context.archiveSpeed,null);assert.equal(h.context.archiveHold,null);
+ });

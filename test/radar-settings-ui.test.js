@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises';
 const code=(await readFile(new URL('../public/radar-settings-ui.js',import.meta.url),'utf8')).replace('export ','');
 function fixture() {
   const nodes=new Map();let configured=false,applied=0,failApply=false;
-  function element(){return {value:'',checked:false,disabled:false,open:false,handlers:{},className:'',set id(v){nodes.set(v,this);},set innerHTML(v){},before(){},after(){},append(){},closest(){return element();},querySelector(){return this.option??=(element());},addEventListener(k,v){this.handlers[k]=v;},replaceChildren(){},reportValidity(){return true;},showModal(){this.open=true;},close(){this.open=false;},click(){return this.onclick?.();}};}
+  function element(){return {value:'',checked:false,disabled:false,open:false,handlers:{},className:'',setAttribute(){},set id(v){nodes.set(v,this);},set innerHTML(v){},before(){},after(){},append(){},closest(){return element();},querySelector(){return this.option??=(element());},addEventListener(k,v){this.handlers[k]=v;},replaceChildren(){},reportValidity(){return true;},showModal(){this.open=true;},close(){this.open=false;},click(){return this.onclick?.();}};}
   function get(id){if(id==='fixture-toggle')return null;if(!nodes.has(id))nodes.set(id,element());return nodes.get(id);}
   const context={window:{addEventListener(){},dispatchEvent(){}},Event,document:{getElementById:get,createElement:element,createTextNode:v=>v,body:{append(){}}}};
   vm.runInNewContext(code+';this.setup=setupRadarSettings;',context);

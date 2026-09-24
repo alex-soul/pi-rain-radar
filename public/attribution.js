@@ -1,8 +1,8 @@
 import {frameProvider} from './playback.js';
-export function visibleRadarSources({frame,observations=[],overviewVisible=false,currentSources={},archive=false}){
+export function visibleRadarSources({frame,observations=[],overviewVisible=false,currentSources={},archive=false,rainVisible=[true,true]}){
   const result=new Set();
   for(const [i,role] of ['main','overview'].entries()){
-    if(role==='overview'&&!overviewVisible)continue;
+    if(!rainVisible[i]||role==='overview'&&!overviewVisible)continue;
     const source=observations[i]?.source??frameProvider(frame,role)??(!archive?currentSources[role]?.source:null);
     if(['rainviewer','rainbow'].includes(source))result.add(source);
   }

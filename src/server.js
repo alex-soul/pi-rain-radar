@@ -1,4 +1,5 @@
 import {collectionRecorder,collectionPeriods} from './collection-history.js';
+import {playbackHistory} from './playback-history.js';
 import {createClouds} from './clouds.js';
 import {radarTiles,makeViews} from './map.js';
 import {disableRadarProviders,resolveRadarSources} from '../public/radar-policy.js';
@@ -100,6 +101,15 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
+  ['/suncalc.js',['suncalc.js','text/javascript']],
+  ['/suncalc-license.txt',['suncalc-license.txt','text/plain']],
+  ['/astronomy-model.js',['astronomy-model.js','text/javascript']],
+  ['/astronomy.js',['astronomy.js','text/javascript']],
+  ['/weather-trends.js',['weather-trends.js','text/javascript']],
+  ['/weather-trends-model.js',['weather-trends-model.js','text/javascript']],
+  ['/dew-point-depression.html',['dew-point-depression.html','text/html']],
+  ['/article.css',['article.css','text/css']],
+  ['/layer-preferences.js',['layer-preferences.js','text/javascript']],
   ['/layer-controls.js',['layer-controls.js','text/javascript']],
   ['/weather-readings.js',['weather-readings.js','text/javascript']],
   ['/weather-settings-ui.js',['weather-settings-ui.js','text/javascript']],
@@ -203,6 +213,12 @@ const server = createServer(async (req, res) => {
       res.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       return res.end(req.method === 'HEAD' ? undefined : JSON.stringify(result || { error: 'That history is unavailable' }));
     }
+    if(path==='/api/camera/image'){
+      const params=new URL(req.url,'http://localhost').searchParams;
+      const bytes=camera.image(params.get('source'),params.get('capture'));
+      res.writeHead(bytes?200:404,{'Content-Type':'image/jpeg','Cache-Control':'no-store'});
+      return res.end(req.method==='HEAD'?undefined:bytes??'Not found');
+    }
     if(path==='/api/camera'){
       const hours=new URL(req.url,'http://localhost').searchParams.get('hours')??'2';
       if(!['2','4','6'].includes(hours)){res.writeHead(400);return res.end();}
@@ -219,6 +235,7 @@ const server = createServer(async (req, res) => {
       checkHealth();
       const hours = new URL(req.url, "http://localhost").searchParams.get('hours') ?? '2';
       if (!['2','4','6'].includes(hours)) { res.writeHead(400); return res.end(); }
+      const liveWindow=path==='/healthz'?null:await clouds.augment(radar.status(Number(hours)),Number(hours));
       res.writeHead(200, {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",
@@ -227,7 +244,7 @@ const server = createServer(async (req, res) => {
         JSON.stringify(
           path === "/healthz"
             ? { ok: true, hasFrame: !!radar.status().frame }
-            : { ...await clouds.augment(radar.status(Number(hours)),Number(hours)), collectionPeriods:await collectionPeriods(history,Math.floor(Date.now()/1000),Number(hours)), weatherHistory:await loadWeatherHistory(history,active.settings,Math.floor(Date.now()/1000),Number(hours)),cameraHistory:await cameraHistory(history,Date.now(),Number(hours)), archiveRevision:radar.archive.revision(), appVersion:packageInfo.version, storage:storage.status(), camera:camera.status(), homeAssistant:ha.status(), weatherPolicy:weatherSettings.current(), weather: {...weather.status(),presentation:haWeather.status()}, stats: {rainbow:{...localRainbowCounts(rainbow.status().usage),monthlyLimit:radarSettings.current().monthlyLimit}}, mapId:active.id, mapUpdate:maps.status() },
+            : { ...liveWindow, ...await playbackHistory(history,active.settings,liveWindow,Number(hours)), archiveRevision:radar.archive.revision(), appVersion:packageInfo.version, storage:storage.status(), camera:camera.status(), homeAssistant:ha.status(), weatherPolicy:weatherSettings.current(), weather: {...weather.status(),presentation:haWeather.status()}, stats: {rainbow:{...localRainbowCounts(rainbow.status().usage),monthlyLimit:radarSettings.current().monthlyLimit}}, mapId:active.id, mapUpdate:maps.status() },
         ),
       );
     }

@@ -105,42 +105,29 @@ test('all integer Archive windows 1–24 are local, inclusive, and available at 
 });
 
 test('off-grid observations survive exactly; partial totals are incomplete, and time advances through zero/one/two positions', async t => {
-  const dir = await fixture(t); let clock = end * 1000;
+  const dir = await fixture(t); let clock = end * 1000 + 300000;
   const a = await open(dir, { now: () => clock });
   await a.add([record(end - 300, 'main'), record(end, 'overview')]);
   assert.deepEqual(a.live().frames.map(f => f.time), [end - 300, end]);
   assert.equal(a.live().playable, 2); assert.equal(a.live().complete, false);
-  clock += 7800000; assert.equal(a.live().playable, 1);
+  clock += 7200000; assert.equal(a.live().playable, 1);
   clock += 600000; assert.equal(a.live().playable, 0);
   assert.equal(a.live().coverage.length, 13);
   assert.ok(a.live().coverage.every(f => !f.main && !f.overview));
   assert.equal(a.live(1), null); assert.equal(a.live(24), null);
 });
 
-test('Live grace delays the endpoint but reports early partial gaps immediately', async t => {
-  const dir=await fixture(t);let clock=end*1000;
-  const a=await open(dir,{now:()=>clock});
-  await a.add(Array.from({length:14},(_,i)=>['main','overview'].map(role=>record(end-(i+1)*600,role))).flat());
-  assert.equal(a.live().end,end-600);
-  assert.equal(a.live().complete,true);
-  assert.equal(a.live().frames.length,13);
-  await a.add([record(end,'main')]);
-  let live=a.live();
-  assert.equal(live.end,end);assert.equal(live.start,end-7200);
-  assert.equal(live.frames.at(-1).overviewUrl,null);
-  assert.equal(live.coverage.at(-1).pending,false);
-  assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
-  assert.equal(a.window(end).counts.overview.missing,1);
-  assert.equal(a.window(end).complete,false);
-  clock+=599999;assert.equal(a.live().complete,false);
-  clock+=1;live=a.live();
-  assert.equal(live.end,end);assert.equal(live.coverage.at(-1).pending,false);
-  assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
-  await a.add([record(end,'overview')]);
-  assert.equal(a.live().complete,true);assert.equal(a.window(end).complete,true);
-  clock+=600000;live=a.live();
-  assert.equal(live.end,end+600);assert.equal(live.counts.main.missing,1);
-  assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
+test('Live waits for its five-minute deadline and newest missing data is Pending only in Live',async t=>{
+ const dir=await fixture(t);let clock=end*1000;const a=await open(dir,{now:()=>clock});
+ await a.add(Array.from({length:14},(_,i)=>['main','overview'].map(role=>record(end-(i+1)*600,role))).flat());
+ await a.add([record(end,'main')]);
+ assert.equal(a.live().end,end-600);assert.equal(a.live().complete,true);
+ clock+=299999;assert.equal(a.live().end,end-600);
+ clock+=1;let live=a.live();assert.equal(live.end,end);assert.equal(live.coverage.at(-1).pending,true);
+ assert.equal(live.counts.overview.missing,0);assert.equal(live.complete,true);
+ assert.equal(a.window(end).counts.overview.missing,1);assert.equal(a.window(end).complete,false);
+ clock+=600000;live=a.live();assert.equal(live.end,end+600);assert.equal(live.counts.overview.missing,1);assert.equal(live.complete,false);
+ await a.add([record(end,'overview')]);assert.equal(a.live().complete,true);
 });
 
 test('late addition patches missing half without duplicates and source transitions preserve existing slots', async t => {
@@ -154,6 +141,7 @@ test('late addition patches missing half without duplicates and source transitio
   assert.equal(old.source, 'rainviewer'); assert.equal(old.overviewSource, 'rainbow');
   clock += 600000;
   await a.add([record(end + 600, 'main', 'rainbow')]);
+  clock+=300000;
   const next = a.live().frames.at(-1);
   assert.equal(next.source, 'rainbow'); assert.equal(next.overviewUrl, null);
   assert.deepEqual(next.expectedSources, { main: 'rainbow', overview: 'rainviewer' });
@@ -205,11 +193,11 @@ test('late provider recovery fills original gaps; status ages on outage; 24-hour
   assert.equal(a.status().frame, null);
 });
 
-test('recent off-grid acquisition appears immediately rather than waiting for a grid tick', async t => {
-  const dir = await fixture(t), a = await open(dir, { now: () => (end + 350) * 1000 });
-  await a.add([record(end + 300, 'main')]);
-  assert.equal(a.live().frames.at(-1).time, end + 300);
-  assert.equal(a.live().end, end + 300);
+test('off-grid acquisition cannot advance the Live endpoint but remains available in Archive',async t=>{
+ const dir=await fixture(t);let clock=(end+350)*1000;const a=await open(dir,{now:()=>clock});
+ await a.add([record(end+300,'main')]);assert.equal(a.live().frames.length,0);assert.equal(a.live().end,end);
+ assert.equal(a.window(end+300).frames[0].time,end+300);
+ clock=(end+900)*1000;assert.equal(a.live().end,end+600);assert.equal(a.live().frames[0].time,end+300);
 });
 
 test('restart preserves source transitions, index revision and geometry isolation', async t => {

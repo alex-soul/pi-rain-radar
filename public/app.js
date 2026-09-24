@@ -1,6 +1,8 @@
-import {playbackFrameDelay} from './weather-format.js';
+import {paintAstronomy} from './astronomy.js';
+import {paintWeatherTrends,weatherTrendCredits} from './weather-trends.js';
+import {playbackSpeeds,lastFrameMultipliers,playbackFrameDelay} from './weather-format.js';
 import {updateAvailability} from './availability.js';
-import {cloudNodes,cloudUrls,updateCloudSettings} from './layer-controls.js';
+import {cloudNodes,cloudUrls,updateCloudSettings,layerVisible,updateLayerAvailability} from './layer-controls.js';
 import {acceptIntegrationStatus} from './integrations-state.js';
 import {updateCamera} from './camera-widget.js';
 import {visibleRadarSources,weatherCreditVisible} from './attribution.js';
@@ -90,6 +92,7 @@ function showExplanation(reading){
   explanation.replaceChildren(...reading.getAttribute('aria-label').split(' · ').map((text,index)=>{
     const line=document.createElement(index===0?'strong':'div');line.textContent=text;return line;
   }));
+  if(reading.querySelector('#weather-depression')){const link=document.createElement('a');link.href='/dew-point-depression.html';link.target='_blank';link.rel='noopener';link.textContent='Read about dew point depression';explanation.append(link);}
   reading.removeAttribute('title');reading.setAttribute('aria-describedby',explanation.id);
   explanation.hidden=false;positionExplanation();
 }
@@ -98,7 +101,7 @@ for(const reading of weatherDock.querySelectorAll('.weather-reading')){
   reading.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&!pinned)showExplanation(reading);});
   reading.addEventListener('pointerleave',()=>{if(!pinned&&document.activeElement!==reading)closeExplanation();});
   reading.addEventListener('focus',()=>showExplanation(reading));
-  reading.addEventListener('blur',()=>{if(explained===reading)closeExplanation();});
+  reading.addEventListener('blur',event=>{if(explained===reading&&!explanation.contains(event.relatedTarget))closeExplanation();});
   reading.addEventListener('click',()=>{if(explained===reading&&pinned)closeExplanation();else{showExplanation(reading);pinned=true;}});
   reading.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();reading.click();}});
   new MutationObserver(()=>{reading.removeAttribute('title');if(explained===reading)showExplanation(reading);}).observe(reading,{attributes:true,attributeFilter:['aria-label']});
@@ -131,6 +134,7 @@ function paintCurrentTime() {
   $("current-time").textContent = format(now.getTime() / 1000, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   $("current-time").dateTime = now.toISOString();
   paintHistoryRing();
+  paintAstronomy(historyWindow&&displayed?displayed.time*1000:Date.now());
 }
 function setClockExpanded(expanded) {
   $("clock-toggle").setAttribute("aria-expanded", String(expanded));
@@ -205,6 +209,7 @@ function paintRadarHandle(health, sources) {
   }
 }
 function paintStatus() {
+  updateLayerAvailability(status,historyWindow);
   const cameraCounts=updateCamera({status,selected:historyWindow,time:displayed?.time,hours:playbackHours()});
   paintAttribution();
   updateStats({status,cameraCounts, reachable:serverReachable, receivedAt:statsReceivedAt, selected:historyWindow, hours:playbackHours(), loading:historyLoading});
@@ -212,6 +217,9 @@ function paintStatus() {
     paintWeather(weatherReplay.weather(displayed.time),displayed.time*1000,{historical:true,operational:serverReachable?status?.weather:null});
     paintHistoricalForecast(weatherReplay,displayed.time,comparisonLead,timeZone);
   }else paintWeather(serverReachable ? status?.weather : null);
+  paintAstronomy(historyWindow&&displayed?displayed.time*1000:Date.now());
+  paintWeatherTrends({history:historyWindow?.weatherHistory??status?.weatherHistory,start:historyWindow?.start??status?.start,end:historyWindow?.end??status?.end,time:displayed?.time,state:historyWindow&&weatherReplay?weatherReplay.weather(displayed?.time):serverReachable?status?.weather:null,historical:!!historyWindow,zone:timeZone});
+  paintAttribution();
 
   const sources = Object.fromEntries(['main','overview'].map(role => [role, radarSourceHealth(status?.sources?.[role], serverReachable)]));
   const health = status?.cloudDemo?['unconfigured','Recorded cloud demo · collection stopped']:worstHealth([...Object.values(sources),cloudHandleHealth(status?.clouds,serverReachable)]);
@@ -251,11 +259,12 @@ function paintProviderLabels(frame) {
   }
 }
 function paintAttribution(){
-  const sources=visibleRadarSources({frame:displayed,observations:['main','overview'].map(role=>mapObservation(sequence,Math.max(0,sequence.indexOf(displayed)),role,!!historyWindow)),overviewVisible:!$('overview').hidden,currentSources:status?.sources,archive:!!historyWindow});
+  const sources=visibleRadarSources({rainVisible:['main','overview'].map(role=>layerVisible(role,'rain')),frame:displayed,observations:['main','overview'].map(role=>mapObservation(sequence,Math.max(0,sequence.indexOf(displayed)),role,!!historyWindow)),overviewVisible:!$('overview').hidden,currentSources:status?.sources,archive:!!historyWindow});
   $('cloud-credit').hidden=!cloudNodes.some((node,i)=>(!i||!$('overview').hidden)&&node.getAttribute('href')&&node.style.visibility==='visible');
   const dockExpanded=$('weather-dock').getAttribute('aria-expanded')==='true',credits=weatherCredits(weatherPreferences().readings);
-  $('weather-credit').hidden=!(dockExpanded&&credits.openweather||!$('rain-forecast').hidden);
-  $('ha-credit').textContent=dockExpanded&&credits.other?' · '+credits.other:'';
+  const chartCredits=$('weather-trends').hidden?{openweather:false,other:''}:weatherTrendCredits();
+  $('weather-credit').hidden=!(dockExpanded&&credits.openweather||!$('rain-forecast').hidden||chartCredits.openweather);
+  const others=[...new Set([dockExpanded?credits.other:'',chartCredits.other].filter(Boolean))];$('ha-credit').textContent=others.length?' · '+others.join(' · '):'';
   const credit=$('radar-credit'),key=[...sources].sort().join(',');
   if(credit.dataset.sources!==key){
     const providers=[['rainviewer','RainViewer','https://www.rainviewer.com/'],['rainbow','Rainbow','https://rainbow.ai/']].filter(([source])=>sources.has(source)).map(([,name,url])=>[name,url]);
@@ -267,11 +276,12 @@ function paintAttribution(){
     credit.replaceChildren(...nodes);credit.dataset.sources=key;
   }
 }
-for(const id of ['overview','rain-forecast','weather-dock'])new MutationObserver(paintAttribution).observe($(id),{attributes:true,attributeFilter:['hidden','aria-expanded']});
+window.addEventListener('radar-chart-credits',paintAttribution);
+for(const id of ['overview','rain-forecast','weather-dock','weather-trends'])new MutationObserver(paintAttribution).observe($(id),{attributes:true,attributeFilter:['hidden','aria-expanded']});
 function showFrame() {
   const next=sequence[index]??null,epoch=++renderRevision;
   const observations=['main','overview'].map(role=>mapObservation(sequence,index,role,!!historyWindow));
-  const rain=observations.map((o,i)=>status?.cloudDemo?(i===0?next?.url:null):o?.url??null);
+  const rain=observations.map((o,i)=>layerVisible(i?'overview':'main','rain')?(status?.cloudDemo?(i===0?next?.url:null):o?.url??null):null);
   const urls=[...rain,...cloudUrls(next,status?.cloudDemo,!!historyWindow)],nodes=[$('radar'),$('overview-radar'),...cloudNodes];
   renderPending=true;
   void Promise.all(urls.map(url=>url?frameLoader.prepare(url):null)).then(images=>{
@@ -295,10 +305,10 @@ function adopt(next, preservePosition = false) {
   index = preservePosition && previousTime ? nearestTimelineFrame(next, previousTime, 0) : 0;
   showFrame();
 }
-let playbackTimer;
+let playbackTimer,archiveSpeed=null,archiveHold=null;
 function schedulePlayback() {
   clearTimeout(playbackTimer);
-  playbackTimer = setTimeout(tick, playbackFrameDelay(index === sequence.length - 1,playbackSpeed(),lastFrameMultiplier()));
+  playbackTimer = setTimeout(tick, playbackFrameDelay(index === sequence.length - 1,historyWindow?(archiveSpeed??playbackSpeed()):playbackSpeed(),historyWindow?(archiveHold??lastFrameMultiplier()):lastFrameMultiplier()));
 }
 window.addEventListener('radar-playback-speed', schedulePlayback);
 function tick() {
@@ -377,7 +387,7 @@ function ageLiveWindow() {
   if(historyWindow || historyLoading || !serverClock||status?.radarDisabled||status?.cloudDemo)return;
   const now=serverClock.time+(performance.now()-serverClock.receivedAt);
   const dueThrough=liveDueThrough(now/1000);
-  const end=Math.max(dueThrough,sequenceEnd??0),start=end-sequenceHours*3600;
+  const end=dueThrough,start=end-sequenceHours*3600;
   if(end===sequenceEnd&&sequence.dueThrough===dueThrough)return;
   const borrowFrames=[...(sequence.borrowFrames??[]),...sequence].filter(f=>f.time>=start-1800&&f.time<start);
   const next=attachWindow(sequence.filter(f=>f.time>=start&&f.time<=end),{end,dueThrough,...ageLiveCoverage(sequence.coverage,start,end,dueThrough),borrowFrames},sequenceHours);
@@ -504,6 +514,7 @@ function paintHistory() {
   }
 }
 async function returnToNow() {
+  archiveSpeed=null;archiveHold=null;
   generation++;
   frameLoader.cancel(); liveRequestKey = '';
   historyWindow = null;weatherReplay=null;comparisonLead=0;resetHistoricalForecast();
@@ -552,6 +563,12 @@ async function loadArchiveDay(){
 }
 async function openHistoryPicker() {
   if(!historyWindow&&!historyLoading){archiveHours=pendingArchiveSelection?Number(pendingArchiveSelection.hours):playbackHours();providerOverlay=false;comparisonLead=0;}
+  $('archive-speed').value=String(playbackSpeeds.indexOf(archiveSpeed??playbackSpeed()));
+  $('archive-speed-value').textContent=(archiveSpeed??playbackSpeed())+'×';
+  $('archive-hold').value=String(lastFrameMultipliers.indexOf(archiveHold??lastFrameMultiplier()));
+  $('archive-hold-value').textContent=(archiveHold??lastFrameMultiplier())+'×';
+  $('archive-speed').setAttribute('aria-valuetext',(archiveSpeed??playbackSpeed())+' times');
+  $('archive-hold').setAttribute('aria-valuetext',(archiveHold??lastFrameMultiplier())+' times');
   $('archive-comparison').value=String(comparisonLead);
   $('archive-comparison-value').textContent=comparisonLead?`−${comparisonLead} min`:'None';
   $('archive-hours').value=String(archiveHours??playbackHours());
@@ -575,6 +592,10 @@ async function openHistoryPicker() {
     $('archive-feedback').textContent = archiveTimes.length ? '' : 'No stored history yet.';
     $('archive-show').disabled = !archiveTimes.length;
   } catch { $('archive-feedback').textContent = 'Archive unavailable. Please try again.'; }
+}
+for(const [id,values] of [['archive-speed',playbackSpeeds],['archive-hold',lastFrameMultipliers]]){
+ $(id).max=String(values.length-1);
+ $(id).addEventListener('input',()=>{const value=values[Number($(id).value)];if(value===undefined)return;$(id+'-value').textContent=value+'×';$(id).setAttribute('aria-valuetext',value+' times');if(id==='archive-speed')archiveSpeed=value;else archiveHold=value;if(historyWindow)schedulePlayback();});
 }
 $('archive-close').addEventListener('click', () => historyDialog.close());
 $('archive-hours').addEventListener('input',()=>{
@@ -607,7 +628,7 @@ async function loadHistory(end, preserve = false) {
     if (!next?.length) throw new Error('No readable history');
     attachWindow(next,window,hours);
     weatherReplay=createWeatherReplay(window.weatherHistory);
-    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}}, deadline: deadline ?? Date.now() + 600000 };
+    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, coverage:window.coverage, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}}, deadline: deadline ?? Date.now() + 600000 };
     archiveHours=hours;archiveRevision=status?.archiveRevision;
     returningLive = false;
     if (!preserve) playing = true;
@@ -617,7 +638,7 @@ async function loadHistory(end, preserve = false) {
     paintHistory();
     historyLoading = false;
     $('playback-window-note').textContent = '';
-    if(!preserve)historyDialog.close();
+    $('archive-feedback').textContent = '';
   } catch {
     if (epoch === generation) {
       const message = 'Could not load that window.';

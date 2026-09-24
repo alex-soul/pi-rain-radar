@@ -20,6 +20,10 @@ Bundled geography is derived from Natural Earth's public-domain datasets. See [N
 
 Optional current conditions and minute precipitation forecasts come from [OpenWeather](https://openweathermap.org/). Users supply their own One Call 4.0 key. Subscription, attribution, usage limits and data terms apply separately: see [OpenWeather terms](https://openweathermap.org/terms). The app displays linked credit when this integration is configured.
 
+## SunCalc
+
+Sun and Moon calculations use [SunCalc](https://github.com/mourner/suncalc), copyright 2026 Volodymyr Agafonkin, distributed under the BSD-2-Clause licence. The pinned browser source is bundled locally with its complete [licence notice](public/suncalc-license.txt). No external astronomy service is contacted.
+
 ## Runtime dependencies
 
 - [Sharp](https://github.com/lovell/sharp): Apache-2.0. Its native distributions include libvips and other libraries under their respective licences. Preserve their included notices when redistributing dependencies.

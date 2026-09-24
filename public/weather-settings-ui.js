@@ -39,7 +39,7 @@ function sync(){
     $('reading-source-'+id).textContent=readingSourceCaption(row);
     $('review-unit-'+id).textContent=row.reason.startsWith('Unit mismatch')?row.reason:'';
   }
-  $('shared-unit-note').textContent=shared.initialized?'Units apply to every screen.':'Adopting this screen’s saved units…';
+  $('shared-unit-note').textContent=shared.initialized?'Weather units apply to every screen. Sun and Moon display choices apply to this screen.':'Adopting this screen’s saved units…';
   for(const id of ['temperature-unit','wind-unit','visibility-unit','pressure-unit'])$(id).disabled=!shared.initialized;
 }
 async function save(input){

@@ -10,7 +10,7 @@ test('rain, clouds and timestamp commit together; obsolete scrub decodes cannot 
  const pending=new Map(),empty={};let paints=0;
  const sequence=[{time:1,url:'r1',overviewUrl:'o1',cloudUrl:'c1',overviewCloudUrl:'v1'},{time:2,url:'r2',overviewUrl:'o2',cloudUrl:'c2',overviewCloudUrl:'v2'}];
  const c=vm.createContext({sequence,index:0,renderRevision:0,renderPending:false,displayed:{time:0},historyWindow:null,status:{},mapUpdateVisible:false,
-  mapObservation:(s,i,role)=>({url:s[i][role==='main'?'url':'overviewUrl']}),cloudUrls:f=>[f.cloudUrl,f.overviewCloudUrl],cloudNodes:nodes.slice(2),
+  layerVisible:()=>true,mapObservation:(s,i,role)=>({url:s[i][role==='main'?'url':'overviewUrl']}),cloudUrls:f=>[f.cloudUrl,f.overviewCloudUrl],cloudNodes:nodes.slice(2),
   $:id=>id==='radar'?nodes[0]:id==='overview-radar'?nodes[1]:empty,
   frameLoader:{prepare(url){if(!pending.has(url)){let resolve;const promise=new Promise(r=>resolve=r);pending.set(url,{promise,resolve});}return pending.get(url).promise;}},paintProviderLabels(){},paintStatus(){paints++;}});
  vm.runInContext(code,c);c.showFrame();

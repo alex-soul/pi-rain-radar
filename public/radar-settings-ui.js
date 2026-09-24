@@ -59,12 +59,22 @@ export function setupRadarSettings(canEdit,request) {
     finally{busy=false;buttons();}
   }
   $('rainbow-save').onclick=()=>key(false);$('rainbow-remove').onclick=()=>key(true);
+  const limitSave=document.createElement('button');limitSave.id='rainbow-limit-save';limitSave.type='button';limitSave.textContent='Save usage limit';
+  const limitNote=document.createElement('p');limitNote.id='rainbow-limit-note';limitNote.setAttribute('role','status');$('rainbow-config').append(limitSave,limitNote);
+  limitSave.onclick=async()=>{
+    if(!canEdit()||busy||$('rainbow-cap').checked&&!$('rainbow-limit').reportValidity())return;
+    busy=true;limitSave.disabled=true;limitNote.textContent='Saving…';
+    try{
+      const response=await request('');if(!response.ok)throw Error('Could not read current settings.');const {radar}=await response.json();
+      const saved=await request('/radar',{...radar,monthlyLimit:$('rainbow-cap').checked?Number($('rainbow-limit').value):null});
+      const result=await saved.json();if(!saved.ok)throw Error(result.error??'Could not save usage limit.');limitNote.textContent='Saved. Applies to Rainbow rain and clouds together.';
+    }catch(e){limitNote.textContent=e.message;}finally{busy=false;limitSave.disabled=false;availability();}
+  };
   $('radar-apply').onclick=async()=>{
     if(!canEdit()||busy)return;const epoch=generation;
-    if($('rainbow-cap').checked&&!$('rainbow-limit').reportValidity())return;
     busy=true;$('radar-apply').disabled=true;$('radar-source-note').textContent='Preparing sources…';
     const selected={main:$('radar-main-source').value,overview:$('radar-overview-source').value};
-    try{const response=await request('/radar',{waitForSettle:$('radar-settling').checked,main:$('radar-main-source').value,overview:$('radar-overview-source').value,monthlyLimit:$('rainbow-cap').checked?Number($('rainbow-limit').value):null});const result=await response.json();if(epoch!==generation)return;if(response.status===401){$('settings-dialog').close();return;}if(response.ok){appliedSources=selected;window.dispatchEvent(new Event('radar-sources-change'));}$('radar-source-note').textContent=response.ok?'Sources applied.':result.error||'Could not apply sources.';}
+    try{const response=await request('/radar',{waitForSettle:$('radar-settling').checked,main:$('radar-main-source').value,overview:$('radar-overview-source').value});const result=await response.json();if(epoch!==generation)return;if(response.status===401){$('settings-dialog').close();return;}if(response.ok){appliedSources=selected;window.dispatchEvent(new Event('radar-sources-change'));}$('radar-source-note').textContent=response.ok?'Sources applied.':result.error||'Could not apply sources.';}
     catch{if(epoch===generation)$('radar-source-note').textContent='Could not confirm the update. Reopen Settings to check.';}
     finally{busy=false;availability();}
   };

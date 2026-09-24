@@ -1,3 +1,4 @@
+import {trendFixture} from './dev-weather-trends.mjs';
 import {syntheticAvailability,syntheticMedia} from './dev-availability.mjs';
 import {loadForecastRecording,applyForecastRecording} from './dev-forecast-recording.mjs';
 import {disableRadarProviders,maskLiveRadar} from '../public/radar-policy.js';
@@ -131,7 +132,8 @@ const server=http(async(req,res)=>{
       if(next==='forecast-recorded'&&!recording){res.writeHead(409);return res.end('Restart with --forecast-recording and a local export.');}
       if(next!==scenario && ['weather-first','weather-second'].includes(next))scenarioLog.record('weather-error');
       await devWeather.scenario(next);
-      if(next==='rc2-review')await devCamera.ready();
+      scenario=next;
+      if(next==='rc2-review'||next.startsWith('camera-')){await devCamera.ready();await devCamera.camera.configure({enabled:true});}
       if(next==='radar-disabled')demoRadar={...demoRadar,main:'disabled',overview:'same'};
       else if(next==='radar-overview-only')demoRadar={...demoRadar,main:'disabled',overview:'rainviewer'};
       else if(next==='healthy')demoRadar={...demoRadar,main:'rainviewer',overview:'same'};
@@ -164,6 +166,7 @@ const server=http(async(req,res)=>{
       res.writeHead(result.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(result));
     }
     if(path.pathname==='/api/settings/camera'||path.pathname.startsWith('/api/settings/camera/'))return await devCamera.handle(req,res,path.pathname);
+    if(path.pathname==='/api/camera/image'){const bytes=devCamera.camera.image(path.searchParams.get('source'),path.searchParams.get('capture'));res.writeHead(bytes?200:404,{'Content-Type':'image/jpeg','Cache-Control':'no-store'});return res.end(bytes??'Not found');}
     if(path.pathname==='/api/camera')return send(await devCamera.camera.live(Number(path.searchParams.get('hours')??2),path.searchParams.has('end')?Number(path.searchParams.get('end'))*1000:undefined));
     if(/^\/archive\/media\/[a-f0-9-]+\/\d+\/\d+-[a-f0-9-]+\.(png|jpg|webp)$/.test(path.pathname)){
       // Only generated camera assets use the fixture's separate managed store.
@@ -196,7 +199,7 @@ const server=http(async(req,res)=>{
       if(!['disabled','rainviewer','rainbow'].includes(next.main)||!['same','disabled','rainviewer','rainbow'].includes(next.overview)){res.writeHead(400);return res.end('{}');}
       const enabled=source=>source==='disabled'||policy[source+'Collect']&&(source!=='rainbow'||demoKey);
       if(!enabled(next.main)||!enabled(next.overview==='same'?next.main:next.overview)){res.writeHead(400);return res.end(JSON.stringify({error:'Enable the selected provider first.'}));}
-      demoRadar=next;return send({status:200});
+      demoRadar={...demoRadar,...next};return send({status:200});
     }
     if((trial&&['/api/settings/clouds','/api/settings/rainbow'].includes(path.pathname)||['/api/settings/unlock','/api/settings/lock','/api/settings/activity','/api/settings/pin','/api/settings/embed','/api/settings/storage'].includes(path.pathname))&&req.method==='POST') {
       let body='';for await(const chunk of req)body+=chunk;
@@ -211,6 +214,7 @@ const server=http(async(req,res)=>{
       let data=filterWindow(await response.json());
       if(path.pathname==='/api/status'){
         data.camera=devCamera.camera.status();
+        data.cameraHistory=await devCamera.camera.live(Number(path.searchParams.get('hours')??2),data.end*1000);
         if(scenario==='archive-rollover'&&data.storage)data.storage={...data.storage,pressure:true,oldest:(end-21600)*1000};
         data.archiveRevision=`fixture-${revision}-${data.archiveRevision}`;
         if(data.sources)for(const source of Object.values(data.sources)){source.time=Math.floor(Date.now()/600000)*600;source.checkedAt=new Date(end*1000).toISOString();source.nextCheckAt=Math.ceil(Date.now()/300000)*300000;source.state=scenario==='source-error'?'warning':'ready';source.error=scenario==='source-error'?'Synthetic provider unavailable':null;}
@@ -238,10 +242,11 @@ const server=http(async(req,res)=>{
         observeScenario(data.sources,data.weather);
       }
       if(scenario.startsWith('availability-'))data=syntheticAvailability(data,{scenario,archive:path.pathname==='/api/archive'});
-      if(scenario==='rc2-review'){
+      if(scenario==='rc2-review'||scenario==='weather-trends'||scenario.startsWith('camera-')){
         const {weatherPolicy,camera,cameraHistory}=data;
         data={...syntheticAvailability(data,{scenario:'availability-healthy',archive:path.pathname==='/api/archive'}),weatherPolicy,camera,cameraHistory};
       }
+      if(scenario==='weather-trends')data=trendFixture(data);
       if(scenario==='forecast-recorded'&&recording)data=applyForecastRecording(data,recording);
       res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(data));
     }

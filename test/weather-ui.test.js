@@ -41,7 +41,7 @@ test('Rain forecast uses baselines for zero and missing minutes, and replaces fa
 test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   assert.equal(f.nodes.get('weather-visibility').textContent,'0');assert.equal(f.nodes.get('weather-uv').textContent,'0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
-  for(const [id,name] of Object.entries(format.readingNames))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
+  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
   assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
   const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);
   for(const convention of ['flow','meteorological'])for(const value of [0,0.1,45,179.9,180,245.25,359.9,360]) {
@@ -62,7 +62,7 @@ test('current values tolerate one failed poll while gust age and acquisition rem
   f.setMinutes(60);f.paint({...s,gust:{mph:0,time:s.gust.time}},now);assert.doesNotMatch(f.nodes.get('weather-gust').title,/Acquired/,'legacy acquisition time is not invented');
   f.paint(s,now+1800000);assert.equal(f.nodes.get('weather-gust').textContent,'—');assert.equal(f.nodes.get('weather-temperature').textContent,'—');
   f.paint(state(),now);assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
-  f.paint({configured:false},now);for(const id of Object.keys(format.readingNames))assert.equal(f.nodes.get('weather-'+id).textContent,'—');
+  f.paint({configured:false},now);for(const id of Object.keys(readings.weatherReadings(null,now)))assert.equal(f.nodes.get('weather-'+id).textContent,'—');
 });
 
 test('gust cache Off keeps current gusts but never retained fallback',()=>{

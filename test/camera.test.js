@@ -12,7 +12,7 @@ import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {settingsRoutes,createSettingsAuth,setPin} from '../src/settings-auth.js';
 
-const initial=Date.now(),minute=60000;
+const initial=Math.floor(Date.now()/600000)*600000,minute=60000;
 const direct={name:'Drive',mode:'direct',url:'http://camera.test/image?key=secret',auth:{mode:'basic',username:'user',password:'secret'}};
 const png=await sharp({create:{width:64,height:48,channels:3,background:'#123456'}}).png().toBuffer();
 async function fixture(t,options={}){
@@ -67,7 +67,8 @@ test('camera source changes preserve continuous archive, exact lookback and wind
   const f=await fixture(t),c=f.camera;let draft=await c.test(direct);await c.configure({ticket:draft.ticket,enabled:true});await idle(c);
   const first=c.status().source;f.setTime(initial+5*minute);draft=await c.test({...direct,url:'http://camera.test/other'});await c.configure({ticket:draft.ticket,enabled:true});await idle(c);
   assert.notEqual(c.status().source,first);
-  const h=await cameraHistory(f.store,initial+5*minute,2);assert.equal(h.records.length,2);assert.equal((await c.live()).counts.acquisition,1);
+  f.setTime(initial+10*minute);await c.collect();
+  const h=await cameraHistory(f.store,initial+10*minute,2);assert.equal(h.records.length,2);assert.equal((await c.live()).counts.acquisition,1);
   assert.equal(matchCamera(h.records,initial-1),null);assert.equal(matchCamera(h.records,initial+15*minute).time,initial+5*minute);assert.equal(matchCamera(h.records,initial+15*minute+1),null);
   assert.deepEqual(cameraCounts(h.records,initial+1,initial+5*minute),{metadata:0,acquisition:1});
   assert.equal(h.records[0].asset.startsWith('/archive/media/'),true);
@@ -105,7 +106,7 @@ test('disable cancels a running poll without publication and expired drafts cann
   }}),c=f.camera;
   const d=await c.test(direct);await c.configure({ticket:d.ticket,enabled:true});await idle(c);
   const source=c.status().source;
-  slow=true;f.setTime(initial+5*minute);const poll=c.collect();await c.configure({enabled:false});await poll;
+  slow=true;f.setTime(initial+5*minute);const poll=c.collect();await new Promise(r=>setTimeout(r,30));await c.configure({enabled:false});await poll;
   assert.equal(stopped,true);assert.equal(c.status().enabled,false);assert.equal((await cameraHistory(f.store,initial+5*minute,2)).records.length,1);
   slow=false;const replacement=await c.test({...direct,url:'http://camera.test/new'});f.setTime(initial+11*minute);
   await assert.rejects(c.configure({ticket:replacement.ticket,enabled:true}),{code:'CAMERA_DRAFT'});assert.equal(c.status().source,source);assert.equal(c.preview(replacement.ticket),null);
@@ -141,3 +142,11 @@ test('name-only camera edits preserve secret connection and identity, allow blan
  await c.close();await f.open();assert.equal(f.camera.status().name,'');assert.equal(f.camera.status().source,saved.source);
  await assert.rejects(f.camera.configure({name:'New',url:'http://other.test/'}),{code:'CAMERA_CONFIG'});
 });
+
+ test('capture interval validates 1-10 minutes and persists independently of identity',async t=>{
+ const f=await fixture(t),c=f.camera,d=await c.test(direct);await c.configure({ticket:d.ticket,enabled:true,intervalMinutes:1});await idle(c);
+ assert.equal(c.status().intervalMinutes,1);assert.equal(c.status().nextCollection,initial+minute);
+ for(const intervalMinutes of [0,11,1.5,'2'])await assert.rejects(c.configure({enabled:true,intervalMinutes}),{code:'CAMERA_CONFIG'});
+ await c.configure({enabled:true,intervalMinutes:10});await idle(c);assert.equal(c.status().nextCollection,initial+10*minute);
+ await c.close();await f.open();assert.equal(f.camera.status().intervalMinutes,10);
+ });

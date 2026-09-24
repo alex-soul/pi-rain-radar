@@ -1,11 +1,11 @@
 // Publication grace applies only to Live, never to stored Archive windows.
 export function liveDueThrough(clockSeconds) {
-  return Math.floor(clockSeconds / 600) * 600 - 600;
+  return Math.floor((clockSeconds - 300) / 600) * 600;
 }
 
-export function classifyCoverage(coverage) {
-  // Grace delays the endpoint only. Every visible slot reports actual availability.
-  coverage = coverage.map(slot => ({ ...slot, pending: false }));
+export function classifyCoverage(coverage, pendingTime = null) {
+  // Only the newest Live slot gets publication grace; Archive passes no endpoint.
+  coverage = coverage.map(slot => ({ ...slot, pending: slot.time === pendingTime }));
   const counts = Object.fromEntries(['main', 'overview'].map(role => [role, {
     available: coverage.filter(slot => slot[role]).length,
     missing: coverage.filter(slot => !slot[role] && !slot.pending && slot.sources?.[role]!=='disabled').length,

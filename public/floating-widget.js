@@ -38,17 +38,18 @@ function layout() {
 }
 function paint() {
   panel.hidden = !visible;
-  toggle.setAttribute("aria-pressed", String(visible));
-  toggle.setAttribute("aria-label", `${visible ? "Hide" : "Show"} ${toggle.dataset.widgetName || "Rain forecast"}`);
+  toggle?.setAttribute("aria-pressed", String(visible));
+  toggle?.setAttribute("aria-label", `${visible ? "Hide" : "Show"} ${toggle.dataset.widgetName || "Rain forecast"}`);
   layout();
   onVisibility(visible);
 }
-toggle.addEventListener("click", () => { visible = !visible; paint(); if (visible) raise(); save(); });
-document.getElementById(`${id}-close`)?.addEventListener("click", () => { visible = false; paint(); save(); toggle.focus(); });
+toggle?.addEventListener("click", () => { visible = !visible; paint(); if (visible) raise(); save(); });
+document.getElementById(`${id}-close`)?.addEventListener("click", () => { visible = false; paint(); save(); toggle?.focus(); });
 let drag = null;
 handle.addEventListener("pointerdown", event => {
   if (event.button !== 0 || !event.isPrimary) return;
   if (event.target.closest("button")) return;
+  const plots=event.target.closest("#trend-plots");if(plots&&plots.scrollHeight>plots.clientHeight)return;
   panel.focus({ preventScroll: true });
   const rect = panel.getBoundingClientRect();
   drag = { id: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top, x: event.clientX, y: event.clientY, moved: false };
@@ -119,5 +120,5 @@ window.addEventListener("radar-screen-lock", () => {
   }
 });
 
-return {isVisible: () => visible};
+return {isVisible: () => visible, setVisible(value) {visible=!!value;paint();}};
 }

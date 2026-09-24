@@ -72,7 +72,7 @@ export async function createRadarHistory(store,views,{now=Date.now,selection}){
   }
   await reload();
   async function observe(clock=now()){
-    const end=Math.max(liveDueThrough(clock/1000),...liveRows.filter(r=>r.time<=clock).map(r=>r.time/1000)),updates=[];
+    const end=Math.max(Math.floor(clock/600000)*600-600,...liveRows.filter(r=>r.time<=clock).map(r=>r.time/1000)),updates=[];
     const times=new Set(liveRows.filter(r=>r.time>=end*1000-21600000&&r.time<=clock).map(r=>r.time/1000));
     for(let t=Math.ceil((end-21600)/600)*600;t<=end;t+=600)times.add(t);
     for(const t of times)for(const role of roles){
@@ -112,9 +112,9 @@ export async function createRadarHistory(store,views,{now=Date.now,selection}){
     },
     live(hours=2){
       if(![2,4,6].includes(hours))return null;
-      const gridEnd=liveDueThrough(now()/1000),end=Math.max(gridEnd,...[...fallback,...liveRows].filter(r=>r.time<=now()).map(r=>r.time/1000));
+      const gridEnd=liveDueThrough(now()/1000),end=gridEnd;
       const start=end-hours*3600,data={rows:[...fallback,...liveRows],held:fallback,events:incidents,changes:transitions},result=window(data,start,end);
-      return {...result,...classifyCoverage(result.coverage,gridEnd),counts:result.counts,dueThrough:gridEnd,borrowFrames:window(data,start-1800,start-1).frames,serverTime:now(),cadenceSeconds:600};
+      return {...result,...classifyCoverage(result.coverage,gridEnd),counts:Object.fromEntries(roles.map(role=>[role,{...result.counts[role],...classifyCoverage(result.coverage,gridEnd).counts[role]}])),dueThrough:gridEnd,borrowFrames:window(data,start-1800,start-1).frames,serverTime:now(),cadenceSeconds:600};
     },
   };
 }

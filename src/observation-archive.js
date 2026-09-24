@@ -157,7 +157,8 @@ export async function createObservationArchive(directory, views, { now = Date.no
   }
   // Only observe the running session; never manufacture incidents during downtime.
   function observe(clock = now()/1000) {
-    const due = liveDueThrough(clock);
+    // Retain the existing diagnostic incident deadline independently of display grace.
+    const due = Math.floor(clock/600)*600-600;
     const end = Math.max(due, frames(due,clock).at(-1)?.time ?? due);
     const times = new Set(frames(end-21600,end).map(f=>f.time));
     for(let time=Math.ceil((end-21600)/600)*600;time<=end;time+=600) times.add(time);
@@ -264,11 +265,11 @@ export async function createObservationArchive(directory, views, { now = Date.no
     live(hours = 2) {
       if (![2, 4, 6].includes(hours)) return null;
       const clock = Math.floor(now() / 1000), gridEnd = liveDueThrough(clock);
-      // Do not hide an already acquired off-grid observation until the next tick.
-      const end = Math.max(gridEnd, frames(gridEnd, clock).at(-1)?.time ?? gridEnd);
+      // Available observations never advance the clock-driven Live endpoint.
+      const end = gridEnd;
       const start=end-hours*3600;
       const result = window(start, end);
-      return { ...result, ...classifyCoverage(result.coverage, gridEnd), counts: result.counts, dueThrough: gridEnd,
+      return { ...result, ...classifyCoverage(result.coverage, gridEnd), counts: Object.fromEntries(roles.map(role=>[role,{...result.counts[role],...classifyCoverage(result.coverage,gridEnd).counts[role]}])), dueThrough: gridEnd,
         borrowFrames: frames(start-1800, start-1), serverTime: now(), cadenceSeconds: 600 };
     },
   };

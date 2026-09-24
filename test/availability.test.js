@@ -14,3 +14,11 @@ test('healthy, prolonged gaps, disabled sources, failures and recovery are disti
  assert.equal(rows('availability-failed').length,4);assert.ok(rows('availability-failed').every(r=>r.segments.some(s=>s.health==='error')));
  assert.ok(rows('availability-recovered').every(r=>r.segments.every(s=>s.health==='ready')));
 });
+
+test('newest missing Live samples are Pending, older gaps and Archive remain errors',()=>{
+ const data={collectionPeriods:[{time:start-600,camera:true,rain:true}]},status={camera:{enabled:true}};
+ for(const archive of [false,true]){
+  const result=availabilityRows({frames:[],data,status,archive,start,end});
+  for(const row of result){assert.equal(row.segments.at(-1).health,archive?'error':'pending');assert.ok(row.segments.slice(0,-1).some(s=>s.health==='error'));}
+ }
+});

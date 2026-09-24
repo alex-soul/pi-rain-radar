@@ -16,7 +16,7 @@ test('disabled views stop acquisition, clear Live and preserve historical radar 
  const store=await createHistoryStore(dir,{now:time+2*86400000});t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
  const png=await sharp({create:{width:256,height:256,channels:4,background:'#abc'}}).png().toBuffer();let calls=0,selected={main:'rainviewer',overview:'same'};
  const provider={getHistory:async()=>{calls++;return [{time:time/1000}];},getTile:async()=>png};
- const options={store,views,now:()=>time,waitForSettle:()=>false,selection:()=>selected};
+ const options={store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>selected};
  let radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},options);await radar.refresh();const oldEnd=time/1000;
  assert.ok(radar.status().frame.url);assert.ok(radar.status().frame.overviewUrl);
  time+=600000;let next={main:'disabled',overview:'same'};

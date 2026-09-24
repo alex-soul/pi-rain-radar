@@ -15,5 +15,5 @@ export function maskLiveRadar(live,selection){
   const frames=mask(live.frames),coverage=(live.coverage??[]).map(slot=>({...slot,main:off('main')?false:slot.main,overview:off('overview')?false:slot.overview,sources:{...slot.sources,...sources}}));
   const counts=Object.fromEntries(['main','overview'].map(role=>[role,off(role)?{tracked:0,gapsSeen:0,lateArrivals:0,available:0,missing:0,total:0}:live.counts?.[role]]));
   return {...live,frames,frame:frames.at(-1)??null,borrowFrames:mask(live.borrowFrames),coverage,counts,playable:frames.length,
-    radarDisabled:off('main')&&off('overview'),complete:coverage.every(slot=>['main','overview'].every(role=>off(role)||slot[role]))};
+    radarDisabled:off('main')&&off('overview'),complete:coverage.every(slot=>slot.pending||['main','overview'].every(role=>off(role)||slot[role]))};
 }

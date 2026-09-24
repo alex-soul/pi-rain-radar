@@ -8,7 +8,7 @@ let description = 'Current weather unavailable', signature = '';
 let currentRows=null;
 export function weatherCredits(visibleReadings){
   const credits=new Set();let openweather=false;
-  for(const id of new Set(visibleReadings.flatMap(id=>id==='depression'?['temperature','dew']:[id]))){const row=currentRows?.[id];
+  for(const id of new Set(visibleReadings.filter(id=>!['sun','moon'].includes(id)).flatMap(id=>id==='depression'?['temperature','dew']:[id]))){const row=currentRows?.[id];
     if(!row||row.source==='openweather'||row.expected==='openweather')openweather=true;
     if(row?.expected==='ha'&&row.attribution)credits.add(row.attribution);
   }

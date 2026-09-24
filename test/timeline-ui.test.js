@@ -10,11 +10,11 @@ const frames = Array.from({length:13}, (_,i)=>({time:60000+i*600,url:`/m${i}`,ov
 test('speed changes replace the timeout, scale final hold and do not unpause or advance the frame', () => {
   let speed=1, nextId=0;
   const timers=new Map(), events={};
-  const c=vm.createContext({sequence:frames,index:3,playing:false,pending:null,
+  const c=vm.createContext({historyWindow:null,sequence:frames,index:3,playing:false,pending:null,
     playbackFrameDelay,lastFrameMultiplier:()=>2.4,playbackSpeed:()=>speed, window:{addEventListener:(name,fn)=>events[name]=fn},
     setTimeout:(fn,delay)=>{timers.set(++nextId,{fn,delay});return nextId;},clearTimeout:id=>timers.delete(id),
     showFrame(){},adopt(){}});
-  vm.runInContext(app.slice(app.indexOf('let playbackTimer;'),app.indexOf('$("play").addEventListener')),c);
+  vm.runInContext(app.slice(app.indexOf('let playbackTimer,'),app.indexOf('$("play").addEventListener')),c);
   c.schedulePlayback(); assert.equal([...timers.values()][0].delay,650);
   speed=2; events['radar-playback-speed'](); assert.equal(timers.size,1);assert.equal([...timers.values()][0].delay,325);
   assert.equal(c.index,3);assert.equal(c.playing,false);

@@ -52,7 +52,7 @@
 [id^="review-"][data-health="neutral"]::before {background:#8e9b96;}
 [id^="review-"][data-health="error"]::before {background:#c77777;}
 [id^="review-"][data-health="warning"]::before {background:#c49343;}
-#control-list {display:grid;grid-template-rows:repeat(4,auto);grid-auto-flow:column;grid-template-columns:repeat(2,minmax(0,1fr));}
+#control-list {display:grid;grid-template-rows: none; grid-auto-flow: row;grid-template-columns:repeat(2,minmax(0,1fr));}
 #control-list li {min-width:0;}
 #control-list label {overflow-wrap:anywhere;}
 .camera-caption {align-items:center;box-sizing:border-box;flex:none;}

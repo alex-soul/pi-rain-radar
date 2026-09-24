@@ -6,7 +6,7 @@ export const availabilityCases=[
  ['availability-gaps','Short gaps','Main rain and Overview clouds each miss isolated frames.','Live borrows in amber; the same Archive timestamps are red with blank affected overlays.'],
  ['availability-outage','Long gaps','Rain, clouds, weather and camera each have a prolonged gap.','Red marks missing data after the Live reuse limit. Tap red segments for source details.'],
  ['availability-disabled','Optional sources off','Weather, camera and clouds are currently disabled; their stored history remains.','Live shows Rain only. Archive restores all four historical rows.'],
- ['availability-failed','Enabled but failing','Optional acquisition remains enabled but recent observations are absent.','Rows remain visible with gaps, rather than disappearing on failure.'],
+ ['availability-failed','Enabled but failing','Optional acquisition remains enabled but recent observations are absent.','Newest unavailable samples are grey Pending in Live; older gaps remain red. Archive has no Pending grace. Provider failures remain visible.'],
  ['availability-slow','Slow images','Synthetic images take 700ms to arrive.','Previous images stay visible while the replacement decodes. Try fast scrubbing and camera Archive playback.'],
  ['availability-recovered','All layers recovered','Restore complete history and healthy current collection.','All rows return to teal; playback and images recover without a reload.']
 ];
