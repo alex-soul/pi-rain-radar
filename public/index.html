@@ -54,7 +54,7 @@
         <text x="{{SCALE_X}}" y="625">{{SCALE_LABEL}}</text>
       </svg>
       <header>
-        <button id="weather-dock" type="button" aria-expanded="true" aria-controls="weather-details" aria-label="Collapse weather readings">
+        <div id="weather-dock" role="group" aria-expanded="true" aria-label="Weather readings">
           <svg class="weather-shape" viewBox="0 0 540 62" preserveAspectRatio="none" aria-hidden="true"><path id="weather-outline" d="M0 0H540Q532 0 526 6L498 34Q488 44 476 44H308Q303 44 299 48L291 56Q285 62 279 62H261Q255 62 249 56L241 48Q237 44 232 44H64Q52 44 42 34L14 6Q8 0 0 0Z"/></svg>
           <span id="weather-details" class="weather-details">
             <span class="weather-details-inner">
@@ -77,6 +77,7 @@
                 </span>
 <span class="weather-reading" aria-label="Humidity unavailable" title="Humidity" hidden><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M14 3C10 9 6 13 6 18a8 8 0 0 0 16 0c0-5-4-9-8-15Z"/></svg><span id="weather-humidity">—</span></span>
 <span class="weather-reading" aria-label="Dew point unavailable" title="Dew point" hidden><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 4v13a4 4 0 1 0 6 0V4a3 3 0 0 0-6 0ZM22 10c-3 4-4 5-4 7a4 4 0 0 0 8 0c0-2-1-3-4-7Z"/></svg><span id="weather-dew">—</span></span>
+<span class="weather-reading" hidden aria-label="Dew point depression unavailable"><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 4v13a4 4 0 1 0 6 0V4a3 3 0 0 0-6 0ZM19 10h7m-7 8h7m-3-8v8"/></svg><span id="weather-depression">—</span></span>
 <span class="weather-reading" hidden aria-label="Visibility unavailable"><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14s4-7 11-7 11 7 11 7-4 7-11 7S3 14 3 14Z"/><circle cx="14" cy="14" r="3.5"/></svg><span><span id="weather-visibility">—</span><small id="weather-visibility-unit"></small></span></span>
 <span class="weather-reading" hidden aria-label="Pressure unavailable"><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v10m-3-3 3 3 3-3M14 3v10m-3-3 3 3 3-3M21 3v10m-3-3 3 3 3-3M4 19c6-4 14 4 20 0M4 24c6-4 14 4 20 0"/></svg><span><span id="weather-pressure">—</span><small id="weather-pressure-unit"></small></span></span>
 <span class="weather-reading" hidden aria-label="UV index unavailable"><svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="14" cy="14" r="5"/><path d="M14 2v3m0 18v3M2 14h3m18 0h3M5.5 5.5l2 2m13 13 2 2m0-17-2 2m-13 13-2 2"/></svg><span><span id="weather-uv">—</span><small id="weather-uv-unit"></small></span></span>
@@ -84,8 +85,8 @@
               </span>
             </span>
           </span>
-          <span class="weather-grip" aria-hidden="true"></span>
-        </button>
+          <button id="weather-handle" type="button" aria-expanded="true" aria-controls="weather-details" aria-label="Collapse weather readings"><span class="weather-grip" aria-hidden="true"></span></button>
+        </div>
         <div class="map-controls">
           <button id="clock-toggle" class="live-clock" type="button" aria-expanded="true" aria-controls="current-time" aria-label="Hide current {{TIME_ZONE}} time" title="Current time · {{TIME_ZONE}} time">
             <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -101,6 +102,7 @@
         <button id="overview-toggle" type="button" aria-label="Show map overview" aria-pressed="false" aria-controls="overview">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6-2v16m6-14v16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </button>
+        <button id="cloud-toggle" type="button" aria-label="Clouds — preview control" title="Clouds — preview control" aria-pressed="false"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 18a4 4 0 0 1-.5-8A6 6 0 0 1 17 8a5 5 0 0 1 1 10Z"/></svg></button>
         <button id="camera-toggle" type="button" data-widget-name="Camera" aria-label="Show Camera" aria-pressed="false" aria-controls="camera"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg></button>
         <button id="rain-forecast-toggle" type="button" aria-label="Show Rain forecast" aria-pressed="false" aria-controls="rain-forecast">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M5 11a4 4 0 0 1 1-7 5 5 0 0 1 9 1 3 3 0 0 1 3 6H5M5 17v3m5-6v6m5-4v4m5-6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -110,7 +112,7 @@
         </div>
       </header>
       <dialog id="archive-dialog" aria-labelledby="archive-title">
-        <div class="archive-heading"><h2 id="archive-title">Archive</h2><button id="archive-close" type="button" aria-label="Close Archive">×</button></div>
+        <h2 id="archive-title" class="sr-only">Archive</h2>
         <div class="archive-fields"><label>Date <input id="archive-day" type="hidden"><button id="archive-date-toggle" type="button" aria-expanded="false" aria-controls="archive-calendar">Choose date</button></label>
         <label>Time <select id="archive-time"></select></label>
         <section id="archive-calendar" aria-label="Choose archive date" hidden>
@@ -121,11 +123,11 @@
         <label for="archive-hours">Playback window <output id="archive-hours-value" for="archive-hours">2 h</output></label>
         <input id="archive-hours" type="range" min="1" max="24" step="1" value="2" aria-label="Archive playback window in hours">
         <label for="archive-comparison">Forecast comparison <output id="archive-comparison-value" for="archive-comparison">None</output></label>
-        <input id="archive-comparison" type="range" min="0" max="60" step="10" value="0" dir="rtl" aria-label="Forecast comparison in minutes">
+        <input id="archive-comparison" type="range" min="0" max="50" step="10" value="0" dir="rtl" aria-label="Forecast comparison in minutes">
         <label class="archive-provider-option" for="archive-provider">Show map providers<input id="archive-provider" type="checkbox" class="control-switch" role="switch"></label>
         <p id="archive-feedback" role="status"></p>
 
-        <div class="archive-actions"><button id="archive-show" type="button">Show</button></div>
+        <div class="archive-actions"><button id="archive-show" type="button">Replay</button><button id="archive-close" type="button">Close</button></div>
       </dialog>
       <dialog id="settings-dialog" aria-labelledby="settings-title">
         <div class="settings-heading">
@@ -140,7 +142,7 @@
           <button id="settings-close" type="button" aria-label="Close settings">×</button>
         </div>
         <div id="pin-panel" class="settings-content">
-          <p id="pin-message" role="status">Enter your settings PIN</p>
+          <p id="pin-message" role="status"></p>
           <div id="pin-dots" aria-label="0 of 6 digits entered">○ ○ ○ ○ ○ ○</div>
           <div id="pin-keypad" aria-label="PIN keypad">
             <button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button>
@@ -193,20 +195,20 @@
 <li data-reading-row="gust"><button class="control-handle" type="button" aria-label="Move Wind gusts reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-gust">Wind gusts</label><input id="reading-gust" data-reading-choice="gust" class="control-switch" type="checkbox" role="switch" aria-label="Show Wind gusts reading" /></li>
 <li data-reading-row="humidity"><button class="control-handle" type="button" aria-label="Move Humidity reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-humidity">Humidity</label><input id="reading-humidity" data-reading-choice="humidity" class="control-switch" type="checkbox" role="switch" aria-label="Show Humidity reading" /></li>
 <li data-reading-row="dew"><button class="control-handle" type="button" aria-label="Move Dew point reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-dew">Dew point</label><input id="reading-dew" data-reading-choice="dew" class="control-switch" type="checkbox" role="switch" aria-label="Show Dew point reading" /></li>
+<li data-reading-row="depression"><button class="control-handle" type="button" aria-label="Move T−Td reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-depression">T−Td</label><input id="reading-depression" data-reading-choice="depression" class="control-switch" type="checkbox" role="switch" aria-label="Show T−Td reading" /></li>
 <li data-reading-row="direction"><button class="control-handle" type="button" aria-label="Move Wind direction reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-direction">Wind direction</label><input id="reading-direction" data-reading-choice="direction" class="control-switch" type="checkbox" role="switch" aria-label="Show Wind direction reading" /></li>
 <li data-reading-row="visibility"><button class="control-handle" type="button" aria-label="Move Visibility reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-visibility">Visibility</label><input id="reading-visibility" data-reading-choice="visibility" class="control-switch" type="checkbox" role="switch" aria-label="Show Visibility reading" /></li><li data-reading-row="pressure"><button class="control-handle" type="button" aria-label="Move Pressure reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-pressure">Pressure</label><input id="reading-pressure" data-reading-choice="pressure" class="control-switch" type="checkbox" role="switch" aria-label="Show Pressure reading" /></li><li data-reading-row="uv"><button class="control-handle" type="button" aria-label="Move UV index reading. Drag or use up and down arrow keys.">⠿</button><label for="reading-uv">UV index</label><input id="reading-uv" data-reading-choice="uv" class="control-switch" type="checkbox" role="switch" aria-label="Show UV index reading" /></li></ol><p id="reading-feedback" role="status"></p></fieldset>
           </section>
           <section id="settings-panel-display" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-display" tabindex="0">
             <label for="playback-speed">Playback speed <output id="playback-speed-value">1×</output></label>
-            <input id="playback-speed" type="range" min="0" max="4" step="1" value="2" list="speed-stops" />
-            <datalist id="speed-stops"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option></datalist>
-            <div class="speed-labels" aria-hidden="true"><span>0.5×</span><span>0.75×</span><span>1×</span><span>1.5×</span><span>2×</span></div>
+            <input id="playback-speed" type="range" min="0" max="20" step="1" value="2" />
+            <div class="speed-labels" aria-hidden="true"><span>0.5×</span><span>10×</span></div>
 <div class="settings-columns display-groups"><div class="settings-group">            <label class="misc-option" for="show-map-scale">Show map scale<input id="show-map-scale" class="control-switch" type="checkbox" role="switch" checked /></label>
-            <label class="misc-option" for="auto-hide-weather">Auto-hide header dock<input id="auto-hide-weather" class="control-switch" type="checkbox" role="switch" /></label>
-            <label class="misc-option" for="auto-hide-footer">Auto-hide footer dock<input id="auto-hide-footer" class="control-switch" type="checkbox" role="switch" /></label>
+            <label class="misc-option" for="auto-hide-weather">Auto-hide weather dock<input id="auto-hide-weather" class="control-switch" type="checkbox" role="switch" /></label>
+            <label class="misc-option" for="auto-hide-footer">Auto-hide playback dock<input id="auto-hide-footer" class="control-switch" type="checkbox" role="switch" /></label>
             <label class="misc-option" for="screen-lock">Lock screen controls<input id="screen-lock" class="control-switch" type="checkbox" role="switch" /></label>
 </div><div class="settings-group playback-window-group">            <label class="misc-option" for="playback-hours">Playback window<select id="playback-hours"><option value="2">2 hours</option><option value="4">4 hours</option><option value="6">6 hours</option></select></label>
-            <p id="playback-window-note" role="status"></p>
+            <label class="misc-option" for="last-frame-multiplier">Last-frame hold<select id="last-frame-multiplier"></select></label><p id="playback-window-note" role="status"></p>
 
 </div></div>
                     </section>
@@ -234,8 +236,8 @@
           </section>
           <section id="settings-panel-api" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-api" tabindex="0" hidden>
 
-            <div class="settings-tabs preview-api-tabs" role="tablist" aria-label="API categories"><button id="api-tab-map" type="button" role="tab" aria-selected="true" aria-controls="api-map" tabindex="0">Map</button><button id="api-tab-radar" type="button" role="tab" aria-selected="false" aria-controls="api-radar" tabindex="-1">Radar</button><button id="api-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="api-weather" tabindex="-1">Weather</button><button id="api-tab-camera" type="button" role="tab" aria-selected="false" aria-controls="api-camera" tabindex="-1">Camera</button></div><div id="api-map" role="tabpanel" aria-labelledby="api-tab-map"><div class="api-map-info"><strong>Built-in base map</strong><p>The base map is included with Pi Rain Radar and uses Natural Earth map data. No API key or external map-service requests are needed to display it.</p></div></div><div id="api-radar" role="tabpanel" aria-labelledby="api-tab-radar" hidden><div class="units-grid"><div><label for="radar-main-source">Main map</label><select id="radar-main-source"><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div><div><label for="radar-overview-source">Overview map</label><select id="radar-overview-source"><option value="same">Same as main</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div></div><label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
-            <p id="radar-settling-note" role="status"></p><div id="rainbow-config"><div class="api-key-heading"><label for="rainbow-key">Rainbow API key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div><input id="rainbow-key" type="password" autocomplete="off" placeholder="Enter your Rainbow key"><div class="weather-key-actions"><button id="rainbow-save">Save key</button><button id="rainbow-remove">Remove key</button></div><p id="rainbow-key-note" role="status">Not configured.</p><label class="misc-option" for="rainbow-cap">Limit monthly usage<input id="rainbow-cap" type="checkbox" class="control-switch" role="switch"></label><div id="rainbow-limit-fields" hidden><label for="rainbow-limit">Maximum API requests</label><input id="rainbow-limit" type="number" min="1" max="10000000" value="28000"></div><details id="rainbow-estimates" class="estimate-drawer"><summary>Estimates</summary><div class="usage-card"><strong id="rainbow-estimate"></strong><div id="rainbow-usage"></div><small>Based on the selected maps running continuously. Repeated map changes can use more; the suggested limit does not guarantee zero charges.</small></div></details></div><div class="weather-key-actions"><button id="radar-apply">Save and apply sources</button></div><p id="radar-source-note" role="status"></p></div><div id="api-weather" role="tabpanel" aria-labelledby="api-tab-weather" hidden><div id="openweather-config" class="api-provider-config"><div class="api-key-heading"><label for="settings-api-key">OpenWeather API Key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div>
+            <div class="settings-tabs preview-api-tabs" role="tablist" aria-label="API categories"><button id="api-tab-map" type="button" role="tab" aria-selected="true" aria-controls="api-map" tabindex="0">Map</button><button id="api-tab-radar" type="button" role="tab" aria-selected="false" aria-controls="api-radar" tabindex="-1">Radar</button><button id="api-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="api-weather" tabindex="-1">Weather</button><button id="api-tab-camera" type="button" role="tab" aria-selected="false" aria-controls="api-camera" tabindex="-1">Camera</button></div><div id="api-map" role="tabpanel" aria-labelledby="api-tab-map"><div class="api-map-info"><strong>Built-in base map</strong><p>The base map is included with Pi Rain Radar and uses Natural Earth map data. No API key or external map-service requests are needed to display it.</p></div></div><div id="api-radar" role="tabpanel" aria-labelledby="api-tab-radar" hidden><div class="units-grid"><div><label for="radar-main-source">Main map</label><select id="radar-main-source"><option value="disabled">Disabled</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div><div><label for="radar-overview-source">Overview map</label><select id="radar-overview-source"><option value="disabled">Disabled</option><option value="same">Same as main</option><option value="rainviewer">RainViewer</option><option value="rainbow">Rainbow Weather</option></select></div></div><label class="misc-option" for="radar-settling">Wait for radar to settle<input id="radar-settling" class="control-switch" type="checkbox" role="switch" checked /></label>
+            <p id="radar-settling-note" role="status"></p><div id="rainbow-config"><div class="api-key-heading"><label for="rainbow-key">Rainbow API key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div><input id="rainbow-key" type="password" autocomplete="off" placeholder="Enter your Rainbow key"><div class="weather-key-actions"><button id="rainbow-save">Save key</button><button id="rainbow-remove">Remove key</button></div><p id="rainbow-key-note" role="status">Not configured.</p><label class="misc-option" for="rainbow-cap">Limit monthly usage<input id="rainbow-cap" type="checkbox" class="control-switch" role="switch"></label><div id="rainbow-limit-fields" hidden><label for="rainbow-limit">Maximum API requests</label><input id="rainbow-limit" type="number" min="1" max="10000000" value="28000"></div></div><div class="weather-key-actions"><button id="radar-apply">Save and apply sources</button></div><p id="radar-source-note" role="status"></p></div><div id="api-weather" role="tabpanel" aria-labelledby="api-tab-weather" hidden><div id="openweather-config" class="api-provider-config"><div class="api-key-heading"><label for="settings-api-key">OpenWeather API Key</label><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md" target="_blank" rel="noopener">(Setup &amp; usage)</a></div>
             <input id="settings-api-key" type="password" placeholder="Enter OpenWeather key" autocomplete="off" spellcheck="false" maxlength="32" aria-describedby="settings-api-note" /><p id="settings-api-note" role="status"></p>
             <div class="weather-key-actions"><button id="weather-key-save" type="button">Save key</button><button id="weather-key-remove" type="button">Remove key</button></div>
             </div>
@@ -369,7 +371,7 @@
         </div>
       </dialog>
       <aside id="stats" tabindex="0" aria-label="Stats for nerds" aria-description="Drag to move, or use arrow keys when focused." hidden>
-        <div class="stats-header"><h3>Stats for nerds <span id="stats-connection">(waiting…)</span></h3><button id="stats-close" type="button" aria-label="Close Stats for nerds" title="Close Stats for nerds">×</button></div>
+        <div class="stats-header"><span id="stats-connection">Backend: waiting…</span></div>
         <div class="stats-content"><div id="stats-data"></div></div>
         <button id="stats-resize" type="button" aria-label="Resize Stats for nerds. Drag or use arrow keys." title="Resize Stats for nerds">◢</button>
       </aside>
@@ -448,7 +450,7 @@
             disabled
           />
           <span id="history-end">—</span>
-          <span id="frame-count"><span id="frame-position">0</span><span class="frame-divider"> / </span><span id="frame-total" class="incomplete">0</span></span>
+          <span id="frame-count"><span id="frame-position">0</span><span class="frame-divider"> / </span><button id="frame-total" type="button" aria-label="Show data availability" aria-expanded="false" aria-controls="availability-panel">0</button></span>
         </div>
         <div class="footer-details">
           <div class="observation" title="Displayed radar frame time · {{TIME_ZONE}} time">
@@ -460,7 +462,7 @@
         </div>
       </footer>
         <div class="source">
-          <p>Radar by <span id="radar-credit"><a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></span> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span><span id="ha-credit"></span></p>
+          <p>Radar by <span id="radar-credit"><a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></span> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="cloud-credit" hidden> · Clouds by <a href="https://rainbow.ai/" target="_blank" rel="noopener noreferrer">Rainbow</a></span><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span><span id="ha-credit"></span></p>
         </div>
     </main>
   </body>

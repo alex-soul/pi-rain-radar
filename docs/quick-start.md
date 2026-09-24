@@ -77,10 +77,12 @@ LAN access is intended for a trusted home network. HTTP does not encrypt API-key
 Move the pointer or tap the page to reveal the settings cog at the bottom right. Open Settings. It is unlocked on a fresh installation.
 
 1. **Map:** choose a label, latitude/longitude and time zone. Typing a place name does not find its coordinates. Preview if you want, then Apply. The progress popup stays visible while the new view is prepared. All connected screens adopt the change. Coventry is ready to use if you prefer to try it first.
-2. **System → API → OpenWeather, optional:** paste your [OpenWeather One Call 4.0](https://openweathermap.org/api/one-call-4) key and Save key. Follow the saved-key link to enable Interface → Weather → Collection, and confirm shared Units. This supplies current readings and Rain forecast. Activate the separate 4.0 subscription first, even if you already use 3.0. Check the provider's access/pricing and set the daily limit to 1,000 to stay within its currently advertised free allowance; the default 2,000 limit permits charges. After moving the map, allow 10–15 minutes for the next weather request. Radar works without a key.
+2. **System → API → OpenWeather, optional:** paste your [OpenWeather One Call 4.0](https://openweathermap.org/api/one-call-4) key and Save key. Follow the saved-key link to enable current readings under Interface → Weather → Readings and minute forecasts independently under Forecast, and confirm shared Units. Activate the separate 4.0 subscription first, even if you already use 3.0. Check the provider's access/pricing and set the daily limit to 1,000 to stay within its currently advertised free allowance; the default 2,000 limit permits charges. After moving the map, allow 10–15 minutes for the next weather request. Radar works without a key.
 3. **System → PIN, optional:** enable protection and enter your chosen six-digit PIN twice, then Save. Leave protection disabled if you do not want it. There are no setup nags. [Forgotten PIN recovery](troubleshooting.md#pin-recovery) uses SSH and does not erase data.
 
 Use the laptop for typing; you do not need a keyboard attached to the Pi. See the [manual](manual.md) for every setting and status colour.
+
+For a simple starting point, keep RainViewer radar and add optional sources as needed. My current setup has three Rainbow layers (Overview rain and clouds on both maps), with RainViewer main rain. Four Rainbow layers would mean rain and clouds on both maps. I still need a full month to establish actual costs. See [current allowances and account limits](radar-providers.md#usage-costs-and-optional-limit); layer count alone is not a billing or storage guarantee.
 
 ## 5. Arrange each screen
 
@@ -110,4 +112,4 @@ No reinstall or reflashing is required. [The upgrade guide](upgrading.md) explai
 - [Upgrades and migration from older installations](upgrading.md)
 - [Technical architecture](design.md) and [development](development.md)
 
-See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.
+See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup, costs and usage, and [Device Power guide](device-power.md) for the optional host helper.

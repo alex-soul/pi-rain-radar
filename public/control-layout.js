@@ -1,6 +1,7 @@
 const controls = [
   { id: 'clock-toggle', label: 'Clock' },
   { id: 'overview-toggle', label: 'Overview' },
+  { id: 'cloud-toggle', label: 'Clouds' },
   { id: 'camera-toggle', label: 'Camera', visible: false },
   { id: 'rain-forecast-toggle', label: 'Rain forecast' },
   { id: 'history-toggle', label: 'Archive' },
@@ -119,8 +120,11 @@ export function setupResponsiveControls() {
     const controls = stack.getBoundingClientRect(), weather = dock.getBoundingClientRect();
     const previous = parseFloat(stack.style.getPropertyValue('--controls-offset')) || 0;
     const naturalTop = controls.top - previous;
-    const collide = controls.left < weather.right + 8 && controls.right > weather.left - 8;
-    const offset = collide ? Math.max(0, weather.bottom + 12 - naturalTop) : 0;
+    const collide = [...stack.children].filter(button=>!button.hidden).some(button=>{
+      const rect=button.getBoundingClientRect();
+      return rect.left < weather.right+8 && rect.right > weather.left-8 && rect.top-previous < weather.bottom+8 && rect.bottom-previous > weather.top-8;
+    });
+    const offset = window.innerWidth < 1100 && collide ? Math.max(0, weather.bottom + 12 - naturalTop) : 0;
     stack.style.setProperty('--controls-offset', `${offset}px`);
   }
   function schedule() { if (!queued) queued = requestAnimationFrame(update); }

@@ -1,14 +1,17 @@
 export const helpText = {
+ dewPointDepression:'T−Td is called dew point depression: air temperature (T) minus dew point (Td). A smaller difference means the air is closer to saturation; zero means the two temperatures are equal. It is a temperature difference, not a rain measurement. It uses the sources selected under Readings for Temperature and Dew point, even when Dew point is hidden from the dock.',
+ lastFrameHold:'Multiplies the final frame duration before playback loops. 1× adds no extra hold; the default is 2.4× (1560 ms at playback speed 1×). Playback speed scales both ordinary and final frame durations.',
+ reviewFallback:'Use OpenWeather when a Home Assistant reading is unavailable. Requires OpenWeather current-weather collection. Borrowed readings show amber and identify OpenWeather as the fallback source.',
  reviewSource:'Choose the primary source for weather readings. Home Assistant can supply the four mapped readings; other readings use OpenWeather when available. Optional OpenWeather fallback appears amber when a mapped HA reading is unavailable. Configure the HA connection under System > API > HA. Collection is managed separately in Collection. Source, mappings and units apply to every screen; layout stays on this browser.',
  reviewMap:'Return to the exact previous coordinates and both zoom values to use matching history while it remains retained. Name and time-zone changes preserve history.',
  reviewHA:'Use the Home Assistant address reachable from the appliance. This shared connection is used by camera and weather. Configure collection separately for each feature.',
- reviewOWM:'Disabling collection also stops rain forecast updates. Existing fresh data remains usable until normal expiry; history and the saved key are retained.',
- reviewCollect:'Configure the shared connection under System > API > HA. Collect mapped weather readings every five minutes, independently of the selected display source. Connection health is checked separately.',
+ reviewOWM:'All current weather metrics share one OpenWeather API call. Selecting fewer metrics does not reduce API calls; disabled metrics are discarded at runtime before storage. Disabling all readings stops current-weather polling. Forecast has its own switch. Existing values expire normally when collection is off; recorded history and the saved key are retained.',
+ reviewCollect:'Collect assigned HA readings every five minutes. Switching off resets HA assignments to OpenWeather, preserving Disabled readings. Connection health and camera collection remain independent.',
  reviewRadar:'Enable collection when this provider is selected for Main or Overview. Disabled providers make no background requests. Saved configuration and retained history remain available.',
   "29": "Restart and shutdown require the optional Device Power helper on your host. Select either button for setup guidance if it is not configured. Settings PIN protection is optional.",
   30: 'Local counter; other apps using your account are not included.',
   "27": "Flow shows where the wind is going. Meteorological shows where it comes from. Both the arrow and the reading follow your choice.",
-  "28": "Wind gusts are not reported with every update, so this reading may be unavailable. The last reported gust can be cached for the duration set in Interface → Weather. Cached readings appear amber.",
+  "28": "OpenWeather gusts are optional: a missing gust is not an error. Cache duration is in Readings. Home Assistant gusts must stay current and never use this cache.",
   "1": "Changes here affect every display connected to this appliance.",
   "2": "A display label only. Set latitude and longitude to change the actual location.",
   "3": "Sets the centre of both maps and the location used for weather readings and Rain forecast. Defaults to Coventry: 52.40801, −1.51041.",
@@ -32,7 +35,7 @@ export const helpText = {
   "22": "Wait about 5 extra minutes before downloading new radar images. Turning this off shows images sooner, but some radar tiles may be missing. Applies to all displays.",
   "23": "Events are captured even when Settings is closed. Shows the latest 25 important events and updates while this tab is open. Repeated errors are grouped. History clears when the app restarts.",
   "24": "Opens an external status page. OpenWeather’s monitor is independent and may not reflect the services used here.",
-  "25": "Changes radar playback speed on this display straight away. It does not change how often new radar data is downloaded.",
+  "25": "At 1×, each ordinary frame is shown for 650 ms, plus any time needed to settle the radar image. Changes playback speed on this display straight away. It does not change how often new radar data is downloaded.",
   "26": "Sets the same 2, 4 or 6-hour window for live playback and History on this display. Older history builds up as the appliance collects it. Longer windows use more browser memory, without extra provider requests. Missing ten-minute frames appear amber on the slider."
 };
 
@@ -46,18 +49,18 @@ export function setupSettingsHelp(dialog) {
   const targets = [
  ['label[for="review-weather-source"]','reviewSource'],
  ['#review-map-warning','reviewMap'],['label[for="review-ha-url"]','reviewHA'],
- ['label[for="review-owm-collect"]','reviewOWM'],['label[for="review-ha-collect"]','reviewCollect'],
+ ['label[for="review-fallback"]','reviewFallback'],['label[for="review-owm-collect"]','reviewOWM'],['label[for="review-ha-collect"]','reviewCollect'],
  ['label[for="review-rainviewer-collect"]','reviewRadar'],['label[for="review-rainbow-collect"]','reviewRadar'],
     ['#device-power-title',29],
     ['label[for="rainbow-key"]',9], ['label[for="rainbow-cap"]',30],
     ['label[for="direction-convention"]',27], ['label[for="reading-gust"]',28],
-    ['label[for="playback-hours"]',26],
+    ['label[for="playback-hours"]',26], ['label[for="last-frame-multiplier"]','lastFrameHold'],
     ['label[for="radar-settling"]',22], ['#diagnostic-title',23],
     ['label[for="map-name"]',2], ['#map-lat',3], ['#map-lon',3], ['#map-zoom',4], ['#map-overviewZoom',5],
     ['label[for="map-timeZone"]',6], ['label[for="settings-api-key"]',9],
     ['label[for="auto-hide-weather"]',10], ['label[for="auto-hide-footer"]',11], ['label[for="gust-cache-minutes"]',12], ['label[for="settings-pin-enabled"]',13],
     ['label[for="screen-lock"]',21], ['#provider-status-title',24], ['label[for="temperature-unit"]',14], ['label[for="wind-unit"]',15], ['label[for="reading-feels"]',17],
-    ['label[for="reading-humidity"]',18], ['label[for="reading-dew"]',19], ['label[for="reading-direction"]',20], ['label[for="playback-speed"]',25],
+    ['label[for="reading-depression"]','dewPointDepression'], ['label[for="reading-humidity"]',18], ['label[for="reading-dew"]',19], ['label[for="reading-direction"]',20], ['label[for="playback-speed"]',25],
   ];
   for (const [selector, key, title] of targets) {
     let target = dialog.querySelector(selector);
@@ -72,6 +75,7 @@ export function setupSettingsHelp(dialog) {
       const caption = document.createElement('span'); caption.className = 'settings-label-title';
       for (const node of [...target.childNodes]) if (node.nodeType === 3) caption.append(node);
       caption.append(button);
+      // Reading LEDs occupy their own column beside the two caption lines.
       if (field?.type === 'checkbox' && target.closest('.reading-choices')) target.append(caption);
       else target.prepend(caption);
     } else target.append(document.createTextNode(' '), button);

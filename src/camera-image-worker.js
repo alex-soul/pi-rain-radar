@@ -11,7 +11,7 @@ process.once('message',async ({bytes,receivedAt,preview})=>{
     const metadata=await image.metadata();
     if(!['jpeg','png','webp'].includes(metadata.format)||(metadata.pages??1)>1)throw Error();
     const timestamp=cameraExifTime(metadata.exif,receivedAt);
-    const {data,info}=await image.autoOrient().resize({width:2048,height:2048,fit:'inside',withoutEnlargement:true}).jpeg({quality:85}).timeout({seconds:6}).toBuffer({resolveWithObject:true});
+    const {data,info}=await image.autoOrient().resize({width:640,height:640,fit:'inside',withoutEnlargement:true}).jpeg({quality:85}).timeout({seconds:6}).toBuffer({resolveWithObject:true});
     if(data.length>8*1024*1024)throw Error();
     const thumbnail=preview?await sharp(data).resize({width:192,height:128,fit:'inside',withoutEnlargement:true}).jpeg({quality:65}).toBuffer():null;
     process.send({ok:true,bytes:data,thumbnail,width:info.width,height:info.height,hash:createHash('sha256').update(data).digest('hex'),time:timestamp??receivedAt,basis:timestamp===null?'acquisition':'metadata'},()=>process.disconnect());

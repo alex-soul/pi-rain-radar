@@ -42,7 +42,11 @@ export async function createDevCamera(directory,scenario,origin,seedEnd){
   const camera=await createCamera(root,{store,get});
   const auth={authorized:async token=>(await fetch(origin+'/api/settings',{headers:token?{Authorization:'Bearer '+token}:{}})).ok};
   const handle=settingsRoutes(auth,null,null,{camera});
-  return {camera,handle,async history(end,hours){
+  return {camera,handle,async ready(){
+    if(camera.status().configured)return;
+    const {ticket}=await camera.test({mode:'direct',name:'Synthetic drive',url:'https://camera.example/snapshot',auth:{mode:'none'}});
+    await camera.configure({ticket,enabled:true});
+  },async history(end,hours){
     const result=await cameraHistory(store,end,hours);
     if(scenario()==='archive-rollover'){result.records=result.records.filter(r=>r.time>=seedEnd-21600000);result.counts=cameraWindowCounts(result.records,end-hours*3600000,end);}
     return result;

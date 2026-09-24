@@ -9,10 +9,10 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
   let timer, open = false, observer, editable = true, saved;
   const dispatched = [];
-  const node = id => nodes[id] ??= {checked:false, hidden:true, classList:{toggle(){}}, closest(){return this;}, setAttribute(k,v){this[k]=v;}, attributes:new Set(), toggleAttribute(k,v){v?this.attributes.add(k):this.attributes.delete(k);}, style:{}, dataset:{width:214}, handlers:{}, addEventListener(k, fn){this.handlers[k]=fn;}};
+  const node = id => nodes[id] ??= {replaceChildren(){},checked:false, hidden:true, classList:{toggle(){}}, contains(){return false;},closest(){return this;}, setAttribute(k,v){this[k]=v;}, attributes:new Set(), toggleAttribute(k,v){v?this.attributes.add(k):this.attributes.delete(k);}, style:{}, dataset:{width:214}, handlers:{}, addEventListener(k, fn){this.handlers[k]=fn;}};
   const footer = {offsetHeight:76, querySelectorAll:()=>content};
   vm.runInNewContext(source.replaceAll('export function', 'function')+'\nsetupDisplaySettings(canEdit);', {
-    canEdit:()=>editable,
+    Option:class {constructor(text,value){this.text=text;this.value=value;}},canEdit:()=>editable,
     document:{hidden:false, body:{style:{setProperty(){}},classList:{contains:k=>classes.has(k),toggle(k,v){v?classes.add(k):classes.delete(k);}}},
       getElementById:node, querySelector:q=>q==='footer'?footer:open?{}:null, querySelectorAll:q=>q==='[data-reading-choice]'?[]:[{}], addEventListener:(k,fn)=>events[k]=fn},
     window:{addEventListener:(k,fn)=>events[k]=fn,dispatchEvent(e){dispatched.push(e);}}, Event, CustomEvent, innerWidth:1280,innerHeight:720,
@@ -20,6 +20,11 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
     setTimeout:(fn,ms)=>{assert.equal(ms,15000);timer=fn;return 1;},clearTimeout:()=>timer=null,
     MutationObserver:class{constructor(fn){observer=fn;}observe(){}},ResizeObserver:class{observe(){}},
   });
+  assert.equal(node('last-frame-multiplier').value,'2.4');
+  node('last-frame-multiplier').value='1';node('last-frame-multiplier').handlers.change();assert.equal(saved.lastFrameMultiplier,1);
+  node('last-frame-multiplier').value='2.4';node('last-frame-multiplier').handlers.change();assert.equal(saved.lastFrameMultiplier,2.4);
+  node('playback-speed').value='1';node('playback-speed').handlers.input();assert.equal(saved.playbackSpeed,0.75);
+  node('playback-speed').value='20';node('playback-speed').handlers.input();assert.equal(saved.playbackSpeed,10);
   assert.equal(typeof timer, 'function'); assert.equal(node('settings-toggle').hidden,true);
   assert.equal(node('gust-cache-minutes').value,60);
   node('gust-cache-minutes').value='90';node('gust-cache-minutes').handlers.change();
@@ -171,7 +176,7 @@ test('display choices restore independently and reject unsupported units and pla
 });
 
 test('reading editor saves reorder, preserves hidden readings, and cancels interrupted drags', () => {
-  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv'];
+  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression'];
   let children=[], saved, writes=0, editable=true;
   const list={get children(){return children;},append(row){children=children.filter(x=>x!==row);children.push(row);},insertBefore(row,before){children=children.filter(x=>x!==row);children.splice(children.indexOf(before),0,row);}};
   const rows=ids.map(id=>{
@@ -187,7 +192,7 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
   cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
-  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv']);
+  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression']);
   assert.deepEqual(saved.readings,['temperature','feels','wind','gust']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
 });

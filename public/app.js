@@ -1,3 +1,6 @@
+import {playbackFrameDelay} from './weather-format.js';
+import {updateAvailability} from './availability.js';
+import {cloudNodes,cloudUrls,updateCloudSettings} from './layer-controls.js';
 import {acceptIntegrationStatus} from './integrations-state.js';
 import {updateCamera} from './camera-widget.js';
 import {visibleRadarSources,weatherCreditVisible} from './attribution.js';
@@ -7,12 +10,12 @@ import {createWeatherReplay} from './history-weather-model.js';
 import {paintHistoricalForecast,resetHistoricalForecast} from './history-weather-ui.js';
 import {storageSummary} from './storage-ui.js';
 import { recordConnection } from './connection-events.js';
-import { radarSourceHealth, worstHealth } from './health.js';
+import { radarSourceHealth, cloudHandleHealth, worstHealth } from './health.js';
 import { updateStats } from "./stats.js";
 import { liveDueThrough, ageLiveCoverage } from './live-window.js';
 import { formatTime } from './time.js';
 import { paintWeather, weatherDescription, weatherCredits } from './weather.js';
-import { playbackSpeed, playbackHours, weatherPreferences } from './display.js';
+import { playbackSpeed, lastFrameMultiplier, playbackHours, weatherPreferences } from './display.js';
 import { mapObservation, playbackState, frameProvider, windowProviders } from './playback.js';
 import { createFrameLoader } from './frame-loader.js';
 import { dockOutline } from './weather-format.js';
@@ -52,16 +55,59 @@ new ResizeObserver(paintWeatherOutline).observe(weatherDock);
 function setWeatherExpanded(expanded) {
   weatherDock.setAttribute("aria-expanded", String(expanded));
   weatherDock.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} weather readings${expanded ? `: ${weatherDescription()}` : ""}`);
+  $("weather-handle").setAttribute("aria-expanded",String(expanded));
+  $("weather-handle").setAttribute("aria-label",weatherDock.getAttribute("aria-label"));
+  weatherDock.setAttribute("aria-label",`Weather readings: ${weatherDescription()}`);
   $("weather-details").setAttribute("aria-hidden", String(!expanded));
+  $("weather-details").inert=!expanded;
+  window.dispatchEvent(new Event("weather-explanation-close"));
 }
 window.addEventListener('radar-weather-expanded', event => setWeatherExpanded(event.detail));
 try { setWeatherExpanded(localStorage.getItem("radar-weather-expanded") !== "false"); }
 catch { setWeatherExpanded(true); }
-weatherDock.addEventListener("click", () => {
+$("weather-handle").addEventListener("click", () => {
   const expanded = weatherDock.getAttribute("aria-expanded") !== "true";
   setWeatherExpanded(expanded);
   try { localStorage.setItem("radar-weather-expanded", String(expanded)); } catch { /* Optional preference. */ }
 });
+// Explanations share the renderer's selected-time source/value/timestamp text.
+const explanation=document.createElement('div');
+explanation.id='weather-explanation';explanation.className='weather-explanation';
+explanation.setAttribute('role','tooltip');explanation.hidden=true;document.body.append(explanation);
+let explained=null,pinned=false;
+function closeExplanation(){
+  explained?.removeAttribute('aria-describedby');explained=null;pinned=false;explanation.hidden=true;
+}
+function positionExplanation(){
+  if(!explained)return;
+  const rect=explained.getBoundingClientRect(),box=explanation.getBoundingClientRect();
+  explanation.style.left=Math.max(8,Math.min(innerWidth-box.width-8,rect.left+rect.width/2-box.width/2))+'px';
+  explanation.style.top=Math.max(8,Math.min(innerHeight-box.height-8,rect.bottom+10))+'px';
+}
+function showExplanation(reading){
+  if(document.body.classList.contains('screen-locked')||weatherDock.getAttribute('aria-expanded')!=='true')return;
+  if(explained!==reading){closeExplanation();explained=reading;}
+  explanation.replaceChildren(...reading.getAttribute('aria-label').split(' · ').map((text,index)=>{
+    const line=document.createElement(index===0?'strong':'div');line.textContent=text;return line;
+  }));
+  reading.removeAttribute('title');reading.setAttribute('aria-describedby',explanation.id);
+  explanation.hidden=false;positionExplanation();
+}
+for(const reading of weatherDock.querySelectorAll('.weather-reading')){
+  reading.tabIndex=0;reading.setAttribute('role','button');
+  reading.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&!pinned)showExplanation(reading);});
+  reading.addEventListener('pointerleave',()=>{if(!pinned&&document.activeElement!==reading)closeExplanation();});
+  reading.addEventListener('focus',()=>showExplanation(reading));
+  reading.addEventListener('blur',()=>{if(explained===reading)closeExplanation();});
+  reading.addEventListener('click',()=>{if(explained===reading&&pinned)closeExplanation();else{showExplanation(reading);pinned=true;}});
+  reading.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();reading.click();}});
+  new MutationObserver(()=>{reading.removeAttribute('title');if(explained===reading)showExplanation(reading);}).observe(reading,{attributes:true,attributeFilter:['aria-label']});
+}
+document.addEventListener('pointerdown',event=>{if(explained&&!explained.contains(event.target)&&!explanation.contains(event.target))closeExplanation();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeExplanation();});
+window.addEventListener('weather-explanation-close',closeExplanation);
+window.addEventListener('resize',positionExplanation);
+new MutationObserver(()=>{if(document.body.classList.contains('screen-locked'))closeExplanation();}).observe(document.body,{attributes:true,attributeFilter:['class']});
 let statsReceivedAt = null;
 let weatherReplay=null,comparisonLead=0;
 let historyWindow = null, historyLoading = false, returningLive = false, generation = 0;
@@ -76,7 +122,8 @@ let sequence = [],
 let sequenceHours = 2, sequenceEnd = null, liveRequestKey = '';
 let archiveHours = null, providerOverlay = false, renderRevision = 0;
 let serverClock = null, archiveRevision = null;
-const frameLoader = createFrameLoader();
+const frameLoader = createFrameLoader({timeoutMs:4000});
+let renderPending=false;
 const format = (time, options) => formatTime(time, options, timeZone);
 const clock = (time) => format(time, { hour: "2-digit", minute: "2-digit" });
 function paintCurrentTime() {
@@ -109,10 +156,10 @@ function timelineWindow(frames, end = frames.at(-1)?.time ?? Math.floor(Date.now
   function track(key) {
     const occupied = new Set(frames.filter(f => f[key]).map(f => Math.round((f.time-start)/600)));
     const role=key==='url'?'main':'overview';
-    const missing = frames.coverage ? frames.coverage.filter(c=>!c[role]&&!c.pending).map(c=>(c.time-start)/600) : Array.from({length:steps+1},(_,i)=>i).filter(i=>!occupied.has(i));
+    const missing = frames.coverage ? frames.coverage.filter(c=>!c[role]&&!c.pending&&c.sources?.[role]!=='disabled').map(c=>(c.time-start)/600) : Array.from({length:steps+1},(_,i)=>i).filter(i=>!occupied.has(i));
     const stops = ['transparent 0%'];
     for (const slot of missing) {
-      const left=Math.max(0,(slot-.5)/steps*100),right=Math.min(100,(slot+.5)/steps*100);
+      const left=Math.max(0,slot/(steps+1)*100),right=Math.min(100,(slot+1)/(steps+1)*100);
       stops.push(`transparent ${left}%`, `var(--timeline-gap) ${left}%`, `var(--timeline-gap) ${right}%`, `transparent ${right}%`);
     }
     stops.push('transparent 100%');
@@ -132,16 +179,17 @@ function paintTimeline() {
   if (timelineFrames !== sequence || timelineEnd !== end || timelineHours !== hours) {
     timelineFrames = sequence; timelineEnd = end; timelineHours = hours;
     timelineModel = timelineWindow(sequence, end, hours);
-    $('timeline').style.setProperty('--timeline-main-gaps', timelineModel.main.gradient);
-    $('timeline').style.setProperty('--timeline-overview-gaps', timelineModel.overview.gradient);
+    $('timeline').style.setProperty('--timeline-main-gaps', 'linear-gradient(transparent,transparent)');
+    $('timeline').style.setProperty('--timeline-overview-gaps', 'linear-gradient(transparent,transparent)');
   }
   const slot = Math.max(0, Math.min(timelineModel.steps, ((displayed?.time ?? timelineModel.start) - timelineModel.start) / 600));
   $('history-start').textContent = clock(timelineModel.start);
   $('history-end').textContent = clock(end);
-  $('timeline').max = timelineModel.steps;
+  $('timeline').min = -.5;
+  $('timeline').max = timelineModel.steps + .5;
   $('timeline').value = slot;
-  $('timeline').style.setProperty('--timeline-progress', `${slot / timelineModel.steps * 100}%`);
-  $('timeline').title = timelineModel.missing.length ? `Missing: ${timelineModel.missing.map(slot => clock(timelineModel.start + slot * 600)).join(', ')}` : `Complete ${hours}-hour window`;
+  $('timeline').style.setProperty('--timeline-progress', `${(slot + .5) / (timelineModel.steps + 1) * 100}%`);
+  $('timeline').title = `${hours}-hour playback window`;
 }
 function paintRadarHandle(health, sources) {
   const handle = $('footer-toggle');
@@ -151,7 +199,7 @@ function paintRadarHandle(health, sources) {
   for (const role of ['main', 'overview']) {
     const row = $('settings-'+role+'-status');
     if (row) {
-      row.textContent = `${status?.sources?.[role]?.source === 'rainbow' ? 'Rainbow' : 'RainViewer'} · ${sources[role][1]}`;
+      row.textContent = `${status?.sources?.[role]?.source === 'disabled' ? 'Radar' : status?.sources?.[role]?.source === 'rainbow' ? 'Rainbow' : 'RainViewer'} · ${sources[role][1]}`;
       row.dataset.health = sources[role][0];
     }
   }
@@ -161,12 +209,12 @@ function paintStatus() {
   paintAttribution();
   updateStats({status,cameraCounts, reachable:serverReachable, receivedAt:statsReceivedAt, selected:historyWindow, hours:playbackHours(), loading:historyLoading});
   if(historyWindow&&displayed&&weatherReplay){
-    paintWeather(weatherReplay.weather(displayed.time,document.getElementById("review-archive-source")?.value==="owm"),displayed.time*1000,{historical:true,operational:serverReachable?status?.weather:null});
+    paintWeather(weatherReplay.weather(displayed.time),displayed.time*1000,{historical:true,operational:serverReachable?status?.weather:null});
     paintHistoricalForecast(weatherReplay,displayed.time,comparisonLead,timeZone);
   }else paintWeather(serverReachable ? status?.weather : null);
 
   const sources = Object.fromEntries(['main','overview'].map(role => [role, radarSourceHealth(status?.sources?.[role], serverReachable)]));
-  const health = worstHealth(Object.values(sources));
+  const health = status?.cloudDemo?['unconfigured','Recorded cloud demo · collection stopped']:worstHealth([...Object.values(sources),cloudHandleHealth(status?.clouds,serverReachable)]);
   document.body.classList.toggle('stale', health[0] !== 'ready');
   document.body.classList.toggle('ready', health[0] === 'ready');
   paintRadarHandle(health, sources);
@@ -176,21 +224,24 @@ function paintStatus() {
   $("timeline").disabled = sequence.length < 2;
   $("timeline").setAttribute(
     "aria-valuetext",
-    `${displayed ? clock(displayed.time) : "No captures"}, frame ${displayed ? index + 1 : 0} of ${sequence.length}`,
+    `${displayed ? clock(displayed.time) : "No captures"}, frame ${displayed ? Math.max(0,sequence.indexOf(displayed))+1 : 0} of ${sequence.length}`,
   );
-  const state = playbackState(playing, sequence.length, !!historyWindow);
-  $("play").disabled = !!historyWindow && sequence.length < 2;
+  const radarDisabled=!historyWindow&&status?.radarDisabled;
+  const state = radarDisabled?'paused':playbackState(playing, sequence.length, !!historyWindow);
+  $("play").disabled = radarDisabled || !!historyWindow && sequence.length < 2;
   $("play").dataset.state = state;
   $("play").dataset.paused = String(state !== "playing");
   $("play").setAttribute(
     "aria-label",
     state === "waiting" ? "Automatically paused; waiting for captures. Click to pause manually" : state === "playing" ? "Pause playback" : "Play playback",
   );
+  if(radarDisabled){$('play').setAttribute('aria-label','Radar playback disabled');$('timeline').title='Radar playback disabled';$('time').textContent='Radar disabled';$('date').textContent='';}
   $("frame-position").textContent = String(displayed ? index + 1 : 0);
   $("frame-total").textContent = String(sequence.length);
   const expected = sequenceHours * 6 + 1;
-  $("frame-total").classList.toggle("incomplete", sequence.complete === false || timelineModel.missing.length > 0);
-  $("frame-count").setAttribute("aria-label", `Frame ${displayed ? index + 1 : 0} of ${sequence.length}. Expected ${expected} frames in a complete ${sequenceHours}-hour window.`);
+  $("frame-total").classList.remove("incomplete");
+  updateAvailability({frames:sequence,data:historyWindow??status,status,archive:!!historyWindow,start:timelineModel.start,end:timelineModel.end,time:displayed?.time,zone:timeZone},time=>{playing=false;if(!sequence.length)return;index=nearestTimelineFrame(sequence,time,0);showFrame();});
+  $("frame-count").setAttribute("aria-label", `Frame ${displayed ? Math.max(0,sequence.indexOf(displayed))+1 : 0} of ${sequence.length}. Expected ${expected} frames in a complete ${sequenceHours}-hour window.`);
 }
 function paintProviderLabels(frame) {
   for (const [i,id] of ['main-provider','overview-provider'].entries()) {
@@ -200,7 +251,8 @@ function paintProviderLabels(frame) {
   }
 }
 function paintAttribution(){
-  const sources=visibleRadarSources({frame:displayed,observations:['main','overview'].map(role=>mapObservation(sequence,index,role,!!historyWindow)),overviewVisible:!$('overview').hidden,currentSources:status?.sources,archive:!!historyWindow});
+  const sources=visibleRadarSources({frame:displayed,observations:['main','overview'].map(role=>mapObservation(sequence,Math.max(0,sequence.indexOf(displayed)),role,!!historyWindow)),overviewVisible:!$('overview').hidden,currentSources:status?.sources,archive:!!historyWindow});
+  $('cloud-credit').hidden=!cloudNodes.some((node,i)=>(!i||!$('overview').hidden)&&node.getAttribute('href')&&node.style.visibility==='visible');
   const dockExpanded=$('weather-dock').getAttribute('aria-expanded')==='true',credits=weatherCredits(weatherPreferences().readings);
   $('weather-credit').hidden=!(dockExpanded&&credits.openweather||!$('rain-forecast').hidden);
   $('ha-credit').textContent=dockExpanded&&credits.other?' · '+credits.other:'';
@@ -217,29 +269,23 @@ function paintAttribution(){
 }
 for(const id of ['overview','rain-forecast','weather-dock'])new MutationObserver(paintAttribution).observe($(id),{attributes:true,attributeFilter:['hidden','aria-expanded']});
 function showFrame() {
-  displayed = sequence[index] ?? null;
-  const epoch=++renderRevision;
+  const next=sequence[index]??null,epoch=++renderRevision;
   const observations=['main','overview'].map(role=>mapObservation(sequence,index,role,!!historyWindow));
-  paintProviderLabels(displayed);
-  for (const [i,id] of ['radar','overview-radar'].entries()) {
-    const node=$(id),observation=observations[i];
-    if (!observation) { node.style.visibility='hidden'; node.removeAttribute('href'); continue; }
-    // Never leave a different timestamp visible while its replacement is loading.
-    if(node.getAttribute('href')!==observation.url)node.style.visibility='hidden';
-    void frameLoader.prepare(observation.url).then(image=>{
-      if(epoch!==renderRevision)return;
-      node.style.visibility=image?'visible':'hidden';
-      if(image)node.setAttribute('href',observation.url);else node.removeAttribute('href');
-      node.dataset.loading=image?'ready':'failed';
-    });
+  const rain=observations.map((o,i)=>status?.cloudDemo?(i===0?next?.url:null):o?.url??null);
+  const urls=[...rain,...cloudUrls(next,status?.cloudDemo,!!historyWindow)],nodes=[$('radar'),$('overview-radar'),...cloudNodes];
+  renderPending=true;
+  void Promise.all(urls.map(url=>url?frameLoader.prepare(url):null)).then(images=>{
+    if(epoch!==renderRevision)return;renderPending=false;
+    // Commit every visible layer and its timestamp together after decoding.
+    nodes.forEach((node,i)=>{if(images[i]&&urls[i]){node.setAttribute('href',urls[i]);node.style.visibility='visible';node.dataset.loading='ready';}else{node.removeAttribute('href');node.style.visibility='hidden';node.dataset.loading=urls[i]?'failed':'ready';}});
+    displayed=next;paintProviderLabels(displayed);$('empty').hidden=!mapUpdateVisible;paintStatus();
+  });
+  for(const offset of [-1,1,2]){
+    const ahead=sequence[(index+offset+sequence.length)%sequence.length];
+    if(ahead)for(const url of [ahead.url,ahead.overviewUrl,...cloudUrls(ahead,status?.cloudDemo,!!historyWindow)])if(url)void frameLoader.prepare(url,false);
   }
-  for(let offset=1;offset<=2;offset++) {
-    const ahead=sequence[(index+offset)%sequence.length];
-    if(ahead)for(const url of [ahead.url,ahead.overviewUrl])if(url)void frameLoader.prepare(url,false);
-  }
-  $("empty").hidden = !mapUpdateVisible;
-  paintStatus();
 }
+window.addEventListener('radar-layers-change',showFrame);
 function adopt(next, preservePosition = false) {
   const previousTime = displayed?.time;
   next.providers=windowProviders(next);
@@ -252,11 +298,11 @@ function adopt(next, preservePosition = false) {
 let playbackTimer;
 function schedulePlayback() {
   clearTimeout(playbackTimer);
-  playbackTimer = setTimeout(tick, (index === sequence.length - 1 ? 1600 : 650) / playbackSpeed());
+  playbackTimer = setTimeout(tick, playbackFrameDelay(index === sequence.length - 1,playbackSpeed(),lastFrameMultiplier()));
 }
 window.addEventListener('radar-playback-speed', schedulePlayback);
 function tick() {
-  if (playing && sequence.length >= 2) {
+  if (playing && !renderPending && sequence.length >= 2) {
     if (index === sequence.length - 1 && pending) {
       adopt(pending);
       pending = null;
@@ -277,7 +323,7 @@ $("play").addEventListener("click", () => {
 });
 $("timeline").addEventListener("input", (event) => {
   playing = false;
-  const value = Number(event.target.value);
+  const value = Math.max(0,Math.min(timelineModel.steps,Math.round(Number(event.target.value))));
   if (!sequence.length) return;
   index = nearestTimelineFrame(sequence, timelineModel.start, value);
   showFrame();
@@ -291,6 +337,7 @@ $('timeline').addEventListener('keydown', event => {
   showFrame();
 });
 async function decodeFrames(offered, epoch = generation) {
+  renderRevision++;renderPending=false;
   return frameLoader.load(offered, [...sequence, ...(pending || [])], () => epoch === generation);
 }
 let mapUpdateVisible = false;
@@ -327,7 +374,7 @@ function attachWindow(frames, result, hours) {
   return frames;
 }
 function ageLiveWindow() {
-  if(historyWindow || historyLoading || !serverClock)return;
+  if(historyWindow || historyLoading || !serverClock||status?.radarDisabled||status?.cloudDemo)return;
   const now=serverClock.time+(performance.now()-serverClock.receivedAt);
   const dueThrough=liveDueThrough(now/1000);
   const end=Math.max(dueThrough,sequenceEnd??0),start=end-sequenceHours*3600;
@@ -336,6 +383,7 @@ function ageLiveWindow() {
   const next=attachWindow(sequence.filter(f=>f.time>=start&&f.time<=end),{end,dueThrough,...ageLiveCoverage(sequence.coverage,start,end,dueThrough),borrowFrames},sequenceHours);
   pending=null;adopt(next,true);
 }
+window.addEventListener('radar-sources-change',()=>{generation++;pending=null;liveRequestKey='';void poll();});
 let pollRunning = false;
 async function poll() {
   if (pollRunning) return;
@@ -348,6 +396,7 @@ async function poll() {
     if (!response.ok) throw new Error("Status unavailable");
     status = await response.json();
     acceptIntegrationStatus(status);
+    updateCloudSettings(status.cloudDemo?{enabled:true,configured:true,map:'main',state:'ready'}:status.clouds);
     statsReceivedAt = Date.now();
     if (status.appVersion && status.appVersion !== appVersion) {
       if (!$('settings-dialog').open) location.reload();
@@ -365,7 +414,7 @@ async function poll() {
     recordConnection(true);
     serverClock={time:status.serverTime??Date.now(),receivedAt:performance.now()};
     const offered=status.frames??[],hours=playbackHours();
-    const requestKey=`${hours}:${status.end}:${status.dueThrough}:${offered.map(f=>`${f.time}:${f.url}:${f.overviewUrl}`).join('|')}`;
+    const requestKey=`${hours}:${status.end}:${status.dueThrough}:${offered.map(f=>`${f.time}:${f.url}:${f.overviewUrl}:${f.cloudUrl}:${f.overviewCloudUrl}`).join('|')}`;
     if(!historyWindow&&!historyLoading&&epoch===generation&&(returningLive||requestKey!==liveRequestKey)) {
       const next=await decodeFrames(offered,epoch);
       if(epoch!==generation||historyWindow||historyLoading||!next)return;
@@ -458,7 +507,7 @@ async function returnToNow() {
   generation++;
   frameLoader.cancel(); liveRequestKey = '';
   historyWindow = null;weatherReplay=null;comparisonLead=0;resetHistoricalForecast();
-  archiveHours=null;providerOverlay=false;archiveRevision=null;
+  archiveHours=null;providerOverlay=false;archiveRevision=null;pendingArchiveSelection=null;
   $('archive-provider').checked=false;
   paintProviderLabels(null);
   sequence=[];sequenceEnd=null;showFrame();
@@ -486,6 +535,7 @@ const archiveCalendar=setupArchiveCalendar(async(month,signal)=>{
   return {days:pages.flatMap(p=>p.times.map(dayKey)),min:pages[0]?.oldest==null?'':dayKey(pages[0].oldest/1000),max:dayKey(Date.now()/1000)};
 });
 let archiveTimes = [];
+let pendingArchiveSelection=null;
 let historyTargetEnd = null;
 const dayKey = time => {const parts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(time*1000));const get=type=>parts.find(p=>p.type===type).value;return `${get('year')}-${get('month')}-${get('day')}`;};
 function populateTimes() {
@@ -501,7 +551,7 @@ async function loadArchiveDay(){
   try{const response=await fetch(`/api/archive?map=${mapIdentity}&start=${start}&until=${end}`,{signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error();const data=await response.json();if($('archive-day').value!==day)return;archiveTimes=data.times.filter(t=>dayKey(t)===day);populateTimes();$('archive-show').disabled=!archiveTimes.length;$('archive-feedback').textContent=archiveTimes.length?'':'No stored history on this date.';}catch{$('archive-feedback').textContent='Archive unavailable. Please try again.';}
 }
 async function openHistoryPicker() {
-  if(!historyWindow&&!historyLoading){archiveHours=playbackHours();providerOverlay=false;comparisonLead=0;if($('review-archive-source'))$('review-archive-source').value='recorded';}
+  if(!historyWindow&&!historyLoading){archiveHours=pendingArchiveSelection?Number(pendingArchiveSelection.hours):playbackHours();providerOverlay=false;comparisonLead=0;}
   $('archive-comparison').value=String(comparisonLead);
   $('archive-comparison-value').textContent=comparisonLead?`−${comparisonLead} min`:'None';
   $('archive-hours').value=String(archiveHours??playbackHours());
@@ -517,8 +567,8 @@ async function openHistoryPicker() {
     const available=await response.json();archiveTimes=available.times;
     $('archive-day').min=available.oldest===null?'':dayKey(available.oldest/1000);$('archive-day').max=dayKey(Date.now()/1000);
 
-    const selectedEnd = archiveTimes.includes(historyWindow?.end) ? historyWindow.end : archiveTimes.at(-1)??(available.newest===null?null:available.newest/1000);
-    $('archive-day').value = selectedEnd ? dayKey(selectedEnd) : '';
+    const selectedEnd = pendingArchiveSelection?.time ? Number(pendingArchiveSelection.time) : archiveTimes.includes(historyWindow?.end) ? historyWindow.end : archiveTimes.at(-1)??(available.newest===null?null:available.newest/1000);
+    $('archive-day').value = pendingArchiveSelection?.day || (selectedEnd ? dayKey(selectedEnd) : '');
     archiveCalendar.sync();
     await loadArchiveDay();
     if (selectedEnd) $('archive-time').value = String(selectedEnd);
@@ -557,7 +607,7 @@ async function loadHistory(end, preserve = false) {
     if (!next?.length) throw new Error('No readable history');
     attachWindow(next,window,hours);
     weatherReplay=createWeatherReplay(window.weatherHistory);
-    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}}, deadline: deadline ?? Date.now() + 600000 };
+    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}}, deadline: deadline ?? Date.now() + 600000 };
     archiveHours=hours;archiveRevision=status?.archiveRevision;
     returningLive = false;
     if (!preserve) playing = true;
@@ -579,6 +629,7 @@ async function loadHistory(end, preserve = false) {
   }
 }
 historyDialog.addEventListener('close', () => {
+  pendingArchiveSelection={day:$('archive-day').value,time:$('archive-time').value,hours:$('archive-hours').value};
   if (historyLoading) { generation++; frameLoader.cancel(); historyLoading = false; }
 });
 

@@ -34,6 +34,31 @@ Stop with Ctrl+C; retain the printed temporary data path and process identities 
 
 To extend it, add a stable ID and explanatory copy to `scripts/dev-scenarios.mjs`, implement its synthetic response in `scripts/dev-playback.mjs`, and check entry, expected state and recovery. Keep earlier cases available; update their explanations when accepted product behaviour changes. `scripts/dev-controls.js` and `.css` own the console presentation. Add meaningful tests for new state logic; the console does not replace automated tests or Pi acceptance.
 
+### Recorded forecast review
+
+Start the same studio with
+`node scripts/dev-playback.mjs --forecast-recording "<local-export.json>"`.
+The explicit local export must contain `end` (epoch seconds) and `forecasts`
+with `time`, `receivedAt` and minute `points` (`time`, `precipitation`). Export
+only these fields, never settings, coordinates, credentials or a full status
+payload. Keep personal recordings outside the product repository.
+
+The **Recorded OWM forecasts** scenario uses saved timestamps unchanged in
+Archive. Radar, camera and Live weather remain synthetic and are labelled as
+such; no provider acquisition is started. Select an Archive capture within the
+recording, pause playback, and compare None with the lead settings. NOW bars use
+each saved forecast's first point; earlier forecasts match those same timestamps
+with up to ten minutes of backward tolerance. Thin bars are point samples, and
+muted dotted gaps are unsampled intervals rather than zero rain. Amber ticks
+mean a matching forecast minute is missing. The comparison picker ends at -50
+minutes: a 60-point minute forecast covers NOW through +59, not +60. Captions
+distinguish the forward forecast from the retrospective two-hour comparison.
+
+Switch to Healthy display and reload Archive to restore synthetic forecasts;
+return to the recorded case and reload Archive to recover the recording. The
+generated radar window is fixed to the recording's `end`. Existing fixture
+datasets and any stopped cloud-trial ledger are not reused or altered.
+
 ### Other isolated fixtures
 
 Start UI iteration on a laptop before building a Pi candidate. A small temporary Node.js server can serve the real public assets with synthetic provider responses and the production Content-Security-Policy on a separate loopback port (for example 3091). Use disposable data and identify the preview as synthetic; do not copy a deployed PIN or API key. This needs no Docker image build. It is a UI fixture, not proof of full backend or ARM64 behaviour.
@@ -172,3 +197,14 @@ The shipped implementation is `src/` plus `public/`. `scripts/rc3-review/` is a 
 `src/home-assistant.js` owns shared credentials and health; `src/ha-weather.js` polls mapped sensor states; `src/weather-settings.js` owns durable shared policy and SQLite transition history. Camera transport and decode use `src/camera-http.js` and the image worker. Provider collection gates are independent of API credential storage. Tests use fake provider responses; do not mix real secrets into synthetic scenarios.
 
 Stop the specific DEV supervisor and its backend child after review, plus any optional review/fixture server. Disposable session data uses `pi-rain-radar-next-release-preview-*`, `pi-rain-radar-rc3-ui-review` and `pi-rain-radar-rc3-integration-preview` beneath the OS temporary directory. Verify exact paths and stopped processes before deleting a session's data. Keep source, release evidence and real deployment backups. The optional LAN embed adapter and historical RC3 review both use3092 and cannot run together.
+
+
+## Reusing the studio for future releases
+
+The maintained studio lives in `scripts/dev-playback.mjs`, `dev-scenarios.mjs`, `dev-weather.mjs`, `dev-camera.mjs`, `dev-availability.mjs` and `dev-forecast-recording.mjs`. Keep these in source control; generated sessions are not shipped in the application image.
+
+With Node24 and dependencies installed, run `npm run dev:scenarios -- --availability`, open `http://127.0.0.1:3091/__dev`, and choose the RC2 acceptance case. It supplies synthetic radar/clouds, mixed HA/OpenWeather readings and an editable camera, including wind27mph with absent gust. Normal UI is at `http://127.0.0.1:3091/`. This case makes no real provider calls.
+
+For an existing OWM export, run `npm run dev:scenarios -- --forecast-recording "<local-export.json>"`. Personal recordings stay outside the public repository. Do not run acquisition/trial commands merely to replay recorded data.
+
+Optional `RADAR_DEV_SETTINGS_FROM` points to a previous synthetic studio session to preserve its test PIN/camera/policy settings in a fresh session. Never use production data. Browser preferences remain associated with the same loopback origin. Stop the owned supervisor/backend after review and retain useful fixtures. The studio does not run on the Pi.

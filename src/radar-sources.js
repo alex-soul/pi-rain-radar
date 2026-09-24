@@ -1,3 +1,4 @@
+import {resolveRadarSources,maskLiveRadar} from '../public/radar-policy.js';
 import {createRadarHistory,radarPersistence} from './radar-history.js';
 import { createRadar } from './radar.js';
 import { hash } from './map.js';
@@ -10,11 +11,13 @@ export async function createRadarSources(directory, providers, {
   const providerSeen=new Map();
   for(const source of ['rainviewer','rainbow'])providerSeen.set(source,new Map());
   let current={...selection()}, activeWorkers={};
-  const resolved=s=>({main:s.main,overview:s.overview==='same'?s.main:s.overview});
+  const resolved=resolveRadarSources;
+  const collecting=source=>source!=='disabled'&&enabled(source);
   // Share a manifest and bounded tile promises across the two views per cycle.
   let metadata=new Map(),tiles=new Map();
   function resetRequests(){metadata=new Map();tiles=new Map();}
   async function worker(source,slot) {
+    if(source==='disabled')return {refresh:async()=>{},status:()=>({frame:null,fetching:false}),observations:()=>[]};
     const target=slot==='main'?views.view:views.overviewView;
     const originalKey=slot==='main'?views.viewKey:views.overviewKey;
     const key=source==='rainviewer'?originalKey:hash({source,originalKey});
@@ -22,7 +25,7 @@ export async function createRadarSources(directory, providers, {
     if(!workers.has(id)) {
       const provider={
         getHistory(){
-          if(!enabled(source))return Promise.resolve([]);
+          if(!collecting(source))return Promise.resolve([]);
           if(!metadata.has(source))metadata.set(source,Promise.resolve().then(()=>providers[source].getHistory()).then(frames=>{
             const seen=providerSeen.get(source),observedAt=now(),selected=frames.slice(-historyDepth);
             const listed=new Set(selected.map(frame=>frame.time));
@@ -33,7 +36,7 @@ export async function createRadarSources(directory, providers, {
           return metadata.get(source);
         },
         getTile(frame,tile){
-          if(!enabled(source))throw Error('Radar collection disabled');
+          if(!collecting(source))throw Error('Radar collection disabled');
           const tileKey=`${source}:${frame.time}:${tile.zoom}:${tile.x}:${tile.y}`;
           if(!tiles.has(tileKey))tiles.set(tileKey,Promise.resolve().then(()=>providers[source].getTile(frame,tile)));
           return tiles.get(tileKey);
@@ -60,11 +63,11 @@ export async function createRadarSources(directory, providers, {
     });capturing=task.catch(()=>{});return task;
   }
   function sourceStatus(slot) {
-    const source=resolved(current)[slot],state=activeWorkers[slot].status(),provider=providers[source].status?.();
+    const source=resolved(current)[slot],state=activeWorkers[slot].status(),provider=providers[source]?.status?.();
     const frame=state.frame;
-    const error=enabled(source)?provider?.error||state.error:null;
+    const error=collecting(source)?provider?.error||state.error:null;
     return {source,time:frame?.time??null,checkedAt:state.checkedAt,nextCheckAt:nextRefreshAt(),nextUpdate:state.nextUpdate,fetching:state.fetching,error,
-      enabled:enabled(source),state:!enabled(source)?'disabled':error?'warning':!frame?'waiting':frame.time<now()/1000-1800?'stale':'ready'};
+      enabled:collecting(source),state:!collecting(source)?'disabled':error?'warning':!frame?'waiting':frame.time<now()/1000-1800?'stale':'ready'};
   }
   return {
     archive,
@@ -74,7 +77,7 @@ export async function createRadarSources(directory, providers, {
       if(busy||changing)return;busy=true;resetRequests();
       try {
         // A view publishes independently as soon as its own acquisition finishes.
-        await Promise.all(Object.entries(activeWorkers).map(async([slot,worker])=>{if(enabled(resolved(current)[slot]))await worker.refresh();await capture();}));
+        await Promise.all(Object.entries(activeWorkers).map(async([slot,worker])=>{if(collecting(resolved(current)[slot]))await worker.refresh();await capture();}));
         await capture();
         storageError=null;
       } catch {storageError='Could not save radar history.';onEvent('storage-error');}
@@ -88,8 +91,8 @@ export async function createRadarSources(directory, providers, {
         // Pressure may run inside another collector's write during this await.
         await store.protect([{context:archive.context,...resolved(current)},{context:archive.context,...resolved(next)}]);
         const candidate=await prepare(next);
-        await Promise.all(Object.entries(candidate).map(([slot,w])=>enabled(resolved(next)[slot])?w.refresh():null));
-        if(Object.entries(candidate).some(([slot,w])=>enabled(resolved(next)[slot])&&(!w.status().frame||w.status().error)))return {status:503,error:'The selected sources are not ready. Your previous sources remain active; try again shortly.'};
+        await Promise.all(Object.entries(candidate).map(([slot,w])=>collecting(resolved(next)[slot])&&w!==activeWorkers[slot]?w.refresh():null));
+        if(Object.entries(candidate).some(([slot,w])=>collecting(resolved(next)[slot])&&w!==activeWorkers[slot]&&(!w.status().frame||w.status().error)))return {status:503,error:'The selected sources are not ready. Your previous sources remain active; try again shortly.'};
         await commit();current={...next};activeWorkers=candidate;
         try{await capture();}catch{storageError='Could not save radar history.';onEvent('storage-error');}
         return {status:200};
@@ -102,7 +105,8 @@ export async function createRadarSources(directory, providers, {
     },
     healthSources: () => ({main:sourceStatus('main'),overview:sourceStatus('overview')}),
     status(hours=2) {
-      const live=archive.live(hours),frames=live.frames;
+      const effective=Object.fromEntries(Object.entries(resolved(current)).map(([role,source])=>[role,collecting(source)?source:'disabled']));
+      const live=maskLiveRadar(archive.live(hours),effective),frames=live.frames;
       const sources={main:sourceStatus('main'),overview:sourceStatus('overview')};
       return {...live,frames,frame:frames.at(-1)??null,sources,error:storageError||Object.values(sources).find(s=>s.error)?.error||null,
         fetching:busy||changing,progress:null,view:views.view};

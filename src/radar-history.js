@@ -51,10 +51,10 @@ export async function createRadarHistory(store,views,{now=Date.now,selection}){
     const eventMap=new Map(data.events.map(r=>[`${r.time}:${r.role}:${r.source}`,r.data]));
     const counts=Object.fromEntries(roles.map(role=>{
       let tracked=0,gapsSeen=0,lateArrivals=0,available=0;
-      for(const slot of coverage){const event=eventMap.get(`${slot.time*1000}:${role}:${slot.sources[role]}`);tracked+=!!event?.tracked;gapsSeen+=!!event?.gap;lateArrivals+=event?.arrivedAt>slot.time*1000+600000;available+=slot[role];}
-      return [role,{tracked,gapsSeen,lateArrivals,available,missing:coverage.length-available,total:coverage.length}];
+      for(const slot of coverage){if(slot.sources[role]==='disabled')continue;const event=eventMap.get(`${slot.time*1000}:${role}:${slot.sources[role]}`);tracked+=!!event?.tracked;gapsSeen+=!!event?.gap;lateArrivals+=event?.arrivedAt>slot.time*1000+600000;available+=slot[role];}
+      return [role,{tracked,gapsSeen,lateArrivals,available,missing:coverage.filter(slot=>slot.sources[role]!=='disabled').length-available,total:coverage.filter(slot=>slot.sources[role]!=='disabled').length}];
     }));
-    return {start,end,frames,coverage,counts,playable:frames.length,complete:coverage.length>0&&coverage.every(f=>f.main&&f.overview)};
+    return {start,end,frames,coverage,counts,playable:frames.length,complete:coverage.length>0&&coverage.every(f=>roles.every(role=>f.sources[role]==='disabled'||f[role]))};
   }
   async function reload(){
     const data=await read(Math.max(0,Math.floor(now()/1000)-25200),Math.floor(now()/1000));
@@ -76,6 +76,7 @@ export async function createRadarHistory(store,views,{now=Date.now,selection}){
     const times=new Set(liveRows.filter(r=>r.time>=end*1000-21600000&&r.time<=clock).map(r=>r.time/1000));
     for(let t=Math.ceil((end-21600)/600)*600;t<=end;t+=600)times.add(t);
     for(const t of times)for(const role of roles){
+      if(current[role]==='disabled')continue;
       const source=current[role],row=liveRows.find(r=>r.time===t*1000&&r.role===role&&r.source===source);
       const previous=incidents.find(r=>r.time===t*1000&&r.role===role&&r.source===source)?.data;
       if(t*1000<=activeSince[role]&&!previous)continue;
@@ -101,8 +102,8 @@ export async function createRadarHistory(store,views,{now=Date.now,selection}){
     async available(start=Math.max(0,now()-86400000),end=now()){
       if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||end-start>32*86400000)return null;
       const times=[];let next=start;
-      do{const page=await store.calendar({kind:'radar',context,start:next,end});times.push(...page.times.map(t=>t/1000));next=page.next;}while(next);
-      const [status,bounds]=await Promise.all([store.status(),store.extent({context})]);return {times,retentionDays:status.retentionDays,...bounds};
+      for(const kind of ['radar','cloud']){next=start;do{const page=await store.calendar({kind,context,start:next,end});times.push(...page.times.map(t=>t/1000));next=page.next;}while(next);}
+      const [status,bounds]=await Promise.all([store.status(),store.extent({context})]);return {times:[...new Set(times)].sort((a,b)=>a-b),retentionDays:status.retentionDays,...bounds};
     },
     async window(end,hours=2){
       if(!Number.isSafeInteger(end)||end>now()/1000||!Number.isInteger(hours)||hours<1||hours>24)return null;

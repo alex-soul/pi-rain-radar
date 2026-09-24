@@ -50,7 +50,7 @@ export function createFrameLoader({ makeImage = () => new Image(), timeoutMs = 1
     cancel, prepare,
     async load(frames, reusable = [], isCurrent = () => true) {
       cancel();
-      const urls = new Set(frames.flatMap(f => [f.url, f.overviewUrl]).filter(Boolean));
+      const urls = new Set(frames.flatMap(f => [f.url, f.overviewUrl,f.cloudUrl,f.overviewCloudUrl]).filter(Boolean));
       for (const [url, image] of cache) if (!urls.has(url)) { image.src = ''; cache.delete(url); }
       return isCurrent() ? frames.map(f => ({ ...f })) : null;
     },

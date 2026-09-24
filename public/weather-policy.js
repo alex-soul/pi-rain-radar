@@ -1,10 +1,21 @@
 // Shared by the collector and replay. HA values are validated, never converted.
-export const haFields=['temperature','feels','wind','gust'];
+export const haFields=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv'];
+export const haUnitChoices={temperature:['C','F'],feels:['C','F'],dew:['C','F'],wind:['mph','km/h','m/s','kn'],gust:['mph','km/h','m/s','kn'],humidity:['%'],direction:['°'],visibility:['km','mi'],pressure:['hPa','inHg','mmHg'],uv:['index']};
+export const haUnitFor=(field,units)=>['temperature','feels','dew'].includes(field)?units.temperatureUnit:['wind','gust'].includes(field)?units.windUnit:field==='visibility'?units.visibilityUnit:field==='pressure'?units.pressureUnit:field==='humidity'?'%':field==='direction'?'°':'index';
+export const weatherKeys={temperature:'temperature',feels:'feelsLike',wind:'windMph',gust:'gustMph',humidity:'humidity',dew:'dewPoint',direction:'windDirection',visibility:'visibility',pressure:'pressure',uv:'uvi'};
+export const weatherFields=Object.keys(weatherKeys);
+export const haEntities=policy=>[...new Set(haFields.map(field=>policy.mappings?.[field]).filter(entity=>/^sensor\.[a-z0-9_]+$/.test(entity)))];
+export function filterCurrent(current,mappings={}){
+  if(!current)return null;
+  const result={...current};
+  for(const [field,key] of Object.entries(weatherKeys))if(mappings[field]==='disabled')delete result[key];
+  return result;
+}
 export const defaultUnits={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa'};
 export const unitChoices={temperatureUnit:['C','F'],windUnit:['mph','km/h','m/s','kn'],visibilityUnit:['km','mi'],pressureUnit:['hPa','inHg','mmHg']};
 export function canonicalUnit(value){
   const key=String(value??'').trim().toLowerCase();
-  return ({'°c':'C','c':'C','celsius':'C','°f':'F','f':'F','fahrenheit':'F','mph':'mph','mi/h':'mph','km/h':'km/h','kph':'km/h','m/s':'m/s','kn':'kn','kt':'kn','kts':'kn','knots':'kn'})[key]??null;
+  return ({'°c':'C','c':'C','celsius':'C','°f':'F','f':'F','fahrenheit':'F','mph':'mph','mi/h':'mph','km/h':'km/h','kph':'km/h','m/s':'m/s','kn':'kn','kt':'kn','kts':'kn','knots':'kn','%':'%','°':'°','deg':'°','degrees':'°','km':'km','mi':'mi','hpa':'hPa','inhg':'inHg','mmhg':'mmHg','':'index','index':'index','uv index':'index'})[key]??null;
 }
 export function normalizeHaReading(state,receivedAt){
   const text=typeof state?.state==='string'?state.state.trim():'';
@@ -19,10 +30,13 @@ export function normalizeHaReading(state,receivedAt){
 export function selectHaReadings(policy,observations,owm,time,{historical=false,comparison=false}={}){
   const result={},current=owm?.data?.current;
   const owmFresh=!!owm?.configured&&current&&current.time*1000<=time+(historical?0:300000)&&current.time*1000>time-1800000&&(owm.failures??0)<2;
-  const keys={temperature:'temperature',feels:'feelsLike',wind:'windMph',gust:'gustMph'};
+  const keys=weatherKeys;
   for(const field of haFields){
-    const entity=policy.mappings[field],expected=!comparison&&policy.source==='ha'&&entity!=='owm'?'ha':'openweather';
-    const unit=policy.units[field==='temperature'||field==='feels'?'temperatureUnit':'windUnit'];
+    if(policy.mappings[field]==='disabled'){
+      result[field]={expected:'disabled',source:null,fallback:false,reason:null,unit:null,entity:null,value:null,time:null,receivedAt:null,basis:null,attribution:''};continue;
+    }
+    const entity=policy.mappings[field]??'owm',expected=!comparison&&policy.source==='ha'&&entity!=='owm'?'ha':'openweather';
+    const unit=haUnitFor(field,policy.units);
     const sample=observations?.[entity];let reason=null;
     if(expected==='ha'){
       if(!sample||sample.reason||!Number.isFinite(sample.value))reason=sample?.reason??'HA reading unavailable';
@@ -30,7 +44,7 @@ export function selectHaReadings(policy,observations,owm,time,{historical=false,
       else if(!Number.isFinite(sample.time))reason='HA report timestamp unavailable';
       else if(sample.time>time+(historical?0:300000)||sample.receivedAt>time)reason='HA report timestamp is in the future';
       else if(time-sample.time>600000)reason='HA report is older than ten minutes';
-      else if((field==='wind'||field==='gust')&&sample.value<0)reason='HA reading invalid';
+      else if((['wind','gust','visibility','uv'].includes(field)&&sample.value<0)||(field==='humidity'&&(sample.value<0||sample.value>100))||(field==='direction'&&(sample.value<0||sample.value>360))||(field==='pressure'&&sample.value<=0))reason='HA reading invalid';
     }
     const fallback=expected==='ha'&&!!reason&&policy.fallback;
     const source=expected==='ha'&&!reason?'ha':(expected==='openweather'||fallback)&&owmFresh&&Number.isFinite(current[keys[field]])?'openweather':null;

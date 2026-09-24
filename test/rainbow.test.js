@@ -82,3 +82,19 @@ test('invalid snapshots and corrupt PNGs do not replace the key, removal makes n
   assert.equal((await f.client.configure(key)).status,503);assert.equal(f.client.configured(),false);
   assert.equal((await f.client.configure('')).status,200);assert.equal(f.client.status().usage.total,2);
 });
+
+test('cloud calls share the rain ledger, reserve rain allowance and runtime keys are not persisted',async t=>{
+ const f=await setup(t,{initialKey:key,monthlyLimit:()=>4,cloudReserve:()=>2});
+ assert.equal(await f.client.cloudSnapshot(),clock/1000);await f.client.cloudTile(clock/1000,{zoom:0,x:0,y:0});
+ assert.ok(f.calls[0].url.endsWith('layer=clouds'));assert.ok(f.calls[1].url.includes('/clouds/'));
+ await assert.rejects(f.client.cloudSnapshot(),{code:'limit'});assert.equal(f.calls.length,2);
+ await f.client.getHistory();assert.equal(f.client.status().usage.total,3);
+ await assert.rejects(readFile(join(f.dir,'settings/rainbow.json')),{code:'ENOENT'});
+ const resumed=await createRainbow(f.dir,f.options);assert.equal(resumed.status().usage.total,3);
+});
+test('cloud tiles accept validated WebP while rain keeps its PNG contract',async t=>{
+ const webp=await sharp(png).webp().toBuffer();
+ const f=await setup(t,{initialKey:key,request:async()=>new Response(webp)});
+ assert.deepEqual(await f.client.cloudTile(clock/1000,{zoom:0,x:0,y:0}),webp);
+ await assert.rejects(f.client.getTile({time:clock/1000},{zoom:0,x:0,y:0}),{code:'image'});
+});

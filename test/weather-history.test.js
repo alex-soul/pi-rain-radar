@@ -12,12 +12,12 @@ const snapshot=(time,points)=>({time,receivedAt:(T+3600)*1000,points:points.map(
 
 test('comparison matching is backward-only, inclusive at ten minutes, and uses exact point times',()=>{
   for(const drift of [0,600,601]){
-    const replay=createWeatherReplay({forecasts:[snapshot(T-3600-drift,[[T,7]])]});
+    const replay=createWeatherReplay({forecasts:[snapshot(T-3600-drift,[[T,7]]),snapshot(T,[[T,2]])]});
     assert.equal(replay.comparison(T,60).at(-1).predicted,drift<=600?7:null);
   }
-  const future=createWeatherReplay({forecasts:[snapshot(T-3599,[[T,8]])]});
+  const future=createWeatherReplay({forecasts:[snapshot(T-3599,[[T,8]]),snapshot(T,[[T,2]])]});
   assert.equal(future.comparison(T,60).at(-1).predicted,null);
-  const missing=createWeatherReplay({forecasts:[snapshot(T-3600,[[T,7]]),snapshot(T-3300,[[T-60,3]])]});
+  const missing=createWeatherReplay({forecasts:[snapshot(T-3600,[[T,7]]),snapshot(T-3300,[[T-60,3]]),snapshot(T,[[T,2]])]});
   assert.equal(missing.comparison(T,50).at(-1).predicted,null,'do not splice an older revision to fill the chosen snapshot');
 });
 
@@ -28,10 +28,29 @@ test('saved forward forecast retains its original anchor and points, including l
   assert.equal(selected.receivedAt,(T+3600)*1000);
 });
 
-test('NOW values stay fixed across leads and two-hour comparisons use thirteen timestamp samples',()=>{
+test('NOW values stay fixed across leads and regular collected timestamps are retained',()=>{
   const forecasts=Array.from({length:21},(_,i)=>snapshot(T-(20-i)*600,Array.from({length:61},(_,m)=>[T-(20-i)*600+m*60,i+m/100])));
   const replay=createWeatherReplay({forecasts});const a=replay.comparison(T,10),b=replay.comparison(T,60);
   assert.equal(a.length,13);assert.equal(a[0].time,T-7200);assert.deepEqual(a.map(p=>p.now),b.map(p=>p.now));assert.notDeepEqual(a.map(p=>p.predicted),b.map(p=>p.predicted));
+});
+
+test('comparison uses irregular first-point times and never samples future minutes as NOW',()=>{
+  const forecasts=[
+    snapshot(T-2400,[[T-2400,0],[T+60,.7],[T+660,.8]]),
+    snapshot(T-1800,[[T-1800,0],[T+60,.3]]),
+    snapshot(T+60,[[T+60,.1],[T+120,9],[T+600,8]]),
+    snapshot(T+660,[[T+660,0]]),
+    snapshot(T+1560,[[T+1560,.2]]),
+  ];
+  const replay=createWeatherReplay({forecasts});
+  const pairs=replay.comparison(T+1800,30).filter(p=>p.time>=T);
+  assert.deepEqual(pairs.map(p=>[p.time,p.now]),[[T+60,.1],[T+660,0],[T+1560,.2]]);
+  assert.equal(pairs[0].predicted,.3);
+  assert.equal(pairs[0].predictedAt,T-1800);
+  assert.equal(pairs[1].predicted,null,'missing eligible snapshot does not become dry');
+  assert.deepEqual(replay.comparison(T+1800,10).map(p=>[p.time,p.now]),replay.comparison(T+1800,30).map(p=>[p.time,p.now]));
+  assert.equal(replay.comparison(T,30).some(p=>p.time>T),false);
+  assert.deepEqual(replay.comparison(T+20000,30),[],'empty window must not manufacture NOW samples');
 });
 
 test('historical readings hold preceding observations without interpolation or future borrowing',()=>{

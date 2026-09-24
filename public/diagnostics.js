@@ -11,7 +11,7 @@ export function setupDiagnostics(dialog, request, canEdit) {
       const rows = events.map(event => {
         const row = document.createElement('div'); row.className = `diagnostic-event ${event.severity}`;
         const time = document.createElement('time'); time.dateTime = event.lastAt;
-        time.textContent = new Date(event.lastAt).toLocaleTimeString('en-GB', { hour12: false, timeZone });
+        time.textContent = new Date(event.lastAt).toLocaleString('en-GB', { day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone }).replace(',', '');
         time.title = `First: ${new Date(event.time).toLocaleString('en-GB', {timeZone})} · Latest: ${new Date(event.lastAt).toLocaleString('en-GB', {timeZone})}`;
         const label = document.createElement('span'); label.className = 'diagnostic-source';
         label.textContent = `${event.severity.toUpperCase()} / ${event.source}`;

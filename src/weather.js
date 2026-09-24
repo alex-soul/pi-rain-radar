@@ -1,4 +1,5 @@
 import {saveWeatherHistory} from './weather-history.js';
+import {filterCurrent,weatherFields} from '../public/weather-policy.js';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -40,7 +41,7 @@ async function save(file, value) {
   await writeFile(temp, JSON.stringify(value), {mode:0o600});
   await rename(temp, file);
 }
-export async function createWeather(directory, { store = null, now = Date.now, request = fetch, location = view, onEvent = () => {}, enabled=()=>true, onNewKey=async()=>{}, onData=async()=>{} } = {}) {
+export async function createWeather(directory, { store = null, now = Date.now, request = fetch, location = view, onEvent = () => {}, enabled=()=>true, forecastEnabled=enabled, mappings=()=>({}), onNewKey=async()=>{}, onData=async()=>{} } = {}) {
   const folder = join(directory, 'settings');
   await mkdir(folder, {recursive:true,mode:0o700});
   const credentialsFile = join(folder, 'openweather.json');
@@ -59,22 +60,35 @@ export async function createWeather(directory, { store = null, now = Date.now, r
   // Migrate the previous cache using the observation time, never the fetch time.
   const storedGust = cache?.gust ?? currentGust(cache?.data);
   let gust = key && validGust(storedGust) ? storedGust : null;
-  let busy = false, configuring = false, generation = 0, controller=null, collectionEnabled=enabled();
+  const currentEnabled=()=>enabled()&&weatherFields.some(field=>mappings()[field]!=='disabled');
+  const signature=()=>JSON.stringify([enabled(),forecastEnabled(),mappings()]);
+  let busy = false, configuring = false, removing=false, suspended=false, generation = 0, controller=null, collectionSignature=signature();
   let nextAttemptAt = number(cache?.nextAttemptAt,0,now()+WEATHER_INTERVAL) ? cache.nextAttemptAt : 0;
   let nextSetupAt = number(cache?.nextSetupAt,0,now()+SETUP_COOLDOWN) ? cache.nextSetupAt : 0;
   let failures = Number.isInteger(cache?.failures) ? Math.max(0, Math.min(2, cache.failures)) : 0;
   let error = failures && typeof cache?.error === 'string' ? cache.error : null;
   let forecastError = typeof cache?.forecastError === 'string' ? cache.forecastError : null;
   let forecastFetchedAt = cache?.forecastFetchedAt ?? cache?.fetchedAt ?? null;
-  async function persist() {
-    const operational={location:locationKey,failures,error,forecastError,nextAttemptAt,nextSetupAt};
-    const current={data:cache?.data||null,fetchedAt:cache?.fetchedAt||null,forecastFetchedAt,gust};
-    await save(cacheFile,store?operational:{...operational,...current});
-    // One bounded latest operational value, separate from immutable historical
-    // forecasts. A later same-anchor response may update Live, never history.
-    if(store)await store.saveWeatherState('openweather',{location:locationKey,...current});
-
+  let writes=Promise.resolve();
+  function scrub(){
+    if(cache?.data)cache.data={...cache.data,current:filterCurrent(cache.data.current,mappings())};
+    // Retention belongs only to the OWM-selected gust, never an HA fallback.
+    if(mappings().gust&&mappings().gust!=='owm')gust=null;
   }
+  function persist() {
+    scrub();
+    const operational={location:locationKey,failures,error,forecastError,nextAttemptAt,nextSetupAt};
+    const current=structuredClone({data:cache?.data||null,fetchedAt:cache?.fetchedAt||null,forecastFetchedAt,gust});
+    const context=locationKey;
+    const write=writes.then(async()=>{
+      await save(cacheFile,store?operational:{...operational,...current});
+      // One bounded latest operational value, separate from immutable historical
+      // forecasts. A later same-anchor response may update Live, never history.
+      if(store)await store.saveWeatherState('openweather',{location:context,...current});
+    });
+    writes=write.catch(()=>{});return write;
+  }
+  await persist();
   async function fetchPart(path, normalize, coordinates, apiKey) {
     try {
       const url = new URL(`https://api.openweathermap.org/data/4.0/onecall/${path}`);
@@ -98,7 +112,8 @@ export async function createWeather(directory, { store = null, now = Date.now, r
   }
   let connectionStarted = false, connectionReady = false, lastFailed = false;
   async function refresh() {
-    if (!enabled() || !key || busy || configuring || now() < nextAttemptAt) return;
+    const fetchCurrent=currentEnabled(),fetchForecast=forecastEnabled();
+    if ((!fetchCurrent&&!fetchForecast) || !key || busy || configuring || suspended || now() < nextAttemptAt) return;
     if (!connectionStarted) { onEvent('weather-start'); connectionStarted = true; }
     busy = true;
     controller=new AbortController();
@@ -107,34 +122,38 @@ export async function createWeather(directory, { store = null, now = Date.now, r
     nextAttemptAt = now() + WEATHER_INTERVAL;
     try {
       await persist(); // Retain the request schedule across ordinary restarts.
+      if(epoch!==generation)return;
       const [current, forecast] = await Promise.all([
-        fetchPart('current', normalizeCurrent, location, key),
-        fetchPart('timeline/1min', normalizeMinutely, location, key),
+        fetchCurrent?fetchPart('current', normalizeCurrent, location, key):{},
+        fetchForecast?fetchPart('timeline/1min', normalizeMinutely, location, key):{},
       ]);
-      if (epoch !== generation || !enabled()) return;
-      error = current.error || null;
-      forecastError = forecast.error || null;
+      if (epoch !== generation) return;
+      if(current.data)current.data=filterCurrent(current.data,mappings());
+      if(fetchCurrent)error = current.error || null;
+      if(fetchForecast)forecastError = forecast.error || null;
       diagnostic = current.diagnostic || forecast.diagnostic || diagnostic;
       currentDiagnostic = current.diagnostic || currentDiagnostic;
-      failures = error ? Math.min(2, failures + 1) : 0;
-      if (!error || !forecastError) {
+      if(fetchCurrent)failures = error ? Math.min(2, failures + 1) : 0;
+      if (current.data || forecast.data) {
         cache = {location:locationKey, data:{current:current.data ?? cache?.data?.current ?? null, minutely:forecast.data ?? cache?.data?.minutely ?? []}, fetchedAt:current.data ? now() : cache?.fetchedAt ?? null};
         if (forecast.data) forecastFetchedAt = now();
         const candidate = currentGust(cache.data);
         if (current.data && validGust(candidate) && (!gust || candidate.time > gust.time || (candidate.time === gust.time && candidate.mph !== gust.mph))) gust = {...candidate, fetchedAt:now()};
+        scrub();
         if(store)try{await saveWeatherHistory(store,{context:locationKey,current:current.data,forecast:forecast.data,gust,receivedAt:now()});}catch{onEvent('storage-error');}
       }
     } catch {
-      if (epoch === generation) { failures = Math.min(2, failures + 1); error = forecastError = 'Weather refresh failed; will retry automatically.'; }
+      if (epoch === generation) {if(fetchCurrent){failures = Math.min(2, failures + 1);error='Weather refresh failed; will retry automatically.';}if(fetchForecast)forecastError='Weather refresh failed; will retry automatically.';}
     } finally {
       if (epoch === generation) {
         const samples = cache?.data?.minutely ?? [];
-        const forecastGaps = !forecastError && (samples.length < 60 || samples.some((entry,i) => i > 0 && entry.time !== samples[i-1].time + 60));
-        if (error) onEvent(currentDiagnostic);
-        else if (forecastError && ['weather-auth','weather-limit'].includes(diagnostic)) onEvent(diagnostic);
-        if (!forecastError && !forecastGaps && !error && lastFailed) onEvent('weather-recovered');
-        else if (!error && !forecastError && !forecastGaps && !connectionReady) onEvent('weather-ready');
-        lastFailed = !!(error || forecastError);
+        const currentFailed=fetchCurrent&&!!error,forecastFailed=fetchForecast&&!!forecastError;
+        const forecastGaps = fetchForecast&&!forecastError && (samples.length < 60 || samples.some((entry,i) => i > 0 && entry.time !== samples[i-1].time + 60));
+        if (currentFailed) onEvent(currentDiagnostic);
+        else if (forecastFailed && ['weather-auth','weather-limit'].includes(diagnostic)) onEvent(diagnostic);
+        if (!forecastFailed && !forecastGaps && !currentFailed && lastFailed) onEvent('weather-recovered');
+        else if (!currentFailed && !forecastFailed && !forecastGaps && !connectionReady) onEvent('weather-ready');
+        lastFailed = currentFailed || forecastFailed;
         if (!lastFailed) connectionReady = true;
         // Preserve failed-poll state across restarts, as well as the request budget.
         try { await persist(); } catch { onEvent('storage-error'); }
@@ -146,7 +165,8 @@ export async function createWeather(directory, { store = null, now = Date.now, r
   }
   return {
     refresh,
-    collectionChanged(){const next=enabled();if(next!==collectionEnabled){collectionEnabled=next;generation++;controller?.abort();}void refresh();},
+    suspend(){suspended=true;generation++;controller?.abort();},
+    async collectionChanged(){const next=signature();if(next!==collectionSignature){collectionSignature=next;generation++;controller?.abort();}await persist();suspended=false;void refresh();},
     async setLocation(value) {
       const nextKey = `${value.lat},${value.lon}`;
       if (nextKey === locationKey) return;
@@ -155,30 +175,32 @@ export async function createWeather(directory, { store = null, now = Date.now, r
       await persist();
       void refresh();
     },
-    configured: () => !!key,
+    configured: () => !!key&&!removing,
     async configure(value) {
       if (typeof value !== 'string' || (value !== '' && !/^[a-f0-9]{32}$/i.test(value))) return {status:400,error:'Enter a 32-character OpenWeather API key.'};
-      if (configuring || busy) return {status:409,error:'Weather update in progress. Please try again shortly.'};
+      if (configuring || busy&&value) return {status:409,error:'Weather update in progress. Please try again shortly.'};
       if (value && now() < nextSetupAt) {
         const retryAfter = Math.ceil((nextSetupAt - now()) / 1000);
         return {status:429,retryAfter,error:`Please wait ${retryAfter} seconds before checking a key again.`};
       }
       configuring = true;
+      removing=!value;
       try {
         if(!key||!value)await onNewKey();
         await save(credentialsFile,{apiKey:value});
         onEvent('weather-key');
-        generation++; key=value; error=null; forecastError=null;
+        generation++;controller?.abort();key=value; error=null; forecastError=null;
         if (!key) { cache=null; gust=null; failures=0; forecastFetchedAt=null; }
         // Explicit setup checks have a short, persistent cooldown; background polling keeps its normal interval.
         if (key) { nextAttemptAt = 0; nextSetupAt = now() + SETUP_COOLDOWN; }
         await persist();
-        return {status:200,apiKeyConfigured:!!key,checking:!!key&&enabled()};
-      } finally { configuring=false; void refresh(); }
+        return {status:200,apiKeyConfigured:!!key,checking:!!key&&(currentEnabled()||forecastEnabled())};
+      } finally { configuring=false;removing=false;void refresh(); }
     },
     status() {
+      scrub();
       const data = key ? cache?.data : null;
-      return {configured:!!key, enabled:enabled(), data:data || null, gust:key ? gust : null, fetchedAt:data ? cache.fetchedAt : null, forecastFetchedAt:key ? forecastFetchedAt : null, failures, error, forecastError, fetching:busy, nextAttemptAt:key&&enabled() ? nextAttemptAt : null};
+      return {configured:!!key, enabled:currentEnabled(), forecastEnabled:forecastEnabled(), data:data || null, gust:key ? gust : null, fetchedAt:data ? cache.fetchedAt : null, forecastFetchedAt:key ? forecastFetchedAt : null, failures, error, forecastError, fetching:busy, nextAttemptAt:key&&(currentEnabled()||forecastEnabled()) ? nextAttemptAt : null};
     },
   };
 }

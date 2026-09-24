@@ -171,7 +171,7 @@ async function writable(bytes=0){
 }
 async function publish({record,bytes}){
   const r=validate(record);
-  if(!['radar','camera'].includes(r.kind)||!(bytes instanceof Uint8Array)||bytes.length>8*MiB||bytes.length===0)throw archiveError('ARCHIVE_INPUT','Invalid image publication');
+  if(!['radar','cloud','camera'].includes(r.kind)||!(bytes instanceof Uint8Array)||bytes.length>8*MiB||bytes.length===0)throw archiveError('ARCHIVE_INPUT','Invalid image publication');
   if(duplicate(r))return {inserted:0};
   if(r.time<meta('cutoff')){
     const previous=r.kind==='radar'?lastGood(r):null;
@@ -316,8 +316,8 @@ async function status(){
   for(const r of marker.recoveries)for(const suffix of ['','-wal','-shm','-journal','-wal.tmp','-shm.tmp','-journal.tmp']){const p=join(root,'recovery',r.id,'history.sqlite'+suffix);if(await exists(p))recoveryDatabaseBytes+=(await regularFile(p)).size;}
   const totals=Object.fromEntries(db.prepare('SELECT * FROM totals').all().map(r=>[r.key,r.value]));
   const cutoff=meta('cutoff');
-  const oldest=db.prepare("SELECT time FROM records WHERE time>=? AND kind IN ('radar','weather','forecast','camera') ORDER BY time,id LIMIT 1").get(cutoff)?.time??null;
-  const newest=db.prepare("SELECT time FROM records WHERE time>=? AND kind IN ('radar','weather','forecast','camera') ORDER BY time DESC,id DESC LIMIT 1").get(cutoff)?.time??null;
+  const oldest=db.prepare("SELECT time FROM records WHERE time>=? AND kind IN ('radar','cloud','weather','forecast','camera') ORDER BY time,id LIMIT 1").get(cutoff)?.time??null;
+  const newest=db.prepare("SELECT time FROM records WHERE time>=? AND kind IN ('radar','cloud','weather','forecast','camera') ORDER BY time DESC,id DESC LIMIT 1").get(cutoff)?.time??null;
   const recoveryMediaBytes=marker.recoveries.reduce((sum,r)=>sum+(r.mediaBytes??0),0);
   return {schema:SCHEMA_VERSION,generation:marker.generation,retentionDays:meta('retentionDays'),cutoff,oldest,newest,...totals,databaseBytes,recoveryDatabaseBytes,recoveryMediaBytes,
     // No fabricated total: unindexed legacy/recovery media is explicitly unknown.
@@ -344,7 +344,7 @@ const methods={
   },
   async put({records}){
     if(!Array.isArray(records)||records.length>BATCH)throw archiveError('ARCHIVE_INPUT','History batch exceeds limit');
-    const checked=records.map(validate);if(checked.some(r=>['radar','camera'].includes(r.kind)))throw archiveError('ARCHIVE_INPUT','Images require atomic publication');
+    const checked=records.map(validate);if(checked.some(r=>['radar','cloud','camera'].includes(r.kind)))throw archiveError('ARCHIVE_INPUT','Images require atomic publication');
     if(checked.reduce((n,r)=>n+Buffer.byteLength(r.data),0)>512*1024)throw archiveError('ARCHIVE_INPUT','History batch too large');
     await writable(512*1024);
     return tx(()=>{let inserted=0;for(const r of checked)if(r.time>=meta('cutoff'))inserted+=insert(r);meta('lastWrite',clock());return {inserted};});
@@ -355,7 +355,7 @@ const methods={
   },
   extent({context}){
     if(!text(context))throw archiveError('ARCHIVE_INPUT','Invalid radar context');
-    const bounds=order=>db.prepare(`SELECT time FROM records WHERE kind='radar' AND context=? AND time>=? ORDER BY time ${order} LIMIT 1`).get(context,meta('cutoff'))?.time??null;
+    const bounds=order=>db.prepare(`SELECT time FROM records WHERE kind IN ('radar','cloud') AND context=? AND time>=? ORDER BY time ${order} LIMIT 1`).get(context,meta('cutoff'))?.time??null;
     return {oldest:bounds('ASC'),newest:bounds('DESC')};
   },
   boundary({source,context,role=''}){

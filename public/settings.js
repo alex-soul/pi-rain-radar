@@ -172,7 +172,7 @@ async function open() {
     if (current !== generation) return;
     configured = state.configured;
     if (!configured) { await showSettings(current); return; }
-    $('pin-message').textContent = 'Enter your six-digit PIN';
+    $('pin-message').textContent = '';
     enable(true);
   } catch { if (current === generation) $('pin-message').textContent = 'Cannot reach settings. Close and try again.'; }
 }
@@ -189,7 +189,7 @@ async function unlock() {
       const wait = Math.max(1, result.retryAfter || 2);
       $('pin-message').textContent = response.status === 409 ? 'PIN protection changed. Close and reopen settings.' : `Not unlocked. Try again in ${wait} seconds.`;
       if (response.status !== 409) retryTimer = setTimeout(() => {
-        busy = false; enable(true); $('pin-message').textContent = 'Enter your six-digit PIN';
+        busy = false; enable(true); $('pin-message').textContent = '';
       }, wait * 1000);
       return;
     }

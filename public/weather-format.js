@@ -1,7 +1,9 @@
-export const readingNames = { temperature: 'Temperature', feels: 'Feels like', wind: 'Wind', gust: 'Wind gusts', humidity: 'Humidity', dew: 'Dew point', direction: 'Wind direction', visibility: 'Visibility', pressure: 'Pressure', uv: 'UV index' };
+export const readingNames = { temperature: 'Temperature', feels: 'Feels like', wind: 'Wind', gust: 'Wind gusts', humidity: 'Humidity', dew: 'Dew point', direction: 'Wind direction', visibility: 'Visibility', pressure: 'Pressure', uv: 'UV index', depression: 'T−Td' };
 export const defaultReadings = ['temperature', 'feels', 'wind', 'gust'];
 export const windUnits = { mph: 1, 'km/h': 1.609344, 'm/s': 0.44704, kn: 0.8689762419 };
-export const playbackSpeeds = [0.5, 0.75, 1, 1.5, 2];
+export const playbackSpeeds = [0.5, 0.75, ...Array.from({length:19},(_,i)=>1+i*0.5)];
+export const lastFrameMultipliers=Array.from({length:21},(_,i)=>Number((1+i*0.2).toFixed(1)));
+export const playbackFrameDelay=(last,speed=1,multiplier=2.4)=>650*(last?multiplier:1)/speed;
 export function dockOutline(width, height) {
   const centre = width / 2, body = Math.max(0, height - 18);
   // Longer, gentler shoulders stay inside the 68px content padding at any width.

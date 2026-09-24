@@ -21,10 +21,10 @@ const safeError=e=>fail(e?.code==='CAMERA_AUTH'?'HA_AUTH':e?.code==='HA_RESPONSE
 
 // A single secret owner, independently probed even when no consumer is enabled.
 // Consumers receive bytes through bounded, DNS-pinned transport, never a token.
-export async function createHomeAssistant(directory,{now=Date.now,get=createCameraHttp(),autoStart=true,onChange=()=>{}}={}){
+export async function createHomeAssistant(directory,{now=Date.now,get=createCameraHttp(),autoStart=true,beforeChange=()=>{},onChange=()=>{}}={}){
   const folder=join(directory,'settings'),file=join(folder,'home-assistant.json');
   await mkdir(folder,{recursive:true,mode:0o700});
-  let config=null,error=null,revision=0,checkedAt=null,nextCheckAt=0,busy=false,mutating=false,closed=false;
+  let config=null,error=null,revision=0,checkedAt=null,nextCheckAt=0,busy=false,mutating=false,removing=false,closed=false;
   const controllers=new Set();
   if(await exists(file)){
     try{const saved=await readJson(file);config=saved.connection?connection(saved.connection):null;revision=Number.isSafeInteger(saved.revision)?saved.revision:0;}
@@ -58,7 +58,7 @@ export async function createHomeAssistant(directory,{now=Date.now,get=createCame
     catch(e){if(epoch===revision){error=e.code??'HA_CONNECTION';checkedAt=now();}}
     finally{busy=false;}
   }
-  const status=()=>({configured:!!config,url:config?.url??'',revision,checking:busy,error:error?haMessages[error]:null,checkedAt,nextCheckAt:config?nextCheckAt:null,state:!config?'unconfigured':error?'error':checkedAt?'connected':'connecting'});
+  const status=()=>({configured:!!config&&!removing,url:config?.url??'',revision,checking:busy,error:error?haMessages[error]:null,checkedAt,nextCheckAt:config?nextCheckAt:null,state:!config?'unconfigured':error?'error':checkedAt?'connected':'connecting'});
   const timer=autoStart?setInterval(()=>void probe(),1000):null;timer?.unref();
   if(autoStart)void probe();
   return {
@@ -67,15 +67,19 @@ export async function createHomeAssistant(directory,{now=Date.now,get=createCame
       if(mutating)throw fail('HA_BUSY');
       const candidate=input?.remove===true?null:connection(input);
       mutating=true;
+      removing=!candidate;
       try{
         // Save only after a real connection test. Failed replacements preserve
         // the existing credential and consumers; no response body is logged.
         if(candidate){const result=await json('/api/',{},candidate);if(typeof result?.message!=='string')throw fail('HA_RESPONSE');}
+        // Disable dependent acquisition durably before removing its credential.
+        // Replacement keeps policy; initial setup/re-add never enables it.
+        if(!candidate||!config)await beforeChange();
         await atomicJson(file,{version:1,connection:candidate,revision:revision+1});
         for(const controller of controllers)controller.abort();
         config=candidate;revision++;error=null;checkedAt=candidate?now():null;nextCheckAt=now()+INTERVAL;
         await onChange();return status();
-      }finally{mutating=false;}
+      }finally{mutating=false;removing=false;}
     },
     async discover(){
       const rows=await json('/api/states');

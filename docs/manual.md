@@ -25,7 +25,7 @@ Tap the screen to reveal the **settings cog at the bottom right**. It disappears
 Choose a section from the Settings selector:
 
 - **Map:** Location, Regional, Embed
-- **Interface:** Display, Buttons, Radar, Weather, Camera
+- **Interface:** Display, Buttons, Radar, Weather, Clouds, Camera
 - **System:** Status, API (OpenWeather / Rainbow / HA), Storage, PIN, Log
 - **Power**
 - **About**
@@ -34,21 +34,23 @@ Small information icons beside setting titles explain their purpose without leav
 
 Selecting a main section or reopening Settings starts its first sub-tab. System starts on Status. External links show their exact destination on hover.
 
-### Radar sources and estimates
+### Radar sources and usage
 
-**Interface → Radar** selects Main and Overview independently. RainViewer needs no key; Rainbow appears after configuring its key under System → API. Enable the required collectors here, then **Save and apply sources**. Disabling collection preserves history and credentials; it does not choose another provider. See [radar setup, estimates and limits](radar-providers.md).
+**Interface → Radar** selects Main and Overview independently. RainViewer needs no key; Rainbow appears after configuring its key under System → API. Enable the required collectors here, then **Save and apply sources**. Disabling collection preserves history and credentials; it does not choose another provider. See [radar setup, usage and limits](radar-providers.md).
 
 History retains observations from whichever providers were selected at that time. Switching sources does not clear it. Map geometry determines which retained history can be replayed.
 
 ### Weather readings and units
 
-Use **Interface → Weather → Readings / Units / Source / Collection**. Layout, reading visibility and order belong to this browser. Units, source mappings, fallback and background collection belong to the appliance.
+Use **Interface → Weather → Dock / Readings / Units / Forecast**. Dock visibility and order belong to this browser. Units, source mappings, fallback and background collection belong to the appliance.
 
 On upgrade, explicitly confirm the initial shared units in **Units**. Existing archive observations are preserved and use that fixed baseline; former browser-specific unit changes cannot be reconstructed. Later shared changes take effect at their recorded time in Archive. Live always follows current shared units.
 
-Save credentials under **System → API → OpenWeather / Rainbow / HA**. Saving a new key does not enable weather collection. Follow the saved-connection links or enable it under **Collection**. Existing enabled collectors remain enabled on upgrade. OpenWeather collection also supplies Rain forecast; switching it off preserves credentials/history and allows already-fresh values to expire normally.
+Save credentials under **System → API → OpenWeather / Rainbow / HA**. Saving a new key does not enable collection. Enable current readings under **Readings** and minute forecasts independently under **Forecast**. Existing enabled collectors remain enabled on upgrade. Switching either off preserves credentials/history and allows already-fresh values to expire normally.
 
-**Home Assistant** can supply temperature, feels-like, wind and gusts through four sensor-entity mappings. Other readings use OpenWeather when available. **Use OpenWeather** in a mapping is a normal source choice. Optional fallback uses fresh OWM data only when an HA-assigned reading is unusable; that individual reading is amber, with its reason in the tooltip. No usable source means a gap. Primary source and collection are independent.
+**Home Assistant** can supply all ten source readings: temperature, feels-like, wind speed, gusts, direction, humidity, dew point, visibility, pressure and UV index. **Use OpenWeather** in a mapping is a normal source choice. Optional fallback uses fresh OWM data only when an HA-assigned reading is unusable; that individual reading is amber, with its reason in the tooltip. No usable source means a gap. Primary source and collection are independent.
+
+**T−Td**, or dew point depression, subtracts dew point from temperature using each reading's configured source, including fallback. Inputs can come from different providers; hiding Dew point in the Dock does not disable the calculation. The subtitle shows OpenWeather, HA or OpenWeather/HA. Missing inputs leave a gap. Wind gust is optional: its own indicator can be amber, but it does not make the weather handle or aggregate availability amber.
 
 HA values are not converted. Their reported units must match Settings, checked on every poll and immediately after changing app units. **Unit mismatch** means changing HA or this app's Settings to match. Recognised spelling aliases do not change the value. Readings use HA's `last_reported` as **Reported to HA**, not a promise of a new physical measurement. Reports older than ten minutes, missing timestamps and unavailable/invalid states are ineligible. Polling the same cached state does not renew its report time.
 
@@ -91,15 +93,15 @@ Changing coordinates or either zoom selects a different history; it **does not d
 
 ### Interface → Buttons: arrange your controls
 
-Drag rows up or down to change the order of the five left-side controls. Turn a row off to hide that button. **Hiding a button does not close its widget:** to leave Overview permanently visible, open it first, then hide its button here. To close it later, show the button again.
+Drag rows up or down to change the order of the left-side controls. Turn a row off to hide that button. **Hiding a button does not close its widget:** to leave Overview permanently visible, open it first, then hide its button here. To close it later, show the button again.
 
 The two dock handles remain available for API status; screen interaction reveals the settings cog independently. Button order, theme and widget layout are remembered in this browser; another browser may have a different layout. Map settings and the weather key belong to the installation and are shared.
 
 ### System → API → OpenWeather: add current weather and Rain forecast (optional)
 
-The app uses **OpenWeather One Call 4.0** for both features. An API key is a private access code from your OpenWeather account. It must have access to this specific service; another OpenWeather subscription may not include it. Check the [provider's current access and pricing information](https://openweathermap.org/api/one-call-4) and your account's request limit before enabling it. One Call 4.0 requires its own subscription, including for existing 3.0 users. As checked on 16 September 2026, the first 1,000 calls/day are free; the default 2,000-call daily limit allows chargeable usage. Set the limit to 1,000 to stay within the free allowance. Normal operation uses approximately 288 calls/day per installation (two requests every ten minutes), plus explicit key checks. Other applications and installations sharing the subscription also consume its allowance.
+The app uses **OpenWeather One Call 4.0** for both features. An API key is a private access code from your OpenWeather account. It must have access to this specific service; another OpenWeather subscription may not include it. Check the [provider's current access and pricing information](https://openweathermap.org/api/one-call-4) and your account's request limit before enabling it. One Call 4.0 requires its own subscription, including for existing 3.0 users. As checked on 24 September 2026, the first 1,000 calls/day are free; the default 2,000-call daily limit allows chargeable usage. Set the limit to 1,000 to stay within the free allowance. Normal operation uses approximately 288 calls/day per installation (two requests every ten minutes), plus explicit key checks. Other applications and installations sharing the subscription also consume its allowance.
 
-Paste the key into **Settings → System → API → OpenWeather**, then tap **Save key** and follow the link to enable **Interface → Weather → Collection**. The message below the field reports whether the key is configured; when configured, Save becomes **Replace key**. Use **System → Status** for connection health and **Log** for available error details. Newly created keys may need activation time; do not repeatedly resave them. The app retries automatically.
+Paste the key into **Settings → System → API → OpenWeather**, then tap **Save key** and follow the link to enable **Interface → Weather → Readings / Forecast**. The message below the field reports whether the key is configured; when configured, Save becomes **Replace key**. Use **System → Status** for connection health and **Log** for available error details. Newly created keys may need activation time; do not repeatedly resave them. The app retries automatically.
 
 Two requests supply current conditions and the minute forecast, normally every 10–15 minutes, shared by all displays. Saving a key triggers an additional check, subject to a short cooldown. Opening widgets or moving the radar slider does not make extra provider requests. Other apps using your OpenWeather account share its allowance.
 
@@ -107,7 +109,7 @@ The key stays on the computer running the app and is not displayed again. **Remo
 
 ### Interface → Display: playback, scale, docks and UI lock
 
-**Playback speed** has five positions: 0.5×, 0.75×, 1× (default), 1.5× and 2×. Changes preview immediately behind Settings. Speed does not affect acquisition.
+**Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Changes preview immediately, persist in this browser and do not affect acquisition.
 
 **Playback window** selects 2, 4 or 6 hours for Live on this browser and supplies the initial Archive duration. Archive has its own temporary 1–24-hour slider. Longer windows use retained history and more browser memory, without extra provider requests or retention.
 
@@ -125,9 +127,9 @@ Choose temperature units independently from wind units: Celsius/Fahrenheit and m
 
 **Cache wind gust (min)** offers **0 (off), 15, 30, 45, 60, 90, 120 and 180 minutes**, defaulting to **60**. Zero disables retained fallback, not the gust reading itself. The last reported gust retains its original observation time through missing samples or provider errors. It survives restart, clears on location change or key removal, and adds no API requests. See [indicators](indicators.md) for retained/expired reading presentation and weather failure states.
 
-### Interface → Weather → Readings
+### Interface → Weather → Dock
 
-Toggle and drag rows to choose and order the ten optional readings listed under [Weather readings and units](#weather-readings-and-units). These use the same current-conditions request; unavailable optional fields show dashes. Wind direction follows your selected convention; see the [wind arrow guide](indicators.md#wind-arrow). It does not predict radar movement.
+Toggle and drag rows to choose and order the ten source readings plus derived T−Td listed under [Weather readings and units](#weather-readings-and-units). Unavailable fields show dashes. Wind direction follows your selected convention; see the [wind arrow guide](indicators.md#wind-arrow). It does not predict radar movement.
 
 The top dock sizes to the selected readings, wrapping on narrow screens. Hiding every reading removes the numbers while keeping the health handle. Controls move below an expanded dock when they would collide and move back up when it tucks away.
 
@@ -170,13 +172,15 @@ Use the numbered [screen indicator guide](indicators.md) for dock handles, retai
 
 ### Look back with Archive
 
-Tap Archive, choose an available **Date** and **Time**, and select **Show**. The time is the window endpoint. Its **1–24-hour slider** defaults to the saved Live window and resets on return to Live. Only retained choices are offered; history builds while the server runs, with seven days retained by default.
+Tap Archive, choose an available **Date** and **Time**, and select **Replay**. The time is the window endpoint. Its **1–24-hour slider** defaults to the saved Live window and resets on return to Live. Only retained choices are offered; history builds while the server runs, with seven days retained by default. **Close** preserves playback position and play/pause state, immediate comparison changes and pending date/window selections. Replay applies the selected window.
 
 The optional provider-name switch starts off on every Archive visit. It labels each map at top right and disappears on return to Live. Tap the Archive icon to return to Live or its date/time range to reopen the picker. The expanded control shows a ten-minute auto-return countdown. Selecting another window restarts it; cancelling the picker does not.
 
 Archive never substitutes an older frame for a missing one. Live may borrow earlier compatible radar for up to 30 minutes; its gaps remain visible. Both modes include late arrivals and skip positions missing both maps. See [playback rules](playback-conventions.md) for endpoint grace and automatic pause/recovery.
 
-Archive replays saved weather and camera snapshots alongside radar. Weather defaults to **As recorded**, preserving the source, units and temporary-fallback colour at the selected time. **OpenWeather** offers an explicit comparison. Rain forecast supports a backwards comparison from 10 to 60 minutes; missing history stays a gap. Returning to Live restores current weather and the latest camera snapshot. Manual Live scrubbing changes radar only.
+Archive replays saved weather and camera snapshots alongside radar, preserving the recorded source, units and temporary-fallback colour. Returning to Live restores current weather and the latest camera snapshot. Manual Live scrubbing changes radar only.
+
+Rain forecast comparison **None** shows the selected capture's next-hour forecast. Selecting **−10 through −50 min** shows a past two-hour analysis: bars are the first minute (OWM NOW estimate) of each saved capture, and the pink line is an earlier forecast for the same target time. Both axes run chronologically left to right; comparison changes the time window, not time direction. Saved captures are about ten minutes apart, so narrow bars mark actual sampling times, not continuous observed rain. Neutral unsampled intervals are distinct from missing expected data and genuine zero rain. The earlier capture can be up to ten minutes older than the requested lead; unavailable evidence stays a gap. This compares OWM against its own later estimates, not a rain gauge. −60 is excluded because the forecast horizon does not reliably cover it.
 
 ### Stats for nerds
 
@@ -196,7 +200,7 @@ The About tab identifies the app version and links to the project and provider i
 
 ### Camera setup
 
-Configure one camera under **Interface → Camera**. Choose a direct snapshot URL or a camera discovered through the shared **System → API → HA** connection. Preview, then Add. The saved preview thumbnail is static. Edit replaces the setup; Delete removes the setup without deleting retained history. The collection switch saves immediately. Enable the Camera button under **Interface → Buttons** to show the widget on this browser; collection and button visibility are separate.
+Configure one camera under **Interface → Camera**. Choose a direct snapshot URL or a camera discovered through the shared **System → API → HA** connection. Preview, then Add. The saved preview thumbnail is static. Edit opens a name-only update, retaining the secret connection without another preview; a blank name hides the label. **Replace connection** explicitly opens connection setup and validation. New captures use the new name; historical labels stay unchanged. Delete removes the setup without deleting retained history. The collection switch saves immediately. Enable the Camera button under **Interface → Buttons** to show the widget on this browser; collection and button visibility are separate.
 
 Direct snapshot transport supports LAN HTTP or HTTPS with valid certificates. Images are fetched by the appliance, not each browser. The latest snapshot remains independent of manual Live radar scrubbing. Archive looks back at most ten minutes across retained camera sources, otherwise shows an empty widget. The image keeps its aspect ratio when resized.
 

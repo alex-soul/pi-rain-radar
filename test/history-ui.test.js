@@ -130,8 +130,8 @@ test('Archive override and provider switch reset on return, without changing sav
 
 test('forecast comparison persists within a visit and resets on return to Live',async()=>{
  const h=await harness();await h.$('archive-show').handlers.click();
- h.$('archive-comparison').value='60';h.$('archive-comparison').handlers.input();
- assert.equal(h.context.comparisonLead,60);await h.context.loadHistory(2000000,true);assert.equal(h.context.comparisonLead,60);
+ h.$('archive-comparison').value='50';h.$('archive-comparison').handlers.input();
+ assert.equal(h.context.comparisonLead,50);await h.context.loadHistory(2000000,true);assert.equal(h.context.comparisonLead,50);
  await h.context.goNow();assert.equal(h.context.comparisonLead,0);assert.equal(h.context.weatherReplay,null);
 });
 
@@ -146,4 +146,15 @@ test('comparison slider updates immediately and dismissal preserves paused playb
  assert.equal(h.requests.length,count);
  h.$('archive-comparison').value='0';h.$('archive-comparison').handlers.input();assert.equal(h.$('archive-comparison-value').textContent,'None');
  await h.$('archive-show').handlers.click();assert.equal(h.context.inspect().playing,true);
+});
+
+
+test('Close retains pending date/window edits without loading or unpausing; Replay uses the window',async()=>{
+ const h=await harness();await h.$('archive-show').handlers.click();h.context.pause();
+ const requests=h.requests.length,window=h.context.inspect().historyWindow;
+ h.$('archive-day').value='2026-09-23';h.$('archive-time').value='2000000';h.$('archive-hours').value='6';h.$('archive-hours').handlers.input();
+ h.$('archive-close').handlers.click();h.$('archive-dialog').handlers.close();
+ assert.equal(h.requests.length,requests);assert.equal(h.context.inspect().playing,false);assert.equal(h.context.inspect().historyWindow,window);
+ assert.equal(vm.runInContext('pendingArchiveSelection.hours',h.context),'6');assert.equal(vm.runInContext('pendingArchiveSelection.day',h.context),'2026-09-23');
+ await h.$('archive-show').handlers.click();assert.match(h.requests.at(-1),/hours=6$/);assert.equal(h.context.inspect().playing,true);
 });

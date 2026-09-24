@@ -1,12 +1,12 @@
 import {shared,change} from './integrations-state.js';
-import { defaultReadings, readingNames, windUnits, playbackSpeeds, weatherOptions } from './weather-format.js';
+import { defaultReadings, readingNames, windUnits, playbackSpeeds, lastFrameMultipliers, weatherOptions } from './weather-format.js';
 const gustChoices = [0, 15, 30, 45, 60, 90, 120, 180];
 function normalizeGust(value) {
   if (value === 0) return 0;
   if (!Number.isInteger(value) || value < 1) return 60;
   return gustChoices.slice(1).reduce((best, pick) => Math.abs(pick-value) < Math.abs(best-value) ? pick : best, 15);
 }
-const preferences = { showScale: true, autoHide: false, autoHideWeather: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2 };
+const preferences = { showScale: true, autoHide: false, autoHideWeather: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
 preferences.readingOrder = Object.keys(readingNames);
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));
@@ -17,12 +17,14 @@ try {
   if (Object.hasOwn(windUnits, saved?.windUnit)) preferences.windUnit = saved.windUnit;
   if (Array.isArray(saved?.readings)) preferences.readings = Object.keys(readingNames).filter(key => saved.readings.includes(key));
   if (Array.isArray(saved?.readingOrder)) preferences.readingOrder = [...new Set([...saved.readingOrder.filter(key => Object.hasOwn(readingNames, key)), ...Object.keys(readingNames)])];
+  if (lastFrameMultipliers.includes(saved?.lastFrameMultiplier)) preferences.lastFrameMultiplier=saved.lastFrameMultiplier;
   if (playbackSpeeds.includes(saved?.playbackSpeed)) preferences.playbackSpeed = saved.playbackSpeed;
   if ([2,4,6].includes(saved?.playbackHours)) preferences.playbackHours = saved.playbackHours;
 } catch { /* Defaults also work without browser storage. */ }
 
 export function gustCacheMinutes() { return preferences.gustCacheMinutes; }
 export function weatherPreferences() { return { temperatureUnit: preferences.temperatureUnit, windUnit: preferences.windUnit, readings: [...preferences.readings], ...Object.fromEntries(Object.keys(weatherOptions).map(key => [key, preferences[key]])), ...(shared.initialized?shared.units:{}) }; }
+export function lastFrameMultiplier(){return preferences.lastFrameMultiplier;}
 export function playbackSpeed() { return preferences.playbackSpeed; }
 export function playbackHours() { return preferences.playbackHours; }
 
@@ -112,6 +114,12 @@ export function setupDisplaySettings(canEdit) {
   const hours = document.getElementById('playback-hours');
   const readings = [...document.querySelectorAll('[data-reading-choice]')];
   const persist = () => { try { localStorage.setItem('radar-display', JSON.stringify(preferences)); } catch { /* Session-only fallback. */ } };
+  const hold=document.getElementById('last-frame-multiplier');
+  hold.replaceChildren(...lastFrameMultipliers.map(value=>new Option(value+'×',String(value))));
+  hold.value=String(preferences.lastFrameMultiplier);
+  hold.addEventListener('change',()=>{const value=Number(hold.value);if(canEdit()&&lastFrameMultipliers.includes(value)){preferences.lastFrameMultiplier=value;persist();window.dispatchEvent(new Event('radar-playback-speed'));}hold.value=String(preferences.lastFrameMultiplier);});
+  speed.max=String(playbackSpeeds.length-1);
+
   hours.value = String(preferences.playbackHours);
   hours.addEventListener('change', () => {
     const value = Number(hours.value);
@@ -172,7 +180,7 @@ export function setupDisplaySettings(canEdit) {
     timer = setTimeout(() => {
       gear.hidden = true;
       if (preferences.autoHide) hidden(true);
-      if (preferences.autoHideWeather) weatherExpanded(false);
+      if (preferences.autoHideWeather&&!document.getElementById('weather-dock').contains(document.activeElement)) weatherExpanded(false);
     }, 15_000);
   }
   function weatherExpanded(expanded) {

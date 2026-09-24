@@ -102,7 +102,7 @@ export function createSettingsAuth(directory, now = Date.now) {
   };
 }
 
-export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, embed, storage, camera, ha, weatherSettings } = {}) {
+export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, embed, storage, camera, ha, weatherSettings, clouds } = {}) {
   return async (req, res, path) => {
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -131,22 +131,48 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
           return send(result.status, result);
         }
       }
+      // First-browser unit adoption is a one-time, same-origin bootstrap, even
+      // with Settings locked. It cannot alter an established policy or baseline.
+      if(path==='/api/settings/weather/initialize'&&req.method==='POST'){
+        if(!weatherSettings)return send(503,{});
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        if(!input?.units||typeof input.units!=='object')return send(400,{});
+        const result=await weatherSettings.initialize(input.units);return send(result.status,result);
+      }
       if(['/api/settings/home-assistant','/api/settings/home-assistant/entities','/api/settings/weather'].includes(path)){
         if(!await auth.authorized(token))return send(401,{});
         if(!ha||!weatherSettings)return send(503,{});
-        if(req.method==='GET')return send(200,path.endsWith('/entities')?{entities:await ha.discover()}:path.endsWith('/weather')?weatherSettings.current():ha.status());
+        if(req.method==='GET'){
+          if(path.endsWith('/entities')){
+            const policy=weatherSettings.current(),revision=ha.status().revision;
+            if(!policy.haCollect)return send(200,{entities:[]});
+            const entities=await ha.discover();
+            if(!weatherSettings.current().haCollect||policy.revision!==weatherSettings.current().revision||revision!==ha.status().revision)return send(200,{entities:[]});
+            return send(200,{entities:entities.filter(entity=>entity.id.startsWith('sensor.'))});
+          }
+          return send(200,path.endsWith('/weather')?weatherSettings.current():ha.status());
+        }
         if(req.method!=='POST'||path.endsWith('/entities'))return send(405,{});
         let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>8192)return send(413,{});}
         let input;try{input=JSON.parse(body);}catch{return send(400,{});}
         try{
           if(path.endsWith('/weather')){
             if((input?.haCollect||input?.source==='ha')&&!ha.status().configured)return send(400,{error:'Configure Home Assistant in System > API first.'});
-            if(input?.owmCollect&&!weather?.configured())return send(400,{error:'Configure OpenWeather in System > API first.'});
+            if((input?.owmCollect||input?.forecastCollect||input?.fallback)&&!weather?.configured())return send(400,{error:'Configure OpenWeather in System > API first.'});
             if(input?.rainbowCollect&&!rainbow?.configured())return send(400,{error:'Configure Rainbow in System > API first.'});
             const result=await weatherSettings.configure(input);return send(result.status,result);
           }
           return send(200,await ha.configure(input));
         }catch(e){return send(e.code==='HA_BUSY'?409:400,{error:haMessages[e.code]??'Settings could not be saved.'});}
+      }
+      if(path==='/api/settings/clouds'){
+        if(!await auth.authorized(token))return send(401,{});if(!clouds)return send(503,{});
+        if(req.method==='GET')return send(200,await clouds.status());
+        if(req.method!=='POST')return send(405,{});
+        let body='';for await(const chunk of req){body+=chunk;if(body.length>1024)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        const result=await clouds.configure(input);return send(result.status,result);
       }
       if(['/api/settings/camera','/api/settings/camera/test','/api/settings/camera/discover','/api/settings/camera/preview','/api/settings/camera/thumbnail'].includes(path)) {
         if(!await auth.authorized(token))return send(401,{});

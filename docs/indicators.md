@@ -56,6 +56,10 @@ In Status, green means connected/ready; warning states identify the affected sou
 
 ## Other colour cues
 
+In the 0.8.0 candidate, optional gust can show amber on its own setting/reading but is excluded from aggregate weather-handle and gaps health. The availability popup distinguishes intentional off/unknown periods from missing expected observations. Its frame marker shares the playback slider's slot geometry. Using playback, including play/pause, keeps the popup open; tapping elsewhere dismisses it. These indicators describe local availability, not proof of provider fault.
+
+Cloud publication lag is separate from collection failure: recent successful acquisition can be healthy while the newest available image is older. Missing cloud slots stay visible. Routine cloud/camera success events are quiet; warnings and a single usable recovery remain in the rolling 25-event log. Entries include their dates.
+
 Weather numbers use muted amber for retained readings; a dash means no usable value. Current readings can survive one failed poll within 30 minutes; gusts use the chosen cache duration. Hover for the full reading, units and acquisition timestamp.
 
 Toolbar outlines indicate an expanded control or open widget, not API health. The rain-intensity strip describes lighter to heavier rain. Clear map areas do not prove dry weather: coverage and missing tiles can leave gaps.

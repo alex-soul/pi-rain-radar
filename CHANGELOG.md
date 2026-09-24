@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0-rc.2 — candidate source, 24 September 2026
+
+- Cloud layers and per-layer availability; honest historical gaps and clearer forecast comparison using recorded OWM first-point estimates against earlier forecasts.
+- All ten HA source readings, independent weather/forecast collection, optional-gust health and mixed-source T−Td (dew point depression).
+- Centred playback and availability markers, stable counters/date spacing, mobile Settings layout and clearer source/help labels.
+- Extended playback speeds, configurable final-frame hold (default 2.4×), Archive Replay/Close semantics and camera name-only editing with immutable historical labels.
+- Quieter cloud/camera event logging, actual usage counters instead of speculative estimates, and refreshed provider/cost guidance.
+
+DEV UI accepted; 334 Windows tests passed. Native ARM64 tests (334), restore/upgrade proofs and local Pi installation passed; initial Pi checks passed and multi-day soak remains pending. Not an upstream release. See [candidate notes](docs/release-0.8.0-rc.2.md).
+
 ## 0.7.0 — 21 September 2026
 
 - SQLite-backed archive with shared rolling retention, storage usage/estimates and automatic pressure cleanup. Seven days is the default; choose retention according to available storage.

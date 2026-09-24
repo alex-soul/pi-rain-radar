@@ -10,27 +10,27 @@ RainViewer generously provides public API access without a key. The app caches d
 
 1. Obtain a Tiles API key from the [Rainbow developer portal](https://developer.rainbow.ai/).
 2. Open **System → API → Rainbow**, enter the key and choose **Save key**. Validation happens before replacement; the key stays on the appliance.
-3. Open **Interface → Radar**, enable Rainbow collection, choose Main/Overview sources and **Save and apply sources**. Saving credentials alone does not enable collection or apply sources. Estimates sit below the collection controls.
+3. Open **Interface → Radar**, enable Rainbow collection, choose Main/Overview sources and **Save and apply sources**. Saving credentials alone does not enable collection or apply sources. Configure cloud collection/layers separately under **Interface → Clouds** using the same Rainbow account.
 4. RainViewer collection defaults enabled. Disable it if it is not needed; cached history remains available and no automatic provider switch occurs.
 
 Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while Live may retain compatible earlier radar for up to 30 minutes, then clears its radar overlay. Archive never borrows. See [indicators](indicators.md).
 
 **Wait for radar to settle** is one global switch. Each provider independently waits about five extra minutes after new frames are first observed. Both maps share a provider's observation time; switching that provider between views does not start the wait again.
 
-## Estimates and optional limit
+## Usage, costs and optional limit
 
-The estimate covers a full 31-day month of continuous use with the selected map geometry. Tiles are downloaded for new ten-minute frames; one shared snapshot check runs every five minutes when Rainbow is selected. Additional displays and playback speed do not multiply acquisition.
+The [Rainbow Tiles API](https://developer.rainbow.ai/) advertises 30,000 tiles/month free and $0.20 per 1,000 additional tiles, resetting each calendar month (checked 24 September 2026). Rain and clouds use this account; do not assume a separate free allowance per layer. The headline tile tariff does not establish how snapshot checks are billed: check your account terms. Local API requests are not proof of billable tiles.
 
-For the default single Rainbow map, the baseline is **26,784 tile downloads + 8,928 snapshot checks = 35,712 API calls**. The suggested **38,000-call limit** leaves 2,288 extra calls for initial loading, retries and occasional changes. Suggestions add roughly 6% to the baseline and round up to the next thousand. Actual geometry, cache sharing, repeated changes and failures affect usage; this is an estimate, not a billing guarantee.
+Actual geometry, enabled layers, shared caches, initial loading, retries and source changes affect usage. Additional screens and playback speed do not multiply acquisition. Stats for nerds retains actual requests, tiles and the monthly budget; speculative map estimates have been removed.
 
-The release assumes Rainbow's advertised **30,000 free tiles/month** excludes snapshot checks. Under that assumption, the default single-map baseline leaves **3,216 free tiles**. Confirm your own subscription's terms in the [developer portal](https://developer.rainbow.ai/); provider pricing may change. The app does not treat total API-call statistics as proof of billable tiles.
+My current setup has RainViewer main rain, Rainbow Overview rain, and Rainbow clouds on both maps: three Rainbow layers. An all-Rainbow rain/cloud setup on both maps has four. I still need one complete month of usage before I know the actual cost; neither configuration has a guaranteed bill or free-tier fit. For a simpler starting point, keep RainViewer radar and add optional layers as needed. Retained storage also varies; no fixed number of years is promised.
 
-The optional **Maximum API requests** limit counts **all** locally dispatched requests, including snapshots and failed calls. It can therefore be higher than 30,000 while expected tile usage stays below the free tile allowance. Once exhausted, Rainbow updates pause until the UTC calendar month changes or the limit is raised/disabled. The dock and Status report the issue; Log records it. The limit does not count other apps using your account.
+The optional **Maximum API requests** limit counts **all** locally dispatched requests, including snapshots and failed calls. It is a request safeguard, not a currency budget or provider billing meter. Once exhausted, Rainbow updates pause until the UTC calendar month changes or the limit is raised/disabled. The dock and Status report the issue; Log records it. The limit does not count other apps using your account.
 
 **Total calls** shows this month's count, with `/limit` when enabled. Counts survive restart. A crash after reservation can conservatively overcount. Older development ledgers without a monthly total carry their lifetime total into that month's count to avoid silently resetting usage.
 
 ## Archive and attribution
 
-Archive replays available observations at their original times, including mixed sources and late arrivals, without downloading old frames on demand. Changing providers preserves it. Changing map geometry selects a different retained history; changing only name or time zone does not. Current weather and Rain forecast remain current during historical radar playback.
+Archive replays available observations at their original times, including mixed sources and late arrivals, without downloading old frames on demand. Changing providers preserves it. Changing map geometry selects a different retained history; changing only name or time zone does not. Archive weather, forecast and camera follow saved history; Live keeps current weather and camera independent of radar scrubbing.
 
-Credit at the bottom follows the displayed radar sources, including historical frames. Mixed sources show **Radar by RainViewer & Rainbow**, with separate direct links. Credits stay visible when the dock is tucked away.
+Credit at the bottom follows the displayed radar sources, including historical frames. Mixed sources show **Radar by RainViewer & Rainbow**, with separate direct links. Clouds have a separate Rainbow credit. Credits stay visible when the dock is tucked away.

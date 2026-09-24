@@ -54,3 +54,19 @@ test('radar policy persists, validates, and shares existing PIN and cross-origin
   auth.lock(token);
   assert.equal((await fetch(base+'/diagnostics',{headers})).status,401);
 });
+
+
+test('cloud and camera routine successes stay quiet, with one recovery per failure',()=>{
+ const log=createDiagnostics();
+ for(let i=0;i<40;i++)for(const code of ['cloud-collected','camera-collected','camera-unchanged'])log.record(code);
+ assert.equal(log.snapshot().events.length,0);
+ log.record('cloud-error');log.record('camera-stale');
+ log.record('cloud-collected');log.record('camera-stale');log.record('cloud-collected');
+ assert.equal(log.snapshot().events.filter(e=>e.code==='cloud-recovered').length,1);
+ assert.equal(log.snapshot().events.filter(e=>e.code==='camera-recovered').length,0);
+ log.record('camera-collected');log.record('camera-collected');log.record('camera-unchanged');
+ assert.equal(log.snapshot().events.filter(e=>e.code==='camera-recovered').length,1);
+ log.record('camera-error');log.record('camera-unchanged');
+ assert.equal(log.snapshot().events.filter(e=>e.code==='camera-recovered').length,2);
+ assert.ok(!log.snapshot().events.some(e=>['camera-collected','camera-unchanged','cloud-collected'].includes(e.code)));
+});

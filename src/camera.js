@@ -22,7 +22,7 @@ export const cameraMessages={
 const errorCode=e=>e?.code==='HA_AUTH'?'CAMERA_AUTH':e?.code?.startsWith('HA_')?'CAMERA_HA':Object.hasOwn(cameraMessages,e?.code)?e.code:'CAMERA_STORAGE';
 const text=(value,max=1024)=>typeof value==='string'&&value.length<=max&&!/[\x00-\x1f\x7f]/.test(value);
 export function cameraConfig(input){
-  if(!input||!['direct','ha'].includes(input.mode)||!text(input.name,80)||!input.name.trim())throw new CameraError('CAMERA_CONFIG');
+  if(!input||!['direct','ha'].includes(input.mode)||!text(input.name,80))throw new CameraError('CAMERA_CONFIG');
   const url=cameraUrl(input.url);
   let auth;
   if(input.mode==='ha'){
@@ -59,7 +59,7 @@ export async function cameraHistory(store,end,hours,source){
   return {records:records.map(r=>({...r,asset:r.asset?'/archive/'+r.asset:null})),counts:cameraCounts(records,start,end)};
 }
 
-export async function createCamera(directory,{store,ha=null,now=Date.now,get=createCameraHttp(),decode=decodeCameraImage,onEvent=()=>{},autoStart=true}={}){
+export async function createCamera(directory,{store,ha=null,now=Date.now,get=createCameraHttp(),decode=decodeCameraImage,onEvent=()=>{},onPolicy=async()=>{},autoStart=true}={}){
   const folder=join(directory,'settings'),file=join(folder,'camera.json');
   await mkdir(folder,{recursive:true,mode:0o700});
   let saved;
@@ -79,12 +79,13 @@ export async function createCamera(directory,{store,ha=null,now=Date.now,get=cre
     onEvent('camera-error');
   }
   let config=saved.config,enabled=saved.enabled,state=saved.state??{},busy=false,controller,operation,closed=false,nextAt=enabled?now():null,draft=null,mutation=false;
-  const persist=()=>atomicJson(file,{version:1,config,enabled,state});
+  const persist=async()=>{await atomicJson(file,{version:1,config,enabled,state});await onPolicy({camera:enabled&&!!config});};
   if(ha&&config?.mode==='ha'&&!config.shared&&ha.status().configured){
     // Shared connection was durably imported first. Remove the duplicate token
     // while retaining the camera UUID, state and original archive references.
     config={mode:'ha',name:config.name,entity:config.entity,id:config.id,shared:true};await persist();
   }
+  await onPolicy({camera:enabled&&!!config});
   const safe=()=>({configured:!!config,enabled,source:config?.id??null,name:config?.name??null,mode:config?.mode??null,entity:config?.entity??null,authMode:config?.auth?.mode??null});
   function status(){
     const fresh=!!state.last&&state.last.time<=now()&&now()-state.last.time<=AGE;
@@ -119,7 +120,7 @@ export async function createCamera(directory,{store,ha=null,now=Date.now,get=cre
           state.last={hash:image.hash,time:image.time,receivedAt:image.receivedAt,basis:image.basis,width:image.width,height:image.height};
         }
         state.lastSuccess=image.receivedAt;state.error=null;state.unchanged=unchanged;
-        onEvent(unchanged?'camera-unchanged':image.receivedAt-image.time>AGE?'camera-stale':'camera-collected');
+        onEvent(image.receivedAt-state.last.time>AGE?'camera-stale':unchanged?'camera-unchanged':'camera-collected');
       }catch(error){
         if(signal.aborted)return;
         state.error=errorCode(error);onEvent('camera-error',{code:state.error});
@@ -153,7 +154,7 @@ export async function createCamera(directory,{store,ha=null,now=Date.now,get=cre
     async test(input){
       let candidate;
       if(ha&&input?.mode==='ha'){
-        if(!ha.status().configured||!text(input.name,80)||!input.name.trim()||!/^camera\.[a-z0-9_]+$/.test(input.entity??''))throw new CameraError('CAMERA_CONFIG');
+        if(!ha.status().configured||!text(input.name,80)||!/^camera\.[a-z0-9_]+$/.test(input.entity??''))throw new CameraError('CAMERA_CONFIG');
         candidate={mode:'ha',name:input.name.trim(),entity:input.entity,shared:true};
       }else candidate=cameraConfig(input);
       draft=null;
@@ -172,6 +173,12 @@ export async function createCamera(directory,{store,ha=null,now=Date.now,get=cre
         if(input?.remove===true){
           await cancel();const prior={config,enabled,state,nextAt};config=null;enabled=false;state={};nextAt=null;
           try{await persist();}catch(e){({config,enabled,state,nextAt}=prior);throw e;}
+          draft=null;return safe();
+        }
+        if(input&&Object.hasOwn(input,'name')&&!input.ticket){
+          if(!config||!text(input.name,80)||Object.keys(input).some(key=>!['name'].includes(key)))throw new CameraError('CAMERA_CONFIG');
+          await cancel();const prior=config;config={...config,name:input.name.trim()};
+          try{await persist();}catch(error){config=prior;throw error;}
           draft=null;return safe();
         }
         if(typeof input?.enabled!=='boolean')throw new CameraError('CAMERA_CONFIG');

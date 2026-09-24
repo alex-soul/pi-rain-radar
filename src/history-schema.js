@@ -1,6 +1,6 @@
 export const APPLICATION_ID = 0x50525248; // PRRH
 export const SCHEMA_VERSION = 1;
-export const kinds = ['radar','weather','forecast','camera','transition','incident','settling'];
+export const kinds = ['radar','cloud','weather','forecast','camera','transition','incident','settling'];
 export const schema = `
 CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
 CREATE TABLE assets(

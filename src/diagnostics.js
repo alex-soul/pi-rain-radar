@@ -1,5 +1,9 @@
 // Only fixed, trusted messages enter this user-facing log. Never accept provider text.
 const messages = {
+  'cloud-collected': ['Clouds', 'info', 'Cloud frames stored.'],
+  'cloud-recovered': ['Clouds', 'info', 'Cloud acquisition recovered.'],
+  'camera-recovered': ['Camera', 'info', 'Fresh camera snapshots available again.'],
+  'cloud-error': ['Clouds', 'warning', 'Cloud acquisition paused or unavailable. Check Clouds in Status and the Rainbow request allowance.'],
   'camera-collected': ['Camera', 'info', 'Camera snapshot stored.'],
   'camera-unchanged': ['Camera', 'info', 'Camera image unchanged. Keeping its original timestamp.'],
   'camera-stale': ['Camera', 'warning', 'Camera returned a snapshot more than ten minutes old.'],
@@ -39,9 +43,17 @@ const messages = {
 };
 export function createDiagnostics({ now = Date.now } = {}) {
   const events = [];
+  const unavailable = new Set();
   let sequence = 0;
   return {
     record(code) {
+      // Successful polls stay quiet; report one recovery after a known failure.
+      if(['cloud-error','camera-error','camera-stale'].includes(code))unavailable.add(code.split('-')[0]);
+      if(['cloud-collected','camera-collected','camera-unchanged'].includes(code)){
+        const source=code.split('-')[0];
+        if(!unavailable.delete(source))return;
+        code=source+'-recovered';
+      }
       if (!Object.hasOwn(messages, code)) return;
       const time = new Date(now()).toISOString();
       const last = events.at(-1);

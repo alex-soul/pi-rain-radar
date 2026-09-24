@@ -1,5 +1,7 @@
 # Pi Rain Radar
 
+Local candidate source: [0.8.0-rc.2 changes and behaviour](docs/release-0.8.0-rc.2.md). DEV and native checks passed; the local Pi candidate is installed and initial checks passed. Multi-day soak remains pending. This candidate image is not published. Earlier release descriptions below remain historical where this candidate supersedes them.
+
 A dedicated rain-radar screen for your home. Animate recent rain, see where it has been moving, and glance at optional current temperature and wind readings.
 
 ![Historical rain radar centred on Coventry](docs/images/radar-preview-20260916-2147.gif)
@@ -50,21 +52,27 @@ Settings stay in the existing data volume. The first upgrade to 0.7.0 resets old
 
 - **See what is there—and what is missing.** Two, four or six hours of Live radar with adjustable playback speed and independent Main/Overview [timeline tracks](docs/indicators.md#5-frame-gaps). Provider gaps stay visible, and late observations fill their original positions.
 - **RainViewer or Rainbow Weather — or both.** Choose either provider for Main and Overview independently, so you can compare them or manually switch when one has problems.
-- **One Rainbow map can fit within the free tile allowance.** The default single-map estimate leaves room below 30,000 tiles/month, assuming snapshot checks are free. Includes usage estimates and an optional request cap; see [setup and usage assumptions](docs/radar-providers.md).
+- **Optional Rainbow rain and cloud layers.** Usage depends on map geometry and enabled layers. Actual local counters and an optional request cap help track it; see [setup, costs and limits](docs/radar-providers.md).
 - **Explore up to 24 hours of radar history.** Scrub or replay a selected window from the local rolling archive (seven days by default, configurable), with optional provider labels. [Archive playback](docs/manual.md#look-back-with-archive) shows the observations actually available and builds as the app runs.
-- **Camera and historical weather.** Collect one direct or Home Assistant camera snapshot every five minutes. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply four readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
+- **Camera and historical weather.** Collect one direct or Home Assistant camera snapshot every five minutes. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply all ten source readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
 - **One radar server, multiple displays.** Each browser remembers its own buttons, layout and theme while sharing the same configured location and acquisition. Use it on your [home network](docs/quick-start.md#3-open-it-from-your-laptop), optionally [install it on phones and laptops or connect privately through Tailscale](docs/pwa.md), and see the [Android and Windows examples](docs/pwa-gallery.md).
 - **Playback that handles delays.** Live can reuse earlier radar for up to 30 minutes and automatically pause while waiting for enough data to resume. Missing observations remain visible; [Live and Archive rules](docs/playback-conventions.md) explain the difference.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
-- Ten optional weather readings: temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [configurable units and wind-arrow convention](docs/manual.md).
+- Ten optional source readings plus derived T−Td (dew point depression): temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [configurable units and wind-arrow convention](docs/manual.md).
 - **[Stats for nerds](docs/stats-for-nerds.md).** An optional widget shows provider freshness, acquisition timing, missing frames, weather updates and local Rainbow API counters.
 - Subtle colour indicators show API health and data gaps without cluttering the screen; details are available in Settings and the log. See the [illustrated indicator guide](docs/indicators.md).
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - **Light/dark themes and touch controls.** Designed for 16:9 landscape displays and tested at 1280 × 720. Other screen shapes receive best-effort layout support.
 
 Radar works out of the box without an API key. Overview and Rain forecast start closed.
+
+## Running costs
+
+Start with RainViewer for radar and add the optional sources you need. OpenWeather offers 1,000 One Call 4.0 calls/day free, but its default 2,000-call limit permits charges; set your account limit deliberately. Rainbow advertises 30,000 Tiles API tiles/month free, then $0.20 per 1,000 tiles. These are separate account allowances, shared with any other apps using them. Checked 24 September 2026: [OpenWeather](https://openweathermap.org/api/one-call-4), [Rainbow](https://developer.rainbow.ai/).
+
+My current setup uses RainViewer on the main map and three Rainbow layers: Overview rain and clouds on both maps. Rain and clouds on both maps would be four Rainbow layers. I still need to run through a full month before I know the actual cost; neither setup has a guaranteed monthly bill. See [usage and limits](docs/radar-providers.md). Storage duration likewise depends on retention, enabled layers and available space.
 
 ## Hardware recommendations
 
@@ -84,7 +92,7 @@ See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and instal
 - [Raspberry Pi build — unpacking to automatic kiosk, without an attached keyboard](docs/raspberry-pi.md)
 - [User manual — settings and controls](docs/manual.md)
 - [Screen indicators — numbered guide to colours and status](docs/indicators.md)
-- [Radar providers — Rainbow setup, estimates and limits](docs/radar-providers.md)
+- [Radar providers — Rainbow setup, usage and limits](docs/radar-providers.md)
 - [Device Power — optional restart/shutdown setup](docs/device-power.md)
 - [Release follow-ups](docs/follow-ups.md)
 - [Upgrades — routine updates, migration and rollback](docs/upgrading.md)

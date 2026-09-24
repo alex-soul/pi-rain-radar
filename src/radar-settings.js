@@ -11,7 +11,7 @@ export async function createRadarSettings(directory, { onEvent = () => {} } = {}
     if (typeof saved.waitForSettle !== 'boolean') throw new Error();
     waitForSettle = saved.waitForSettle;
     main=saved.main??main;overview=saved.overview??overview;monthlyLimit=saved.monthlyLimit??null;
-    if(!['rainviewer','rainbow'].includes(main)||!['same','rainviewer','rainbow'].includes(overview)||!(monthlyLimit===null||Number.isSafeInteger(monthlyLimit)&&monthlyLimit>=1&&monthlyLimit<=10000000))throw new Error();
+    if(!['disabled','rainviewer','rainbow'].includes(main)||!['same','disabled','rainviewer','rainbow'].includes(overview)||!(monthlyLimit===null||Number.isSafeInteger(monthlyLimit)&&monthlyLimit>=1&&monthlyLimit<=10000000))throw new Error();
   } catch (error) {
     if (error.code !== 'ENOENT') throw new Error('Stored radar settings are invalid. Restore settings/radar.json before starting.');
   }
@@ -23,7 +23,7 @@ export async function createRadarSettings(directory, { onEvent = () => {} } = {}
     async configure(input) {
       if (typeof input?.waitForSettle !== 'boolean') return { status: 400, error: 'Choose whether to wait for radar to settle.' };
       const next={waitForSettle:input.waitForSettle,main:input.main??main,overview:input.overview??overview,monthlyLimit:Object.hasOwn(input,'monthlyLimit')?input.monthlyLimit:monthlyLimit};
-      if(!['rainviewer','rainbow'].includes(next.main)||!['same','rainviewer','rainbow'].includes(next.overview)||!(next.monthlyLimit===null||Number.isSafeInteger(next.monthlyLimit)&&next.monthlyLimit>=1&&next.monthlyLimit<=10000000))return {status:400,error:'Check the radar sources and monthly tile limit.'};
+      if(!['disabled','rainviewer','rainbow'].includes(next.main)||!['same','disabled','rainviewer','rainbow'].includes(next.overview)||!(next.monthlyLimit===null||Number.isSafeInteger(next.monthlyLimit)&&next.monthlyLimit>=1&&next.monthlyLimit<=10000000))return {status:400,error:'Check the radar sources and monthly tile limit.'};
       if (busy) return { status: 409, error: 'Radar settings are being saved. Please try again.' };
       busy = true;
       pendingLimit=next.monthlyLimit;

@@ -26,7 +26,9 @@ async function idle(camera){for(let i=0;i<200&&camera.status().collecting;i++)aw
 test('decode strips metadata, preserves aspect ratio, bounds dimensions and rejects malformed images',async()=>{
   const result=await decodeCameraImage(png,initial);assert.equal(result.basis,'acquisition');assert.equal(result.time,initial);assert.equal(result.width,64);assert.equal(result.height,48);assert.equal((await sharp(result.bytes).metadata()).exif,undefined);
   const large=await sharp({create:{width:3000,height:1500,channels:3,background:'#fff'}}).png().toBuffer();
-  const resized=await decodeCameraImage(large,initial);assert.equal(resized.width,2048);assert.equal(resized.height,1024);
+  const resized=await decodeCameraImage(large,initial);assert.equal(resized.width,640);assert.equal(resized.height,320);
+  const oriented=await sharp({create:{width:1200,height:2400,channels:3,background:'#fff'}}).jpeg().withMetadata({orientation:6}).toBuffer();
+  const turned=await decodeCameraImage(oriented,initial);assert.equal(turned.width,640);assert.equal(turned.height,320);assert.equal((await sharp(turned.bytes).metadata()).orientation,undefined);
   await assert.rejects(decodeCameraImage(Buffer.from('<svg><script>secret</script></svg>'),initial),{code:'CAMERA_IMAGE'});
   await assert.rejects(decodeCameraImage(Buffer.alloc(8*1024*1024+1),initial),{code:'CAMERA_IMAGE'});
   const controller=new AbortController();controller.abort();await assert.rejects(decodeCameraImage(png,initial,{signal:controller.signal}),{code:'CAMERA_CANCELLED'});
@@ -40,15 +42,15 @@ test('EXIF exposure requires offset; old valid times survive and future/invalid 
   assert.equal(cameraExifTime(Buffer.from('broken'),initial),null);
 });
 test('test-before-save, five-minute collection, unchanged-image expiry, restart and enable/disable preserve history',async t=>{
-  let calls=0;const f=await fixture(t,{get:async()=>{calls++;return png;}}),c=f.camera;
+  let calls=0;const events=[];const f=await fixture(t,{get:async()=>{calls++;return png;},onEvent:code=>events.push(code)}),c=f.camera;
   await assert.rejects(c.configure({enabled:true}),{code:'CAMERA_DRAFT'});
   const draft=await c.test(direct);assert.ok(c.preview(draft.ticket));assert.equal(c.status().configured,false);
   const saved=await c.configure({ticket:draft.ticket,enabled:true});await idle(c);assert.equal(calls,2);
   assert.equal(c.status().state,'fresh');assert.equal((await c.live()).counts.acquisition,1);
   await c.collect();assert.equal(calls,2);
   f.setTime(initial+5*minute);await c.collect();assert.equal(calls,3);assert.equal(c.status().snapshotTime,initial);
-  assert.equal(c.status().unchanged,true);assert.equal((await c.live()).counts.acquisition,1);
-  f.setTime(initial+10*minute+1);await c.collect();assert.equal(c.status().state,'stale');assert.equal((await c.live()).latest,null);
+  assert.equal(c.status().unchanged,true);assert.equal((await c.live()).counts.acquisition,1);assert.equal(events.at(-1),'camera-unchanged');
+  f.setTime(initial+10*minute+1);await c.collect();assert.equal(c.status().state,'stale');assert.equal((await c.live()).latest,null);assert.equal(events.at(-1),'camera-stale');
   await c.configure({enabled:false});const previous=calls;f.setTime(initial+15*minute);await c.collect();assert.equal(calls,previous);
   await c.close();await f.open();assert.equal(f.camera.status().source,saved.source);assert.equal(f.camera.status().snapshotTime,initial);
   await f.camera.configure({enabled:true});await idle(f.camera);assert.equal(calls,previous+1);assert.equal(f.camera.status().snapshotTime,initial);
@@ -83,7 +85,8 @@ test('HA selection only returns camera identities; collection uses the proxy and
   assert.deepEqual(await c.discover(input),[{id:'camera.drive',name:'Drive'}]);
   const d=await c.test(input);await c.configure({ticket:d.ticket,enabled:true});await idle(c);
   assert.equal(requests.at(-1).url,'http://homeassistant.local:8123/api/camera_proxy/camera.drive');assert.deepEqual(requests.at(-1).auth,{mode:'bearer',token:'secret'});
-  await c.close();await f.open();assert.equal(f.camera.status().entity,'camera.drive');
+  await c.configure({name:''});await idle(c);assert.equal(c.status().name,'');
+  await c.close();await f.open();assert.equal(f.camera.status().entity,'camera.drive');assert.equal(f.camera.status().name,'');
 });
 test('parallel pollers are rejected, cancellation stops work, and damaged optional configuration does not stop radar',async t=>{
   const f=await fixture(t,{get:(_url,{signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(Error('cancelled')),{once:true}))}),c=f.camera;
@@ -125,4 +128,16 @@ test('camera Settings enforce PIN and same-origin JSON, redact credentials, and 
   assert.equal((await request('',{ticket:d.ticket,enabled:false})).status,200);assert.equal((await request('')).status,200);assert.equal((await (await request('')).text()).includes('secret'),false);
   slow=true;const pending=request('/test',direct);assert.equal(await (await fetch(url+'/healthz')).text(),'ok');const failure=await pending;assert.equal(failure.status,400);assert.equal((await failure.text()).includes('secret'),false);assert.equal(f.camera.status().configured,true);
   assert.equal((await request('',{ticket:d.ticket,enabled:true})).status,400);
+});
+
+
+test('name-only camera edits preserve secret connection and identity, allow blank, and do not relabel archive',async t=>{
+ let calls=0;const events=[];const f=await fixture(t,{get:async()=>{calls++;return png;},onEvent:code=>events.push(code)}),c=f.camera;
+ const draft=await c.test(direct);const saved=await c.configure({ticket:draft.ticket,enabled:true});await idle(c);
+ const before=calls,records=await cameraHistory(f.store,initial,2);
+ await c.configure({name:''});await idle(c);assert.equal(c.status().name,'');assert.equal(c.status().source,saved.source);assert.equal(calls,before);
+ assert.equal(JSON.stringify(c.status()).includes('key=secret'),false);
+ const later=await cameraHistory(f.store,initial,2);assert.deepEqual(later,records);
+ await c.close();await f.open();assert.equal(f.camera.status().name,'');assert.equal(f.camera.status().source,saved.source);
+ await assert.rejects(f.camera.configure({name:'New',url:'http://other.test/'}),{code:'CAMERA_CONFIG'});
 });

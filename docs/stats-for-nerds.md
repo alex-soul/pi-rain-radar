@@ -78,6 +78,10 @@ These measure local availability, not provider fault. Provider publication timin
 - Preserve honest unknown/untracked states rather than presenting missing evidence as zero.
 - Keep the widget lightweight and separate from the diagnostic Log; it is not an additional acquisition or monitoring service.
 
+## Candidate usage counters
+
+Rainbow statistics retain actual requests, tiles, monthly request cap and remaining budget, including when only clouds use Rainbow. These are local operational counters, not the account's invoice or a projection. Speculative map estimates are removed. See [usage and limits](radar-providers.md#usage-costs-and-optional-limit). A broader widget redesign remains a future task.
+
 ## Camera timestamps
 
 The Camera acquisition details remain current in Live and Archive. **Timestamps · Metadata / Acquisition** counts camera snapshots in the selected playback window, following the same Live/Archive scope as window coverage. It does not count the entire retained archive. Metadata means a usable image timestamp; acquisition means the appliance's receipt time was used instead.

@@ -18,7 +18,7 @@ export async function connectionSaved(provider){
   const a=document.createElement('a');a.href=camera?'#camera':'#weather-collection';a.textContent=label;
   a.onclick=event=>{event.preventDefault();popup.close();const section=$('settings-section');section.value='dashboard';section.dispatchEvent(new Event('change',{bubbles:true}));
    if(camera){$('review-tab-camera').click();$('review-camera-add').hidden?$('review-camera-enabled').focus():$('review-camera-add').focus();}
-   else{$('settings-tab-weather').click();$('review-collection-tab').click();$(provider==='owm'?'review-owm-collect':'review-ha-collect').focus();}
+   else{$('settings-tab-weather').click();$('review-readings-tab').click();$(provider==='owm'?'review-owm-collect':'review-ha-collect').focus();}
   };$('review-saved-links').append(a);
  }
  if(!enabled){if(provider==='owm')link('Enable weather collection');else{link('Configure camera',true);link('Set up alternative weather readings');}}

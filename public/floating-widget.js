@@ -26,7 +26,8 @@ function place(x, y) {
   panel.style.left = `${position.x}px`;
   panel.style.top = `${position.y}px`;
 }
-function aspect(){const image=id==='camera'?panel.querySelector('img'):null;return image&&!image.hidden&&image.naturalWidth?image.naturalWidth/image.naturalHeight:null;}
+let lastAspect=null;
+function aspect(){const image=id==='camera'?panel.querySelector('img'):null;if(image&&!image.hidden&&image.naturalWidth)lastAspect=image.naturalWidth/image.naturalHeight;return lastAspect;}
 function layout() {
   if (!visible) return;
   const footerTop = widgetBottom();
