@@ -32,11 +32,11 @@ A failed or expired minute forecast shows a **red baseline**, rather than an emp
 
 ## 4. Total frames indicator
 
-In **12 / 13**, 12 is the current playable position and 13 the number of playable positions. The total is greenish only when both maps have observations throughout the selected window; otherwise it is amber. Even 13 can be amber in a two-hour window when one provider is missing at a position.
+In **12 / 13**, 12 is the current playback position and 13 the number of playable positions. Tap the counter to open availability for the full window. The total takes the worst applicable row state: red for missing expected data, amber for reused earlier observations, greenish for available data, or neutral when collection is disabled or historical policy is unknown. It includes enabled/history-applicable Rain, Clouds, Weather and Camera rows; optional gust is excluded. The newest pending Live slot does not worsen the total. A full count therefore does not guarantee complete data in every row.
 
 ## 5. Frame gaps
 
-The timeline's touching upper/lower halves show Main/Overview availability. Missing observations are amber, not dry weather. One missing half remains playable; two missing halves are skipped without delay. Live may display borrowed radar for up to 30 minutes but never hides its gap. Archive leaves the affected basemap empty of radar. Late arrivals fill their original gaps.
+The current availability popup has Rain, Clouds, Weather and Camera rows where applicable. Each cell represents a ten-minute playback position. Rain and Clouds combine Main/Overview detail; tap a cell for the affected map or reading. Greenish means available, amber means an earlier observation was reused, red means expected data is missing, and grey means pending, disabled or unknown as shown in its detail. Missing imagery never means dry weather. Live may reuse compatible earlier radar/cloud imagery strictly less than 30 minutes old; Archive leaves a missing radar/cloud layer empty. Late arrivals fill their original slots. The two-track timeline in the screenshots above is historical.
 
 Live uses a clock-aligned ten-minute endpoint with a five-minute publication lag. Only the newest missing Live slot is pending; newer provider frames do not advance the clock endpoint. See [playback rules](playback-conventions.md).
 

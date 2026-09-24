@@ -16,13 +16,13 @@
 
 Both modes use the best available observations at their original times, independently for Main and Overview. An observation acquired late fills its original position wherever the period remains retained. Repeated cached imagery does not count as a fresh observation. Data no longer offered by a provider cannot necessarily be recovered.
 
-The timeline consists of two touching halves: Main above, Overview below. Every visible position shows actual availability. If one half is missing it shows a gap and makes the total amber, even if all 13 positions in a two-hour window have something playable. Positions missing both halves are skipped without a playback delay.
+Playback and the availability popup share ten-minute positions. The popup groups Rain, Clouds, Weather and Camera when applicable, with Main/Overview details inside the map-layer cells. Reused observations are amber; missing expected data is red; pending/disabled/unknown states remain distinct. The total reflects the worst applicable state, independently of operational freshness LEDs. Positions with no playable radar on either map are skipped by animation, while the popup retains their slots. See [indicators](indicators.md#5-frame-gaps).
 
 ## Live publication grace and borrowing
 
 The endpoint is the clock rounded down to a ten-minute boundary after subtracting five minutes: at 21:03 it is 20:50; at 21:05 it becomes 21:00. Newer provider observations do not advance this endpoint. Only its newest missing slot is pending; older missing slots are gaps. The chosen duration extends backward from the endpoint. This grace does not change acquisition timing or the separate settling preference.
 
-Live may borrow a compatible earlier observation for a missing map for up to 30 minutes. Beyond that, only its basemap is shown. Borrowing does not fill timeline gaps or improve completeness. With fewer than two playable positions, automatic pause waits for recovery; the combined play/pause icon distinguishes it from manual pause. Manual pause stays paused until changed by the user.
+Live may borrow a compatible earlier observation for a missing map for less than 30 minutes. Beyond that, only its basemap is shown. Borrowing does not fill timeline gaps or improve completeness. With fewer than two playable positions, automatic pause waits for recovery; the combined play/pause icon distinguishes it from manual pause. Manual pause stays paused until changed by the user.
 
 ## Archive
 

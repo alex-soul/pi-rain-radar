@@ -188,7 +188,7 @@ Development builds should use identifiable local tags (for example `dev-<commit>
 
 See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.
 
-The Archive weather playground includes **Forecast vs now** in the existing chart: select 10, 20, 30, 40, 50 or 60 minutes earlier to overlay one prediction line on historical now-estimate bars (rolling two hours, ten-minute samples). None restores the saved next-hour forecast. All choices reuse the same synthetic snapshots and match valid timestamps exactly; missing samples remain amber without interpolating across gaps. These are provider-estimate comparisons, not measured rainfall accuracy. The POC loads four six-hour archive windows once, deduplicates boundaries, and then scrubs locally.
+The historical Archive weather playground (not the shipped comparison contract) includes **Forecast vs now** in the existing chart: select 10, 20, 30, 40, 50 or 60 minutes earlier to overlay one prediction line on historical now-estimate bars (rolling two hours, ten-minute samples). None restores the saved next-hour forecast. All choices reuse the same synthetic snapshots and match valid timestamps exactly; missing samples remain amber without interpolating across gaps. These are provider-estimate comparisons, not measured rainfall accuracy. The POC loads four six-hour archive windows once, deduplicates boundaries, and then scrubs locally. The shipped 0.8.0 comparison uses −10 through −50 minutes and a bounded capture-time tolerance; see the [current manual](manual.md#look-back-with-archive).
 
 ## 0.7.0 integration testing and temporary data
 

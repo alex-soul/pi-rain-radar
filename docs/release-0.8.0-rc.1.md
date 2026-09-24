@@ -1,5 +1,7 @@
 # 0.8.0-rc.1 — local release candidate
 
+> Historical candidate record. Superseded by the [published and accepted 0.8.0 release](release-0.8.0.md); statuses below describe that candidate checkpoint, not the current deployment.
+
 This candidate is for device soak testing; 0.8.0 has not been released.
 
 Weather now separates current readings from Forecast collection. Ten reading sources support Disabled/OpenWeather; temperature, feels-like, wind and gust additionally support Home Assistant. Fresh installations start with readings disabled; upgrades retain existing selections and collection. Disabled metrics are discarded before storage. Hiding a Dock reading only changes presentation. One OpenWeather current request supplies all selected metrics; selecting fewer does not save calls. All disabled suppresses current requests. Forecast remains independent. Removing credentials turns dependent switches off; re-adding requires manual enablement.

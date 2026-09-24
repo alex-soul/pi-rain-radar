@@ -28,11 +28,11 @@ Use the same browser profile and address each time. Hostname, IP address and loc
 
 ## Fresh-browser defaults
 
-Dark theme; clock expanded; Overview and Rain forecast closed; the original five buttons visible and Stats for nerds hidden; map scale on; both dock auto-hide switches off; gust cache 60 minutes; Celsius/mph; temperature, feels-like, wind and gusts shown; 2-hour playback at 1×; UI lock off. Existing saved preferences take priority.
+Dark theme; clock expanded; Overview and Rain forecast closed; Sun and Moon, Weather history, Clock, Overview, Rain forecast, Archive and Light/dark buttons visible; Camera and Stats for nerds buttons hidden; map scale on; both dock auto-hide switches and button auto-hide off; gust cache 60 minutes; Celsius/mph; temperature, feels-like, wind and gusts shown; 2-hour playback at 1×; UI lock off. Existing saved preferences take priority.
 
 ## Settings
 
-The app starts on Coventry. Overview and Rain forecast start closed; all buttons are shown in this order: Clock, Overview, Rain forecast, Archive, Light/dark. Previously saved browser preferences keep their own order and visibility.
+The app starts on Coventry. Overview and Rain forecast start closed; fresh visible buttons are ordered Sun and Moon, Weather history, Clock, Overview, Rain forecast, Archive, Light/dark. Previously saved browser preferences keep their own order and visibility.
 
 Tap the screen to reveal the **settings cog at the bottom right**. It disappears after 15 seconds of inactivity. Tap the cog to open settings. Display preferences apply immediately; Map, key and PIN changes use their own Preview/Apply or Save actions. No PIN is required by default.
 
@@ -166,11 +166,16 @@ The top dock sizes to the selected readings, wrapping on narrow screens. Hiding 
 | Control | What it does |
 | --- | --- |
 | Clock, top left | Tap to show or tuck away the current clock, including seconds. |
-| Sun / moon | Switches theme. The icon shows what pressing it will do: sun for light, moon for dark. |
+| Light / dark | Switches theme. The icon shows what pressing it will do: sun for light, moon for dark. |
+| Sun and Moon | Shows/hides the combined local astronomy widget. |
+| Weather history | Shows/hides all enabled trend charts, including detached charts. |
+| Layers, bottom left | Reveals per-map rain/cloud visibility and opacity controls for enabled layers. |
+| Camera | Shows/hides the configured camera widget; collection is independent. |
+| Stats for nerds | Shows/hides provider and acquisition diagnostics. |
 | Folded map | Shows or hides **Overview**, a wider map with matching radar. The dot marks your centre; the dashed box marks the main map's area. |
 | Rain cloud | Shows or hides **Rain forecast**, the forecast for approximately the next hour at your chosen coordinates. |
 | Clock with backward arrow | Opens stored radar **Archive**. See below. |
-| Footer handle | Shows or hides the footer. Its indicator reports selected radar sources even while hidden; see [indicators](indicators.md). |
+| Footer handle | Shows or hides the footer. Its indicator reports selected radar sources and enabled clouds even while hidden; see [indicators](indicators.md). |
 | Settings cog, bottom right | Appears on screen interaction for 15 seconds. Opens settings; asks for a PIN only when protection is enabled. |
 | Weather drawer handle | Shows/hides the selected readings in their saved order and units. The handle indicates weather health even when all readings are hidden. |
 | Play / pause, bottom | Starts or pauses the radar animation. Pausing does not stop new data being collected. |
@@ -190,7 +195,7 @@ Tap Archive, choose an available **Date**, **Time** and playback window, and sel
 
 The optional provider-name switch starts off on every Archive visit. It labels each map at top right and disappears on return to Live. Tap the Archive icon to return to Live or its date/time range to reopen the picker. The expanded control shows a ten-minute auto-return countdown. Selecting another window restarts it; cancelling the picker does not.
 
-Archive never substitutes an older frame for a missing one. Live may borrow earlier compatible radar for up to 30 minutes; its gaps remain visible. Both modes include late arrivals and skip positions missing both maps. See [playback rules](playback-conventions.md) for endpoint grace and automatic pause/recovery.
+Archive never substitutes an older frame for a missing one. Live may borrow earlier compatible radar for less than 30 minutes; its gaps remain visible. Both modes include late arrivals and skip positions missing both maps. See [playback rules](playback-conventions.md) for endpoint grace and automatic pause/recovery.
 
 Archive replays saved weather and camera snapshots alongside radar, preserving the recorded source, units and temporary-fallback colour. Returning to Live restores current weather and the latest camera snapshot. Manual Live scrubbing changes radar only.
 

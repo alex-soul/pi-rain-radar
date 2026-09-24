@@ -1,5 +1,7 @@
 # 0.8.0-rc.2 candidate
 
+> Historical candidate record. Superseded by the [published and accepted 0.8.0 release](release-0.8.0.md); statuses below describe that candidate checkpoint, not the current deployment.
+
 24 September 2026: DEV UI accepted; native build, isolated restore/upgrade proof and Pi installation passed. I confirmed About 0.8.0-rc.2 and the initial skim tests passed. Multi-day soak is in progress. This is not a published image.
 
 ## Changes
@@ -22,4 +24,4 @@ See the [manual](manual.md), [provider costs and limits](radar-providers.md) and
 
 Existing compatible 0.7.0/RC1 archives and settings are intended to be preserved. The older pre-0.7 archive reset remains as documented in [Upgrading](upgrading.md). Before installing this candidate, retain the exact RC1 image/configuration and make a consistent stopped-writer backup of current data and browser profile. Prove restoration and upgrade against isolated copies first; retain the compatible pre-upgrade data for rollback. Never substitute generic latest-image upgrade commands while using a local candidate override.
 
-Native ARM64 validation: 334 tests passed; fresh/restart, RC1 restore and RC2 upgrade/restart passed. Upgrade checks preserved 5,069 records and 1,791 image assets. Settings and usage counters survived installation. See [deferred findings](follow-ups.md#deferred-after-080-rc2-review) for non-blocking observations parked beyond 0.8.0.
+Native ARM64 validation: 334 tests passed; fresh/restart, RC1 restore and RC2 upgrade/restart passed. Upgrade checks preserved 5,069 records and 1,791 image assets. Settings and usage counters survived installation. See [deferred findings](follow-ups.md#after-080) for non-blocking observations parked beyond 0.8.0.

@@ -13,7 +13,7 @@ RainViewer generously provides public API access without a key. The app caches d
 3. Open **Interface → Radar**, enable Rainbow collection, choose Main/Overview sources and **Save and apply sources**. Saving credentials alone does not enable collection or apply sources. Configure cloud collection/layers separately under **Interface → Clouds** using the same Rainbow account.
 4. RainViewer collection defaults enabled. Disable it if it is not needed; cached history remains available and no automatic provider switch occurs.
 
-Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while Live may retain compatible earlier radar for up to 30 minutes, then clears its radar overlay. Archive never borrows. See [indicators](indicators.md).
+Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while Live may retain compatible earlier radar for less than 30 minutes, then clears its radar overlay. Archive never borrows. See [indicators](indicators.md).
 
 **Wait for radar to settle** is one global switch. Each provider independently waits about five extra minutes after new frames are first observed. Both maps share a provider's observation time; switching that provider between views does not start the wait again.
 
@@ -25,7 +25,7 @@ Actual geometry, enabled layers, shared caches, initial loading, retries and sou
 
 My current setup has RainViewer main rain, Rainbow Overview rain, and Rainbow clouds on both maps: three Rainbow layers. An all-Rainbow rain/cloud setup on both maps has four. I still need one complete month of usage before I know the actual cost; neither configuration has a guaranteed bill or free-tier fit. For a simpler starting point, keep RainViewer radar and add optional layers as needed. Retained storage also varies; no fixed number of years is promised.
 
-The optional **Maximum API requests** limit counts **all** locally dispatched requests, including snapshots and failed calls. It is a request safeguard, not a currency budget or provider billing meter. Once exhausted, Rainbow updates pause until the UTC calendar month changes or the limit is raised/disabled. The dock and Status report the issue; Log records it. The limit does not count other apps using your account.
+Under **System → API → Rainbow**, the optional **Maximum API requests** limit is shared by rain and clouds and counts **all** locally dispatched requests, including snapshots and failed calls. It is a request safeguard, not a currency budget or provider billing meter. Once exhausted, Rainbow updates pause until the UTC calendar month changes or the limit is raised/disabled. The dock and Status report the issue; Log records it. The limit does not count other apps using your account.
 
 **Total calls** shows this month's count, with `/limit` when enabled. Counts survive restart. A crash after reservation can conservatively overcount. Older development ledgers without a monthly total carry their lifetime total into that month's count to avoid silently resetting usage.
 
