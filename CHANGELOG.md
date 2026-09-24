@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0 — 24 September 2026
+
+- Cloud layers on both maps, local Layers visibility/opacity controls and a shared Rainbow request budget in API settings.
+- All ten HA weather readings, independent weather/forecast collection, optional-gust health and mixed-source T−Td (dew point depression).
+- Recorded OWM forecast comparison, honest Live/Archive gaps, and camera history aligned to the displayed window without future captures. Camera intervals are configurable from one to ten minutes; new history keeps one representative per ten-minute slot.
+- Nine configurable weather trend charts, adaptive scales, source-aware trend arrows and independently movable/resizable detached charts.
+- Local Sun/Moon calculations, a phase-aware Moon widget, event times revealed by resizing, and optional Dock readings.
+- Responsive settings, stable playback counters, synchronized optional auto-hide and Archive controls that load playback without closing.
+
+360 automated tests passed on Windows and native ARM64, along with fresh startup/restart and copied-data upgrade/restart checks. I tested RC3 on my Pi and found no obvious issues; all new features behaved as expected. Longer soak remains ongoing. See [release notes](docs/release-0.8.0.md).
+
+The cloud stale threshold remains 30 minutes. This may be too aggressive for normal provider publication delays; a red Dock indicator can coexist with amber reused-image slots. Longer observations will inform any later adjustment. Existing compatible archives and settings are preserved; the older archive migration warning still applies when upgrading from 0.6.0 or earlier.
+
 ## 0.8.0-rc.2 — candidate source, 24 September 2026
 
 - Cloud layers and per-layer availability; honest historical gaps and clearer forecast comparison using recorded OWM first-point estimates against earlier forecasts.

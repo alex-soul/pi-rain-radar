@@ -147,7 +147,7 @@ During release review, check README, Quick Start, the manual and troubleshooting
 
 ### Publication
 
-Publishing a GitHub release runs .github/workflows/release-image.yml. The workflow checks that its tag matches package.json, runs tests, builds ARM64 and AMD64 images, verifies fresh offline startup and data persistence on both architectures, then promotes the versioned image to latest. latest includes published pre-releases while the product remains pre-release. Fixed v-prefixed image tags support explicit version selection. Publish releases in ascending version order; rerunning an older release also moves latest. GHCR package visibility must be public for anonymous pulls. The source label links images to this repository. Registry publishing uses the workflow GITHUB_TOKEN, with no personal publishing secret.
+Publishing a GitHub release runs .github/workflows/release-image.yml. The workflow checks that its tag matches package.json, runs tests, builds ARM64 and AMD64 images, verifies fresh offline startup and data persistence on both architectures, then promotes the versioned image to latest. latest includes published pre-releases while the product remains pre-release. Fixed v-prefixed image tags support explicit version selection. Publish releases in ascending version order; rerunning an older release leaves latest unchanged when a newer published release exists. GHCR package visibility must be public for anonymous pulls. The source label links images to this repository. Registry publishing uses the workflow GITHUB_TOKEN, with no personal publishing secret.
 
 ## Source map and handover
 

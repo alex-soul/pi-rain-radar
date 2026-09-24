@@ -1,5 +1,11 @@
 # Validation and remaining work
 
+## 0.8.0 release candidate acceptance — 24 September 2026
+
+360 tests passed on Windows and native ARM64. Fresh startup/restart and backup restore checks passed. A copied-data upgrade/restart preserved 6,657 records and 2,433 assets, archive generation and settings. Responsive DEV review covered the accepted controls. I tested RC3 on my Pi and accepted the new features with no obvious issues. These results precede final release CI and published-image handover.
+
+Short Pi checks found no throttling or active swap-in/out during the sample. Docker memory limits are not enforced by this Pi kernel. Neither fact establishes prolonged soak. Cloud freshness remains unchanged pending longer publication-delay observations; see [follow-ups](follow-ups.md).
+
 ## 0.7.0 published-image acceptance — 21 September 2026
 
 [Release CI 35634068431](https://github.com/alex-soul/pi-rain-radar/actions/runs/35634068431) passed 275 tests, AMD64/ARM64 builds and fresh-start/restart checks for both architectures. The Pi runs the published image from the normal Compose configuration, preserving settings and archive generation. I confirmed About 0.7.0 and healthy operation after handover. The camera interruption during handover was a local issue, unrelated to the Pi.

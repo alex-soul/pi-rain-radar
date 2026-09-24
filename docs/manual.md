@@ -1,5 +1,19 @@
 # User manual
 
+## New controls in 0.8.0
+
+**Layers** controls visibility and opacity separately for Main and Overview. Only enabled layers appear; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
+
+**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap the widget to reveal **Edit**, then use toggles and draggable rows to select and order nine readings: those three plus Wind, Gust, T−Td, Visibility, Pressure and UV. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
+
+**Sun/Moon** uses bundled local calculations for the configured location/time zone, without provider downloads. Live uses current time; Archive uses its selected time. The compact widget shows the bodies rising/setting through its border and Moon phase; expand vertically to reveal event times. **Weather → Dock** has ordinary Sun/Moon visibility/order rows, off by default. **Units** selects Next event (default) or Altitude/direction for each. Compact Dock suffixes **r**, **s**, **p** mean rise, set and peak; the Dock retains its themed Moon icon. Widget information remains available through its help.
+
+**Display → Auto-hide buttons** shares the 15-second inactivity/reveal timing of both dock auto-hide switches. Each switch stays independent. Tap to reveal hidden controls together. An open clock stays open. Chart Edit controls follow the same reveal timing.
+
+**Camera** offers a one-to-ten-minute collection interval. Live retains the latest image; new Archive history retains one representative per ten-minute playback slot. Existing captured history is preserved. Archive never chooses a future image; missing matches remain gaps.
+
+Cloud freshness may be stricter than normal publication delay warrants; see [cloud freshness](indicators.md#cloud-freshness-in-080). Thresholds remain unchanged in this release.
+
 Controls and settings for Pi Rain Radar. Status meanings live in the numbered [indicator guide](indicators.md). For installation, use [Quick Start](quick-start.md) or the [Raspberry Pi build guide](raspberry-pi.md).
 
 ## One installation, multiple screens
@@ -109,7 +123,7 @@ The key stays on the computer running the app and is not displayed again. **Remo
 
 ### Interface → Display: playback, scale, docks and UI lock
 
-**Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Changes preview immediately, persist in this browser and do not affect acquisition.
+**Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
 
 **Playback window** selects 2, 4 or 6 hours for Live on this browser and supplies the initial Archive duration. Archive has its own temporary 1–24-hour slider. Longer windows use retained history and more browser memory, without extra provider requests or retention.
 
@@ -129,7 +143,7 @@ Choose temperature units independently from wind units: Celsius/Fahrenheit and m
 
 ### Interface → Weather → Dock
 
-Toggle and drag rows to choose and order the ten source readings plus derived T−Td listed under [Weather readings and units](#weather-readings-and-units). Unavailable fields show dashes. Wind direction follows your selected convention; see the [wind arrow guide](indicators.md#wind-arrow). It does not predict radar movement.
+Toggle and drag rows to choose and order the ten source readings, derived T−Td and optional Sun/Moon entries listed under [Weather readings and units](#weather-readings-and-units). Unavailable fields show dashes. Wind direction follows your selected convention; see the [wind arrow guide](indicators.md#wind-arrow). It does not predict radar movement.
 
 The top dock sizes to the selected readings, wrapping on narrow screens. Hiding every reading removes the numbers while keeping the health handle. Controls move below an expanded dock when they would collide and move back up when it tucks away.
 
@@ -172,7 +186,7 @@ Use the numbered [screen indicator guide](indicators.md) for dock handles, retai
 
 ### Look back with Archive
 
-Tap Archive, choose an available **Date** and **Time**, and select **Replay**. The time is the window endpoint. Its **1–24-hour slider** defaults to the saved Live window and resets on return to Live. Only retained choices are offered; history builds while the server runs, with seven days retained by default. **Close** preserves playback position and play/pause state, immediate comparison changes and pending date/window selections. Replay applies the selected window.
+Tap Archive, choose an available **Date**, **Time** and playback window, and select **Load**. Playback starts while the popup stays open. Use its top-right cross to dismiss it. The time is the window endpoint. Its **1–24-hour slider** defaults to the saved Live window and resets on return to Live. Only retained choices are offered; history builds while the server runs, with seven days retained by default. Closing preserves playback position and play/pause state. Comparison, speed and last-frame-hold overrides remain through closing and loading again, then reset to the saved Live settings when returning to Live.
 
 The optional provider-name switch starts off on every Archive visit. It labels each map at top right and disappears on return to Live. Tap the Archive icon to return to Live or its date/time range to reopen the picker. The expanded control shows a ten-minute auto-return countdown. Selecting another window restarts it; cancelling the picker does not.
 

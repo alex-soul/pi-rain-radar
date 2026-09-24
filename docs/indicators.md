@@ -1,5 +1,11 @@
 # Screen indicators
 
+## Cloud freshness in 0.8.0
+
+The bottom Dock turns red when the newest enabled cloud imagery is at least **30 minutes old**, even if collection succeeds. This threshold may be too aggressive for normal provider publication delays. It remains unchanged while longer observations are collected; a red indicator alone does not prove a failed download.
+
+The gaps popup answers a different question: whether each historical position has its expected image. Reusing an earlier image is amber; unavailable expected imagery is red. Therefore a red freshness indicator with two amber cloud slots and no red gaps can be correct. Provider delay still affects the gaps popup and total colour. Check Status for image age and collection errors separately.
+
 This page is the single reference for status colours and symbols. For setup and controls, see the [manual](manual.md).
 
 ![Numbered locations of screen indicators](images/indicators-numbered-0.4.0.png)
@@ -16,7 +22,7 @@ This page is the single reference for status colours and symbols. For setup and 
 
 ## 2. Bottom dock indicator
 
-**Greenish:** both selected radar sources are ready with recent data. **Amber:** a source reports a delay/problem while usable data remains, or initial acquisition is pending. **Red:** either source has no usable data after a failed acquisition, observations are at least 30 minutes old, or the browser cannot reach the backend. Already-loaded playback can continue while usable; animation does not prove connection health. Historical timeline gaps alone do not determine handle colour.
+**Greenish:** both selected radar sources and enabled cloud layers have recent usable data. **Amber:** a source reports a delay/problem while usable data remains, or initial acquisition is pending. **Red:** either source has no usable data after a failed acquisition, observations are at least 30 minutes old, or the browser cannot reach the backend. Already-loaded playback can continue while usable; animation does not prove connection health. Historical timeline gaps alone do not determine handle colour.
 
 ## 3. Rain forecast indicator
 
@@ -32,7 +38,7 @@ In **12 / 13**, 12 is the current playable position and 13 the number of playabl
 
 The timeline's touching upper/lower halves show Main/Overview availability. Missing observations are amber, not dry weather. One missing half remains playable; two missing halves are skipped without delay. Live may display borrowed radar for up to 30 minutes but never hides its gap. Archive leaves the affected basemap empty of radar. Late arrivals fill their original gaps.
 
-Live waits one ten-minute interval before opening an empty new endpoint, but newer actual data advances it immediately and any missing half is visible immediately. See [playback rules](playback-conventions.md).
+Live uses a clock-aligned ten-minute endpoint with a five-minute publication lag. Only the newest missing Live slot is pending; newer provider frames do not advance the clock endpoint. See [playback rules](playback-conventions.md).
 
 ## 6. Archive playback countdown
 
@@ -56,7 +62,7 @@ In Status, green means connected/ready; warning states identify the affected sou
 
 ## Other colour cues
 
-In the 0.8.0 candidate, optional gust can show amber on its own setting/reading but is excluded from aggregate weather-handle and gaps health. The availability popup distinguishes intentional off/unknown periods from missing expected observations. Its frame marker shares the playback slider's slot geometry. Using playback, including play/pause, keeps the popup open; tapping elsewhere dismisses it. These indicators describe local availability, not proof of provider fault.
+In 0.8.0, optional gust can show amber on its own setting/reading but is excluded from aggregate weather-handle and gaps health. The availability popup distinguishes intentional off/unknown periods from missing expected observations. Its frame marker shares the playback slider's slot geometry. Using playback, including play/pause, keeps the popup open; tapping elsewhere dismisses it. These indicators describe local availability, not proof of provider fault.
 
 Cloud publication lag is separate from collection failure: recent successful acquisition can be healthy while the newest available image is older. Missing cloud slots stay visible. Routine cloud/camera success events are quiet; warnings and a single usable recovery remain in the rolling 25-event log. Entries include their dates.
 

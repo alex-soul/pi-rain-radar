@@ -1,15 +1,14 @@
 # Release follow-ups
 
-## Deferred after 0.8.0 RC2 review
+## After 0.8.0
 
-I confirmed 0.8.0-rc.2 on the Pi and the initial skim tests passed. These are deferred beyond the planned 0.8.0 release unless the soak reveals a blocker:
+I accepted RC3 after Pi skim tests: no obvious issues and all new features behaved as expected. Future UI refinements are non-blocking and will be recorded once supplied.
 
-- Keep the camera timestamp left-aligned when its name is blank; currently it moves to the right.
-- Give the current-capture count enough width and separation from the divider/total in a 24-hour Archive window.
-- Observe cloud publication lag over a longer period before adjusting Settings status. A consistent 20-plus-minute provider delay may warrant a healthy status within an evidence-based allowance. Keep actual gaps visible in the popup and total colour. Do not silently change thresholds now.
-- Move the Rainbow request-limit control to System > API > Rainbow and clarify its shared rain/cloud scope. The backend budget is already shared; this is a control-placement and clarity refinement.
+- Observe cloud publication delays for several days or weeks before changing thresholds. The current 30-minute stale threshold may be too aggressive; retain honest gaps and total colour independently of any later health allowance.
+- Continue longer Pi soak, including memory/swap, recovery and retained history. Short successful checks are not prolonged soak.
+- Keep the broader Stats for nerds redesign for a later release.
 
-Multi-day RC2 soak remains in progress. Initial skim is not final release acceptance. The broader Stats for nerds redesign remains future work.
+The RC2 camera-label alignment, 24-hour counter spacing and shared Rainbow API limit placement were addressed in 0.8.0. No threshold change is included.
 
 ## After 0.7.0
 

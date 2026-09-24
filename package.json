@@ -1,6 +1,6 @@
 {
   "name": "pi-rain-radar",
-  "version": "0.8.0-rc.3",
+  "version": "0.8.0",
   "private": true,
   "license": "MIT",
   "type": "module",

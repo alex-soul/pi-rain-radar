@@ -1,7 +1,5 @@
 # Pi Rain Radar
 
-Local candidate source: [0.8.0-rc.2 changes and behaviour](docs/release-0.8.0-rc.2.md). DEV and native checks passed; the local Pi candidate is installed and initial checks passed. Multi-day soak remains pending. This candidate image is not published. Earlier release descriptions below remain historical where this candidate supersedes them.
-
 A dedicated rain-radar screen for your home. Animate recent rain, see where it has been moving, and glance at optional current temperature and wind readings.
 
 ![Historical rain radar centred on Coventry](docs/images/radar-preview-20260916-2147.gif)
@@ -10,7 +8,7 @@ A dedicated rain-radar screen for your home. Animate recent rain, see where it h
 
 ## Status
 
-**[v0.7.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.7.0) is the current pre-release.** It adds a SQLite-backed rolling archive, historical weather and camera playback, one optional camera, shared Home Assistant integration and clearer Settings. I tested the release candidate on my Pi 4 / 2 GB: no major problems found and everything is working. A few non-blocking UI tweaks will be recorded after review in [follow-ups](docs/follow-ups.md). Prolonged soak remains separate from that acceptance.
+**[v0.8.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.8.0) is the current pre-release.** It adds cloud layers, configurable weather trend charts, local Sun/Moon information, expanded HA readings and clearer camera/Archive playback. I tested RC3 on my Pi 4 / 2 GB and found no obvious issues. Longer soak and cloud publication-delay observations continue; see [release notes](docs/release-0.8.0.md) and [follow-ups](docs/follow-ups.md).
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
@@ -54,7 +52,7 @@ Settings stay in the existing data volume. The first upgrade to 0.7.0 resets old
 - **RainViewer or Rainbow Weather — or both.** Choose either provider for Main and Overview independently, so you can compare them or manually switch when one has problems.
 - **Optional Rainbow rain and cloud layers.** Usage depends on map geometry and enabled layers. Actual local counters and an optional request cap help track it; see [setup, costs and limits](docs/radar-providers.md).
 - **Explore up to 24 hours of radar history.** Scrub or replay a selected window from the local rolling archive (seven days by default, configurable), with optional provider labels. [Archive playback](docs/manual.md#look-back-with-archive) shows the observations actually available and builds as the app runs.
-- **Camera and historical weather.** Collect one direct or Home Assistant camera snapshot every five minutes. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply all ten source readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
+- **Camera and historical weather.** Collect one direct or Home Assistant camera snapshots at a configurable one-to-ten-minute interval. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply all ten source readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
 - **One radar server, multiple displays.** Each browser remembers its own buttons, layout and theme while sharing the same configured location and acquisition. Use it on your [home network](docs/quick-start.md#3-open-it-from-your-laptop), optionally [install it on phones and laptops or connect privately through Tailscale](docs/pwa.md), and see the [Android and Windows examples](docs/pwa-gallery.md).
 - **Playback that handles delays.** Live can reuse earlier radar for up to 30 minutes and automatically pause while waiting for enough data to resume. Missing observations remain visible; [Live and Archive rules](docs/playback-conventions.md) explain the difference.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.

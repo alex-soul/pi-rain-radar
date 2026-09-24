@@ -1,5 +1,11 @@
 # Upgrades and migration
 
+## 0.8.0 weather and display refinements
+
+Compatible 0.7.0/0.8.0 candidate archives, credentials, PIN, map and browser preferences are preserved. Back up data and browser preferences first. New camera history keeps one representative per ten-minute slot prospectively; previously captured history is retained. Sun/Moon Dock readings start off, and new chart preferences start with Temperature, Humidity and Dew point. Cloud health thresholds remain unchanged and may be too aggressive for normal provider delays; see [release notes](release-0.8.0.md).
+
+The older archive reset described below still applies when upgrading from 0.6.0 or earlier.
+
 ## 0.7.0: new archive and shared integrations
 
 **Upgrading from 0.6.0 or earlier removes up to seven days of old rolling history.** The new SQLite archive starts fresh; no migration, mixed legacy archive or import is supported. [Back up the complete app data first](archive-backup.md) and retain the matching old image if you need to replay it later.

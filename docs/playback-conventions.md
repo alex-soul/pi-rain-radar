@@ -20,7 +20,7 @@ The timeline consists of two touching halves: Main above, Overview below. Every 
 
 ## Live publication grace and borrowing
 
-The normal endpoint is the preceding ten-minute boundary: at 21:00 it is 20:50. A newer acquired observation advances it immediately. If RainViewer supplies 21:00 while Rainbow only has 20:50, the endpoint becomes 21:00 and Rainbow's half shows a gap immediately. At 21:10, 21:00 enters the window even if both maps are missing. The chosen duration extends backward from the endpoint. This grace does not change acquisition timing or the separate settling preference.
+The endpoint is the clock rounded down to a ten-minute boundary after subtracting five minutes: at 21:03 it is 20:50; at 21:05 it becomes 21:00. Newer provider observations do not advance this endpoint. Only its newest missing slot is pending; older missing slots are gaps. The chosen duration extends backward from the endpoint. This grace does not change acquisition timing or the separate settling preference.
 
 Live may borrow a compatible earlier observation for a missing map for up to 30 minutes. Beyond that, only its basemap is shown. Borrowing does not fill timeline gaps or improve completeness. With fewer than two playable positions, automatic pause waits for recovery; the combined play/pause icon distinguishes it from manual pause. Manual pause stays paused until changed by the user.
 
