@@ -27,4 +27,3 @@ test('real collection transitions survive reopening and distinguish unknown, ena
   assert.equal(recent.at(-1).clouds,false); // boundary before requested window
  }finally{await store?.close();await rm(dir,{recursive:true,force:true});}
 });
-
