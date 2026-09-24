@@ -72,6 +72,17 @@ Start with RainViewer for radar and add the optional sources you need. OpenWeath
 
 My current setup uses RainViewer on the main map and three Rainbow layers: Overview rain and clouds on both maps. Rain and clouds on both maps would be four Rainbow layers. I still need to run through a full month before I know the actual cost; neither setup has a guaranteed monthly bill. See [usage and limits](docs/radar-providers.md). Storage duration likewise depends on retention, enabled layers and available space.
 
+### A feature-rich setup with no weather API bill
+
+You can use most of the app without paying for weather data: choose **RainViewer for both Main and Overview**, add **Rainbow clouds on one map**, and enable **OpenWeather readings plus Rain forecast**. For one installation running continuously at the default Coventry map geometry:
+
+- **Both radar maps:** RainViewer needs no key or subscription. The app shares acquisition and paces requests at about 71/minute maximum, below RainViewer's published 100 requests/IP/minute limit. Other installations or apps on the same public IP share that limit. [RainViewer limits](https://www.rainviewer.com/api/transition-faq.html).
+- **One cloud layer:** six tiles per new ten-minute frame works out to approximately **25,920–26,784 tiles in a 30–31-day month**, below Rainbow's **30,000 free tiles/month**. This is a steady-state estimate, not a billing guarantee: different map geometry, initial history loading, retries and other account usage add requests. Check snapshot billing in your account, watch the counters and use the app's request cap. [Rainbow allowance](https://developer.rainbow.ai/).
+- **Weather readings and minute rain forecasts together:** two calls every ten minutes are about **288 calls/day**, comfortably below OpenWeather's **1,000 free calls/day**. Activate One Call 4.0 and set its account limit to **1,000/day** rather than the chargeable default of 2,000. [OpenWeather allowance and limit](https://openweathermap.org/api/one-call-4).
+- **Sun/Moon, charts, replay and your local camera:** local calculations and stored data add no weather API charges; a camera you already access locally needs no extra subscription from this app. Additional screens reuse the Pi's collected data.
+
+With those allowances respected, the weather API bill can be **£0/$0** while retaining radar, clouds, weather, forecasts, astronomy and camera playback. Your Pi/display, electricity, internet and any separately paid camera service are outside that estimate. I still need a full billing cycle to confirm real Rainbow usage.
+
 ## Hardware recommendations
 
 - **[Raspberry Pi 4 Model B](https://thepihut.com/products/raspberry-pi-4-model-b)** — tested with 2 GB RAM.
