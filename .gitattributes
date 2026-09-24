@@ -1,1 +1,3 @@
 *.sh text eol=lf
+public/suncalc.js text eol=lf
+public/suncalc-license.txt text eol=lf
