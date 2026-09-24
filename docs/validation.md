@@ -1,5 +1,11 @@
 # Validation and remaining work
 
+## 0.8.0 published-image acceptance — 24 September 2026
+
+[Release CI 36050970878](https://github.com/alex-soul/pi-rain-radar/actions/runs/36050970878) passed tests, AMD64/ARM64 builds and fresh-start/restart checks on both architectures. Published index: `sha256:e4b60a8e5ff27b0256d40f83722f0ea2b2df6b6ecdcf879d025f45ae4ba34ace`, source/tag `a6b5f9d4c0ca9a9cd447a53a9dcb88912991f31f` / `v0.8.0`.
+
+Copied-data upgrade/restart preserved 6,753 records and 2,468 assets, settings and archive generation. The Pi runs the verified published image using normal Compose plus Device Power. I confirmed About 0.8.0 and smooth operation, with all status LEDs green and one expected cloud gap. This completes published-image acceptance. Longer soak, cloud publication-delay observations and full-month billing verification remain separate follow-ups.
+
 ## 0.8.0 release candidate acceptance — 24 September 2026
 
 360 tests passed on Windows and native ARM64. Fresh startup/restart and backup restore checks passed. A copied-data upgrade/restart preserved 6,657 records and 2,433 assets, archive generation and settings. Responsive DEV review covered the accepted controls. I tested RC3 on my Pi and accepted the new features with no obvious issues. These results precede final release CI and published-image handover.
