@@ -383,7 +383,9 @@ class Installer:
             trials = list(dict.fromkeys([saved.get('transform', '90'), '90', '270']))
             for transform in trials:
                 self.run('Try display rotation ' + transform, 'wlr-randr', '--output', display['name'], '--transform', transform)
-                if ask('Is the picture upright, and does tapping a desktop control follow your finger?', True):
+                UI.say('Check that the screen is landscape (wide), with text the right way up.')
+                UI.say('Tap a desktop control to check that touch follows your finger.')
+                if ask('Are the landscape orientation and touch both correct?', True):
                     chosen = transform
                     break
             if chosen is None:
@@ -414,7 +416,7 @@ class Installer:
             UI.command(RETRY)
             UI.say('\nSetup will resume after the OS update; your choices are kept.')
         if ask('Reboot now?', True):
-            self.run('Reboot requested; SSH will disconnect', 'sudo', 'systemctl', 'reboot')
+            self.run('Reboot requested; SSH will disconnect.', 'sudo', 'systemctl', 'reboot', interactive=True)
         else:
             UI.say('When ready, run this in the Pi terminal:')
             UI.command('sudo reboot')
