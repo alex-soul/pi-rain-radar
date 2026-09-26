@@ -139,15 +139,20 @@ def main():
     print('when it is OFF; touch or Wake resumes. No HA automations are created.')
     settings.update(owner_uid=uid, device_id=settings.get('device_id', 'radar_' + uuid.uuid4().hex),
                     output=args.output, backlight=backlight)
-    settings['mqtt_host'] = ask('Existing broker hostname or IP', settings.get('mqtt_host', ''))
-    print('TLS needs a broker already configured for TLS. Choose No for a normal LAN')
-    print('broker on port 1883. No certificates or broker settings will be created.')
-    settings['mqtt_tls'] = yes('Use TLS?', settings.get('mqtt_tls', False))
+    print('Use the address and MQTT login for your existing broker, such as the')
+    print('Mosquitto broker in Home Assistant. This does not install a broker.')
+    settings['mqtt_host'] = ask('MQTT broker address (hostname or IP)', settings.get('mqtt_host', ''))
+    print('\nTLS encrypts the connection to your MQTT broker.')
+    print('If you have not configured certificates/encryption on your broker, choose no.')
+    print('Choose yes only if your broker already accepts TLS connections.')
+    settings['mqtt_tls'] = yes('Does your broker use TLS encryption?', settings.get('mqtt_tls', False))
     default_port = settings.get('mqtt_port', 8883 if settings['mqtt_tls'] else 1883)
     settings['mqtt_port'] = int(ask('Broker port', str(default_port)))
     ca_source = None
     if settings['mqtt_tls']:
-        ca = ask('Private CA file, or leave empty for system trust', settings.get('mqtt_ca', ''))
+        print('For a certificate issued by a public authority, leave this empty.')
+        print('For a private certificate authority, enter the path to its CA file on this Pi.')
+        ca = ask('CA certificate file on the Pi (optional)', settings.get('mqtt_ca', ''))
         if ca:
             ca_source = Path(ca).expanduser().resolve(strict=True)
             settings['mqtt_ca'] = str(ETC / 'broker-ca.pem')
@@ -160,9 +165,14 @@ def main():
     password = getpass.getpass('MQTT password (hidden): ')
     if not username_mqtt or not password:
         raise SystemExit('An authenticated broker account is required.')
-    print('Credentials will be stored root-only and supplied using systemd credentials.')
-    print('Plain MQTT is unencrypted on your LAN. TLS, if selected, verifies the broker certificate.')
-    if not yes('Install/update these optional display controls?', True):
+    print('\nReady to connect to ' + settings['mqtt_host'] + ':' + str(settings['mqtt_port']))
+    print('Connection: ' + ('TLS encrypted, broker certificate verified.' if settings['mqtt_tls']
+                            else 'unencrypted MQTT on your LAN.'))
+    print('Your MQTT login will be saved on this Pi, readable only by the administrator.')
+    print('Next: test the login, then enable the six display controls in Home Assistant.')
+    print('Existing Pi display settings will be updated if already configured.')
+    print('Choose no to cancel this MQTT setup without changing its existing configuration.')
+    if not yes('Connect and save these MQTT settings?', True):
         raise SystemExit(2)
     # Validate authentication and TLS before stopping any existing controller.
     # This probe neither publishes discovery nor operates the display.
