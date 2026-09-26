@@ -16,6 +16,12 @@ Pi Rain Radar focuses on rain: recent radar playback, a small overview map, opti
 
 See [what’s next](docs/follow-ups.md) for planned improvements and ideas for future releases.
 
+## Build your first Raspberry Pi radar screen
+
+Start with the **[Ludicrously Quick Start](docs/ludicrous-quick-start.md)**: a photographed guide to assembly, preparing the memory card, connecting from your computer and running the guided installer. No previous Pi experience needed. The fresh-install walkthrough is tested on Pi 5 with the official 7-inch Touch Display 2; Pi 4 installer testing remains pending.
+
+Already have a working Pi setup? Use the [manual Pi guide](docs/raspberry-pi.md) or the Docker instructions below.
+
 ## Run with Docker
 
 Install Docker with the Compose plugin. For a new installation on Linux or a Pi (existing installations should use [Upgrade](#upgrade)):

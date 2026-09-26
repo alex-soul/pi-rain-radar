@@ -1,5 +1,7 @@
 # Build a Raspberry Pi rain-radar screen
 
+**Starting with a freshly flashed, dedicated Pi?** The [Ludicrously Quick Start](ludicrous-quick-start.md) walks through assembly and Imager with photos, then uses the guided installer. This page is the manual installation route.
+
 A walkthrough from unpacking the hardware to an automatically starting kitchen display. You use a laptop to prepare and configure the Pi; no keyboard or mouse needs to be connected to the Pi. No AI assistant is required.
 
 **Reference setup:** Raspberry Pi 4 Model B (2 GB), 7-inch Touch Display 2, microSD storage, Raspberry Pi OS with desktop, 64-bit Debian 13 Trixie and labwc/Wayland. Installation, landscape touch, kiosk reboot, LAN configuration, image upgrade and location changes were confirmed in a manual walkthrough. Other boards/screens may need different cables or display settings. Continuous resource use and long-duration recovery tests remain ongoing.

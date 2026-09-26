@@ -2,8 +2,10 @@
 
 The permanent entry point is the repository-root `install-pi.sh`. It is public
 for first fresh-hardware trials; Pi 5/Pi 4 installer acceptance is not yet complete.
-The main user guides do not point to it yet. The planned **Ludicrously Quick Guide**
-will cover flashing, assembly, SSH and the guided steps after the walkthrough works.
+The **[Ludicrously Quick Start](../../docs/ludicrous-quick-start.md)** covers
+assembly, flashing, SSH and the guided steps with photographs. The Pi 5 / 7-inch
+walkthrough and six HA controls have been tested; fresh Pi 4 installer testing
+and longer resilience checks remain outstanding.
 
 Run in the Pi SSH terminal as the normal desktop user:
 
