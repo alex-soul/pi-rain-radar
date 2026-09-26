@@ -48,6 +48,12 @@ def ask(text, default=False):
             return answer in ('y', 'yes')
 
 
+def progress(elapsed):
+    # Package tooling can temporarily disable the terminal's LF -> CRLF mapping.
+    # Explicit column reset/newline also avoids wrapping a long log path repeatedly.
+    print(f'\r  Still working... {elapsed}s elapsed.', end='\r\n', flush=True)
+
+
 def os_info(text):
     return {key: value.strip('"') for line in text.splitlines()
             if '=' in line and not line.startswith('#') for key, value in [line.split('=', 1)]}
@@ -151,14 +157,16 @@ class Installer:
         with self.log.open('a', encoding='utf-8') as log:
             log.write('\n' + title + '\n')
             log.flush()
-            child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=self.env)
+            child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log,
+                                     stderr=subprocess.STDOUT, env=self.env)
+            started = time.monotonic()
             try:
                 while True:
                     try:
                         code = child.wait(timeout=10)
                         break
                     except subprocess.TimeoutExpired:
-                        print('  Still working; progress is in ' + str(self.log), flush=True)
+                        progress(int(time.monotonic() - started))
             except BaseException:
                 child.terminate()
                 child.wait()
@@ -171,7 +179,7 @@ class Installer:
 
     def apt(self, title, *args):
         self.run(title, 'sudo', 'env', 'DEBIAN_FRONTEND=noninteractive', 'apt-get',
-                 '-o', 'DPkg::Lock::Timeout=120', '-o', 'Dpkg::Options::=--force-confdef',
+                 '-o', 'Dpkg::Use-Pty=0', '-o', 'DPkg::Lock::Timeout=120', '-o', 'Dpkg::Options::=--force-confdef',
                  '-o', 'Dpkg::Options::=--force-confold', *args)
 
     def owned(self, path, data, root=False, mode=0o644, allow_empty=False):

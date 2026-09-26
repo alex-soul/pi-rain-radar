@@ -1,5 +1,6 @@
 """Installer contracts and interrupted-run recovery; no host changes or network."""
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -10,6 +11,29 @@ import installer as app
 
 
 class InstallerTests(unittest.TestCase):
+    def test_progress_resets_column_when_terminal_newline_mapping_is_disabled(self):
+        import pty
+        import termios
+        master, slave = pty.openpty()
+        try:
+            settings = termios.tcgetattr(slave)
+            settings[1] &= ~termios.OPOST
+            termios.tcsetattr(slave, termios.TCSANOW, settings)
+            with os.fdopen(os.dup(slave), 'w') as terminal, patch.object(app.sys, 'stdout', terminal):
+                app.progress(10)
+                app.progress(20)
+            self.assertEqual(os.read(master, 4096),
+                             b'\r  Still working... 10s elapsed.\r\n\r  Still working... 20s elapsed.\r\n')
+        finally:
+            os.close(master)
+            os.close(slave)
+
+    def test_package_commands_disable_dpkg_terminal(self):
+        instance = app.Installer.__new__(app.Installer)
+        instance.run = Mock()
+        instance.apt('Update', 'full-upgrade', '-y')
+        self.assertIn('Dpkg::Use-Pty=0', instance.run.call_args.args)
+
     def fixture(self, root):
         instance = app.Installer.__new__(app.Installer)
         instance.directory = root / 'state'
