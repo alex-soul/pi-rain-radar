@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Guided fresh Raspberry Pi installation. No maintenance scheduler or HA admin."""
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -11,6 +12,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import textwrap
 import time
 import urllib.request
 
@@ -40,18 +42,93 @@ def atomic(path, data, mode=0o600):
 
 
 def ask(text, default=False):
+    UI.clear()
+    UI.say(text)
     while True:
-        answer = input(text + (' [Y/n]: ' if default else ' [y/N]: ')).strip().lower()
+        answer = input('  Your choice ' + ('[Y/n]: ' if default else '[y/N]: ')).strip().lower()
         if not answer:
             return default
         if answer in ('y', 'yes', 'n', 'no'):
             return answer in ('y', 'yes')
+        UI.say('Please enter y or n, or press Enter for the capital-letter default.')
 
 
-def progress(elapsed):
-    # Package tooling can temporarily disable the terminal's LF -> CRLF mapping.
-    # Explicit column reset/newline also avoids wrapping a long log path repeatedly.
-    print(f'\r  Still working... {elapsed}s elapsed.', end='\r\n', flush=True)
+class Terminal:
+    """A small, line-oriented UI; no cursor movement across prompts or log output."""
+    def __init__(self):
+        self.active = False
+        self.grouped = False
+        self.last_notice = None
+
+    @property
+    def live(self):
+        return sys.stdout.isatty() and os.environ.get('TERM', '') not in ('', 'dumb')
+
+    @property
+    def width(self):
+        return max(20, shutil.get_terminal_size((80, 24)).columns - 1)
+
+    def color(self, text, code):
+        if self.live and 'NO_COLOR' not in os.environ:
+            return f'\033[{code}m{text}\033[0m'
+        return text
+
+    def clear(self):
+        if self.active:
+            sys.stdout.write('\r\033[2K')
+            sys.stdout.flush()
+            self.active = False
+
+    def say(self, text='', style=None):
+        self.clear()
+        for paragraph in text.split('\n'):
+            for line in textwrap.wrap(paragraph, self.width, break_long_words=False,
+                                      break_on_hyphens=False) or ['']:
+                # apt can disable the terminal's automatic LF -> CRLF mapping.
+                sys.stdout.write((self.color(line, style) if style else line) + '\r\n')
+        sys.stdout.flush()
+
+    def command(self, text):
+        # Never insert line breaks into copyable shell commands.
+        self.clear()
+        sys.stdout.write(text + '\r\n')
+        sys.stdout.flush()
+
+    def tick(self, title, elapsed=0):
+        if not elapsed:
+            self.last_notice = None
+        if self.live:
+            suffix = f'  {elapsed // 60}m {elapsed % 60:02d}s' if elapsed else ''
+            room = max(1, self.width - len(suffix) - 4)
+            label = title if len(title) <= room else title[:max(0, room - 3)] + '...'
+            sys.stdout.write('\r\033[2K' + self.color('  > ' + label + suffix, '36'))
+            sys.stdout.flush()
+            self.active = True
+        elif ((not elapsed and not self.grouped) or
+              (elapsed >= 60 and self.last_notice != (title, elapsed // 60))):
+            self.say('  > ' + title + (f' ({elapsed}s elapsed)' if elapsed else ''))
+            self.last_notice = (title, elapsed // 60)
+
+    @contextmanager
+    def stage(self, label):
+        self.say()
+        self.say(label, '1;36')
+        self.grouped = True
+        started = time.monotonic()
+        try:
+            yield
+        except BaseException:
+            self.clear()
+            self.say('  STOPPED - ' + label, '31')
+            raise
+        else:
+            elapsed = int(time.monotonic() - started)
+            self.say(f'  OK  {elapsed // 60}m {elapsed % 60:02d}s', '32')
+        finally:
+            self.grouped = False
+
+
+UI = Terminal()
 
 
 def os_info(text):
@@ -136,6 +213,9 @@ class Installer:
         self.env = os.environ.copy()
         self.boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
         self.model = Path('/proc/device-tree/model').read_text().rstrip('\0')
+        self.log.write_text('Installer: ' + self.args.source_commit + '\nApp: ' +
+                            self.release['app_release'] + '@' + self.release['app_digest'] + '\n',
+                            encoding='utf-8')
 
     def save(self):
         atomic(self.path, (json.dumps(self.state, indent=2) + '\n').encode())
@@ -147,13 +227,15 @@ class Installer:
         return result.stdout.strip()
 
     def run(self, title, *command, interactive=False):
-        print('\n' + title, flush=True)
+        UI.clear()
         # Never log interactive MQTT configuration, terminal input or passwords.
         if command[0] == 'sudo':
             subprocess.run(['sudo', '-v'], check=True)
         if interactive:
+            UI.say(title)
             subprocess.run(command, check=True, env=self.env)
             return
+        UI.tick(title)
         with self.log.open('a', encoding='utf-8') as log:
             log.write('\n' + title + '\n')
             log.flush()
@@ -166,16 +248,21 @@ class Installer:
                         code = child.wait(timeout=10)
                         break
                     except subprocess.TimeoutExpired:
-                        progress(int(time.monotonic() - started))
+                        UI.tick(title, int(time.monotonic() - started))
             except BaseException:
                 child.terminate()
                 child.wait()
+                UI.clear()
                 raise
+        UI.clear()
         if code:
             lines = self.log.read_text(encoding='utf-8', errors='replace').splitlines()
-            print('\n'.join(lines[-15:]))
+            UI.say('Last output from the failed step:', '31')
+            UI.say('\n'.join(lines[-15:]))
+            UI.say('Full log: ' + str(self.log))
             raise Stop(title + ' failed. Resolve the error and rerun the same command; completed checkpoints are kept.')
-        print('  OK', flush=True)
+        if not UI.grouped:
+            UI.say('  OK  ' + title, '32')
 
     def apt(self, title, *args):
         self.run(title, 'sudo', 'env', 'DEBIAN_FRONTEND=noninteractive', 'apt-get',
@@ -243,16 +330,25 @@ class Installer:
                      Path('/etc/pi-rain-radar-power'), Path('/etc/pi-rain-radar-display')]
         if any(path.exists() or path.is_symlink() for path in conflicts) or shutil.which('docker'):
             raise Stop('An existing app/helper/Docker setup was found. Use the standard installation guide; no takeover was attempted.')
-        print('\nPi Rain Radar installer ' + self.release['installer_version'])
-        print(self.model + ' / Raspberry Pi OS 64-bit Desktop Trixie')
-        print('This public test installer is awaiting fresh-hardware acceptance.')
-        print('It rotates the display, fully upgrades this OS once, installs Docker/radar,')
-        print('and configures desktop auto-login and a dedicated Chromium kiosk.')
-        print('No maintenance schedules, broker/HA setup or SSH policy changes are added.')
-        if not ask('Is this a freshly flashed, dedicated Pi, and shall installation continue?'):
+        UI.say(self.model + ' | Raspberry Pi OS 64-bit Desktop')
+        UI.say('Screen first, then OS updates, then your radar kiosk.')
+        UI.say('Expect two reboots: one to resume setup, one to test startup.')
+        UI.say('The first OS update can take a while. Progress stays visible; details are logged.')
+        UI.say('This sets up desktop auto-login and an always-on screen. Future updates are manual.')
+        UI.say('Press Enter to accept a capital-letter default, or type y / n.')
+        UI.say('If sudo asks for a password, use your Pi login password. Typing stays hidden.')
+        UI.say()
+        if not ask('Is this a freshly flashed Pi dedicated to radar? Continue setup?'):
             raise Stop('No installation changes made.')
-        power = ask('Enable Device Power? Adds safe reboot/shutdown in the app; PIN remains optional.', True)
-        mqtt = ask('Enable MQTT? Adds six display controls to your existing HA broker; blanking starts OFF.')
+        UI.say('\nOptional extras', '1')
+        UI.say('Device Power adds safe shutdown and restart buttons to the app. You can set a PIN later.')
+        power = ask('Enable Device Power?', True)
+        UI.say('\nHome Assistant display controls use MQTT to connect to your existing broker.')
+        UI.say('Adds brightness, idle timeout, Wake, Sleep, screen state and automatic blanking.')
+        UI.say('Blanking starts OFF. Connection details are requested later; you can also add this later.')
+        mqtt = ask('Enable MQTT display controls?')
+        UI.say('\nYour choices: Device Power ' + ('ON' if power else 'OFF') +
+               ' | MQTT ' + ('ON' if mqtt else 'OFF'), '1')
         self.state = {'schema': 1, 'uid': os.getuid(), 'installer_commit': self.args.source_commit,
                       'release': self.release, 'power': power, 'mqtt': mqtt, 'files': {}}
         self.save()
@@ -279,7 +375,7 @@ class Installer:
         if (saved.get('output') == display['name'] and saved.get('transform') == display['transform']
                 and saved.get('confirmed_boot') == self.boot):
             return
-        print('\nScreen orientation comes first. Check the physical display and touch tracking.')
+        UI.say('Look at the Pi screen and try tapping a desktop control.')
         if not self.state.get('display') and not ask('Is this an official 7-inch or 10-inch Touch Display 2?', True):
             raise Stop('Other displays are outside this installer.')
         chosen, original = None, display['transform']
@@ -305,13 +401,25 @@ class Installer:
             if chosen is None:
                 subprocess.run(['wlr-randr', '--output', display['name'], '--transform', original], env=self.env)
 
-    def reboot(self, why):
-        print('\n' + why)
-        print('After the desktop returns, reconnect with your usual SSH command and run:\n' + RETRY)
+    def reboot(self, why, complete=False):
+        UI.say('\n' + why, '1;36')
+        if complete:
+            UI.say('After reboot, radar should open automatically. Check the picture and touch.')
+            UI.say('No third setup run is needed. Rerunning the installer only checks the installation.')
+        else:
+            UI.say('Your choices are saved. After the desktop returns:')
+            UI.say('\n1. In your laptop terminal, reconnect to the Pi:')
+            UI.command('ssh ' + self.home.name + '@' + socket.gethostname() + '.local')
+            UI.say('\n2. Once logged into the Pi, paste the same installer command:')
+            UI.command(RETRY)
+            UI.say('\nSetup will resume after the OS update; your choices are kept.')
         if ask('Reboot now?', True):
             self.run('Reboot requested; SSH will disconnect', 'sudo', 'systemctl', 'reboot')
         else:
-            print('Reboot later with sudo reboot. Installation is paused at a saved checkpoint.')
+            UI.say('When ready, run this in the Pi terminal:')
+            UI.command('sudo reboot')
+            UI.say('Setup is complete; automatic startup still needs testing.' if complete else
+                   'Setup is paused at the saved OS-update checkpoint.')
 
     def upgrade(self):
         previous = self.state.get('upgrade_boot')
@@ -325,7 +433,6 @@ class Installer:
             self.save()
             previous = self.boot
         if previous == self.boot:
-            self.reboot('Initial OS upgrade finished. Reboot before Docker/application setup.')
             return False
         return True
 
@@ -458,13 +565,15 @@ exec systemctl --user start pi-rain-radar-kiosk.service
         self.run('Start kiosk in the desktop session', 'sh', str(start))
 
     def health(self, wait=15):
-        deadline = time.monotonic() + wait
+        started = time.monotonic()
+        deadline = started + wait
         while True:
+            UI.tick('Waiting for radar to respond', int(time.monotonic() - started))
             try:
                 with urllib.request.urlopen('http://127.0.0.1:3080/healthz', timeout=4) as response:
                     result = json.load(response)
                 if result.get('ok') is True:
-                    print('Radar HTTP ready; imagery ' + ('available.' if result.get('hasFrame') else 'still acquiring.'))
+                    UI.clear()
                     return result
             except (OSError, ValueError):
                 pass
@@ -478,25 +587,40 @@ exec systemctl --user start pi-rain-radar-kiosk.service
         if display['transform'] != self.state['display']['transform']:
             raise Stop('Display rotation differs from the confirmed setting.')
         self.run('Check Docker service', 'sudo', 'systemctl', 'is-active', '--quiet', 'docker')
-        self.health()
+        health = self.health()
         self.run('Check kiosk service', 'systemctl', '--user', 'is-active', '--quiet', 'pi-rain-radar-kiosk.service')
         if self.state['power']:
             self.run('Check Device Power', 'sudo', 'systemctl', 'is-active', '--quiet', 'pi-rain-radar-power.service')
         if self.state.get('mqtt_ready'):
             self.run('Check MQTT adapter process', 'sudo', 'systemctl', 'is-active', '--quiet', 'pi-rain-radar-mqtt.service')
             self.run('Check local display controller', 'systemctl', '--user', 'is-active', '--quiet', 'pi-rain-radar-display.service')
-        print('\nRecorded app: ' + self.release['app_release'] + ' (' + self.release['app_digest'] + ')')
-        print('Kiosk: http://127.0.0.1:3080/?kiosk=1')
-        print('Configure Map, optional providers and PIN from another device: http://' + socket.gethostname() + '.local:3080')
-        print('Confirm picture, touch, kiosk startup after reboot and any selected HA controls yourself.')
-        print('Process checks do not prove physical display or MQTT broker/discovery readiness.')
-        print('App and OS updates are manual; no maintenance jobs were added.')
+        return health
+
+    def summary(self, health):
+        UI.say('\nPi Rain Radar ' + self.release['app_release'] + ' - services ready', '1;32')
+        UI.say('Device Power: ' + ('enabled' if self.state['power'] else 'not selected') +
+               ' | MQTT: ' + ('configured' if self.state.get('mqtt_ready') else 'not selected'))
+        UI.say('Radar imagery: ' + ('available' if health.get('hasFrame') else
+                                  'still loading - leave the screen open'))
+        UI.say('\nMake it yours', '1')
+        UI.say('Open this on your phone or computer to set your maps, providers and PIN:')
+        UI.command('http://' + socket.gethostname() + '.local:3080')
+        UI.say('\nApp and OS updates are yours to manage.')
+        if self.state.get('mqtt_ready'):
+            UI.say('Test discovery and the display controls in Home Assistant yourself.')
+        UI.say('These checks cover radar services and rotation, not SD-card or whole-OS health.')
+        UI.say('Details and version pins: ' + str(self.directory))
 
     def main(self):
+        UI.say('\nPI RAIN RADAR', '1;36')
+        UI.say('Guided setup | hardware test edition')
         self.preflight()
-        print('Log: ' + str(self.log))
+        UI.say('\nDetailed log: ' + str(self.log))
         if self.args.check or (self.state.get('complete') and not self.args.reconfigure):
-            self.checks()
+            UI.say('Already installed. Checking services only; nothing will be reinstalled.')
+            with UI.stage('Check installation'):
+                health = self.checks()
+            self.summary(health)
             return
         if self.args.reconfigure and self.state.get('complete'):
             if not self.state['power']:
@@ -504,26 +628,35 @@ exec systemctl --user start pi-rain-radar-kiosk.service
             if not self.state['mqtt']:
                 self.state['mqtt'] = ask('Add optional MQTT display controls?')
             self.save()
-        self.orientation()
-        if not self.upgrade():
+        with UI.stage('[1/6] Set screen orientation'):
+            self.orientation()
+        with UI.stage('[2/6] Update Raspberry Pi OS'):
+            upgraded = self.upgrade()
+        if not upgraded:
+            self.reboot('OS update complete - reboot to continue setup')
             return
-        if not self.state.get('desktop_ready'):
-            self.desktop()
-            self.state['desktop_ready'] = True
-            self.save()
-        self.docker()
-        self.application()
-        self.power()
-        self.mqtt()
-        self.kiosk()
-        self.health(wait=60)
-        # Allow services a short startup interval before bounded checks.
-        time.sleep(3)
-        self.checks()
+        with UI.stage('[3/6] Prepare the desktop and Docker'):
+            if not self.state.get('desktop_ready'):
+                self.desktop()
+                self.state['desktop_ready'] = True
+                self.save()
+            self.docker()
+        with UI.stage('[4/6] Install Pi Rain Radar'):
+            self.application()
+        with UI.stage('[5/6] Set up your extras and kiosk'):
+            self.power()
+            self.mqtt()
+            self.kiosk()
+        with UI.stage('[6/6] Check radar services'):
+            self.health(wait=60)
+            # Allow services a short startup interval before bounded checks.
+            time.sleep(3)
+            health = self.checks()
         self.state['complete'] = True
         self.state['completed_boot'] = self.boot
         self.save()
-        self.reboot('Installation steps completed. Reboot once to test automatic startup.')
+        self.summary(health)
+        self.reboot('Setup complete - one final reboot to test startup', complete=True)
 
 
 def main():
@@ -546,6 +679,7 @@ def main():
         try:
             Installer(args).main()
         except (Stop, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+            UI.clear()
             print('\nInstallation stopped: ' + str(error), file=sys.stderr)
             print('No completion is claimed. Existing data and checkpoints are retained.', file=sys.stderr)
             raise SystemExit(1) from None

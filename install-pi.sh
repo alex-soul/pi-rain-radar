@@ -27,7 +27,7 @@ if [[ -f "$state/install.json" && ${1:-} != --refresh-installer ]]; then
     sha=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["installer_commit"])' "$state/install.json")
 fi
 if [[ -z $sha ]]; then
-    echo 'Resolving the current installer snapshot...'
+    printf '\rPreparing Pi Rain Radar setup...\r\n'
     sha=$(curl --fail --silent --show-error --retry 3 --connect-timeout 15 --max-time 60 \
         https://api.github.com/repos/alex-soul/pi-rain-radar/commits/main |
         python3 -c 'import json,sys; print(json.load(sys.stdin)["sha"])')
@@ -51,7 +51,6 @@ if [[ ! -f "$bundle/.complete" ]]; then
     mv -- "$temporary" "$bundle"
     trap - EXIT
 fi
-echo "Installer snapshot: $sha"
 args=()
 [[ ${1:-} != --refresh-installer && -n ${1:-} ]] && args+=("$1")
 python3 "$bundle/host/installer/installer.py" --source-commit "$sha" "${args[@]}" </dev/tty

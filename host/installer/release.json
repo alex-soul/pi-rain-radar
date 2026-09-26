@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "installer_version": "0.1.0-test.1",
+  "installer_version": "0.1.0-test.2",
   "app_release": "v0.8.0",
   "app_commit": "a6b5f9d4c0ca9a9cd447a53a9dcb88912991f31f",
   "app_digest": "sha256:e4b60a8e5ff27b0256d40f83722f0ea2b2df6b6ecdcf879d025f45ae4ba34ace",

@@ -21,7 +21,9 @@ for physical picture/touch confirmation before the long OS upgrade. It persists
 orientation, performs a required full initial upgrade, then asks for a reboot.
 Reconnect over SSH and run **the same command** to resume. It then installs Docker,
 the pinned published app, desktop autologin, a dedicated Chromium kiosk and the
-selected helpers. A final reboot tests automatic startup; rerunning performs checks.
+selected helpers. A final reboot tests automatic startup. A third run is optional:
+it performs checks, not another installation. The first reboot handoff prints the
+detected SSH login separately from the command to run inside the Pi terminal.
 
 New MQTT installs start automatic blanking OFF, with a saved 15-minute timeout.
 Setup verifies broker authentication/TLS before replacing an existing configuration.
@@ -60,8 +62,16 @@ No successful checkpoint is recorded for failed package or optional setup steps.
 
 ## Failure and recovery
 
-Progress is printed every ten seconds during long operations; package output goes
-to a timestamped install log under the state directory. MQTT passwords use hidden
+Six numbered stages keep the walkthrough compact. On a normal SSH terminal, the
+current step and elapsed time update in place every ten seconds during commands;
+each stage retains one success row. Colour is optional (`NO_COLOR` disables it).
+Narrow terminals shorten only the live status, never copyable commands. Redirected
+output and `TERM=dumb` use plain stage summaries and roughly minute-long heartbeats
+without terminal escape codes. Explicit carriage returns keep output aligned even
+when package tooling changes terminal newline handling.
+
+Package output and exact version pins go to a timestamped install log under the
+state directory. Errors show the last output and log location. MQTT passwords use hidden
 terminal input, not logs or command arguments. The installer checks ownership of
 files before replacing them, backs up adopted empty configs, and journals writes
 for retry. Modified/unrelated files and Compose overrides cause a stop for review.

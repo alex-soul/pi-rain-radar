@@ -1,5 +1,6 @@
 """Installer contracts and interrupted-run recovery; no host changes or network."""
 import json
+import io
 import os
 from pathlib import Path
 import tempfile
@@ -19,14 +20,80 @@ class InstallerTests(unittest.TestCase):
             settings = termios.tcgetattr(slave)
             settings[1] &= ~termios.OPOST
             termios.tcsetattr(slave, termios.TCSANOW, settings)
-            with os.fdopen(os.dup(slave), 'w') as terminal, patch.object(app.sys, 'stdout', terminal):
-                app.progress(10)
-                app.progress(20)
-            self.assertEqual(os.read(master, 4096),
-                             b'\r  Still working... 10s elapsed.\r\n\r  Still working... 20s elapsed.\r\n')
+            with os.fdopen(os.dup(slave), 'w') as terminal, patch.object(app.sys, 'stdout', terminal), \
+                    patch.dict(os.environ, {'TERM': 'xterm', 'NO_COLOR': '1'}):
+                ui = app.Terminal()
+                ui.tick('Updating OS', 10)
+                ui.tick('Updating OS', 20)
+                ui.say('  OK')
+            output = os.read(master, 4096)
+            self.assertEqual(output, b'\r\x1b[2K  > Updating OS  0m 10s'
+                             b'\r\x1b[2K  > Updating OS  0m 20s\r\x1b[2K  OK\r\n')
         finally:
             os.close(master)
             os.close(slave)
+
+    def test_plain_stage_is_compact_and_failure_never_claims_success(self):
+        output = io.StringIO()
+        with patch.object(app.sys, 'stdout', output):
+            ui = app.Terminal()
+            with self.assertRaises(app.Stop), ui.stage('Prepare Docker'):
+                ui.tick('Write internal file')
+                ui.tick('Install Docker', 10)
+                ui.tick('Install Docker', 60)
+                raise app.Stop('package failure')
+        text = output.getvalue()
+        self.assertNotIn('\033', text)
+        self.assertNotIn('Write internal', text)
+        self.assertNotIn('10s', text)
+        self.assertIn('Install Docker (60s elapsed)', text)
+        self.assertIn('STOPPED', text)
+        self.assertNotIn('OK', text)
+
+    def test_live_progress_fits_narrow_terminal_and_command_is_copyable(self):
+        output = io.StringIO()
+        output.isatty = lambda: True
+        with patch.object(app.sys, 'stdout', output), \
+                patch.object(app.shutil, 'get_terminal_size', return_value=os.terminal_size((40, 24))), \
+                patch.dict(os.environ, {'TERM': 'xterm', 'NO_COLOR': '1'}):
+            ui = app.Terminal()
+            ui.tick('Install a very long package description that would normally wrap', 120)
+            status = output.getvalue().replace('\r\033[2K', '')
+            self.assertLessEqual(len(status), 39)
+            ui.command(app.RETRY)
+        self.assertIn(app.RETRY + '\r\n', output.getvalue())
+
+    def test_reboot_distinguishes_resume_from_finished_install(self):
+        instance = app.Installer.__new__(app.Installer)
+        instance.home = Path('/home/new-user')
+        with patch.object(app, 'ask', return_value=False), \
+                patch.object(app.socket, 'gethostname', return_value='new-pi'):
+            resume, finished = io.StringIO(), io.StringIO()
+            with patch.object(app.sys, 'stdout', resume):
+                instance.reboot('OS ready')
+            with patch.object(app.sys, 'stdout', finished):
+                instance.reboot('Setup complete', complete=True)
+        self.assertIn('ssh new-user@new-pi.local', resume.getvalue())
+        self.assertIn('Once logged into the Pi', resume.getvalue())
+        self.assertIn(app.RETRY, resume.getvalue())
+        self.assertNotIn(app.RETRY, finished.getvalue())
+        self.assertIn('No third setup run is needed', finished.getvalue())
+        self.assertNotIn('paused', finished.getvalue())
+
+    def test_failed_child_retains_log_and_visible_error_under_grouped_ui(self):
+        with tempfile.TemporaryDirectory() as directory:
+            instance = app.Installer.__new__(app.Installer)
+            instance.log = Path(directory) / 'failure.log'
+            instance.env = os.environ.copy()
+            output = io.StringIO()
+            with patch.object(app.sys, 'stdout', output), patch.object(app, 'UI', app.Terminal()):
+                with self.assertRaises(app.Stop), app.UI.stage('Install radar'):
+                    instance.run('Download app', app.sys.executable, '-c',
+                                 'import sys; print("simulated network failure"); sys.exit(3)')
+            self.assertIn('simulated network failure', instance.log.read_text())
+            self.assertIn('simulated network failure', output.getvalue())
+            self.assertIn(str(instance.log), output.getvalue())
+            self.assertNotIn('  OK', output.getvalue())
 
     def test_package_commands_disable_dpkg_terminal(self):
         instance = app.Installer.__new__(app.Installer)
@@ -100,6 +167,7 @@ HDMI-A-1 "HDMI"
             instance.log = Path(directory) / 'test.log'
             instance.args = SimpleNamespace(check=False, reconfigure=False)
             instance.preflight, instance.orientation = Mock(), Mock()
+            instance.reboot = Mock()
             instance.upgrade, instance.docker = Mock(return_value=False), Mock()
             instance.main()
             instance.orientation.assert_called_once()
@@ -112,6 +180,7 @@ HDMI-A-1 "HDMI"
             instance.state['complete'] = True
             instance.args = SimpleNamespace(check=False, reconfigure=False)
             instance.preflight, instance.checks, instance.upgrade = Mock(), Mock(), Mock()
+            instance.summary = Mock()
             instance.main()
             instance.checks.assert_called_once()
             instance.upgrade.assert_not_called()
