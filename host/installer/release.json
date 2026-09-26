@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "installer_version": "0.1.0-test.1",
+  "app_release": "v0.8.0",
+  "app_commit": "a6b5f9d4c0ca9a9cd447a53a9dcb88912991f31f",
+  "app_digest": "sha256:e4b60a8e5ff27b0256d40f83722f0ea2b2df6b6ecdcf879d025f45ae4ba34ace",
+  "files": {
+    "compose.yaml": "98ee5a4d1ca70758cde72a84244fea2f211518e1381c89e9faaa4354f4b769d1",
+    "host/device-power/manage.sh": "9467332766a1e4e929f39a9b7718207b67733bcedf2395f0ea5aeff7429f7043",
+    "host/device-power/helper.py": "d9c89476c9e00e1e8f98992742b8eabcec8a985b0dfa46221f8d0c4c1e93b44f",
+    "host/device-power/pi-rain-radar-power.service": "9b6f37494d59289bac5360002507ec03b19f7a7080a25b953a7a37af4b2d2ebc"
+  }
+}

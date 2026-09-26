@@ -1,0 +1,37 @@
+name: Installer checks
+on:
+  push:
+    branches: [main]
+    paths: ['install-pi.sh', 'host/installer/**', 'host/display-controls/**', '.github/workflows/installer-checks.yml']
+  pull_request:
+    paths: ['install-pi.sh', 'host/installer/**', 'host/display-controls/**', '.github/workflows/installer-checks.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install isolated test dependencies
+        run: |
+          python3 -m venv /tmp/radar-installer-test
+          /tmp/radar-installer-test/bin/pip install paho-mqtt==2.1.0 Jinja2==3.1.6
+      - name: Check shell and Python contracts
+        run: |
+          bash -n install-pi.sh
+          sh -n host/display-controls/start.sh
+          bash install-pi.sh --help
+          /tmp/radar-installer-test/bin/python -m unittest discover -s host/installer -p 'test_*.py'
+          /tmp/radar-installer-test/bin/python -m unittest discover -s host/display-controls -p 'test_*.py'
+      - name: Verify pinned release files
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,urllib.request
+          manifest=json.load(open('host/installer/release.json'))
+          for path,expected in manifest['files'].items():
+              url='https://raw.githubusercontent.com/alex-soul/pi-rain-radar/'+manifest['app_commit']+'/'+path
+              with urllib.request.urlopen(url,timeout=30) as response:
+                  assert hashlib.sha256(response.read()).hexdigest()==expected,path
+          PY
