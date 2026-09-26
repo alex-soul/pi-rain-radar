@@ -235,6 +235,10 @@ With TLS enabled, setup may ask for a CA certificate file. Publicly trusted cert
 
 After setup, Home Assistant should discover a new device through its MQTT integration. Look under **Settings → Devices & services → MQTT**. It provides six controls/entities: **brightness, idle timeout, Wake, Sleep, screen state and Automatic screen blanking**.
 
+![Pi Rain Radar MQTT device in Home Assistant, showing automatic blanking, idle timeout, brightness, Sleep and Wake controls, and the screen-state sensor](images/ludicrous-quick-start/home-assistant-mqtt.png)
+
+*Example after setup: five controls appear under Controls, and Screen state appears under Sensors. The Activity panel records recent changes. The 48% brightness shown is an example setting, not an installation default; your values and activity will differ.*
+
 Automatic blanking starts **OFF**, so your new screen stays on. Turn it on in HA if you want the screen to sleep after inactivity; the saved starting timeout is 15 minutes. Explicit Sleep still works with automatic blanking off. Touch the screen or use Wake to wake it again.
 
 ## 7. Make it yours
