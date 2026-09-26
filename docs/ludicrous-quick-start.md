@@ -142,6 +142,19 @@ With the Pi still unplugged, put the microSD card into its card slot. Place the 
 
 **A sideways or portrait desktop is normal at this point.** The installer fixes the screen orientation early, before the long update. Leave any desktop update notification alone for now; the installer performs the full initial update itself.
 
+![First boot reaches the Raspberry Pi desktop, still sideways before installer orientation](images/ludicrous-quick-start/first-boot-desktop.jpg)
+
+*This is the desktop you are waiting for. Its sideways appearance is expected before setup.*
+
+<details>
+<summary>What you may see while the Pi is starting</summary>
+
+![Sideways Raspberry Pi OS boot splash before the desktop loads](images/ludicrous-quick-start/boot-splash.jpg)
+
+The welcome screen and startup text may also be sideways. Wait for the desktop above. The early boot splash may remain sideways on later boots too; the installer rotates the desktop and radar screen.
+
+</details>
+
 **On your computer:** open **PowerShell** from the Windows Start menu, or **Terminal** on Mac/Linux. Copy this line, paste it and press Enter:
 
 ```sh
@@ -230,6 +243,12 @@ When the installer says **Setup complete**, accept the **final reboot**. After t
 
 Give the first radar images roughly two or three minutes to arrive; your connection or the provider may take longer. A lack of coloured rain can simply mean it is dry at the displayed location.
 
+![Pi Rain Radar on its first launch, showing the default Coventry map before personal configuration](images/ludicrous-quick-start/first-launch.jpg)
+
+*First-launch example: the app is running with its starting map and settings. The weather, time and available frames will differ on your screen.*
+
+**This is your first milestone: the hardware and installation work.** Now comes the easier part—making it yours through Settings. Choose your location and maps, add keys for any optional providers you want, and arrange the screen to suit you. Basic RainViewer radar needs no key, so you can personalise it a little at a time.
+
 **On your computer or phone**, open this in a web browser while connected to the same home network:
 
 ```text
@@ -240,14 +259,21 @@ Change the hostname if you chose another one. Tap the page or move the pointer t
 
 Shared map/provider settings apply to the installation. Button visibility and layout are remembered by each browser, so adjust the Pi's own screen layout on the Pi.
 
-Try these before declaring victory:
+A useful order for personalising it:
+
+1. **Your place:** set the map coordinates, label, zoom and time zone.
+2. **Your data:** keep RainViewer to begin with, or follow the [provider guide](radar-providers.md) to add optional radar/cloud sources and their keys. See the [user guide](manual.md) for optional weather readings and other integrations.
+3. **Your screen:** open **Settings → Interface → Buttons** on the Pi to choose and order its controls, then arrange the widgets you want.
+4. **Your preferences:** choose your theme, units and optional settings PIN. You can return to Settings whenever you want to adjust things.
+
+Check the installation milestone before moving on:
 
 - Radar opens automatically after the final reboot.
 - The screen is landscape, text is the right way up, and touch works.
 - Radar frames arrive and play.
 - If you chose MQTT, the six HA controls appear and respond.
 
-That's your rain-radar screen running. You can close the SSH window; the app keeps going.
+You can close the SSH window; the app keeps going. Continue personalising through the app whenever you like—there is no need to run the installer again for map, provider or layout changes.
 
 ### Turning it off and keeping it updated
 
