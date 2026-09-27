@@ -25,6 +25,10 @@ Already using your Pi for other things? Use the [manual installation guide](rasp
 
 You do not need a keyboard or mouse attached to the Pi. You do not need Home Assistant, a weather subscription or an API key to get the basic radar working.
 
+![Boxed Pi 5, official Touch Display 2, 27 W power supply, Active Cooler and Pimoroni LCD Frame, with a memory-card adapter](images/ludicrous-quick-start/boxed-parts.jpg)
+
+*The parts for my build, before unpacking. I used the Pimoroni LCD Frame for the 7-inch Touch Display 2; you can choose another compatible stand or enclosure. The full-size SD adapter in front holds the tiny microSD card for use in a computer's card reader.*
+
 For another supported board/display combination, check the [official display compatibility and cable instructions](https://www.raspberrypi.com/documentation/accessories/touch-display-2.html) before buying parts. Pi 4 uses a different ribbon cable and power supply. This guide does not cover the original Touch Display, 5-inch displays or third-party screens.
 
 ## 2. Put the hardware together
@@ -69,6 +73,14 @@ Check the ribbon clips, fan lead and power lead before going further. Keep wires
 ![Finished assembly viewed from the side, showing mounting posts and cable routing](images/ludicrous-quick-start/hardware-08.jpg)
 
 </details>
+
+### Fit the stand or enclosure
+
+Follow the instructions supplied with your stand or enclosure. Keep the ribbon and power leads clear of screws and leave space around the cooler for air to circulate. Here is my assembled frame from both sides, still switched off:
+
+| Front | Back |
+| --- | --- |
+| ![Assembled touchscreen in its frame, standing in landscape orientation with power off](images/ludicrous-quick-start/assembled-stand-front.jpg) | ![Rear of the framed display showing the mounted Pi 5, Active Cooler, ribbon cable and clear stand legs](images/ludicrous-quick-start/assembled-stand-rear.jpg) |
 
 Leave the power disconnected. The card comes next.
 
