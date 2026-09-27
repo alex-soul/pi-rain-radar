@@ -282,6 +282,10 @@ A useful order for personalising it:
 3. **Your screen:** open **Settings → Interface → Buttons** on the Pi to choose and order its controls, then arrange the widgets you want.
 4. **Your preferences:** choose your theme, units and optional settings PIN. You can return to Settings whenever you want to adjust things.
 
+![Personalised Coventry radar with rain and clouds on both maps, weather readings and charts, rain forecast, Sun and Moon, and a camera view](images/pi-rain-radar.jpg)
+
+*Here is my screen after adding optional provider API keys and integrations, choosing my readings and arranging the widgets to suit me—with plenty of rain nearby. Compare it with the first-launch view above: the same app, made personal through Settings. Your screen can be as simple or as full as you like; the clouds, weather readings and camera need their respective optional sources configured, and the rain depends on the actual weather.*
+
 Check the installation milestone before moving on:
 
 - Radar opens automatically after the final reboot.
