@@ -14,6 +14,9 @@ It should simply be there, beside the front door, at the exact moment I need it.
 
 That small idea became Pi Rain Radar.
 
+![Pi Rain Radar showing rain and cloud playback](images/pi-rain-radar.jpg)
+
+
 ## The project that stayed in my head
 
 The story really starts several years earlier.
