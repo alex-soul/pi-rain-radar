@@ -2,6 +2,8 @@
 
 A dedicated rain-radar screen for your home. Animate recent rain, see where it has been moving, and glance at optional current temperature and wind readings.
 
+Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-built-pi-rain-radar.md).
+
 ![Rain and cloud playback centred on Coventry](docs/images/radar-preview-20260927.gif)
 
 *Recorded on 27 September 2026 in v0.8.0: 13 frames spanning 09:00–11:00 BST, with rain and clouds on both maps, weather charts, Rain forecast, Sun/Moon and Camera open. A recording of Live playback, not current conditions; weather readings, Rain forecast and Camera reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/) and [Rainbow](https://rainbow.ai/), clouds by Rainbow, basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/pi-rain-radar.jpg).*
