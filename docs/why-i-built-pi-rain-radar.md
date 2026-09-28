@@ -49,7 +49,7 @@ I also used dedicated weather applications heavily.
 
 [Windy](https://www.windy.com/) became one of my favourites. I have used the premium version and I still think it is an extraordinary application. I occasionally fly RC planes, so wind visualisation is particularly interesting to me. The number of layers and the amount of information available are incredible.
 
-[RainViewer](https://www.rainviewer.com/) was another favourite, especially for rain radar. I also used a custom RainViewer card inside Home Assistant.
+[RainViewer](https://www.rainviewer.com/) was another favourite, especially for rain radar. In Home Assistant, I used — and still use — the excellent [Weather Radar Card](https://github.com/jpettitt/weather-radar-card), installed through HACS, to bring that radar view onto my dashboards.
 
 At one point I probably had five or seven weather applications on my phone, comparing different views and sources.
 
@@ -81,7 +81,7 @@ Put a screen next to the front door.
 
 The first implementation seemed straightforward.
 
-I already had a RainViewer card in Home Assistant. I could put Raspberry Pi OS on a Pi, connect a display, open Home Assistant in a browser and leave the radar on screen.
+I already had that radar card in Home Assistant. I could put Raspberry Pi OS on a Pi, connect a display, open Home Assistant in a browser and leave the radar on screen.
 
 Technically, that would have worked perfectly well.
 
