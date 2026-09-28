@@ -6,7 +6,7 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ![Rain and cloud playback centred on Coventry](docs/images/radar-preview-20260927.gif)
 
-*Recorded on 27 September 2026 in v0.8.0: 13 frames spanning 09:00–11:00 BST, with rain and clouds on both maps, weather charts, Rain forecast, Sun/Moon and Camera open. A recording of Live playback, not current conditions; weather readings, Rain forecast and Camera reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/) and [Rainbow](https://rainbow.ai/), clouds by Rainbow, basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/pi-rain-radar.jpg).*
+*Recorded on 27 September 2026 in v0.8.0: 13 frames spanning 09:00–11:00 BST, with rain and clouds on both maps, weather charts, Rain forecast, Sun/Moon and Camera open. A recording of Live playback, not current conditions; weather readings, Rain forecast and Camera reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/) and [Rainbow](https://rainbow.ai/), clouds by Rainbow, basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/pi-rain-radar.jpg) · [Gallery](docs/gallery.md).*
 
 ## Status
 
@@ -105,6 +105,7 @@ See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and instal
 
 ## Documentation
 
+- [Gallery](docs/gallery.md)
 - [Quick Start — install and configure from another computer](docs/quick-start.md)
 - [Raspberry Pi build — unpacking to automatic kiosk, without an attached keyboard](docs/raspberry-pi.md)
 - [User manual — settings and controls](docs/manual.md)
