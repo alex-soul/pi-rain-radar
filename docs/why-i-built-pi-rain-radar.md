@@ -77,6 +77,10 @@ The answer was obvious once I saw it.
 
 Put a screen next to the front door.
 
+![Pi Rain Radar in its home by the front door, with an umbrella ready](images/pi-rain-radar-home.jpg)
+
+*Pi Rain Radar in its natural habitat — by the front door, with the umbrella ready.*
+
 ## Why I didn't just use Home Assistant
 
 The first implementation seemed straightforward.
