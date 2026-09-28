@@ -8,5 +8,7 @@
 
 [![04.jpg](images/gallery/04.jpg)](images/gallery/04.jpg)
 
+[![screenshot-1280x720-clean.png](images/gallery/screenshot-1280x720-clean.png)](images/gallery/screenshot-1280x720-clean.png)
+
 [![screenshot-3840x2160.png](images/gallery/screenshot-3840x2160.png)](images/gallery/screenshot-3840x2160.png)
 
