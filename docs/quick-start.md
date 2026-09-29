@@ -86,7 +86,7 @@ For a simple starting point, keep RainViewer radar and add optional sources as n
 
 ## 5. Arrange each screen
 
-On the Pi touchscreen, open the widgets you want, drag them into position and resize them with their corner handles. In Settings → Interface → Buttons, show/hide and reorder the controls. These display preferences belong to that browser; arranging your laptop does not rearrange the Pi.
+On the Pi touchscreen, open the widgets you want, drag them into position and resize them with their corner handles. Tap or hover over the side buttons to reveal their cog below the stack, then show/hide and reorder controls there. These display preferences belong to that browser; arranging your laptop does not rearrange the Pi.
 
 One Pi can serve multiple screens, sharing location and downloaded data while each browser keeps its own layout. Use the same address and browser profile each time. Switching from hostname to IP, or clearing browser site data, starts a separate layout.
 

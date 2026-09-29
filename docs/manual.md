@@ -28,7 +28,7 @@ Use the same browser profile and address each time. Hostname, IP address and loc
 
 ## Personalise this screen
 
-Tap or hover over the top dock, bottom dock or side buttons to reveal their small cog, centred below the dock handle or last button. Widget cogs sit at the top right; resize corners sit at the bottom right. Only interaction with that area reveals its controls, without reserving layout space. The one-second edit-control timeout is separate from the 15-second global inactivity behaviour.
+Tap or hover over the top dock, bottom dock or side buttons to reveal their small cog. It sits centred below the top-dock handle or last side button, and above the bottom-dock handle. Widget cogs sit at the top right; resize corners sit at the bottom right. Only interaction with that area reveals its controls, without reserving layout space. The one-second edit-control timeout is separate from the 15-second global inactivity behaviour.
 
 Top dock, side buttons and Weather trends use a first tab for visibility/order and **Options** for other preferences. Order runs down the first column, then down the second; narrow screens use one column. Local editors work without the shared Settings PIN when this browser is unlocked. Locking this browser blocks editing here, without locking other browsers.
 
@@ -133,7 +133,7 @@ The key stays on the computer running the app and is not displayed again. **Remo
 
 ### Playback dock, Layers and UI lock
 
-Open the cog below the bottom-dock handle for playback and footer preferences. **Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
+Open the cog above the bottom-dock handle for playback and footer preferences. **Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
 
 **Playback window** selects 2, 4 or 6 hours for Live on this browser and supplies the initial Archive duration. Archive has its own temporary 1–24-hour slider. Longer windows use retained history and more browser memory, without extra provider requests or retention.
 

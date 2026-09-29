@@ -32,7 +32,7 @@ A failed or expired minute forecast shows a **red baseline**, rather than an emp
 
 ## 4. Total frames indicator
 
-In **12 / 13**, 12 is the current playback position and 13 the number of playable positions. Tap the counter to open availability for the full window. The total takes the worst applicable row state: red for missing expected data, amber for reused earlier observations, greenish for available data, or neutral when collection is disabled or historical policy is unknown. It includes enabled/history-applicable Rain, Clouds, Weather and Camera rows; optional gust is excluded. The newest pending Live slot does not worsen the total. A full count therefore does not guarantee complete data in every row.
+In **12 / 13**, 12 is the current playback position and 13 the number of playable positions. Tap the counter to toggle availability for the full window. Its whole outlined area stays highlighted while the popup is open. The total takes the worst applicable row state: red for missing expected data, amber for reused earlier observations, greenish for available data, or neutral when collection is disabled or historical policy is unknown. It includes enabled/history-applicable Rain, Clouds, Weather and Camera rows; optional gust is excluded. The newest pending Live slot does not worsen the total. A full count therefore does not guarantee complete data in every row.
 
 ## 5. Frame gaps
 
@@ -40,9 +40,9 @@ The current availability popup has Rain, Clouds, Weather and Camera rows where a
 
 Live uses a clock-aligned ten-minute endpoint with a five-minute publication lag. Only the newest missing Live slot is pending; newer provider frames do not advance the clock endpoint. See [playback rules](playback-conventions.md).
 
-## 6. Archive playback countdown
+## 6. Archive mode
 
-The expanded Archive control shows the ten-minute automatic-return countdown. This is a playback timer, not a health warning. The older screenshots above document 0.4.0; current timeline semantics are described here.
+The expanded Archive control shows its selected date/time, which opens the movable configuration panel. The bottom dock shows a clickable LIVE/ARCHIVE indicator. Archive starts on one tap and stays active until you return to Live; v0.9.0 has no countdown or automatic return. The countdown numbered 6 in the screenshots above is historical.
 
 ### Automatic pause
 
@@ -62,7 +62,7 @@ In Status, green means connected/ready; warning states identify the affected sou
 
 ## Other colour cues
 
-In 0.8.0, optional gust can show amber on its own setting/reading but is excluded from aggregate weather-handle and gaps health. The availability popup distinguishes intentional off/unknown periods from missing expected observations. Its frame marker shares the playback slider's slot geometry. Using playback, including play/pause, keeps the popup open; tapping elsewhere dismisses it. These indicators describe local availability, not proof of provider fault.
+In 0.8.0, optional gust can show amber on its own setting/reading but is excluded from aggregate weather-handle and gaps health. The availability popup distinguishes intentional off/unknown periods from missing expected observations. Its frame marker shares the playback slider's slot geometry. Using playback, including play/pause, keeps the popup open. Tap the same counter again to dismiss it; tapping elsewhere leaves it open. On a locked screen, 15 seconds of inactivity resumes playback and dismisses the popup. These indicators describe local availability, not proof of provider fault.
 
 Cloud publication lag is separate from collection failure: recent successful acquisition can be healthy while the newest available image is older. Missing cloud slots stay visible. Routine cloud/camera success events are quiet; warnings and a single usable recovery remain in the rolling 25-event log. Entries include their dates.
 

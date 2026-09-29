@@ -10,7 +10,7 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.8.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.8.0) is the current pre-release.** It adds cloud layers, configurable weather trend charts, local Sun/Moon information, expanded HA readings and clearer camera/Archive playback. I tested RC3 on my Pi 4 / 2 GB and confirmed smooth operation again after installing the published 0.8.0 image. Longer soak and cloud publication-delay observations continue; see [release notes](docs/release-0.8.0.md) and [follow-ups](docs/follow-ups.md).
+**[v0.9.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.9.0) is the current pre-release.** It adds screen-local editors, compact dock readings, one-tap Archive, capture stepping and more consistent touch controls. I tested RC1 on my Pi 4 / 2 GB and accepted the published 0.9.0 image with normal playback and fullscreen kiosk operation. Longer soak and cloud publication-delay observations continue; see [release notes](docs/release-0.9.0.md) and [validation](docs/validation.md).
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 

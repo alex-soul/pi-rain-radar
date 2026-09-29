@@ -2,7 +2,7 @@
 
 Stats for nerds is an optional view of acquisition, playback coverage and local API usage. It helps explain what the radar is doing without having to watch every update.
 
-Enable its button under **Settings → Interface → Buttons**, then open the draggable/resizable widget. Its placement belongs to the current browser. It uses the app's existing status data and needs no additional provider requests or host permissions.
+Enable its button in the **side-button editor**, then open the draggable/resizable widget. Its placement belongs to the current browser. It uses the app's existing status data and needs no additional provider requests or host permissions.
 
 This page is the reference for the widget’s metrics and limitations. See [screen indicators](indicators.md) for colours elsewhere in the UI and [playback conventions](playback-conventions.md) for Live, Archive and grace rules.
 
@@ -18,7 +18,7 @@ That 45-second status age is separate from the radar observation's 30-minute fre
 
 ### Main and Overview acquisition
 
-Main, Overview and OpenWeather have separate columns. Each radar column identifies its current provider.
+Six groups show Main, Overview, Clouds, OpenWeather, Camera and Rainbow. Each radar group identifies its current provider; backend connection appears inside Main. Resize the widget to reveal more detail without scrolling where screen space permits. Its cog adjusts background opacity for this browser.
 
 | Field | Meaning |
 | --- | --- |
@@ -79,7 +79,7 @@ These measure local availability, not provider fault. Provider publication timin
 
 ## Candidate usage counters
 
-Rainbow statistics retain actual requests, tiles, monthly request cap and remaining budget, including when only clouds use Rainbow. These are local operational counters, not the account's invoice or a projection. Speculative map estimates are removed. See [usage and limits](radar-providers.md#usage-costs-and-optional-limit). A broader widget redesign remains a future task.
+Rainbow statistics retain actual requests, tiles, monthly request cap and remaining budget, including when only clouds use Rainbow. These are local operational counters, not the account's invoice or a projection. Speculative map estimates are removed. See [usage and limits](radar-providers.md#usage-costs-and-optional-limit). The six-group layout includes cloud and camera acquisition details; future refinements remain separate.
 
 ## Camera timestamps
 

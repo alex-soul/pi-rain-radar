@@ -279,7 +279,7 @@ A useful order for personalising it:
 
 1. **Your place:** set the map coordinates, label, zoom and time zone.
 2. **Your data:** keep RainViewer to begin with, or follow the [provider guide](radar-providers.md) to add optional radar/cloud sources and their keys. See the [user guide](manual.md) for optional weather readings and other integrations.
-3. **Your screen:** open **Settings → Interface → Buttons** on the Pi to choose and order its controls, then arrange the widgets you want.
+3. **Your screen:** tap or hover over the side buttons on the Pi, then use the cog below the stack to choose and order its controls, then arrange the widgets you want.
 4. **Your preferences:** choose your theme, units and optional settings PIN. You can return to Settings whenever you want to adjust things.
 
 ![Personalised Coventry radar with rain and clouds on both maps, weather readings and charts, rain forecast, Sun and Moon, and a camera view](images/pi-rain-radar.jpg)
