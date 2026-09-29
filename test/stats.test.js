@@ -24,7 +24,7 @@ test('new Stats control preserves existing order and visibility, and is hidden b
   const source=(await readFile(new URL('../public/control-layout.js',import.meta.url),'utf8')).split('export function setupControlEditor')[0];
   const saved=[{id:'theme-toggle',visible:false},{id:'history-toggle',visible:true}];
   const nodes={},order=[];
-  vm.runInNewContext(source,{localStorage:{getItem:()=>JSON.stringify(saved)},document:{getElementById:id=>nodes[id]??={id},querySelector:()=>({append:node=>order.push(node.id)})}});
+  vm.runInNewContext(source,{localStorage:{getItem:()=>JSON.stringify(saved)},document:{getElementById:id=>nodes[id]??={id},querySelector:()=>({insertBefore:node=>order.push(node.id)})}});
   assert.deepEqual(order.slice(0,2),saved.map(x=>x.id));assert.equal(nodes['theme-toggle'].hidden,true);assert.equal(nodes['stats-toggle'].hidden,true);
 });
 test('Stats does no widget rendering while hidden and resumes with latest shared status',async()=>{
@@ -62,4 +62,19 @@ test('Stats replaces the next estimate with real acquisition activity, but not s
   assert.ok(texts.some(t=>t.startsWith('100 ·')),'Latest remains the last completed observation');
   update(false,null);assert.ok(texts.includes('300'));assert.ok(!texts.includes('Fetching…'));
   update(true,{state:'fetching'},false);assert.ok(!texts.includes('Fetching…'));assert.ok(texts.includes('Last received'));
+});
+
+
+test('cloud diagnostics expose per-map timestamps and collection timing without stale activity',async()=>{
+ let texts=[];
+ const source=(await readFile(new URL('../public/stats.js',import.meta.url),'utf8')).replace(/^import[^\n]+\n/gm,'').replace('export function','function');
+ const node=()=>({dataset:{},append(){},replaceChildren(){},set textContent(v){texts.push(v);}});
+ const context=vm.createContext({document:{querySelector:()=>({content:'UTC'}),getElementById:node,createElement:node},statsSnapshot,formatTime:t=>String(t),setupFloatingWidget:o=>o.onVisibility(true)});
+ vm.runInContext(source,context);
+ const clouds={map:'both',enabled:true,state:'error',collecting:true,latest:{main:10000,overview:20000},lastSuccess:30000,nextAt:40000,error:'Cloud acquisition unavailable.'};
+ const update=(reachable=true)=>{texts=[];context.updateStats({status:{clouds},receivedAt:Date.now(),reachable,hours:2});};
+ update();for(const value of ['Clouds · Rainbow','Main + Overview','10','20','30','Fetching…','Cloud acquisition unavailable.'])assert.ok(texts.includes(value),value);
+ update(false);assert.ok(texts.includes('Last received'));assert.ok(!texts.includes('Fetching…'));assert.ok(texts.includes('40'));
+ clouds.map='main';clouds.collecting=false;clouds.latest.main=null;clouds.state='disabled';clouds.nextAt=null;update();
+ assert.ok(texts.includes('Not selected'));assert.ok(texts.includes('Unavailable'));assert.ok(texts.includes('disabled'));assert.ok(!texts.includes('20'));
 });

@@ -1,4 +1,5 @@
 import './settings-layout.js';
+import {setupLocalEditors,canEditLocal} from './local-ui.js';
 import {setupReviewRadar} from './settings-layout-details.js';
 import {bindIntegrationSettings,refresh as refreshIntegrations} from './integrations-state.js';
 import {loadIntegrationChoices} from './settings-layout.js';
@@ -53,12 +54,13 @@ const embedUI=setupEmbedSettings(canEdit,request);
 const storageUI=setupStorageSettings(canEdit,request);
 const cameraUI=setupCameraSettings(canEdit,request);
 const powerUI=setupDevicePower(canEdit,request);
-const resetButtons = setupControlEditor(canEdit);
-const resetReadings = setupReadingEditor(canEdit);
+const resetButtons = setupControlEditor(canEditLocal);
+const resetReadings = setupReadingEditor(canEditLocal);
 const resetControlEditor = () => { resetButtons(); resetReadings(); };
 setupScreenLock(canEdit);
-setupDisplaySettings(canEdit);
+setupDisplaySettings(canEdit,canEditLocal);
 setupResponsiveControls();
+setupLocalEditors();
 const sectionSelector = $('settings-section');
 function resetSectionTabs() {
   const panel = $('settings-panel-'+sectionSelector.value);
@@ -122,26 +124,6 @@ async function request(path, data, bearer = token) {
 }
 function discard(bearer) { if (bearer) void request('/lock', {}, bearer).catch(() => {}); }
 const syncDiagnostics = setupDiagnostics(dialog, request, canEdit);
-let savingRadar = false;
-$('radar-settling').addEventListener('change', async () => {
-  if($('radar-main-source')&&!$('fixture-toggle'))return; // Saved with the source form.
-  if (!canEdit() || savingRadar) return;
-  const field = $('radar-settling'), value = field.checked, epoch = generation;
-  savingRadar = true; field.disabled = true;
-  $('radar-settling-note').textContent = 'Saving…';
-  try {
-    const response = await request('/radar', { waitForSettle: value });
-    if (epoch !== generation) return;
-    if (response.status === 401) { dialog.close(); return; }
-    if (!response.ok) throw new Error();
-    $('radar-settling-note').textContent = 'Saved. Applies to the next radar acquisition.';
-  } catch {
-    if (epoch === generation) {
-      field.checked = !value;
-      $('radar-settling-note').textContent = 'Could not confirm the save. Reopen Settings to check.';
-    }
-  } finally { savingRadar = false; field.disabled = false; }
-});
 function lock() {
   cameraUI.reset();
   embedUI.clear();
@@ -211,8 +193,6 @@ async function showSettings(current) {
     if (current !== generation) return;
     weatherKeyConfigured = !!keyState.apiKeyConfigured; weatherKeyButtons();
     $('settings-api-note').textContent = weatherKeyConfigured ? 'Configured.' : 'Not configured.';
-    $('radar-settling').checked = keyState.radar?.waitForSettle ?? true;
-    $('radar-settling-note').textContent = '';
     void radarUI.load(keyState.radar);
     void embedUI.load();
     void storageUI.load();

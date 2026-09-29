@@ -30,8 +30,8 @@ function sync(){
   $('review-fallback').checked=shared.fallback;$('review-fallback').disabled=!shared.owm||!shared.owmCollect;
   $('review-fallback-row').hidden=!haEntities(shared).length;
   const gust=shared.mappings.gust==='owm';$('review-gust-cache').hidden=!gust;$('gust-cache-minutes').disabled=!gust;
-  $('review-reading-options').hidden=!gust&&$('review-fallback-row').hidden;
-  $('review-reading-options').classList.toggle('single-option',!gust||$('review-fallback-row').hidden);
+  $('review-reading-options').hidden=$('review-fallback-row').hidden;
+  $('review-reading-options').classList.add('single-option');
   const rows=weatherReadings(shared.weather,Date.now(),{preferences:weatherPreferences(),gustMinutes:gustCacheMinutes()});
   for(const [id,row] of Object.entries(rows).filter(([id])=>weatherFields.includes(id))){
     $('reading-health-'+id).dataset.health=row.health;$('reading-health-'+id).title=row.reason||'OK';
@@ -39,7 +39,7 @@ function sync(){
     $('reading-source-'+id).textContent=readingSourceCaption(row);
     $('review-unit-'+id).textContent=row.reason.startsWith('Unit mismatch')?row.reason:'';
   }
-  $('shared-unit-note').textContent=shared.initialized?'Weather units apply to every screen. Sun and Moon display choices apply to this screen.':'Adopting this screen’s saved units…';
+  $('shared-unit-note').textContent=shared.initialized?'':'Adopting this screen’s saved units…';
   for(const id of ['temperature-unit','wind-unit','visibility-unit','pressure-unit'])$(id).disabled=!shared.initialized;
 }
 async function save(input){
@@ -59,11 +59,11 @@ export async function loadWeatherChoices(){
 export function setupWeatherLayout(){
   const panel=$('settings-panel-weather'),units=make('<section id="review-weather-units" role="tabpanel" aria-labelledby="review-units-tab" hidden></section>');
   units.append(...panel.children);panel.append(units);units.append(make('<p id="shared-unit-note" role="status"></p>'));
-  const readings=make(`<section id="review-weather-readings" role="tabpanel" aria-labelledby="review-readings-tab" hidden><div class="weather-provider-switches" id="review-weather-collection"></div><div class="weather-source-grid">${weatherFields.map(field=>`<div><label for="review-map-${field}">${readingNames[field]}</label><select id="review-map-${field}"></select><small id="review-unit-${field}" role="status"></small></div>`).join('')}</div><div id="review-reading-options" class="weather-reading-options"><label id="review-fallback-row" class="misc-option" for="review-fallback">OWM fallback<input id="review-fallback" type="checkbox" class="control-switch" role="switch"></label><div id="review-gust-cache"></div></div><p id="review-weather-note" role="status"></p></section>`);
+  const readings=make(`<section id="review-weather-readings" role="tabpanel" aria-labelledby="review-readings-tab" hidden><div class="weather-provider-switches settings-group" id="review-weather-collection"></div><div class="weather-source-grid">${weatherFields.map(field=>`<div><label for="review-map-${field}">${readingNames[field]}</label><select id="review-map-${field}"></select><small id="review-unit-${field}" role="status"></small></div>`).join('')}</div><div id="review-reading-options" class="weather-reading-options"><label id="review-fallback-row" class="misc-option" for="review-fallback">OWM fallback<input id="review-fallback" type="checkbox" class="control-switch" role="switch"></label><div id="review-gust-cache"></div></div><p id="review-weather-note" role="status"></p></section>`);
   for(const [id,label] of [['review-owm-collect','OpenWeather'],['review-ha-collect','Home Assistant']]){const row=$(id).closest('label');row.firstChild.textContent=label;readings.querySelector('#review-weather-collection').append(row);}
   $('openweather-config').querySelector('.review-collection')?.remove();
   const gust=$('gust-cache-minutes').closest('label');gust.firstChild.textContent='Gust cache';readings.querySelector('#review-gust-cache').append(gust);units.querySelector('.gust-setting-row')?.remove();
-  const forecast=make('<section id="review-weather-forecast" role="tabpanel" aria-labelledby="review-forecast-tab" hidden><label class="misc-option" for="review-forecast-collect">Enable forecast data collection<input id="review-forecast-collect" type="checkbox" class="control-switch" role="switch"></label><p>OpenWeather minute forecast.</p></section>');
+  const forecast=make('<section id="review-weather-forecast" role="tabpanel" aria-labelledby="review-forecast-tab" hidden><div class="settings-group"><label class="misc-option" for="review-forecast-collect">Enable forecast data collection<input id="review-forecast-collect" type="checkbox" class="control-switch" role="switch"></label><p>OpenWeather minute forecast.</p></div></section>');
   const tabs=make('<div class="settings-tabs settings-subtabs" role="tablist" aria-label="Weather categories"></div>');
   const dock=$('settings-tab-readings');dock.textContent='Dock';tabs.append(dock);
   for(const [id,label,target] of [['readings','Readings','readings'],['units','Units','units'],['forecast','Forecast','forecast']])tabs.append(make(`<button id="review-${id}-tab" type="button" role="tab" aria-controls="review-weather-${target}" aria-selected="false" tabindex="-1">${label}</button>`));

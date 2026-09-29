@@ -1,7 +1,11 @@
+import {localPreferences} from './local-preferences.js';
+import {createTrendHistoryClient} from './trend-history-client.js';
+import {movablePanel} from './local-ui.js';
+import {createLocalIdle} from './local-idle.js';
 import {paintAstronomy} from './astronomy.js';
 import {paintWeatherTrends,weatherTrendCredits} from './weather-trends.js';
 import {playbackSpeeds,lastFrameMultipliers,playbackFrameDelay} from './weather-format.js';
-import {updateAvailability} from './availability.js';
+import {updateAvailability,dismissAvailability} from './availability.js';
 import {cloudNodes,cloudUrls,updateCloudSettings,layerVisible,updateLayerAvailability} from './layer-controls.js';
 import {acceptIntegrationStatus} from './integrations-state.js';
 import {updateCamera} from './camera-widget.js';
@@ -22,6 +26,8 @@ import { mapObservation, playbackState, frameProvider, windowProviders } from '.
 import { createFrameLoader } from './frame-loader.js';
 import { dockOutline } from './weather-format.js';
 const $ = (id) => document.getElementById(id);
+const trendHistory=createTrendHistoryClient({fetchHistory:async({map,end,hours,signal})=>{const response=await fetch(`/api/weather-history?map=${map}&end=${end}&hours=${hours}`,{signal:AbortSignal.any([signal,AbortSignal.timeout(10000)])});if(!response.ok)throw Error();return response.json();},onReady:()=>paintStatus()});
+window.addEventListener('radar-local-preferences',()=>paintStatus());
 const timeZone = document.querySelector('meta[name="time-zone"]').content;
 const assetIdentity = document.querySelector('meta[name="map-assets"]').content;
 const mapIdentity = document.querySelector('meta[name="map-id"]').content;
@@ -84,7 +90,7 @@ function positionExplanation(){
   if(!explained)return;
   const rect=explained.getBoundingClientRect(),box=explanation.getBoundingClientRect();
   explanation.style.left=Math.max(8,Math.min(innerWidth-box.width-8,rect.left+rect.width/2-box.width/2))+'px';
-  explanation.style.top=Math.max(8,Math.min(innerHeight-box.height-8,rect.bottom+10))+'px';
+  explanation.style.top=Math.max(8,Math.min(innerHeight-box.height-8,Math.max(rect.bottom+10,weatherDock.getBoundingClientRect().bottom+36)))+'px';
 }
 function showExplanation(reading){
   if(document.body.classList.contains('screen-locked')||weatherDock.getAttribute('aria-expanded')!=='true')return;
@@ -114,7 +120,7 @@ new MutationObserver(()=>{if(document.body.classList.contains('screen-locked'))c
 let statsReceivedAt = null;
 let weatherReplay=null,comparisonLead=0;
 let historyWindow = null, historyLoading = false, returningLive = false, generation = 0;
-let historyTimer;
+
 let displayed = null,
   status = null,
   serverReachable = true;
@@ -133,7 +139,6 @@ function paintCurrentTime() {
   const now = new Date();
   $("current-time").textContent = format(now.getTime() / 1000, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   $("current-time").dateTime = now.toISOString();
-  paintHistoryRing();
   paintAstronomy(historyWindow&&displayed?displayed.time*1000:Date.now());
 }
 function setClockExpanded(expanded) {
@@ -218,7 +223,7 @@ function paintStatus() {
     paintHistoricalForecast(weatherReplay,displayed.time,comparisonLead,timeZone);
   }else paintWeather(serverReachable ? status?.weather : null);
   paintAstronomy(historyWindow&&displayed?displayed.time*1000:Date.now());
-  paintWeatherTrends({history:historyWindow?.weatherHistory??status?.weatherHistory,start:historyWindow?.start??status?.start,end:historyWindow?.end??status?.end,time:displayed?.time,state:historyWindow&&weatherReplay?weatherReplay.weather(displayed?.time):serverReachable?status?.weather:null,historical:!!historyWindow,zone:timeZone});
+  paintWeatherTrends({valueHistory:historyWindow?.weatherHistory??status?.weatherHistory,history:trendHistory.read({map:mapIdentity,end:historyWindow?.end??status?.end,hours:localPreferences.lookback,revision:status?.archiveRevision,mode:historyWindow?'archive':'live',fallback:historyWindow?.weatherHistory??status?.weatherHistory}),start:historyWindow?.start??status?.start,end:historyWindow?.end??status?.end,time:displayed?.time,state:historyWindow&&weatherReplay?weatherReplay.weather(displayed?.time):serverReachable?status?.weather:null,historical:!!historyWindow,zone:timeZone});
   paintAttribution();
 
   const sources = Object.fromEntries(['main','overview'].map(role => [role, radarSourceHealth(status?.sources?.[role], serverReachable)]));
@@ -227,7 +232,7 @@ function paintStatus() {
   document.body.classList.toggle('ready', health[0] === 'ready');
   paintRadarHandle(health, sources);
   $("time").textContent = displayed ? clock(displayed.time) : '—';
-  $("date").textContent = displayed ? `${format(displayed.time, { weekday: "short" })}, ${format(displayed.time, { day: "numeric" })} ${format(displayed.time, { month: "short" }).slice(0, 3)}` : '';
+  $("date-label").textContent = displayed ? `${format(displayed.time, { weekday: "short" })}, ${format(displayed.time, { day: "numeric" })} ${format(displayed.time, { month: "short" }).slice(0, 3)}` : '';
   paintTimeline();
   $("timeline").disabled = sequence.length < 2;
   $("timeline").setAttribute(
@@ -239,11 +244,13 @@ function paintStatus() {
   $("play").disabled = radarDisabled || !!historyWindow && sequence.length < 2;
   $("play").dataset.state = state;
   $("play").dataset.paused = String(state !== "playing");
+  for(const [id,edge]of [['capture-previous',index<=0],['capture-next',index>=sequence.length-1]]){const button=$(id);button.hidden=playing;button.disabled=edge||!sequence.length;}
+
   $("play").setAttribute(
     "aria-label",
     state === "waiting" ? "Automatically paused; waiting for captures. Click to pause manually" : state === "playing" ? "Pause playback" : "Play playback",
   );
-  if(radarDisabled){$('play').setAttribute('aria-label','Radar playback disabled');$('timeline').title='Radar playback disabled';$('time').textContent='Radar disabled';$('date').textContent='';}
+  if(radarDisabled){$('play').setAttribute('aria-label','Radar playback disabled');$('timeline').title='Radar playback disabled';$('time').textContent='Radar disabled';$('date-label').textContent='';}
   $("frame-position").textContent = String(displayed ? index + 1 : 0);
   $("frame-total").textContent = String(sequence.length);
   const expected = sequenceHours * 6 + 1;
@@ -346,6 +353,22 @@ $('timeline').addEventListener('keydown', event => {
   index = event.key === 'Home' ? 0 : event.key === 'End' ? sequence.length - 1 : Math.max(0, Math.min(sequence.length - 1, index + (['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1)));
   showFrame();
 });
+for(const [id,delta]of [['capture-previous',-1],['capture-next',1]])$(id).addEventListener('click',()=>{
+  if(playing||!sequence.length)return;index=Math.max(0,Math.min(sequence.length-1,index+delta));showFrame();
+});
+const playbackPointers=new Set();
+const playbackIdle=createLocalIdle({show:()=>{},held:()=>playbackPointers.size>0,hide:()=>{
+  if(!document.body.classList.contains('screen-locked'))return;
+  dismissAvailability();playing=true;paintStatus();schedulePlayback();
+}});
+const playbackTarget=target=>target.closest?.('#timeline,#play,#frame-count,#availability-panel,#capture-previous,#capture-next');
+for(const name of ['click','keydown','input','change','pointermove','focusin'])document.addEventListener(name,e=>{
+  if(document.body.classList.contains('screen-locked')&&playbackTarget(e.target))playbackIdle.activity();
+},true);
+document.addEventListener('pointerdown',e=>{if(document.body.classList.contains('screen-locked')&&playbackTarget(e.target)){playbackPointers.add(e.pointerId);playbackIdle.activity();}},true);
+for(const name of ['pointerup','pointercancel','lostpointercapture'])window.addEventListener(name,e=>{if(playbackPointers.delete(e.pointerId))playbackIdle.schedule();});
+window.addEventListener('radar-screen-lock',()=>{playbackPointers.clear();if(document.body.classList.contains('screen-locked'))playbackIdle.activity();else playbackIdle.cancel();});
+window.addEventListener('blur',()=>{playbackPointers.clear();playbackIdle.schedule();});
 async function decodeFrames(offered, epoch = generation) {
   renderRevision++;renderPending=false;
   return frameLoader.load(offered, [...sequence, ...(pending || [])], () => epoch === generation);
@@ -356,7 +379,12 @@ function paintMapUpdate(update) {
   const error = update?.error;
   mapUpdateVisible = !!update?.applying || !!(error && error !== dismissedMapError);
   $('map-update-dismiss').hidden = !mapUpdateVisible || !!update?.applying;
-  if (!mapUpdateVisible) { $('empty').hidden = true; return; }
+  if (!mapUpdateVisible) {
+    const cold=!displayed&&!sequence.length&&!status?.radarDisabled&&!historyLoading;
+    $('empty').hidden=!cold;
+    if(cold){$('empty').querySelector('h2').textContent='Fetching the latest radar';$('empty').querySelector('p').textContent=status?.error?'Radar is not available yet. Retrying automatically.':'The map is ready. Acquiring the first radar history…';}
+    return;
+  }
   $('empty').hidden = false;
   $('empty').querySelector('h2').textContent = update.applying
     ? (update.progress ? 'Preparing radar history' : 'Preparing map') : 'Map update unavailable';
@@ -491,21 +519,18 @@ function historyLabel(start, end) {
   const sameDay = format(start, { year: 'numeric', month: 'numeric', day: 'numeric' }) === format(end, { year: 'numeric', month: 'numeric', day: 'numeric' });
   return `${date(start)} ${clock(start)} - ${sameDay ? '' : `${date(end)} `}${clock(end)}`;
 }
-function paintHistoryRing() {
-  if (!historyWindow && !returningLive) return;
-  const elapsed = historyWindow ? Math.max(0, Math.min(1, 1 - (historyWindow.deadline - Date.now()) / 600000)) : 1;
-  $('history-progress').setAttribute('stroke-dashoffset', String(100 * (1 - elapsed)));
-  $('history-track').setAttribute('stroke-dasharray', `0 ${100 * elapsed} ${100 * (1 - elapsed)} 100`);
-}
 function paintHistory() {
-  paintHistoryRing();
-  const active = !!historyWindow || returningLive;
-  $('history-countdown').toggleAttribute('hidden', !active);
+  const active = !!historyWindow || historyLoading;
+  $('playback-mode').textContent=active?'ARCHIVE':'LIVE';
+  $('playback-mode').dataset.archive=String(active);
+  $('playback-mode').setAttribute('aria-label',active?'Return to Live':'Replay recent Archive');
+  $('history-action').setAttribute('aria-busy',String(historyLoading));
   $('history-action').setAttribute('aria-label', active ? 'Return to Live' : 'Open Archive');
   $('history-action').title = returningLive ? 'Returning to Live…' : active ? 'Return to Live' : 'Open Archive';
-  $('history-range').inert = !active;
+  $('history-range').inert = !historyWindow;
   $('history-toggle').setAttribute('data-expanded', String(active));
   $('history-selection').setAttribute('aria-hidden', String(!active));
+  if(historyLoading&&!historyWindow)$('history-selection').textContent='Loading…';
   if (historyWindow) {
     const selected = historyLabel(historyWindow.start, historyWindow.end);
     $('history-selection').textContent = selected;
@@ -514,6 +539,7 @@ function paintHistory() {
   }
 }
 async function returnToNow() {
+  historyDialog.close();
   archiveSpeed=null;archiveHold=null;
   generation++;
   frameLoader.cancel(); liveRequestKey = '';
@@ -524,20 +550,29 @@ async function returnToNow() {
   sequence=[];sequenceEnd=null;showFrame();
   historyLoading = false;
   pending = null;
-  clearTimeout(historyTimer);
   returningLive = true;
   playing = true;
   paintHistory();
   await poll();
 }
-function checkHistoryDeadline() {
-  if (historyWindow && Date.now() >= historyWindow.deadline) void returnToNow();
+async function toggleArchive(){
+  if(historyWindow||historyLoading)return returnToNow();
+  if(returningLive)return;
+  const epoch=++generation;historyLoading=true;archiveHours=playbackHours();paintHistory();
+  $('playback-window-note').textContent='Loading recent Archive…';
+  try{
+    const response=await fetch(`/api/archive?map=${mapIdentity}`,{signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error();const available=await response.json();if(epoch!==generation)return;
+    const end=available.times?.at(-1)??(available.newest==null?null:Math.floor(available.newest/1000));
+    if(!Number.isSafeInteger(end))throw Error();
+    await loadHistory(end);
+  }catch{if(epoch===generation){historyLoading=false;paintHistory();$('playback-window-note').textContent='No readable Archive available. Live remains available.';}}
 }
-document.addEventListener('visibilitychange', checkHistoryDeadline);
-window.addEventListener('pageshow', checkHistoryDeadline);
-$('history-action').addEventListener('click', () => historyWindow || returningLive ? returnToNow() : openHistoryPicker());
+$('history-action').addEventListener('click',toggleArchive);
+$('playback-mode').addEventListener('click',toggleArchive);
 $('history-range').addEventListener('click', () => openHistoryPicker());
 const historyDialog = $('archive-dialog');
+const placeArchive=movablePanel(historyDialog,historyDialog.querySelector('.archive-heading'));
 const archiveCalendar=setupArchiveCalendar(async(month,signal)=>{
   const pages=await Promise.all(monthRanges(month,Date.now()).map(async([start,until])=>{
     const response=await fetch(`/api/archive?map=${mapIdentity}&start=${start}&until=${until}`,{signal:AbortSignal.any([signal,AbortSignal.timeout(10000)])});
@@ -546,7 +581,7 @@ const archiveCalendar=setupArchiveCalendar(async(month,signal)=>{
   return {days:pages.flatMap(p=>p.times.map(dayKey)),min:pages[0]?.oldest==null?'':dayKey(pages[0].oldest/1000),max:dayKey(Date.now()/1000)};
 });
 let archiveTimes = [];
-let pendingArchiveSelection=null;
+let pendingArchiveSelection=null,pickerGeneration=0;
 let historyTargetEnd = null;
 const dayKey = time => {const parts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(time*1000));const get=type=>parts.find(p=>p.type===type).value;return `${get('year')}-${get('month')}-${get('day')}`;};
 function populateTimes() {
@@ -556,10 +591,10 @@ function populateTimes() {
 }
 $('archive-day').addEventListener('change', () => void loadArchiveDay());
 async function loadArchiveDay(){
-  const day=$('archive-day').value;if(!day)return;
+  const day=$('archive-day').value,epoch=pickerGeneration;if(!day)return;
   $('archive-show').disabled=true;
   const midnight=Date.parse(`${day}T00:00:00Z`),start=midnight-15*3600000,end=Math.min(Date.now(),midnight+39*3600000);
-  try{const response=await fetch(`/api/archive?map=${mapIdentity}&start=${start}&until=${end}`,{signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error();const data=await response.json();if($('archive-day').value!==day)return;archiveTimes=data.times.filter(t=>dayKey(t)===day);populateTimes();$('archive-show').disabled=!archiveTimes.length;$('archive-feedback').textContent=archiveTimes.length?'':'No stored history on this date.';}catch{$('archive-feedback').textContent='Archive unavailable. Please try again.';}
+  try{const response=await fetch(`/api/archive?map=${mapIdentity}&start=${start}&until=${end}`,{signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error();const data=await response.json();if(epoch!==pickerGeneration||!historyDialog.open||$('archive-day').value!==day)return;archiveTimes=data.times.filter(t=>dayKey(t)===day);populateTimes();$('archive-show').disabled=!archiveTimes.length;$('archive-feedback').textContent=archiveTimes.length?'':'No stored history on this date.';}catch{if(epoch===pickerGeneration&&historyDialog.open)$('archive-feedback').textContent='Archive unavailable. Please try again.';}
 }
 async function openHistoryPicker() {
   if(!historyWindow&&!historyLoading){archiveHours=pendingArchiveSelection?Number(pendingArchiveSelection.hours):playbackHours();providerOverlay=false;comparisonLead=0;}
@@ -575,23 +610,26 @@ async function openHistoryPicker() {
   $('archive-hours-value').textContent=`${$('archive-hours').value} h`;
   $('archive-provider').checked=providerOverlay;
   archiveCalendar.close();
-  historyDialog.showModal();
+  if(historyDialog.open){historyDialog.focus();return;}
+  const pickerEpoch=++pickerGeneration;
+  historyDialog.show();placeArchive($('history-toggle'));
   $('archive-feedback').textContent = 'Loading available history…';
   $('archive-show').disabled = true;
   try {
     const response = await fetch(`/api/archive?map=${mapIdentity}`, { signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error();
-    const available=await response.json();archiveTimes=available.times;
+    const available=await response.json();if(pickerEpoch!==pickerGeneration||!historyDialog.open)return;archiveTimes=available.times;
     $('archive-day').min=available.oldest===null?'':dayKey(available.oldest/1000);$('archive-day').max=dayKey(Date.now()/1000);
 
     const selectedEnd = pendingArchiveSelection?.time ? Number(pendingArchiveSelection.time) : archiveTimes.includes(historyWindow?.end) ? historyWindow.end : archiveTimes.at(-1)??(available.newest===null?null:available.newest/1000);
     $('archive-day').value = pendingArchiveSelection?.day || (selectedEnd ? dayKey(selectedEnd) : '');
     archiveCalendar.sync();
     await loadArchiveDay();
+    if(pickerEpoch!==pickerGeneration||!historyDialog.open)return;
     if (selectedEnd) $('archive-time').value = String(selectedEnd);
     $('archive-feedback').textContent = archiveTimes.length ? '' : 'No stored history yet.';
     $('archive-show').disabled = !archiveTimes.length;
-  } catch { $('archive-feedback').textContent = 'Archive unavailable. Please try again.'; }
+  } catch { if(pickerEpoch===pickerGeneration&&historyDialog.open)$('archive-feedback').textContent = 'Archive unavailable. Please try again.'; }
 }
 for(const [id,values] of [['archive-speed',playbackSpeeds],['archive-hold',lastFrameMultipliers]]){
  $(id).max=String(values.length-1);
@@ -611,10 +649,9 @@ $('archive-show').addEventListener('click', () => loadHistory($('archive-time').
 async function loadHistory(end, preserve = false) {
   const epoch = ++generation;
   const hours = preserve ? historyWindow.hours : archiveHours ?? playbackHours();
-  const deadline = preserve ? historyWindow.deadline : null;
   historyTargetEnd = end;
   frameLoader.cancel();
-  historyLoading = true;
+  historyLoading = true;paintHistory();
   pending = null;
   $('archive-show').disabled = true;
   $('archive-feedback').textContent = 'Loading the selected window…';
@@ -628,14 +665,12 @@ async function loadHistory(end, preserve = false) {
     if (!next?.length) throw new Error('No readable history');
     attachWindow(next,window,hours);
     weatherReplay=createWeatherReplay(window.weatherHistory);
-    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, coverage:window.coverage, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}}, deadline: deadline ?? Date.now() + 600000 };
+    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, coverage:window.coverage, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}} };
     archiveHours=hours;archiveRevision=status?.archiveRevision;
     returningLive = false;
     if (!preserve) playing = true;
     adopt(next, preserve);
-    clearTimeout(historyTimer);
-    historyTimer = setTimeout(checkHistoryDeadline, Math.max(0, historyWindow.deadline - Date.now()));
-    paintHistory();
+      paintHistory();
     historyLoading = false;
     $('playback-window-note').textContent = '';
     $('archive-feedback').textContent = '';
@@ -646,23 +681,13 @@ async function loadHistory(end, preserve = false) {
       $('playback-window-note').textContent = message;
     }
   } finally {
-    if (epoch === generation) { historyLoading = false; $('archive-show').disabled = !archiveTimes.length; }
+    if (epoch === generation) { historyLoading = false;paintHistory();$('archive-show').disabled = !archiveTimes.length; }
   }
 }
 historyDialog.addEventListener('close', () => {
+  pickerGeneration++;if(!historyWindow&&!historyLoading){pendingArchiveSelection=null;return;}
   pendingArchiveSelection={day:$('archive-day').value,time:$('archive-time').value,hours:$('archive-hours').value};
-  if (historyLoading) { generation++; frameLoader.cancel(); historyLoading = false; }
 });
-
-// Follow the whole pill, including date widths and responsive font changes.
-new ResizeObserver(() => {
-  const { width, height } = $('history-toggle').getBoundingClientRect();
-  if (!width || !height) return;
-  const r = (height - 2) / 2, right = width - 1, bottom = height - 1, mid = width / 2;
-  const path = `M${mid} 1H${right-r}A${r} ${r} 0 0 1 ${right} ${1+r}V${bottom-r}A${r} ${r} 0 0 1 ${right-r} ${bottom}H${1+r}A${r} ${r} 0 0 1 1 ${bottom-r}V${1+r}A${r} ${r} 0 0 1 ${1+r} 1H${mid}`;
-  $('history-countdown').setAttribute('viewBox', `0 0 ${width} ${height}`);
-  for (const id of ['history-track', 'history-progress']) $(id).setAttribute('d', path);
-}).observe($('history-toggle'));
 
 window.addEventListener("radar-gust-cache-change", paintStatus);
 window.addEventListener('radar-weather-preferences', paintStatus);

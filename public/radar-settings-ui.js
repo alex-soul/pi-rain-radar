@@ -13,7 +13,7 @@ export function setupRadarSettings(canEdit,request) {
   panel.innerHTML='<details class="estimate-drawer"><summary>RainViewer public API</summary><p>RainViewer generously provides public API access without a key. Data is cached and shared across displays to respect rate limits.</p><a class="api-setup-link" href="https://github.com/alex-soul/pi-rain-radar/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener noreferrer">Usage &amp; limits</a></details>';
   const left=document.createElement('div');left.className='radar-source-column';
   const selectors=$('radar-main-source').closest('.units-grid');selectors.before(left);
-  left.append(selectors,$('radar-settling').closest('label'),$('radar-settling-note'),panel);
+  left.append(selectors,panel);
   $('rainbow-key').after($('rainbow-key-note'));
   left.append($('radar-apply').closest('.weather-key-actions'),$('radar-source-note'));
   const unavailableNote='Rainbow is disabled until an API key is configured. Choose RainViewer to change the saved source.';
@@ -74,7 +74,7 @@ export function setupRadarSettings(canEdit,request) {
     if(!canEdit()||busy)return;const epoch=generation;
     busy=true;$('radar-apply').disabled=true;$('radar-source-note').textContent='Preparing sources…';
     const selected={main:$('radar-main-source').value,overview:$('radar-overview-source').value};
-    try{const response=await request('/radar',{waitForSettle:$('radar-settling').checked,main:$('radar-main-source').value,overview:$('radar-overview-source').value});const result=await response.json();if(epoch!==generation)return;if(response.status===401){$('settings-dialog').close();return;}if(response.ok){appliedSources=selected;window.dispatchEvent(new Event('radar-sources-change'));}$('radar-source-note').textContent=response.ok?'Sources applied.':result.error||'Could not apply sources.';}
+    try{const response=await request('/radar',{main:$('radar-main-source').value,overview:$('radar-overview-source').value});const result=await response.json();if(epoch!==generation)return;if(response.status===401){$('settings-dialog').close();return;}if(response.ok){appliedSources=selected;window.dispatchEvent(new Event('radar-sources-change'));}$('radar-source-note').textContent=response.ok?'Sources applied.':result.error||'Could not apply sources.';}
     catch{if(epoch===generation)$('radar-source-note').textContent='Could not confirm the update. Reopen Settings to check.';}
     finally{busy=false;availability();}
   };

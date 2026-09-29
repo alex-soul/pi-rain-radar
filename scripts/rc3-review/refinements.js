@@ -61,8 +61,6 @@ export function setupReviewRadar(){
  const providers=make('<div class="review-radar-providers"></div>');
  radar.append(providers);providers.append(rainbow,$('rainviewer-config'));
  radar.querySelector('.radar-source-column').classList.add('settings-group','review-radar-selection');
- const settling=make('<div class="settings-group review-settling"></div>');
- settling.append($('radar-settling').closest('label'),$('radar-settling-note'));providers.append(settling);
  const enable=$('review-rainbow-collect').closest('.review-collection');rainbow.insertBefore(enable,$('rainbow-cap').closest('label'));rainbow.append($('rainbow-estimates'));
  const group=$('settings-radar-sources');
  for(const [id,label]of [['rainviewer','RainViewer'],['rainbow','Rainbow']])group.append(make(`<div class="source-status-row"><span>${label}</span><span id="review-${id}-status" data-health="ready"></span></div>`));

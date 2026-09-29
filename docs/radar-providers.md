@@ -15,7 +15,7 @@ RainViewer generously provides public API access without a key. The app caches d
 
 Switch both maps away from Rainbow before removing its key. Failed validation keeps the existing key; a failed source change keeps the previous selection. There is no automatic switch to the other provider on failure: a healthy map continues updating, while Live may retain compatible earlier radar for less than 30 minutes, then clears its radar overlay. Archive never borrows. See [indicators](indicators.md).
 
-**Wait for radar to settle** is one global switch. Each provider independently waits about five extra minutes after new frames are first observed. Both maps share a provider's observation time; switching that provider between views does not start the wait again.
+New observations from either provider are attempted during the current acquisition, without an extra settling wait. Provider publication timing, request pacing and the five-minute polling cycle still apply. Both maps share metadata and matching tile requests within a cycle.
 
 ## Usage, costs and optional limit
 

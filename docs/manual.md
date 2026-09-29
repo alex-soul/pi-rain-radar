@@ -1,14 +1,14 @@
 # User manual
 
-## New controls in 0.8.0
+## Display controls
 
 **Layers** controls visibility and opacity separately for Main and Overview. Only enabled layers appear; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
 
-**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap the widget to reveal **Edit**, then use toggles and draggable rows to select and order nine readings: those three plus Wind, Gust, T−Td, Visibility, Pressure and UV. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
+**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap or hover over the widget to reveal its **cog**, then use toggles and draggable rows to select and order nine readings: those three plus Wind, Gust, T−Td, Visibility, Pressure and UV. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
 
-**Sun/Moon** uses bundled local calculations for the configured location/time zone, without provider downloads. Live uses current time; Archive uses its selected time. The compact widget shows the bodies rising/setting through its border and Moon phase; expand vertically to reveal event times. **Weather → Dock** has ordinary Sun/Moon visibility/order rows, off by default. **Units** selects Next event (default) or Altitude/direction for each. Compact Dock suffixes **r**, **s**, **p** mean rise, set and peak; the Dock retains its themed Moon icon. Widget information remains available through its help.
+**Sun/Moon** uses bundled local calculations for the configured location/time zone, without provider downloads. Live uses current time; Archive uses its selected time. The compact widget shows the bodies rising/setting through its border and Moon phase; expand vertically to reveal event times. The **top-dock editor** has Sun/Moon visibility/order rows, off by default. Its **Options** tab selects Next event (default) or Altitude/direction for each. Compact Dock suffixes **r**, **s**, **p** mean rise, set and peak; the Dock retains its themed Moon icon. Widget information remains available through its help.
 
-**Display → Auto-hide buttons** shares the 15-second inactivity/reveal timing of both dock auto-hide switches. Each switch stays independent. Tap to reveal hidden controls together. An open clock stays open. Chart Edit controls follow the same reveal timing.
+**Auto-hide buttons** in the side-button editor shares the 15-second inactivity/reveal timing of the two dock auto-hide switches in their own editors. Each switch stays independent. Tap to reveal hidden controls together. An open clock stays open. Local edit cogs and resize corners use a separate one-second timeout after you leave their area or finish touching it; hovering, keyboard focus, dragging or an open editor keeps them available.
 
 **Camera** offers a one-to-ten-minute collection interval. Live retains the latest image; new Archive history retains one representative per ten-minute playback slot. Existing captured history is preserved. Archive never chooses a future image; missing matches remain gaps.
 
@@ -22,24 +22,34 @@ Controls and settings for Pi Rain Radar. Status meanings live in the numbered [i
 | --- | --- |
 | Location, both map zooms, time zone | Widget positions/sizes and open/closed state |
 | API connections, weather units/source/collection and settings PIN | Button visibility/order, theme and dock preferences |
-| Radar acquisition, settling preference and retained history | Map scale, readings, UI lock, playback speed/window and gust cache |
+| Radar acquisition and retained history | Map scale, readings, UI lock, playback speed/window and gust cache |
 
 Use the same browser profile and address each time. Hostname, IP address and localhost are different browser storage locations; switching between them starts a separate layout. Clearing site data also resets that layout. One Pi collects the data for all screens; more screens do not each make their own provider requests. Simultaneous-screen capacity has not been measured.
 
+## Personalise this screen
+
+Tap or hover over the top dock, bottom dock or side buttons to reveal their small cog, centred below the dock handle or last button. Widget cogs sit at the top right; resize corners sit at the bottom right. Only interaction with that area reveals its controls, without reserving layout space. The one-second edit-control timeout is separate from the 15-second global inactivity behaviour.
+
+Top dock, side buttons and Weather trends use a first tab for visibility/order and **Options** for other preferences. Order runs down the first column, then down the second; narrow screens use one column. Local editors work without the shared Settings PIN when this browser is unlocked. Locking this browser blocks editing here, without locking other browsers.
+
+Background opacity is adjustable from 0–100% in 5% steps for both docks, side buttons, Rain forecast, Sun/Moon, Weather trends and Stats for nerds. Reset restores the original themed background. Weather trends uses one opacity across all charts. Overview and Camera have no background-opacity editor.
+
+Weather trends can follow the main playback window or use a separate 2, 4, 6, 12 or 24-hour lookback. This uses retained local data, without extra provider collection. The capture cursor disappears outside the chart window. **Detach** is in Options and gives enabled charts independent positions and sizes.
+
 ## Fresh-browser defaults
 
-Dark theme; clock expanded; Overview and Rain forecast closed; Sun and Moon, Weather history, Clock, Overview, Rain forecast, Archive and Light/dark buttons visible; Camera and Stats for nerds buttons hidden; map scale on; both dock auto-hide switches and button auto-hide off; gust cache 60 minutes; Celsius/mph; temperature, feels-like, wind and gusts shown; 2-hour playback at 1×; UI lock off. Existing saved preferences take priority.
+Dark theme; clock expanded; other widgets closed. Button order is Clock, Archive, Overview, Rain forecast, Camera, Light/dark, Sun and Moon, Weather trends, then Stats for nerds. Camera and Stats buttons start hidden; feature availability still applies. Top-dock readings start with Temperature, Humidity, Dew point, Wind speed and Wind direction. Map scale is on, auto-hide is off, gust cache is 60 minutes, playback is two hours at 1× and UI lock is off. Existing saved preferences take priority; a new/incognito browser gets fresh local defaults. Shared units and provider settings still come from the installation.
 
 ## Settings
 
-The app starts on Coventry. Overview and Rain forecast start closed; fresh visible buttons are ordered Sun and Moon, Weather history, Clock, Overview, Rain forecast, Archive, Light/dark. Previously saved browser preferences keep their own order and visibility.
+The app starts on Coventry. Previously saved browser preferences keep their own order and visibility.
 
 Tap the screen to reveal the **settings cog at the bottom right**. It disappears after 15 seconds of inactivity. Tap the cog to open settings. Display preferences apply immediately; Map, key and PIN changes use their own Preview/Apply or Save actions. No PIN is required by default.
 
 Choose a section from the Settings selector:
 
 - **Map:** Location, Regional, Embed
-- **Interface:** Display, Buttons, Radar, Weather, Clouds, Camera
+- **Interface:** Display, Radar, Weather, Clouds, Camera
 - **System:** Status, API (OpenWeather / Rainbow / HA), Storage, PIN, Log
 - **Power**
 - **About**
@@ -56,7 +66,7 @@ History retains observations from whichever providers were selected at that time
 
 ### Weather readings and units
 
-Use **Interface → Weather → Dock / Readings / Units / Forecast**. Dock visibility and order belong to this browser. Units, source mappings, fallback and background collection belong to the appliance.
+Use **Interface → Weather → Readings / Units / Forecast**. Dock visibility and order are in the top-dock cog and belong to this browser. Units, source mappings, fallback and background collection belong to the appliance.
 
 On upgrade, explicitly confirm the initial shared units in **Units**. Existing archive observations are preserved and use that fixed baseline; former browser-specific unit changes cannot be reconstructed. Later shared changes take effect at their recorded time in Archive. Live always follows current shared units.
 
@@ -105,7 +115,7 @@ Tap **Apply**. Once accepted, Settings closes and the startup-style popup shows 
 
 Changing coordinates or either zoom selects a different history; it **does not delete the previous history**. Old images remain subject to the configured shared retention. Returning to the exact previous coordinates and both zoom values can restore that matching history while it is retained. Changing only the name or time zone preserves radar history. A time-zone change reloads the display and changes how timestamps are shown, without fetching new radar.
 
-### Interface → Buttons: arrange your controls
+### Side-button editor: arrange your controls
 
 Drag rows up or down to change the order of the left-side controls. Turn a row off to hide that button. **Hiding a button does not close its widget:** to leave Overview permanently visible, open it first, then hide its button here. To close it later, show the button again.
 
@@ -121,39 +131,39 @@ Two requests supply current conditions and the minute forecast, normally every 1
 
 The key stays on the computer running the app and is not displayed again. **Remove key** disables these features; radar continues working.
 
-### Interface → Display: playback, scale, docks and UI lock
+### Playback dock, Layers and UI lock
 
-**Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
+Open the cog below the bottom-dock handle for playback and footer preferences. **Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
 
 **Playback window** selects 2, 4 or 6 hours for Live on this browser and supplies the initial Archive duration. Archive has its own temporary 1–24-hour slider. Longer windows use retained history and more browser memory, without extra provider requests or retention.
 
-**Lock screen controls** freezes dashboard buttons, widgets and playback controls while animation and updates continue. Settings stays reachable, with the PIN if enabled. A tap still reveals auto-hidden docks; a dock manually hidden with auto-hide off remains tucked away. Provider credits remain visible and their links remain active through an external-page warning. UI lock is a per-browser interaction guard, not a security boundary or an operating-system kiosk lock.
+**Lock screen controls** under **Interface → Display** freezes layout editing and dashboard buttons while animation and updates continue. Playback slider, play/pause, paused Previous/Next and the gaps popup remain usable. After 15 seconds without interaction, playback resumes and the gaps popup closes. Settings stays reachable, with the PIN if enabled. A tap still reveals auto-hidden docks; a dock manually hidden with auto-hide off remains tucked away. Provider credits remain visible and their links remain active through an external-page warning. UI lock is a per-browser interaction guard, not a security boundary or an operating-system kiosk lock.
 
-**Show map scale** controls the distance scale (on by default). Maps always face north; Preview omits the scale.
+**Show map scale** under **Layers → Main map** controls the distance scale (on by default). Maps always face north; Preview omits the scale.
 
 **Auto-hide footer dock** is off by default. Enable it to hide the footer after 15 seconds of inactivity; tap the screen to bring it back. It stays visible while you interact with controls or have a dialog open. The scale moves down when the footer hides. Widgets can use the full screen regardless of auto-hide. Docks can cover them without moving their saved positions; tuck a dock away to reach covered controls. These preferences are remembered on this browser, like button layout. Refreshing briefly shows the footer again and starts a new 15-second idle period.
 
 **Auto-hide header dock** independently tucks away weather readings after the same 15-second idle period. Tap elsewhere on the screen to reveal them again. It is off by default. Both handles stay visible, and can be tapped to manually show or hide their dock when UI lock is off. Opening a dialog or holding a touch pauses idle hiding.
 
-### Interface → Weather: units and gust cache
+### Weather units and top-dock gust cache
 
 Choose temperature units independently from wind units: Celsius/Fahrenheit and mph, km/h, m/s or knots. Temperatures always show one decimal, including .0; wind speed and gusts round to whole numbers.
 
-**Cache wind gust (min)** offers **0 (off), 15, 30, 45, 60, 90, 120 and 180 minutes**, defaulting to **60**. Zero disables retained fallback, not the gust reading itself. The last reported gust retains its original observation time through missing samples or provider errors. It survives restart, clears on location change or key removal, and adds no API requests. See [indicators](indicators.md) for retained/expired reading presentation and weather failure states.
+The top-dock editor's **Options** tab contains **Cache wind gust (min)**. It offers **0 (off), 15, 30, 45, 60, 90, 120 and 180 minutes**, defaulting to **60**. Zero disables retained fallback, not the gust reading itself. The last reported gust retains its original observation time through missing samples or provider errors. It survives restart, clears on location change or key removal, and adds no API requests. See [indicators](indicators.md) for retained/expired reading presentation and weather failure states.
 
-### Interface → Weather → Dock
+### Top-dock editor
 
 Toggle and drag rows to choose and order the ten source readings, derived T−Td and optional Sun/Moon entries listed under [Weather readings and units](#weather-readings-and-units). Unavailable fields show dashes. Wind direction follows your selected convention; see the [wind arrow guide](indicators.md#wind-arrow). It does not predict radar movement.
 
 The top dock sizes to the selected readings, wrapping on narrow screens. Hiding every reading removes the numbers while keeping the health handle. Controls move below an expanded dock when they would collide and move back up when it tucks away.
 
-### Interface → Radar: collection and settling
+### Interface → Radar: collection
 
-**Wait for radar to settle** is on by default and affects every connected display. It waits about five extra minutes before downloading new radar images. Turning it off allows earlier acquisition, but some radar tiles may be missing. Changes take effect on subsequent acquisition; they do not repair already cached imagery or increase polling frequency.
+Newly offered radar images are attempted on the current acquisition, without an extra settling wait. Incomplete images are not published; existing gap and borrowing rules still apply. The five-minute polling cycle and separate [Live timeline grace](playback-conventions.md) remain unchanged. Previously saved settling preferences are ignored.
 
 ### System → Status and Log
 
-**Status** links to RainViewer's status page and an independent OpenWeather monitor. External links show a short warning only in explicit kiosk mode because leaving the page can disrupt kiosk viewing; the independent monitor may not cover the service used here.
+**Status** links to RainViewer and Rainbow status pages and an independent OpenWeather monitor. External links show a short warning only in explicit kiosk mode because leaving the page can disrupt kiosk viewing; the independent monitor may not cover the service used here.
 
 **Log** shows the last 25 important events since the app started. Capture continues while Settings is closed; LIVE means the viewer refreshes while open. Repeated events are grouped. This is a bounded in-memory troubleshooting aid, cleared on restart, with safe messages rather than raw provider responses or credentials. Full Docker logs remain available separately. The panel follows the selected theme.
 
@@ -168,7 +178,7 @@ The top dock sizes to the selected readings, wrapping on narrow screens. Hiding 
 | Clock, top left | Tap to show or tuck away the current clock, including seconds. |
 | Light / dark | Switches theme. The icon shows what pressing it will do: sun for light, moon for dark. |
 | Sun and Moon | Shows/hides the combined local astronomy widget. |
-| Weather history | Shows/hides all enabled trend charts, including detached charts. |
+| Weather trends | Shows/hides all enabled trend charts, including detached charts. |
 | Layers, bottom left | Reveals per-map rain/cloud visibility and opacity controls for enabled layers. |
 | Camera | Shows/hides the configured camera widget; collection is independent. |
 | Stats for nerds | Shows/hides provider and acquisition diagnostics. |
@@ -191,9 +201,11 @@ Use the numbered [screen indicator guide](indicators.md) for dock handles, retai
 
 ### Look back with Archive
 
-Tap Archive, choose an available **Date**, **Time** and playback window, and select **Load**. Playback starts while the popup stays open. Use its top-right cross to dismiss it. The time is the window endpoint. Its **1–24-hour slider** defaults to the saved Live window and resets on return to Live. Only retained choices are offered; history builds while the server runs, with seven days retained by default. Closing preserves playback position and play/pause state. Comparison, speed and last-frame-hold overrides remain through closing and loading again, then reset to the saved Live settings when returning to Live.
+Tap **Archive** to start replay immediately using the saved playback window. Tap its displayed date/time to adjust Date, Time, the temporary **1–24-hour window**, comparison, speed or last-frame hold, then select **Load**. The time is the window endpoint. Only retained choices are offered; history builds while the server runs, with seven days retained by default.
 
-The optional provider-name switch starts off on every Archive visit. It labels each map at top right and disappears on return to Live. Tap the Archive icon to return to Live or its date/time range to reopen the picker. The expanded control shows a ten-minute auto-return countdown. Selecting another window restarts it; cancelling the picker does not.
+The date/time panel opens beside the button without dimming the screen. Drag its heading to move it; closing the panel preserves Archive playback. Tap the Archive icon again, or the bottom-dock **LIVE/ARCHIVE** indicator, to return to Live. There is no countdown or automatic return to Live. Temporary Archive overrides reset when you return to Live. The provider-name switch starts off on each Archive visit.
+
+When paused, **Previous** beside Layers and **Next** beside Settings step between playable capture positions. Tap the total/availability counter to open the gaps popup, and tap it again to close; clicking elsewhere leaves it open. Its whole outline stays highlighted while open. On a locked screen the separate 15-second inactivity rule resumes playback and dismisses gaps.
 
 Archive never substitutes an older frame for a missing one. Live may borrow earlier compatible radar for less than 30 minutes; its gaps remain visible. Both modes include late arrivals and skip positions missing both maps. See [playback rules](playback-conventions.md) for endpoint grace and automatic pause/recovery.
 
@@ -203,7 +215,7 @@ Rain forecast comparison **None** shows the selected capture's next-hour forecas
 
 ### Stats for nerds
 
-Enable its button under **Interface → Buttons** to open the draggable/resizable widget. It reports each provider's latest observation, last/next check and acquisition state; selected-window availability; OpenWeather fetch/next-attempt timing; and local monthly Rainbow request/tile counts. These are not billing totals or guarantees of the next frame. It needs no extra host permissions and is separate from Log.
+Enable its button in the **side-button editor** to open the draggable/resizable widget. It reports each provider's latest observation, last/next check and acquisition state; selected-window availability; OpenWeather fetch/next-attempt timing; and local monthly Rainbow request/tile counts. These are not billing totals or guarantees of the next frame. It needs no extra host permissions and is separate from Log.
 
 See the [Stats for nerds reference](stats-for-nerds.md) for metric definitions and tracking limitations.
 
@@ -219,7 +231,7 @@ The About tab identifies the app version and links to the project and provider i
 
 ### Camera setup
 
-Configure one camera under **Interface → Camera**. Choose a direct snapshot URL or a camera discovered through the shared **System → API → HA** connection. Preview, then Add. The saved preview thumbnail is static. Edit opens a name-only update, retaining the secret connection without another preview; a blank name hides the label. **Replace connection** explicitly opens connection setup and validation. New captures use the new name; historical labels stay unchanged. Delete removes the setup without deleting retained history. The collection switch saves immediately. Enable the Camera button under **Interface → Buttons** to show the widget on this browser; collection and button visibility are separate.
+Configure one camera under **Interface → Camera**. Choose a direct snapshot URL or a camera discovered through the shared **System → API → HA** connection. Preview, then Add. The saved preview thumbnail is static. Edit opens a name-only update, retaining the secret connection without another preview; a blank name hides the label. **Replace connection** explicitly opens connection setup and validation. New captures use the new name; historical labels stay unchanged. Delete removes the setup without deleting retained history. The collection switch saves immediately. Enable the Camera button in the **side-button editor** to show the widget on this browser; collection and button visibility are separate.
 
 Direct snapshot transport supports LAN HTTP or HTTPS with valid certificates. Images are fetched by the appliance, not each browser. The latest snapshot remains independent of manual Live radar scrubbing. Archive looks back at most ten minutes across retained camera sources, otherwise shows an empty widget. The image keeps its aspect ratio when resized.
 

@@ -1,5 +1,11 @@
 # Upgrades and migration
 
+## 0.9.0: personal screen controls and immediate Archive
+
+Compatible archives, shared settings and existing browser preferences are preserved. Keep the same Compose project, data volume, browser origin/profile and Device Power override. New layouts apply only to fresh browser storage. Local layout editors have moved out of shared Settings; see the [manual](manual.md#personalise-this-screen). Back up data and browser preferences before upgrading.
+
+New observations are attempted on the current acquisition cycle. Old `waitForSettle` preferences are ignored and omitted when radar settings are next saved; provider selections, request limits and retained history are preserved. No data migration is required. Normal polling and Live timeline grace are unchanged. References to settling in older release sections below describe those historical versions.
+
 ## 0.8.0 weather and display refinements
 
 Compatible 0.7.0/0.8.0 candidate archives, credentials, PIN, map and browser preferences are preserved. Back up data and browser preferences first. New camera history keeps one representative per ten-minute slot prospectively; previously captured history is retained. Sun/Moon Dock readings start off, and new chart preferences start with Temperature, Humidity and Dew point. Cloud health thresholds remain unchanged and may be too aggressive for normal provider delays; see [release notes](release-0.8.0.md).

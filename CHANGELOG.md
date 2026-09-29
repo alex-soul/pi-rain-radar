@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0 — 29 September 2026
+
+- Browser-local editors, consistent cogs/resize controls, background opacity and cleaner shared Settings.
+- Compact dock readings, fresh-browser defaults, clearer hover states and larger labels.
+- Immediate Archive replay, a movable date/time panel, LIVE/ARCHIVE toggle and paused capture stepping.
+- Predictable gaps popup and locked-screen playback with a 15-second idle reset; separate one-second local edit-control timeout.
+- Weather trends lookback overrides and a clearer cursor; six-group Stats for nerds including Clouds and Camera.
+- Removed the radar acquisition settling delay, added Rainbow status and improved startup feedback.
+
+I accepted RC1 on my Pi. Copied-data upgrade/restart checks preserved settings and history; bounded health checks passed. See [release notes](docs/release-0.9.0.md) for validation scope and [upgrade guidance](docs/upgrading.md).
+
 ## 0.8.0 — 24 September 2026
 
 - Cloud layers on both maps, local Layers visibility/opacity controls and a shared Rainbow request budget in API settings.

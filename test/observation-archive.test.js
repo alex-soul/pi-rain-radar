@@ -177,7 +177,7 @@ test('late provider recovery fills original gaps; status ages on outage; 24-hour
   });
   const store=await createHistoryStore(dir,{now:clock+86400000});t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
   const a = await createRadarSources(dir, { rainviewer: provider('rainviewer'), rainbow: provider('rainbow') }, {
-    store, views, now: () => clock, waitForSettle: () => false, selection: () => selection, nextRefreshAt: () => clock + 123000,
+    store, views, now: () => clock, selection: () => selection, nextRefreshAt: () => clock + 123000,
   });
   await a.refresh();
   assert.equal((await a.archive.window(end)).frames[0].overviewUrl, null);

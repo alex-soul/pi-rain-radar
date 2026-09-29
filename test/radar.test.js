@@ -66,7 +66,7 @@ test("history publishes complete pairs atomically despite a failed newest frame"
     },
   };
   try {
-    const radar = await createRadar(directory, provider, { settleMs: 0 });
+    const radar = await createRadar(directory, provider, {});
     await radar.refresh();
     assert.deepEqual(
       radar.status().frames.map((frame) => frame.time),
@@ -79,7 +79,7 @@ test("history publishes complete pairs atomically despite a failed newest frame"
       radar.status().frames.map((frame) => frame.time),
       [100, 200, 300],
     );
-    const restored = await createRadar(directory, provider, { settleMs: 0 });
+    const restored = await createRadar(directory, provider, {});
     assert.deepEqual(
       restored.status().frames.map((frame) => frame.time),
       [100, 200, 300],
@@ -126,7 +126,7 @@ for (const failedView of ['main', 'overview']) test(`missing ${failedView} frame
   };
   try {
     const events=[];
-    const options={ waitForSettle: () => false, now: () => 2400000, onEvent: code=>events.push(code) };
+    const options={ now: () => 2400000, onEvent: code=>events.push(code) };
     let radar = await createRadar(directory, provider, options);
     await radar.refresh();
     times = [600, 1200, 1800, 2400];
@@ -163,13 +163,13 @@ test('failed far-future observations retain the full last-good window', async ()
     return image;
   } };
   try {
-    let radar = await createRadar(directory, provider, { settleMs: 0 });
+    let radar = await createRadar(directory, provider, {});
     await radar.refresh();
     times = [12000, 12600]; fail = true;
     await radar.refresh();
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1200]);
     assert.ok(radar.status().error);
-    radar = await createRadar(directory, provider, { settleMs: 0 });
+    radar = await createRadar(directory, provider, {});
     assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1200]);
     fail = false;
     await radar.refresh();
@@ -220,7 +220,7 @@ test("failed acquisition preserves complete frame, restart restores it, recovery
     },
   };
   try {
-    const radar = await createRadar(directory, provider, { settleMs: 0 });
+    const radar = await createRadar(directory, provider, {});
     assert.equal(radar.status().frame, null);
     await radar.refresh();
     const first = radar.status().frame;
@@ -235,7 +235,7 @@ test("failed acquisition preserves complete frame, restart restores it, recovery
     assert.equal(radar.status().frame.time, 100);
     assert.ok(radar.status().error);
     assert.deepEqual(await readFile(join(directory, first.file)), original);
-    const restarted = await createRadar(directory, provider, { settleMs: 0 });
+    const restarted = await createRadar(directory, provider, {});
     assert.equal(restarted.status().frame.time, 100);
     fail = false;
     await restarted.refresh();
@@ -245,7 +245,7 @@ test("failed acquisition preserves complete frame, restart restores it, recovery
     const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
     manifest.viewKey = "previous-view";
     await writeFile(manifestPath, JSON.stringify(manifest));
-    const changedView = await createRadar(directory, provider, { settleMs: 0 });
+    const changedView = await createRadar(directory, provider, {});
     assert.equal(
       changedView.status().frame,
       null,
@@ -270,7 +270,7 @@ test("overview failure cannot publish mismatched views; retry reuses the main im
     },
   };
   try {
-    const radar = await createRadar(directory, provider, { settleMs: 0 });
+    const radar = await createRadar(directory, provider, {});
     await radar.refresh();
     const first = radar.status().frame;
     const pixels = await sharp(await readFile(join(directory, first.overviewFile))).raw().toBuffer({ resolveWithObject: true });
@@ -280,7 +280,7 @@ test("overview failure cannot publish mismatched views; retry reuses the main im
     time = 200; failOverview = true;
     await radar.refresh();
     assert.equal(radar.status().frame.time, 100);
-    const restored = await createRadar(directory, provider, { settleMs: 0 });
+    const restored = await createRadar(directory, provider, {});
     assert.equal(restored.status().frame.overviewUrl, first.overviewUrl);
     mainRequests = 0; failOverview = false;
     await restored.refresh();
@@ -291,80 +291,40 @@ test("overview failure cannot publish mismatched views; retry reuses the main im
 });
 
 
-test("settling delays new frames without downloads, survives restart, and preserves history", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "radar-settle-"));
-  let clock = 1000000, times = [600, 1200], downloads = [];
-  const image = await sharp({ create: { width: 256, height: 256, channels: 4, background: "#3489bf" } }).png().toBuffer();
-  const provider = { getHistory: async () => times.map(time => ({ time })), getTile: async frame => { downloads.push(frame.time); return image; } };
-  try {
-    let radar = await createRadar(directory, provider, { now: () => clock });
-    await radar.refresh();
-    assert.deepEqual(radar.status().frames.map(f => f.time), [600]);
-    assert.ok(downloads.every(time => time === 600));
-    downloads = [];
-    clock += 299999;
-    radar = await createRadar(directory, provider, { now: () => clock });
-    await radar.refresh();
-    assert.equal(downloads.length, 0);
-    clock++;
-    await radar.refresh();
-    assert.equal(radar.status().frame.time, 1200);
-    assert.ok(downloads.every(time => time === 1200));
-    times = [1200, 1800]; downloads = [];
-    await radar.refresh();
-    assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1200]);
-    assert.equal(downloads.length, 0);
-    clock += 300000;
-    await radar.refresh();
-    assert.deepEqual(radar.status().frames.map(f => f.time), [600, 1200, 1800]);
-    assert.ok(downloads.every(time => time === 1800));
-  } finally { await rm(directory, { recursive: true, force: true }); }
-});
-
-test('settling changes take effect next acquisition, survive restart, and reuse complete cached pairs', async t => {
-  const directory = await mkdtemp(join(tmpdir(), 'radar-policy-transition-'));
+test("new frames load immediately, survive restart, and preserve cached history", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "radar-immediate-"));
   t.after(() => rm(directory, {recursive:true,force:true}));
-  let clock=1000000, wait=true, times=[600], downloads=0, manifests=0, release;
+  let clock=1000000, times=[600,1200], downloads=[];
   const image=await sharp({create:{width:256,height:256,channels:4,background:'#3489bf'}}).png().toBuffer();
-  let gate=null;
-  const provider={getHistory:async()=>{manifests++;if(gate) await gate;return times.map(time=>({time}));},getTile:async()=>{downloads++;return image;}};
-  const options={now:()=>clock,waitForSettle:()=>wait,nextRefreshAt:()=>clock+299000};
+  const provider={getHistory:async()=>times.map(time=>({time})),getTile:async frame=>{downloads.push(frame.time);return image;}};
+  // Old callers and saved preferences must not reinstate the retired delay.
+  const options={now:()=>clock,waitForSettle:()=>true,settleMs:300000};
   let radar=await createRadar(directory,provider,options);
-  gate=new Promise(resolve=>{release=resolve;});
-  const pending=radar.refresh();
-  wait=false; release(); await pending; gate=null;
-  assert.equal(downloads,0,'In-flight acquisition retains its initial policy');
-  assert.equal(manifests,1,'Toggling never initiates requests');
-  assert.equal(radar.status().nextUpdate.expectedAt,1299000);
   await radar.refresh();
-  const pairCount=radarTiles().length+radarTiles(overviewView).length;
-  assert.equal(downloads,pairCount);assert.equal(radar.status().frame.time,600);
-  wait=true;times=[600,1200]; await radar.refresh();
-  assert.equal(downloads,pairCount,'Off-to-on holds the newly seen timestamp');
-  clock+=300000;
+  assert.deepEqual(radar.status().frames.map(f=>f.time),[600,1200]);
+  assert.ok(downloads.includes(1200));
+  downloads=[];
   radar=await createRadar(directory,provider,options);await radar.refresh();
-  assert.equal(downloads,2*pairCount,'Restart retains first-seen time and complete cache');
-  assert.equal(radar.status().frame.time,1200);
-  wait=false;await radar.refresh();assert.equal(downloads,2*pairCount);
-  times=[3000,3600,4200];await radar.refresh();
-  assert.equal(radar.status().frame.time,4200,'Off catches up including the newest frame');
-  assert.equal(manifests,6);
+  assert.equal(downloads.length,0);
+  times=[1200,1800];await radar.refresh();
+  assert.deepEqual(radar.status().frames.map(f=>f.time),[600,1200,1800]);
+  assert.ok(downloads.length>0);assert.ok(downloads.every(time=>time===1800));
 });
 
-test("a lone newest frame waits on empty-cache startup", async () => {
+test("a lone newest frame is attempted immediately but failed tiles are not published", async () => {
   const directory = await mkdtemp(join(tmpdir(), "radar-single-settle-"));
   let downloads = 0;
   try {
-    const radar = await createRadar(directory, { getHistory: async () => [{ time: 600 }], getTile: async () => { downloads++; throw new Error("should wait"); } });
+    const radar = await createRadar(directory, { getHistory: async () => [{ time: 600 }], getTile: async () => { downloads++; throw new Error("tile unavailable"); } });
     await radar.refresh();
-    assert.equal(downloads, 0);
+    assert.ok(downloads > 0);
     assert.equal(radar.status().frame, null);
-    assert.equal(radar.status().error, null);
+    assert.ok(radar.status().error);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 
-test("pending status estimates the eligible poll, reports acquisition and clears after publish", async () => {
+test("status reports acquisition immediately and clears after publish", async () => {
   const directory = await mkdtemp(join(tmpdir(), "radar-next-status-"));
   let clock = 1000000, poll = clock + 299000;
   const image = await sharp({ create: { width: 256, height: 256, channels: 4, background: "#3489bf" } }).png().toBuffer();
@@ -377,9 +337,7 @@ test("pending status estimates the eligible poll, reports acquisition and clears
     radar = await createRadar(directory, provider, { now: () => clock, nextRefreshAt: () => poll });
     assert.equal(radar.status().nextUpdate, null);
     await radar.refresh();
-    assert.deepEqual(radar.status().nextUpdate, { state: "waiting", expectedAt: 1599000 });
-    clock = 1599000; poll = clock + 300000;
-    await radar.refresh();
+    assert.equal(radar.status().frame.time, 600);
     assert.equal(radar.status().nextUpdate, null);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
@@ -393,8 +351,8 @@ test("manifest latency does not defer a new observation for an extra poll", asyn
   try {
     const radar = await createRadar(directory, provider, { now: () => clock, nextRefreshAt: () => poll });
     await radar.refresh(clock);
-    assert.deepEqual(radar.status().nextUpdate, { state: "waiting", expectedAt: 1300000 });
-    assert.equal(downloads, 0);
+    assert.equal(radar.status().nextUpdate, null);
+    assert.equal(radar.status().frame.time, 600);
     clock = poll; poll = clock + 300000;
     await radar.refresh(clock);
     assert.equal(radar.status().frame.time, 600);
@@ -404,20 +362,20 @@ test("manifest latency does not defer a new observation for an extra poll", asyn
 });
 
 
-test("long-gap recovery loads older history immediately but holds newest", async () => {
+test("long-gap recovery loads all offered history immediately", async () => {
   const directory = await mkdtemp(join(tmpdir(), "radar-catchup-"));
   let clock = 1000000, times = [600], downloads = [];
   const image = await sharp({ create: { width: 256, height: 256, channels: 4, background: "#3489bf" } }).png().toBuffer();
   const provider = { getHistory: async () => times.map(time => ({ time })), getTile: async frame => { downloads.push(frame.time); return image; } };
   try {
-    let radar = await createRadar(directory, provider, { now: () => clock, settleMs: 0 });
+    let radar = await createRadar(directory, provider, { now: () => clock });
     await radar.refresh();
     clock += 8 * 3600000; times = [28200, 28800, 29400]; downloads = [];
     radar = await createRadar(directory, provider, { now: () => clock });
     await radar.refresh();
-    assert.deepEqual(radar.status().frames.map(f => f.time), [28200, 28800]);
+    assert.deepEqual(radar.status().frames.map(f => f.time), [28200, 28800, 29400]);
     assert.ok(downloads.length > 0);
-    assert.ok(!downloads.includes(29400));
+    assert.ok(downloads.includes(29400));
     clock += 300000;
     await radar.refresh();
     assert.equal(radar.status().frame.time, 29400);

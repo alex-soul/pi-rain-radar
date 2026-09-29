@@ -33,7 +33,7 @@ const simulationId=Date.now().toString(36);
 await mkdir(join(directory,'settings'),{recursive:true});
 await writeFile(join(directory,'settings/embed.json'),JSON.stringify({enabled:true,origins:['http://127.0.0.1:3091'],hours:2,speed:1,theme:'dark'}));
 await writeFile(join(directory,'settings/map.json'),JSON.stringify({...defaultSettings,name:'DEV · Synthetic radar'}));
-await writeFile(join(directory,'settings/radar.json'),JSON.stringify({waitForSettle:false,main:'rainviewer',overview:'same',monthlyLimit:null}));
+await writeFile(join(directory,'settings/radar.json'),JSON.stringify({main:'rainviewer',overview:'same',monthlyLimit:null}));
 const seedStore=await createHistoryStore(directory);
 const end=recording?.end??Math.floor(Date.now()/600000)*600;
 await seedStore.put([{kind:'transition',receivedAt:Date.now(),source:'selection',context:hash(defaultViews),time:(end-86400)*1000,data:{main:'rainviewer',overview:'rainbow'}}]);
@@ -83,7 +83,7 @@ const devCamera=await createDevCamera(directory,()=>scenario,origin,end*1000);
 const devWeather=await createDevWeather(directory);
 const scenarioLog=createDiagnostics(),observeScenario=createHealthEvents(scenarioLog.record);
 scenarioLog.record('startup');
-let demoKey=!!trial,demoRadar={waitForSettle:false,main:'rainviewer',overview:'same',monthlyLimit:null};
+let demoKey=!!trial,demoRadar={main:'rainviewer',overview:'same',monthlyLimit:null};
 const controls=()=>controlsPage(scenario);
 function filterWindow(data) {
   if(scenario==='archive-rollover'&&data.weatherHistory)data={...data,weatherHistory:{...data.weatherHistory,weather:data.weatherHistory.weather.filter(r=>r.time>=end-21600),forecasts:data.weatherHistory.forecasts.filter(r=>r.time>=end-21600)}};
@@ -165,6 +165,8 @@ const server=http(async(req,res)=>{
       if(input&&path.pathname==='/api/settings/weather'&&result.status===200)demoRadar=disableRadarProviders(demoRadar,source=>result[source+'Collect']);
       res.writeHead(result.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(result));
     }
+    if(path.pathname==='/api/archive'&&scenario==='archive-delayed')await new Promise(resolve=>setTimeout(resolve,3000));
+    if(path.pathname==='/api/archive'&&scenario==='archive-empty')return send({times:[],oldest:null,newest:null,frames:[]});
     if(path.pathname==='/api/settings/camera'||path.pathname.startsWith('/api/settings/camera/'))return await devCamera.handle(req,res,path.pathname);
     if(path.pathname==='/api/camera/image'){const bytes=devCamera.camera.image(path.searchParams.get('source'),path.searchParams.get('capture'));res.writeHead(bytes?200:404,{'Content-Type':'image/jpeg','Cache-Control':'no-store'});return res.end(bytes??'Not found');}
     if(path.pathname==='/api/camera')return send(await devCamera.camera.live(Number(path.searchParams.get('hours')??2),path.searchParams.has('end')?Number(path.searchParams.get('end'))*1000:undefined));

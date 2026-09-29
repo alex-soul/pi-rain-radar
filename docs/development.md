@@ -80,7 +80,7 @@ Or use the development container's installed dependencies:
 docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps -v "${PWD}/test:/app/test:ro" radar node --test
 ```
 
-Tests use synthetic tiles, never the external provider. They cover projection, paired-frame publication/recovery, settling and archive boundaries, PIN authorization, weather acquisition/expiry, retained gusts, one-poll fallback and recovery, map preview/apply, time zones and display preferences. External provider requests are mocked.
+Tests use synthetic tiles, never the external provider. They cover projection, paired-frame publication/recovery, immediate acquisition, legacy-setting compatibility and archive boundaries, PIN authorization, weather acquisition/expiry, retained gusts, one-poll fallback and recovery, map preview/apply, time zones and display preferences. External provider requests are mocked.
 
 ## Changing the location
 

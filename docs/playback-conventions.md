@@ -20,7 +20,7 @@ Playback and the availability popup share ten-minute positions. The popup groups
 
 ## Live publication grace and borrowing
 
-The endpoint is the clock rounded down to a ten-minute boundary after subtracting five minutes: at 21:03 it is 20:50; at 21:05 it becomes 21:00. Newer provider observations do not advance this endpoint. Only its newest missing slot is pending; older missing slots are gaps. The chosen duration extends backward from the endpoint. This grace does not change acquisition timing or the separate settling preference.
+The endpoint is the clock rounded down to a ten-minute boundary after subtracting five minutes: at 21:03 it is 20:50; at 21:05 it becomes 21:00. Newer provider observations do not advance this endpoint. Only its newest missing slot is pending; older missing slots are gaps. The chosen duration extends backward from the endpoint. This grace does not delay acquisition: newly offered observations are attempted on the current acquisition cycle.
 
 Live may borrow a compatible earlier observation for a missing map for less than 30 minutes. Beyond that, only its basemap is shown. Borrowing does not fill timeline gaps or improve completeness. With fewer than two playable positions, automatic pause waits for recovery; the combined play/pause icon distinguishes it from manual pause. Manual pause stays paused until changed by the user.
 

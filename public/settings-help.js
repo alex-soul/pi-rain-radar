@@ -1,5 +1,6 @@
 export const helpText = {
- astronomy:'Calculated locally from the map location using SunCalc. Live follows now; Archive follows the selected frame. In Units, choose the next rise (r), highest point/peak (p) or set (s), or altitude above the horizon and compass direction. A negative altitude is below the horizon. Hiding this Dock reading does not hide the Sun/Moon widget. Format and visibility are saved on this screen.',
+  embed: "Just the main radar, status light and credits in an iframe. Trust your dashboard’s origin (scheme, host and port), one per line, without paths. Settings save automatically; origins save when you leave the field. Reload the embed after changes. Tested in Home Assistant on LAN over HTTP and remotely through Nabu Casa with Tailscale Serve. HTTPS dashboards need an HTTPS radar address; this remote setup needs Tailscale connected on your device. For a full setup guide, follow the Embed setup guide below.",
+ astronomy:'Calculated locally from the map location using SunCalc. Live follows now; Archive follows the selected frame. In the top dock editor, choose the next rise (r), highest point/peak (p) or set (s), or altitude above the horizon and compass direction. A negative altitude is below the horizon. Hiding this Dock reading does not hide the Sun/Moon widget. Format and visibility are saved on this screen.',
  dewPointDepression:'T−Td is called dew point depression: air temperature (T) minus dew point (Td). A smaller difference means the air is closer to saturation; zero means the two temperatures are equal. It is a temperature difference, not a rain measurement. It uses the sources selected under Readings for Temperature and Dew point, even when Dew point is hidden from the dock.',
  lastFrameHold:'Multiplies the final frame duration before playback loops. 1× adds no extra hold; the default is 2.4× (1560 ms at playback speed 1×). Playback speed scales both ordinary and final frame durations.',
  reviewFallback:'Use OpenWeather when a Home Assistant reading is unavailable. Requires OpenWeather current-weather collection. Borrowed readings show amber and identify OpenWeather as the fallback source.',
@@ -33,7 +34,6 @@ export const helpText = {
   "19": "The temperature at which moisture in the air begins to condense. A dew point close to the air temperature means high relative humidity.",
   "20": "Uses the convention selected in Weather: Flow shows where the wind is going; Meteorological shows where it comes from.",
   "21": "Stops dashboard interaction on this display while playback and updates continue. Settings remains accessible, protected by your PIN if enabled. Taps reveal auto-hidden docks. Manually hidden docks stay tucked away. All provider credit links remain active.",
-  "22": "Wait about 5 extra minutes before downloading new radar images. Turning this off shows images sooner, but some radar tiles may be missing. Applies to all displays.",
   "23": "Events are captured even when Settings is closed. Shows the latest 25 important events and updates while this tab is open. Repeated errors are grouped. History clears when the app restarts.",
   "24": "Opens an external status page. OpenWeather’s monitor is independent and may not reflect the services used here.",
   "25": "At 1×, each ordinary frame is shown for 650 ms, plus any time needed to settle the radar image. Changes playback speed on this display straight away. It does not change how often new radar data is downloaded.",
@@ -48,6 +48,7 @@ export function setupSettingsHelp(dialog) {
   let active;
   function close() { active?.setAttribute('aria-expanded', 'false'); active?.removeAttribute('aria-describedby'); active = null; bubble.hidden = true; }
   const targets = [
+    ['label[for="embed-enabled"]','embed'],
  ['label[for="review-weather-source"]','reviewSource'],
  ['#review-map-warning','reviewMap'],['label[for="review-ha-url"]','reviewHA'],
  ['label[for="review-fallback"]','reviewFallback'],['label[for="review-owm-collect"]','reviewOWM'],['label[for="review-ha-collect"]','reviewCollect'],
@@ -56,7 +57,7 @@ export function setupSettingsHelp(dialog) {
     ['label[for="rainbow-key"]',9], ['label[for="rainbow-cap"]',30],
     ['label[for="direction-convention"]',27], ['label[for="reading-gust"]',28],
     ['label[for="playback-hours"]',26], ['label[for="last-frame-multiplier"]','lastFrameHold'],
-    ['label[for="radar-settling"]',22], ['#diagnostic-title',23],
+    ['#diagnostic-title',23],
     ['label[for="map-name"]',2], ['#map-lat',3], ['#map-lon',3], ['#map-zoom',4], ['#map-overviewZoom',5],
     ['label[for="map-timeZone"]',6], ['label[for="settings-api-key"]',9],
     ['label[for="reading-sun"]','astronomy'], ['label[for="reading-moon"]','astronomy'], ['label[for="astro-sun-mode"]','astronomy'], ['label[for="astro-moon-mode"]','astronomy'], ['label[for="auto-hide-weather"]',10], ['label[for="auto-hide-footer"]',11], ['label[for="gust-cache-minutes"]',12], ['label[for="settings-pin-enabled"]',13],
@@ -84,8 +85,9 @@ export function setupSettingsHelp(dialog) {
       event.preventDefault(); event.stopPropagation();
       if (active === button) { close(); return; }
       close(); active = button; button.setAttribute('aria-expanded','true'); button.setAttribute('aria-describedby', bubble.id);
-      bubble.textContent = helpText[key]; if(key==='astronomy'){for(const [title,url] of [['SunCalc source','https://github.com/mourner/suncalc'],['License','/suncalc-license.txt']]){const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent=title;bubble.append(document.createElement('br'),link);}} if(key==='dewPointDepression'){const link=document.createElement('a');link.href='/dew-point-depression.html';link.target='_blank';link.rel='noopener';link.textContent='Read about dew point depression';bubble.append(document.createElement('br'),link);} if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
-      const rect = button.getBoundingClientRect(), bounds = dialog.getBoundingClientRect();
+      const owner=button.closest('dialog')||dialog;owner.append(bubble);
+      bubble.textContent = helpText[key]; if(key==='embed'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/embed.md';link.target='_blank';link.rel='noopener noreferrer';link.textContent='Embed setup guide';bubble.append(document.createElement('br'),link);} if(key==='astronomy'){for(const [title,url] of [['SunCalc source','https://github.com/mourner/suncalc'],['License','/suncalc-license.txt']]){const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent=title;bubble.append(document.createElement('br'),link);}} if(key==='dewPointDepression'){const link=document.createElement('a');link.href='/dew-point-depression.html';link.target='_blank';link.rel='noopener';link.textContent='Read about dew point depression';bubble.append(document.createElement('br'),link);} if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
+      const rect = button.getBoundingClientRect(), bounds = owner.getBoundingClientRect();
       bubble.style.width = `${Math.min(320, bounds.width - 32)}px`;
       bubble.style.left = `${Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - bubble.offsetWidth - 8))}px`;
       bubble.style.top = `${Math.max(bounds.top + 8, Math.min(rect.bottom + 5, bounds.bottom - bubble.offsetHeight - 8))}px`;
@@ -96,5 +98,8 @@ export function setupSettingsHelp(dialog) {
   dialog.addEventListener('close', close);
   dialog.addEventListener('settings-tab-change', close);
   dialog.addEventListener('scroll', close, true);
+  document.addEventListener('close',close,true);
+  document.addEventListener('settings-tab-change',close);
+  document.addEventListener('click',event=>{if(active&&!bubble.contains(event.target)&&!active.contains(event.target))close();});
   window.addEventListener('resize', close);
 }

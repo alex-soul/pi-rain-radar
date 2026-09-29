@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
@@ -30,8 +30,8 @@ test('radar policy persists, validates, and shares existing PIN and cross-origin
   t.after(()=>rm(dir,{recursive:true,force:true}));
   const diagnostics=createDiagnostics();
   const radarSettings=await createRadarSettings(dir,{onEvent:diagnostics.record});
-  assert.equal(radarSettings.waitForSettle(),true);
-  assert.equal((await radarSettings.configure({waitForSettle:'false'})).status,400);
+  assert.equal(radarSettings.current().monthlyLimit,null);
+  assert.equal((await radarSettings.configure({monthlyLimit:'100'})).status,400);
   await setPin(dir,'123456');
   const auth=createSettingsAuth(dir);
   const route=settingsRoutes(auth,null,null,{diagnostics,radarSettings});
@@ -41,16 +41,16 @@ test('radar policy persists, validates, and shares existing PIN and cross-origin
   const base=`http://127.0.0.1:${server.address().port}/api/settings`;
   const post=(body,headers={})=>fetch(base+'/radar',{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)});
   assert.equal((await fetch(base+'/diagnostics')).status,401);
-  assert.equal((await post({waitForSettle:false})).status,401);
+  assert.equal((await post({monthlyLimit:100})).status,401);
   const {token}=await auth.unlock('123456');
   const headers={Authorization:`Bearer ${token}`};
-  assert.equal((await post({waitForSettle:false},{...headers,Origin:'https://example.com'})).status,403);
-  assert.equal((await post({waitForSettle:false},headers)).status,200);
-  assert.equal(radarSettings.waitForSettle(),false);
-  assert.equal((await createRadarSettings(dir)).waitForSettle(),false);
+  assert.equal((await post({monthlyLimit:100},{...headers,Origin:'https://example.com'})).status,403);
+  assert.equal((await post({monthlyLimit:100},headers)).status,200);
+  assert.equal(radarSettings.current().monthlyLimit,100);
+  assert.equal((await createRadarSettings(dir)).current().monthlyLimit,100);
   const shared=await (await fetch(base+'/diagnostics',{headers})).json();
-  assert.equal(shared.events.at(-1).code,'settling-off');
-  assert.equal((await (await fetch(base,{headers})).json()).radar.waitForSettle,false);
+  assert.equal(shared.events.length,0);
+  assert.equal((await (await fetch(base,{headers})).json()).radar.waitForSettle,undefined);
   auth.lock(token);
   assert.equal((await fetch(base+'/diagnostics',{headers})).status,401);
 });
@@ -69,4 +69,17 @@ test('cloud and camera routine successes stay quiet, with one recovery per failu
  log.record('camera-error');log.record('camera-unchanged');
  assert.equal(log.snapshot().events.filter(e=>e.code==='camera-recovered').length,2);
  assert.ok(!log.snapshot().events.some(e=>['camera-collected','camera-unchanged','cloud-collected'].includes(e.code)));
+});
+
+test('legacy settling settings are ignored while sources and limits survive',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'radar-legacy-policy-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ await createRadarSettings(dir);
+ const file=join(dir,'settings','radar.json');
+ await writeFile(file,JSON.stringify({waitForSettle:true,main:'rainbow',overview:'rainviewer',monthlyLimit:123}));
+ const settings=await createRadarSettings(dir);
+ assert.deepEqual(settings.current(),{main:'rainbow',overview:'rainviewer',monthlyLimit:123});
+ assert.equal((await settings.configure({waitForSettle:true,monthlyLimit:456})).status,200);
+ assert.deepEqual(JSON.parse(await readFile(file,'utf8')),{main:'rainbow',overview:'rainviewer',monthlyLimit:456});
+ assert.deepEqual((await createRadarSettings(dir)).current(),settings.current());
 });

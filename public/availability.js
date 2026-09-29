@@ -5,11 +5,11 @@ let expanded=false,signature='',current=[],active=null,pinned=false,zone='Europe
 function hideDetail(){active=null;pinned=false;$('availability-detail').hidden=true;}
 function saveExpanded(){disclosure();try{localStorage.setItem('radar-availability-open',String(expanded));}catch{}}
 function disclosure(){if(!expanded)hideDetail(); $('availability-panel').hidden=!expanded;$('frame-count').setAttribute('aria-expanded',String(expanded));$('frame-count').setAttribute('aria-label',`${expanded?'Hide':'Show'} data availability`);}
-$('frame-count').onclick=()=>{expanded=true;saveExpanded();};disclosure();
-// Playback controls, including scrubbing and play/pause, never dismiss the popup.
-document.addEventListener('pointerdown',event=>{if(expanded&&!playback.closest('footer').contains(event.target)){expanded=false;saveExpanded();}});
+$('frame-count').onclick=()=>{expanded=!expanded;saveExpanded();};disclosure();
+// Only the counter toggles the popup; the locked-screen idle reset can dismiss it explicitly.
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&expanded){expanded=false;saveExpanded();}});
 window.addEventListener('resize',hideDetail);
+export function dismissAvailability(){expanded=false;saveExpanded();}
 const clock=t=>new Date(t*1000).toLocaleTimeString('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit'});
 export function updateAvailability(input,onSelect){
  zone=input.zone??zone;current=availabilityRows(input);const health=current.some(r=>r.segments.some(s=>s.health==='error'))?'error':current.some(r=>r.segments.some(s=>s.health==='warning'))?'warning':current.some(r=>r.segments.some(s=>s.health==='ready'))?'ready':'disabled';$('frame-total').dataset.health=health;

@@ -13,15 +13,17 @@ const mapTabs=make('<div class="settings-tabs settings-subtabs" role="tablist" a
 const location=make('<section id="review-map-location" role="tabpanel" aria-labelledby="review-tab-location"></section>');
 const regional=make('<section id="review-map-regional" role="tabpanel" aria-labelledby="review-tab-regional" hidden></section>');
 location.append($('map-settings-intro'),form);map.append(mapTabs,location,regional);
-const timezone=$('map-timeZone').parentElement;regional.append(timezone);
+$('map-name').parentElement.classList.add('settings-group');
+const timezone=$('map-timeZone').parentElement;timezone.classList.add('settings-group');regional.append(timezone);
 // Keep the input's original form association even though it has moved visually.
 $('map-timeZone').setAttribute('form','map-form');
-regional.append(make('<div class="weather-key-actions"><button type="button" id="review-region-save">Save time zone</button></div><p id="review-region-note" role="status"></p>'));
+timezone.append(make('<div class="weather-key-actions"><button type="button" id="review-region-save">Save time zone</button></div>'));
+regional.append(make('<p id="review-region-note" role="status"></p>'));
   $('review-region-save').onclick=async()=>{try{const timeZone=$('map-timeZone').value.trim();new Intl.DateTimeFormat('en',{timeZone});await change({action:'settings',timeZone});window.location.reload();}catch{$('review-region-note').textContent='Enter a valid time zone, for example Europe/London.';}};
 const embed=$('settings-panel-embed');map.append(embed);embed.setAttribute('role','tabpanel');embed.setAttribute('aria-labelledby','review-tab-embed');
 for(const [id,label,panel] of [['location','Location','review-map-location'],['regional','Regional','review-map-regional'],['embed','Embed','settings-panel-embed']])mapTabs.append(button('review-tab-'+id,label,panel,id==='location'));
 const selector=$('settings-section');selector.querySelector('[value="embed"]').remove();selector.add(new Option('Power','power'),selector.querySelector('[value="about"]'));
-const power=make('<section id="settings-panel-power" class="settings-content settings-tab-panel" role="region" aria-label="Power" hidden></section>');power.append($('device-power-title'),document.querySelector('.power-buttons'));parent.insertBefore(power,$('settings-panel-about'));
+const power=make('<section id="settings-panel-power" class="settings-content settings-tab-panel" role="region" aria-label="Power" hidden></section>');const powerGroup=make('<div class="settings-group"></div>');powerGroup.append($('device-power-title'),document.querySelector('.power-buttons'));power.append(powerGroup);parent.insertBefore(power,$('settings-panel-about'));
 // Move storage detail to its drawer; keep status identifiers for existing painters.
 const storage=make('<details class="estimate-drawer"><summary>Storage status</summary><div id="review-storage-details"></div></details>');storage.querySelector('div').append($('storage-summary'));$('settings-panel-storage').append(storage);
 const oldStorage=$('status-storage');oldStorage.previousElementSibling.remove();oldStorage.hidden=true;

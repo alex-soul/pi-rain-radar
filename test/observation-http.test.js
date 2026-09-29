@@ -92,6 +92,17 @@ test('HTTP Archive accepts 1–24 while Live remains 2/4/6, with truthful per-ma
   }
   const status=await (await get('/api/status')).json();
   assert.equal((await get(status.frames[0].url)).status,200);
+  for(const asset of ['/local-ui.js','/local-ui.css','/local-idle.js','/local-preferences.js','/dock-format.js','/trend-history-client.js'])assert.equal((await get(asset)).status,200);
+  for(const hours of [2,4,6,12,24]){
+    const response=await get(`/api/weather-history?map=${status.mapId}&end=${end}&hours=${hours}`);
+    assert.equal(response.status,200);const weather=await response.json();
+    assert.equal(weather.end,end);assert.deepEqual(weather.forecasts,[]);assert.equal(weather.frames,undefined);
+    assert.match(response.headers.get('cache-control'),/private/);
+  }
+  for(const hours of [0,1,3,25])assert.equal((await get(`/api/weather-history?map=${status.mapId}&end=${end}&hours=${hours}`)).status,400);
+  assert.equal((await get(`/api/weather-history?map=wrong&end=${end}&hours=24`)).status,409);
+  assert.equal((await get(`/api/weather-history?map=${status.mapId}&end=${end+86400}&hours=24`)).status,400);
+
   assert.ok(status.storage.availableBytes>0);
   const save=days=>fetch(`http://127.0.0.1:${port}/api/settings/storage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({days})});
   assert.equal((await save(0)).status,400);assert.equal((await save(null)).status,200);

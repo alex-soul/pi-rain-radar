@@ -1,3 +1,4 @@
+import {dockText} from './dock-format.js';
 import { gustCacheMinutes, weatherPreferences } from './display.js';
 import { temperatureText, windText, windBearing, windDirectionText, visibilityText, pressureText, readingNames } from './weather-format.js';
 import { formatTime } from './time.js';
@@ -30,7 +31,7 @@ export function paintWeather(state, now = Date.now(), {historical=false,operatio
   currentRows=rows;
   for(const [id,row] of Object.entries(rows)){
     const node=$('weather-'+id),holder=node.closest('.weather-reading');
-    node.textContent=row.text;node.setAttribute('data-cached',String(row.text!=='—'&&row.retained));
+    node.textContent=dockText(row);node.setAttribute('data-cached',String(row.text!=='—'&&row.retained));
     holder.setAttribute('data-source',row.source??'gap');holder.setAttribute('data-expected-source',row.expected);
     holder.setAttribute('data-attribution',row.attribution);
     holder.title=readingExplanation(row,fetchedStamp);holder.setAttribute('aria-label',holder.title);

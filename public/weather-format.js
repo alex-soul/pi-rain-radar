@@ -1,5 +1,5 @@
 export const readingNames = { temperature: 'Temperature', feels: 'Feels like', wind: 'Wind', gust: 'Wind gusts', humidity: 'Humidity', dew: 'Dew point', direction: 'Wind direction', visibility: 'Visibility', pressure: 'Pressure', uv: 'UV index', depression: 'T−Td', sun: 'Sun', moon: 'Moon' };
-export const defaultReadings = ['temperature', 'feels', 'wind', 'gust'];
+export const defaultReadings = ['temperature', 'humidity', 'dew', 'wind', 'direction'];
 export const windUnits = { mph: 1, 'km/h': 1.609344, 'm/s': 0.44704, kn: 0.8689762419 };
 export const playbackSpeeds = [0.5, 0.75, ...Array.from({length:19},(_,i)=>1+i*0.5)];
 export const lastFrameMultipliers=Array.from({length:21},(_,i)=>Number((1+i*0.2).toFixed(1)));

@@ -18,7 +18,7 @@ async function fixture(t){const dir=await mkdtemp(join(tmpdir(),'sqlite-radar-')
 test('SQLite acquisition seeds two hours, preserves 4/6h gaps and survives restart without sidecars',async t=>{
   const {dir,store}=await fixture(t),time=Math.floor(Date.now()/600000)*600000;
   const provider={getHistory:async()=>Array.from({length:13},(_,i)=>({time:time/1000-(12-i)*600})),getTile:async()=>png};
-  const options={store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})};
+  const options={store,views,now:()=>time+300000,selection:()=>({main:'rainviewer',overview:'same'})};
   const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},options);
   await radar.refresh();
   assert.equal(radar.status().frames.length,13);assert.ok(radar.status().frames.every(f=>f.url.startsWith('/archive/media/')&&f.overviewUrl));
@@ -57,7 +57,7 @@ test('pressure can roll beyond a stalled radar while bounded Live survives resta
   assert.ok(archive.live().frames[0].url&&archive.live().frames[0].overviewUrl);
   await store.close();store=await createHistoryStore(dir,{now:time});
   const requested=new Set(),provider={getHistory:async()=>Array.from({length:13},(_,i)=>({time:time/1000-(12-i)*600})),getTile:async frame=>{requested.add(frame.time);return png;}};
-  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})});
+  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time+300000,selection:()=>({main:'rainviewer',overview:'same'})});
   assert.equal(radar.status().frames[0].time,time/1000-600);
   await radar.refresh();
   assert.deepEqual([...requested],[time/1000]);
@@ -70,7 +70,7 @@ test('switching back to an inactive source reacquires its pressure-pruned images
   const {dir,store}=await fixture(t),time=Math.floor(Date.now()/600000)*600000,context=hash(views);
   let calls=0,selected={main:'rainviewer',overview:'same'};
   const provider={getHistory:async()=>[{time:time/1000}],getTile:async()=>{calls++;return png;}};
-  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>selected});
+  const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{store,views,now:()=>time+300000,selection:()=>selected});
   await store.protect([{context,main:'rainviewer',overview:'rainviewer'}]);await radar.refresh();
   const next={main:'rainbow',overview:'same'};
   assert.equal((await radar.configure(next,async()=>{selected=next;})).status,200);
@@ -100,7 +100,7 @@ test('pressure during source commit preserves new Live, survives restart, and re
   let store=await createHistoryStore(dir,{now:time}),selected={main:'rainviewer',overview:'same'};
   t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
   const provider={getHistory:async()=>[{time:time/1000}],getTile:async()=>png};
-  const options=()=>({store,views,now:()=>time+300000,waitForSettle:()=>false,selection:()=>selected});
+  const options=()=>({store,views,now:()=>time+300000,selection:()=>selected});
   let radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},options());
   await store.protect([radar.protection()]);await radar.refresh();await store.maintain({space:full});
   const next={main:'rainbow',overview:'same'};
@@ -122,7 +122,7 @@ test('map replacement protects both views during pressure and releases the old m
   const provider={getHistory:async()=>[{time:time/1000}],getTile:async()=>png};let interleave=false;
   const maps=await createMapSettings(dir,{prepare:async()=>{},
     radarFactory:async(_directory,_provider,options)=>{
-      const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{...options,store,now:()=>time+300000,waitForSettle:()=>false,selection:()=>({main:'rainviewer',overview:'same'})});
+      const radar=await createRadarSources(dir,{rainviewer:provider,rainbow:provider},{...options,store,now:()=>time+300000,selection:()=>({main:'rainviewer',overview:'same'})});
       const refresh=radar.refresh;radar.refresh=async()=>{await refresh();if(interleave)await store.maintain({space:full});};return radar;
     },protectRadar:radars=>store.protect(radars.map(radar=>radar.protection()))});
   await store.protect([maps.current().radar.protection()]);await maps.current().radar.refresh();await store.maintain({space:full});

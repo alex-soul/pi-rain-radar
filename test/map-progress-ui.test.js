@@ -28,4 +28,14 @@ test('map progress stays visible over old frames, distinguishes preview and perm
   assert.equal($('empty').hidden,false);
   context.paintMapUpdate({applying:false,error:null});
   assert.equal($('empty').hidden,true);
+  context.displayed=null;context.sequence=[];context.historyLoading=false;
+  context.paintMapUpdate(null);
+  assert.equal($('empty').hidden,false,'first acquisition stays visible without a map-change job');
+  assert.match($('emptyp').textContent,/Acquiring the first radar history/);
+  context.status.error='Provider unavailable';context.paintMapUpdate(null);
+  assert.match($('emptyp').textContent,/Retrying automatically/);
+  context.displayed={time:1};context.paintMapUpdate(null);
+  assert.equal($('empty').hidden,true,'cached or successfully acquired frames remove startup message');
+  context.displayed=null;context.status.radarDisabled=true;context.paintMapUpdate(null);
+  assert.equal($('empty').hidden,true,'intentional collection disable is not fake acquisition');
 });

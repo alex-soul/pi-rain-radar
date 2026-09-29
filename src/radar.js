@@ -16,7 +16,7 @@ import { getHistory, getTile } from "./provider.js";
 export async function createRadar(
   directory,
   provider = { getHistory, getTile },
-  { now = Date.now, settleMs = 300000, waitForSettle = () => true, onEvent = () => {}, nextRefreshAt = () => now() + 300000, persistence = null, views = defaultViews, storageKey = '', manageCleanup = true, onObservation = async()=>{} } = {},
+  { now = Date.now, onEvent = () => {}, nextRefreshAt = () => now() + 300000, persistence = null, views = defaultViews, storageKey = '', manageCleanup = true, onObservation = async()=>{} } = {},
 ) {
   const {view, viewKey, overviewView, overviewKey} = views;
   const historyFile = storageKey ? `history-${storageKey}.json` : 'history.json';
@@ -134,12 +134,10 @@ export async function createRadar(
       Array.isArray(entry) && Number.isSafeInteger(entry[0]) && entry[0] > 0 &&
       Number.isFinite(entry[1]) && entry[1] >= 0 && entry[1] <= now()
     ).slice(-13));
-  } catch { /* Missing or invalid state safely starts a fresh waiting period. */ }
+  } catch { /* Missing or invalid legacy first-seen state starts fresh. */ }
   let connectionStarted = false, connectionReady = false, lastFailed = false;
   async function refresh(startedAt = now()) {
     if (busy) return;
-    // Snapshot before any await: a settings change affects the next acquisition only.
-    const delay = waitForSettle() ? settleMs : 0;
     if (!connectionStarted) { onEvent('radar-start'); connectionStarted = true; }
     busy = true;
     let incomplete = false, acquisitionFailed = false;
@@ -161,13 +159,9 @@ export async function createRadar(
       const known = new Set(frames.map(frame => frame.time));
       const listed = new Set(available.map(frame => frame.time));
       firstSeen = new Map([...firstSeen].filter(([time]) => listed.has(time) && !known.has(time)));
-      const newest = available.at(-1).time;
-      const recovering = !frames.length || newest - frames.at(-1).time >= 1800;
       for (const frame of available) {
         if (!known.has(frame.time)) {
-          // Old history is already settled when bootstrapping or catching up.
-          if (recovering && frame.time < newest) firstSeen.set(frame.time, startedAt - settleMs);
-          else if (!firstSeen.has(frame.time)) firstSeen.set(frame.time, startedAt);
+          if (!firstSeen.has(frame.time)) firstSeen.set(frame.time, startedAt);
           if(Number.isFinite(frame.firstSeenAt)&&frame.firstSeenAt<=observedAt)
             firstSeen.set(frame.time,Math.min(firstSeen.get(frame.time),frame.firstSeenAt));
         }
@@ -175,7 +169,8 @@ export async function createRadar(
       if(persistence)await persistence.saveSettling([...firstSeen]);
       else {await writeFile(join(directory, `${settlingFile}.tmp`), JSON.stringify([...firstSeen]));
       await rename(join(directory, `${settlingFile}.tmp`), join(directory, settlingFile));}
-      const eligible = available.filter(frame => known.has(frame.time) || observedAt - firstSeen.get(frame.time) >= delay);
+      // Attempt every offered timestamp immediately; incomplete tiles still fail closed.
+      const eligible = available;
       const currentLatest = frames.at(-1)?.time ?? 0;
       if (!eligible.some(frame => !known.has(frame.time) && frame.time >= currentLatest - 7200)) {
         error = null;
@@ -276,10 +271,9 @@ export async function createRadar(
     const known = new Set(frames.map(frame => frame.time));
     const pending = [...firstSeen].filter(([time]) => !known.has(time));
     if (!pending.length || error) return null;
-    const eligibleAt = Math.min(...pending.map(([, seen]) => seen + (waitForSettle() ? settleMs : 0)));
     const pollAt = nextRefreshAt();
     if (!Number.isFinite(pollAt)) return { state: "waiting", expectedAt: null };
-    const expectedAt = pollAt + Math.max(0, Math.ceil((eligibleAt - pollAt) / 300000)) * 300000;
+    const expectedAt = pollAt;
     return { state: "waiting", expectedAt };
   }
   return {

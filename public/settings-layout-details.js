@@ -41,8 +41,6 @@ export function setupReviewRadar(){
  const providers=make('<div class="review-radar-providers"></div>');
  radar.append(providers);providers.append($('rainviewer-config'),rainbow);
  radar.querySelector('.radar-source-column').classList.add('settings-group','review-radar-selection');
- const settling=make('<div class="settings-group review-settling"></div>');
- settling.append($('radar-settling').closest('label'),$('radar-settling-note'));providers.append(settling);
  const enable=$('review-rainbow-collect').closest('.review-collection');rainbow.insertBefore(enable,$('rainbow-cap').closest('label'));
  target.append($('rainbow-cap').closest('label'),$('rainbow-limit-fields'),$('rainbow-limit-save'),$('rainbow-limit-note'));
  target.append(make('<p class="review-muted">One monthly request allowance shared by Rainbow rain and clouds.</p>'));
@@ -54,6 +52,7 @@ export function setupReviewRadar(){
  const providerGroup=make('<section class="settings-group review-provider-group" aria-labelledby="provider-status-title"></section>');
  providerHeading.before(providerGroup);
  providerGroup.append(providerHeading,document.querySelector('.provider-links'));
+ providerGroup.querySelector('.provider-links').append(make('<a href="https://status.rainbow.ai/" target="_blank" rel="noopener noreferrer">Rainbow service status</a>'));
  const originalMapStatus=new Map();
  function paint(){
   for(const provider of ['rainviewer','rainbow']){

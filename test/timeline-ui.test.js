@@ -48,7 +48,7 @@ test('live and historical keyboard navigation skip missing slots without getting
     const handlers={};let shown;
     const c=vm.createContext({historyWindow,sequence:frames.filter((_,i)=>i!==5),index:4,playing:true,
       $:()=>({addEventListener:(key,fn)=>handlers[key]=fn}),showFrame:()=>{shown=c.index;}});
-    vm.runInContext(app.slice(app.indexOf('// Keyboard navigation skips'), app.indexOf('async function decodeFrames')),c);
+    vm.runInContext(app.slice(app.indexOf('// Keyboard navigation skips'), app.indexOf("for(const [id,delta]of")),c);
     handlers.keydown({key:'ArrowRight',preventDefault(){}});assert.equal(shown,5);assert.equal(c.sequence[shown].time,63600);
     handlers.keydown({key:'Home',preventDefault(){}});assert.equal(shown,0);
     handlers.keydown({key:'End',preventDefault(){}});assert.equal(shown,11);

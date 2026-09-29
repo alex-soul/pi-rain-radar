@@ -7,7 +7,7 @@ function normalizeGust(value) {
   return gustChoices.slice(1).reduce((best, pick) => Math.abs(pick-value) < Math.abs(best-value) ? pick : best, 15);
 }
 const preferences = { showScale: true, autoHide: false, autoHideWeather: false, autoHideButtons: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
-preferences.readingOrder = Object.keys(readingNames);
+preferences.readingOrder = [...defaultReadings,...Object.keys(readingNames).filter(id=>!defaultReadings.includes(id))];
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));
   for (const key of ['showScale', 'autoHide', 'autoHideWeather', 'autoHideButtons']) if (typeof saved?.[key] === 'boolean') preferences[key] = saved[key];
@@ -103,7 +103,7 @@ export function setupWidgetLayer(panel) {
 }
 
 // Screen preferences affect only presentation, never acquisition or map rendering.
-export function setupDisplaySettings(canEdit) {
+export function setupDisplaySettings(canEdit,canEditLocal=canEdit) {
   const footer = document.querySelector('footer');
   const scale = document.getElementById('map-scale');
   const showScale = document.getElementById('show-map-scale');
@@ -123,13 +123,13 @@ export function setupDisplaySettings(canEdit) {
   const hold=document.getElementById('last-frame-multiplier');
   hold.replaceChildren(...lastFrameMultipliers.map(value=>new Option(value+'×',String(value))));
   hold.value=String(preferences.lastFrameMultiplier);
-  hold.addEventListener('change',()=>{const value=Number(hold.value);if(canEdit()&&lastFrameMultipliers.includes(value)){preferences.lastFrameMultiplier=value;persist();window.dispatchEvent(new Event('radar-playback-speed'));}hold.value=String(preferences.lastFrameMultiplier);});
+  hold.addEventListener('change',()=>{const value=Number(hold.value);if(canEditLocal()&&lastFrameMultipliers.includes(value)){preferences.lastFrameMultiplier=value;persist();window.dispatchEvent(new Event('radar-playback-speed'));}hold.value=String(preferences.lastFrameMultiplier);});
   speed.max=String(playbackSpeeds.length-1);
 
   hours.value = String(preferences.playbackHours);
   hours.addEventListener('change', () => {
     const value = Number(hours.value);
-    if (canEdit() && [2,4,6].includes(value)) {
+    if (canEditLocal() && [2,4,6].includes(value)) {
       preferences.playbackHours = value; persist(); window.dispatchEvent(new Event('radar-playback-window'));
     }
     hours.value = String(preferences.playbackHours);
@@ -154,7 +154,7 @@ export function setupDisplaySettings(canEdit) {
     applyWeatherChoices();
   });
   for (const input of readings) input.addEventListener('change', () => {
-    if (canEdit()) { preferences.readings = readings.filter(item => item.checked).map(item => item.dataset.readingChoice); persist(); }
+    if (canEditLocal()) { preferences.readings = readings.filter(item => item.checked).map(item => item.dataset.readingChoice); persist(); }
     applyWeatherChoices();
   });
   function applySpeed() {
@@ -164,7 +164,7 @@ export function setupDisplaySettings(canEdit) {
   }
   speed.addEventListener('input', () => {
     const value = playbackSpeeds[Number(speed.value)];
-    if (canEdit() && value) { preferences.playbackSpeed = value; persist(); window.dispatchEvent(new Event('radar-playback-speed')); }
+    if (canEditLocal() && value) { preferences.playbackSpeed = value; persist(); window.dispatchEvent(new Event('radar-playback-speed')); }
     applySpeed();
   });
   applyWeatherChoices(); applySpeed();
@@ -178,7 +178,7 @@ export function setupDisplaySettings(canEdit) {
     footerHidden = value;
     footerToggle.setAttribute('aria-expanded', String(!value));
     document.body.classList.toggle('footer-hidden', value);
-    for (const item of content) item.inert = value || document.body.classList.contains('screen-locked');
+    for (const item of content) item.inert = value;
   }
   function schedule() {
     clearTimeout(timer);
@@ -215,7 +215,7 @@ export function setupDisplaySettings(canEdit) {
   }
   for (const [input, key] of [[showScale, 'showScale'], [autoHide, 'autoHide'], [autoWeather, 'autoHideWeather'], [autoButtons, 'autoHideButtons']]) {
     input.addEventListener('change', () => {
-      if (canEdit()) {
+      if (canEditLocal()) {
         preferences[key] = input.checked;
         try { localStorage.setItem('radar-display', JSON.stringify(preferences)); } catch { /* Session-only fallback. */ }
       }
@@ -223,7 +223,7 @@ export function setupDisplaySettings(canEdit) {
     });
   }
   gustMinutes.addEventListener('change', () => {
-    if (!canEdit()) { gustMinutes.value = preferences.gustCacheMinutes; return; }
+    if (!canEditLocal()) { gustMinutes.value = preferences.gustCacheMinutes; return; }
     const value = Number(gustMinutes.value);
     if (gustMinutes.value === '' || !gustChoices.includes(value)) { gustMinutes.reportValidity(); return; }
     preferences.gustCacheMinutes = value;
@@ -246,7 +246,7 @@ export function setupDisplaySettings(canEdit) {
     else schedule();
   });
   const dialogs = new MutationObserver(wake);
-  for (const dialog of document.querySelectorAll('dialog')) dialogs.observe(dialog, { attributes: true, attributeFilter: ['open'] });
+  dialogs.observe(document.body, {subtree:true,attributes:true,attributeFilter:['open']});
   function size() {
     document.body.style.setProperty('--footer-height', `${footer.offsetHeight}px`);
     // Match the main SVG's xMidYMid slice scale, including cropped portrait views.

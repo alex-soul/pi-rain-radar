@@ -59,13 +59,13 @@ test('display preferences suspend idle hiding during interaction and dialogs, an
   events.click({target:{closest:selector=>selector==='#weather-dock'}});
   assert.equal(dispatched.at(-1).detail,false);
   events.click();assert.equal(dispatched.at(-1).detail,true);
-  // Lock still permits automatic dock reveal, without enabling their controls.
+  // Lock permits automatic dock reveal and the separately guarded playback exception.
   node('auto-hide-footer').checked=true;node('auto-hide-footer').handlers.change();
   classes.add('screen-locked');timer();
   assert.ok(classes.has('footer-hidden'));assert.equal(dispatched.at(-1).detail,false);
   events['radar-settings-wake']({target:{}});
   assert.ok(!classes.has('footer-hidden'));assert.equal(dispatched.at(-1).detail,true);
-  assert.ok(content.every(x=>x.inert));
+  assert.ok(content.every(x=>!x.inert));
   timer();assert.ok(classes.has('footer-hidden'));assert.equal(dispatched.at(-1).detail,false);
   // With auto-hide off, opening Settings/enabling lock cannot undo manual collapse.
   classes.delete('screen-locked');
@@ -194,8 +194,8 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
   cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
-  assert.deepEqual(saved.readingOrder,['feels','temperature','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression','sun','moon']);
-  assert.deepEqual(saved.readings,['temperature','feels','wind','gust']);
+  assert.deepEqual(saved.readingOrder,['humidity','temperature','dew','wind','direction','feels','gust','visibility','pressure','uv','depression','sun','moon']);
+  assert.deepEqual(saved.readings,['temperature','humidity','dew','wind','direction']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
 });
 

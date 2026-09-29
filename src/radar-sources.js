@@ -4,7 +4,7 @@ import { createRadar } from './radar.js';
 import { hash } from './map.js';
 
 export async function createRadarSources(directory, providers, {
-  store, views, now = Date.now, waitForSettle, selection, enabled=()=>true, onEvent = ()=>{}, historyDepth=13, nextRefreshAt = () => now() + 300000,
+  store, views, now = Date.now, selection, enabled=()=>true, onEvent = ()=>{}, historyDepth=13, nextRefreshAt = () => now() + 300000,
 } = {}) {
   const archive=await createRadarHistory(store,views,{now,selection:selection()});
   const workers=new Map();let busy=false,changing=false,storageError=null,capturing=Promise.resolve();
@@ -44,7 +44,7 @@ export async function createRadarSources(directory, providers, {
       };
       const persistence=await radarPersistence(store,directory,{context:archive.context,source,role:slot,now});
       if(persistence)for(const [time,at] of persistence.settling)providerSeen.get(source).set(time,Math.min(providerSeen.get(source).get(time)??Infinity,at));
-      workers.set(id,await createRadar(directory,provider,{persistence,now,waitForSettle,nextRefreshAt,manageCleanup:false,onEvent:code=>{if(code==='radar-error'||code==='radar-recovered')onEvent(code);},onObservation:r=>archive.add([{...r,source,key}]),storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
+      workers.set(id,await createRadar(directory,provider,{persistence,now,nextRefreshAt,manageCleanup:false,onEvent:code=>{if(code==='radar-error'||code==='radar-recovered')onEvent(code);},onObservation:r=>archive.add([{...r,source,key}]),storageKey:id,views:{view:target,viewKey:key,overviewView:target,overviewKey:key}}));
     }
     return workers.get(id);
   }

@@ -1,3 +1,4 @@
+import {dockText} from '../public/dock-format.js';
 import * as format from '../public/weather-format.js';
 import * as readings from '../public/weather-readings.js';
 import {formatTime} from '../public/time.js';
@@ -14,7 +15,7 @@ function fixture(zone='Europe/London') {
   const prefs={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa',directionFormat:'compass',directionConvention:'flow'};
   function node(){return {attributes:{},children:[],style:{},setAttribute(k,v){writes++;this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},getAttribute(){return 'true';},closest(){return this;},append(n){this.children.push(n);},replaceChildren(...children){writes++;this.children=children;}};}
   const document={querySelectorAll:()=>[],querySelector:()=>({content:zone}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
-  const c=vm.createContext({...format,...readings,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
+  const c=vm.createContext({dockText,...format,...readings,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
   return {nodes,prefs,paint:c.paintWeather,writes:()=>writes,setMinutes:v=>minutes=v};
 }
 test('Rain forecast uses baselines for zero and missing minutes, and replaces failed or expired charts with a red baseline',()=>{
@@ -40,7 +41,7 @@ test('Rain forecast uses baselines for zero and missing minutes, and replaces fa
 });
 test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
   const f=fixture(),s=state();f.paint(s,now);
-  assert.equal(f.nodes.get('weather-visibility').textContent,'0');assert.equal(f.nodes.get('weather-uv').textContent,'0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
+  assert.equal(f.nodes.get('weather-visibility').textContent,'0.0');assert.equal(f.nodes.get('weather-uv').textContent,'0.0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
   for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
   assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
   const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);

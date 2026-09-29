@@ -59,7 +59,7 @@ const rainbow=await createRainbow(directory,{monthlyLimit:radarSettings.requestL
   inUse:()=>{const s=radarSettings.current();return collectionEnabled('rainbow')&&(s.main==='rainbow'||s.overview==='rainbow')||maps.current().radar.status().fetching;},onEvent:diagnostics.record});
 runtimeRainbowKey=null;
 const rainviewerProvider={getHistory:()=>rainviewer.getHistory({enabled:()=>collectionEnabled('rainviewer')}),getTile:(frame,tile)=>rainviewer.getTile(frame,tile,{enabled:()=>collectionEnabled('rainviewer')})};
-const maps = await createMapSettings(directory,{radarFactory:(directory,_,options)=>createRadarSources(directory,{rainviewer:rainviewerProvider,rainbow},{...options,store:history,enabled:collectionEnabled,historyDepth:process.env.RADAR_TEST_HISTORY==='2'?2:13,selection:radarSettings.current}),nextRefreshAt:()=>nextRefreshAt,waitForSettle:radarSettings.waitForSettle,onEvent:diagnostics.record,onChange:settings=>weather.setLocation(settings),protectRadar:radars=>history.protect(radars.map(radar=>radar.protection()))});
+const maps = await createMapSettings(directory,{radarFactory:(directory,_,options)=>createRadarSources(directory,{rainviewer:rainviewerProvider,rainbow},{...options,store:history,enabled:collectionEnabled,historyDepth:process.env.RADAR_TEST_HISTORY==='2'?2:13,selection:radarSettings.current}),nextRefreshAt:()=>nextRefreshAt,onEvent:diagnostics.record,onChange:settings=>weather.setLocation(settings),protectRadar:radars=>history.protect(radars.map(radar=>radar.protection()))});
 radarSettings.setApply((next,commit)=>{
   if(maps.status().busy)return {status:409,error:'Wait for the map update to finish.'};
   if((next.main==='rainbow'||next.overview==='rainbow')&&!rainbow.configured())return {status:400,error:'Save a Rainbow key before selecting it.'};
@@ -101,6 +101,8 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
+  ...['local-ui','local-idle','local-preferences','dock-format','trend-history-client'].map(name=>['/'+name+'.js',[name+'.js','text/javascript']]),
+  ['/local-ui.css',['local-ui.css','text/css']],
   ['/suncalc.js',['suncalc.js','text/javascript']],
   ['/suncalc-license.txt',['suncalc-license.txt','text/plain']],
   ['/astronomy-model.js',['astronomy-model.js','text/javascript']],
@@ -201,6 +203,17 @@ const server = createServer(async (req, res) => {
       const template=(await readFile('public/embed.html','utf8')).replace('{{EMBED_THEME}}',config.theme).replace('{{EMBED_HOURS}}',String(config.hours)).replace('{{EMBED_SPEED}}',String(config.speed)).replace('{{EMBED_BASEMAP}}',config.theme==='dark'?'basemap-dark.svg':'basemap.svg');
       res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-store'});
       return res.end(req.method==='HEAD'?undefined:mapPage(template,active));
+    }
+    if(path==='/api/weather-history'){
+      const params=new URL(req.url,'http://localhost').searchParams;
+      const end=Number(params.get('end')),hours=Number(params.get('hours'));
+      if(params.get('map')!==active.id){res.writeHead(409);return res.end();}
+      if(!/^\d+$/.test(params.get('end')??'')||!Number.isSafeInteger(end*1000)||end<=0||end*1000>Date.now()||![2,4,6,12,24].includes(hours)){
+        res.writeHead(400);return res.end();
+      }
+      const result=await loadWeatherHistory(history,active.settings,end,hours,{includeForecasts:false});
+      res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'private, max-age=30'});
+      return res.end(req.method==='HEAD'?undefined:JSON.stringify(result));
     }
     if (path === "/api/archive") {
       const params = new URL(req.url, "http://localhost").searchParams;

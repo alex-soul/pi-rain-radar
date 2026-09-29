@@ -18,7 +18,9 @@ function paint() {
       link.removeAttribute('aria-disabled'); delete link.dataset.lockedLink; blockedLinks.delete(link);
     }
   }
-  for (const selector of ['.map-controls','#weather-dock','.playback','#overview','#camera','#rain-forecast','#weather-trends','#astronomy','#stats','#footer-toggle']) {
+  for (const selector of ['.map-controls','#weather-dock','#overview','#camera','#rain-forecast','#weather-trends','#astronomy','#stats','#footer-toggle','#playback-mode','#bottom-edit']) {
+    document.querySelector(selector)?.setAttribute('data-lock-target','');
+    if(!document.querySelector(selector))continue;
     document.querySelector(selector).inert = locked || (selector === '.playback' && document.body.classList.contains('footer-hidden'));
   }
 }
@@ -26,6 +28,7 @@ function paint() {
 function guard(event) {
   if (!locked) return;
   const target = event.target;
+  if(target.closest?.('#timeline,#play,#frame-count,#availability-panel,#capture-previous,#capture-next'))return;
   if (target.closest?.('#settings-dialog, #map-preview-dialog, #radar-confirm-dialog, #power-dialog, #power-ack-dialog, #external-dialog, #review-camera-dialog, #review-preview-dialog, #review-saved-dialog, #settings-toggle, [data-provider-credit]')) return;
   if (event.type === 'click' || event.type === 'pointerdown' || event.type === 'keydown') {
     document.getElementById('settings-toggle').hidden = false;
@@ -47,8 +50,8 @@ export function setupScreenLock(canEdit) {
     if (!canEdit()) { toggle.checked = locked; return; }
     locked = toggle.checked;
     try { localStorage.setItem(storageKey, String(locked)); } catch { /* Session-only fallback. */ }
-    window.dispatchEvent(new Event('radar-screen-lock'));
     paint();
+    window.dispatchEvent(new Event('radar-screen-lock'));
   });
   paint();
 }

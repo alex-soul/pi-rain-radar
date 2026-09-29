@@ -37,8 +37,6 @@ const messages = {
   'weather-ready': ['Weather', 'info', 'Current weather and minute forecast connection ready.'],
   'weather-recovered': ['Weather', 'info', 'Current weather and minute forecast updates recovered.'],
   'weather-key': ['Weather', 'info', 'OpenWeather configuration changed.'],
-  'settling-on': ['Radar', 'info', 'Radar settling enabled for the next acquisition.'],
-  'settling-off': ['Radar', 'info', 'Radar settling disabled for the next acquisition.'],
   'storage-error': ['System', 'warning', 'Could not save cached data. The in-memory result is still available.'],
 };
 export function createDiagnostics({ now = Date.now } = {}) {

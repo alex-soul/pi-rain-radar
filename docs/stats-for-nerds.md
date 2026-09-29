@@ -26,7 +26,6 @@ Main, Overview and OpenWeather have separate columns. Each radar column identifi
 | Latest observation | The newest observation timestamp and its age, not the currently animated frame's timestamp. |
 | Last check | The most recent reported acquisition check. A check need not produce a new observation. |
 | Next check (estimate) | The expected next check, not a guarantee that the provider will offer a new frame. |
-| Settling · eligible check | Shown while an observation is waiting under the separate settling policy. This is not Live publication grace. |
 
 These acquisition details stay current while browsing Archive. They describe the currently selected providers; older archive observations can have different provider provenance.
 
@@ -51,7 +50,7 @@ Monthly usage appears once under the Rainbow column (Main if both use Rainbow), 
 
 ## Gap history and late arrivals
 
-These two diagnostics preserve information that current availability counts lose after recovery. They do not alter playback, acquisition, settling or provider requests.
+These two diagnostics preserve information that current availability counts lose after recovery. They do not alter playback, acquisition or provider requests.
 
 | Counter | Meaning |
 | --- | --- |
@@ -68,7 +67,7 @@ The counters overlap; do not add them together as a total. The display reports t
 
 Tracking runs in the backend without a browser left open and retains evidence across ordinary restarts within the configured shared retention (seven days by default). It begins for new observations after tracking/provider activation; imported history and unobserved downtime are not assumed clean. Incident tracking reports tracked slots and marks partial coverage or Untracked. Existing observations without reliable arrival/gap evidence cannot be retrospectively classified as on-time or late. Archive coverage can report only evidence actually retained; opening an old window must not manufacture gap events.
 
-These measure local availability, not provider fault. Provider publication timing, polling, connectivity and deliberate settling can all contribute to when a frame becomes usable.
+These measure local availability, not provider fault. Provider publication timing, polling and connectivity can all contribute to when a frame becomes usable.
 
 ## Further refinements
 

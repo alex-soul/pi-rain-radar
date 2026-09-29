@@ -1,12 +1,12 @@
 const controls = [
-  {id:'astronomy-toggle',label:'Sun and Moon'},
-  {id:'weather-trends-toggle',label:'Weather history'},
   { id: 'clock-toggle', label: 'Clock' },
-  { id: 'overview-toggle', label: 'Overview' },
-  { id: 'camera-toggle', label: 'Camera', visible: false },
-  { id: 'rain-forecast-toggle', label: 'Rain forecast' },
   { id: 'history-toggle', label: 'Archive' },
+  { id: 'overview-toggle', label: 'Overview' },
+  { id: 'rain-forecast-toggle', label: 'Rain forecast' },
+  { id: 'camera-toggle', label: 'Camera', visible: false },
   { id: 'theme-toggle', label: 'Light / dark' },
+  {id:'astronomy-toggle',label:'Sun and Moon'},
+  {id:'weather-trends-toggle',label:'Weather trends'},
   { id: 'stats-toggle', label: 'Stats for nerds', visible: false },
 ];
 const key = 'radar-controls';
@@ -25,7 +25,7 @@ function apply() {
   for (const { id, visible } of layout) {
     const button = document.getElementById(id);
     button.hidden = !visible;
-    stack.append(button);
+    stack.insertBefore(button,document.getElementById('side-edit'));
   }
 }
 apply();
@@ -121,7 +121,7 @@ export function setupResponsiveControls() {
     const controls = stack.getBoundingClientRect(), weather = dock.getBoundingClientRect();
     const previous = parseFloat(stack.style.getPropertyValue('--controls-offset')) || 0;
     const naturalTop = controls.top - previous;
-    const collide = [...stack.children].filter(button=>!button.hidden).some(button=>{
+    const collide = [...stack.children].filter(button=>!button.hidden&&button.id!=='side-edit').some(button=>{
       const rect=button.getBoundingClientRect();
       return rect.left < weather.right+8 && rect.right > weather.left-8 && rect.top-previous < weather.bottom+8 && rect.bottom-previous > weather.top-8;
     });

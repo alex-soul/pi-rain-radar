@@ -4,7 +4,7 @@ import { formatTime } from './time.js';
 let input = {}, visible = false, previous = '';
 const zone = document.querySelector('meta[name="time-zone"]').content;
 const data = document.getElementById('stats-data');
-const connection = document.getElementById('stats-connection');
+const connection = document.createElement('dd');connection.id='stats-connection';
 const clock = value => value == null ? 'Unavailable' : formatTime(typeof value === 'string' ? Date.parse(value)/1000 : value/1000, {hour:'2-digit',minute:'2-digit'}, zone);
 function element(tag, text) { const node=document.createElement(tag);node.textContent=text;return node; }
 function row(list, name, value) { list.append(element('dt',name),element('dd',value)); }
@@ -14,17 +14,17 @@ function render() {
   // Round ages to minutes and avoid rebuilding unchanged content on the shared tick.
   const signature=JSON.stringify({...s,clouds:input.status?.clouds,now:Math.floor(s.now/60000)});
   if(signature===previous)return;previous=signature;
-  connection.textContent=`Backend: ${s.connection.toLowerCase()}`;connection.dataset.stale=String(s.stale);
+  connection.textContent=s.connection;connection.dataset.stale=String(s.stale);
   const grid=element('div','');grid.className='stats-grid';
   for(const [role,name] of [['main','Main'],['overview','Overview']]) {
     const source=s.sources[role],column=element('div',''),list=element('dl','');
     column.append(element('strong',`${name} · ${source?.source==='disabled'?'Disabled':source?.source==='rainbow'?'Rainbow':source?.source==='rainviewer'?'RainViewer':'Unavailable'}`));
+    if(role==='main')list.append(element('dt','Backend'),connection);
     const activity=!s.stale && source?.fetching ? source.nextUpdate?.state==='fetching'?'Fetching…':'Checking…':null;
     row(list,'Acquisition',s.stale?'Last received':activity ?? (source?.state==='disabled'?'Disabled':source ? source.error?'Problem':source.state==='ready'?'Ready':source.state==='stale'?'Stale observation':'Waiting' : 'Unavailable'));
     row(list,'Latest observation',source?.time ? `${clock(source.time*1000)} · ${Math.max(0,Math.floor((s.now-source.time*1000)/60000))} min ago`:'Unavailable');
     row(list,'Last check',clock(source?.checkedAt));
     row(list,'Next check (estimate)',activity ?? clock(source?.nextCheckAt));
-    if(source?.nextUpdate?.state==='waiting')row(list,'Settling · eligible check',clock(source.nextUpdate.expectedAt));
     column.append(list,element('h4',s.windowLabel));
     const c=s.counts?.[role],counts=element('dl','');
     row(counts,'Window ending',clock(s.end == null ? null : s.end*1000));
@@ -36,6 +36,18 @@ function render() {
     column.append(counts);
     grid.append(column);
   }
+  const clouds=input.status?.clouds,cloudColumn=element('div',''),cloudInfo=element('dl','');
+  cloudColumn.append(element('strong','Clouds · Rainbow'));
+  row(cloudInfo,'Acquisition',s.stale?'Last received':clouds?.collecting?'Fetching…':clouds?.state??'Unavailable');
+  row(cloudInfo,'Collection maps',clouds?.map==='both'?'Main + Overview':clouds?.map==='main'?'Main':clouds?.map==='overview'?'Overview':'Unavailable');
+  for(const [role,name] of [['main','Main observation'],['overview','Overview observation']]){
+    const enabled=clouds?.map===role||clouds?.map==='both';
+    row(cloudInfo,name,!clouds?'Unavailable':enabled?clock(clouds.latest?.[role]):'Not selected');
+  }
+  row(cloudInfo,'Last collection',clock(clouds?.lastSuccess));
+  row(cloudInfo,'Next check (estimate)',!s.stale&&clouds?.collecting?'Fetching…':clock(clouds?.nextAt));
+  if(clouds?.error)row(cloudInfo,'Problem',clouds.error);
+  cloudColumn.append(cloudInfo);grid.append(cloudColumn);
   const weather=s.weather, weatherColumn=element('div',''),weatherInfo=element('dl','');
   weatherColumn.append(element('strong','OpenWeather'));
   if (!weather?.configured) row(weatherInfo,'Status',weather ? 'Not configured' : 'Unavailable');
@@ -57,9 +69,8 @@ function render() {
   provider.append(element('strong','Rainbow · measured usage'));
   row(usageList,'Month',usage?.month??'Unavailable');row(usageList,'Requests this month',usage?.requests??'Unavailable');row(usageList,'Tiles this month',usage?.tiles??'Unavailable');
   const limit=input.status?.stats?.rainbow?.monthlyLimit;row(usageList,'Monthly request limit',limit==null?'No cap':String(limit));if(limit!=null&&usage)row(usageList,'Requests remaining',String(Math.max(0,limit-usage.requests)));
-  row(usageList,'Cloud acquisition',input.status?.clouds?.state??'Disabled');
   provider.append(usageList);grid.append(provider);
   data.replaceChildren(grid);
 }
-setupFloatingWidget({id:'stats',storageKey:'radar-stats',width:620,minWidth:560,height:600,maxHeight:640,minHeight:220,startX:80,startY:160,onVisibility(value){visible=value;render();}});
+setupFloatingWidget({id:'stats',storageKey:'radar-stats',width:1000,minWidth:560,maxWidth:1100,height:600,maxHeight:640,minHeight:220,startX:80,startY:160,onVisibility(value){visible=value;render();}});
 export function updateStats(value) { input=value;render(); }

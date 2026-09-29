@@ -56,16 +56,14 @@ test('map apply is atomic, persistent, bounded to one job and keeps the previous
   assert.equal(maps.status().applying,false);assert.equal(maps.status().progress,null);
   assert.equal(maps.current().settings.name,'Paris');assert.match(maps.status().error,/Existing map kept/);
 });
-test('map replacements retain the shared dynamic radar policy and event sink',async t=>{
-  const directory=await fixture(t);let wait=true;const policies=[],events=[];
-  const waitForSettle=()=>wait,onEvent=code=>events.push(code);
+test('map replacements retain the event sink without forwarding a settling policy',async t=>{
+  const directory=await fixture(t);const policies=[],events=[];
+  const waitForSettle=()=>true,onEvent=code=>events.push(code);
   const maps=await createMapSettings(directory,{prepare:async()=>{},waitForSettle,onEvent,
     radarFactory:async(_d,_p,options)=>{policies.push(options);return {refresh:async()=>{},status:()=>({frames:[{time:123}]})};}});
-  wait=false;
   maps.configure({...defaultSettings,lat:48.8566,lon:2.3522});await idle(maps);
   assert.equal(policies.length,2);
-  for(const policy of policies) {assert.equal(policy.waitForSettle(),false);assert.equal(policy.onEvent,onEvent);}
-  wait=true;assert.equal(policies[1].waitForSettle(),true);
+  for(const policy of policies) {assert.equal(policy.waitForSettle,undefined);assert.equal(policy.onEvent,onEvent);}
 });
 
 test('offline geometry renders another country and dynamic HTML escapes labels and aligns annotations',async t=>{
@@ -90,10 +88,10 @@ test('archives and restart caches remain scoped to each centre and zoom',async t
   const dir=await fixture(t),now=Date.now(),time=Math.floor(now/600000)*600;
   const tile=await sharp({create:{width:256,height:256,channels:4,background:'#126789'}}).png().toBuffer();
   const provider={getHistory:async()=>[{time}],getTile:async()=>tile};
-  const first=await createRadar(dir,provider,{now:()=>now,settleMs:0});await first.refresh();
+  const first=await createRadar(dir,provider,{now:()=>now});await first.refresh();
   assert.equal(first.archive.available().times.length,1);
   const views=makeViews({...defaultSettings,lat:48.8566,lon:2.3522});
-  const second=await createRadar(dir,provider,{now:()=>now,settleMs:0,views,storageKey:'paris'});
+  const second=await createRadar(dir,provider,{now:()=>now,views,storageKey:'paris'});
   assert.equal(second.archive.available().times.length,0);assert.equal(second.status().frames.length,0);
   await second.refresh();
   assert.notEqual(first.status().frame.url,second.status().frame.url);

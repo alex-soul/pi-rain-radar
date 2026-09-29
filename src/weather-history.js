@@ -8,14 +8,14 @@ export async function saveWeatherHistory(store,{context,current,forecast,gust,re
   if(records.length)await store.put(records);
 }
 
-export async function loadWeatherHistory(store,location,end,hours){
+export async function loadWeatherHistory(store,location,end,hours,{includeForecasts=true}={}){
   if(!Number.isSafeInteger(end)||!Number.isInteger(hours)||hours<1||hours>24)throw Error('Invalid weather window');
   // Earliest displayed target - two-hour chart - maximum 60-minute lead -
   // inclusive ten-minute matching tolerance. All reads still obey shared cutoff.
   const start=Math.max(0,(end-hours*3600-11400)*1000),context=weatherContext(location);
   const query={source:'openweather',context,start,end:end*1000};
   const [weather,forecasts,presentations,policies,boundary,policy]=await Promise.all([
-    historyRows(store,{...query,kind:'weather'}),historyRows(store,{...query,kind:'forecast'}),
+    historyRows(store,{...query,kind:'weather'}),includeForecasts?historyRows(store,{...query,kind:'forecast'}):[],
     historyRows(store,{...query,source:'presentation',kind:'weather'}),
     historyRows(store,{kind:'transition',source:'weather-policy',context:'appliance',start,end:end*1000}),
     store.contextBefore({source:'weather-policy',context:'appliance',end:start}),store.weatherState('policy')]);

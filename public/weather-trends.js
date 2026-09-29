@@ -1,3 +1,5 @@
+import {editIcon,setupAffordances} from './local-ui.js';
+import {localPreferences,trendWindow,captureInWindow} from './local-preferences.js';
 import {setupFloatingWidget} from './floating-widget.js';
 import {weatherPreferences,gustCacheMinutes} from './display.js';
 import {weatherReadings} from './weather-readings.js';
@@ -6,10 +8,12 @@ import {createWeatherReplay} from './history-weather-model.js';
 import {formatTime} from './time.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 const mainWidget=setupFloatingWidget({id:'weather-trends',storageKey:'radar-weather-trends',width:440,height:220,minWidth:180,minHeight:150,maxHeight:420,startY:200});
+let valueHistoryRef=null,valueReplay=createWeatherReplay();
 let latestInput=null,replay=createWeatherReplay(),cache='',series={},chartKey='',historyRef=null,prefKey='',credits={openweather:false,other:''};
 export const weatherTrendCredits=()=>credits;
 export function paintWeatherTrends(input){
- latestInput=input;const {history,start,end,time,state,historical=false,zone}=input;
+ latestInput=input;const {history,time,state,historical=false,zone}=input;
+ const {start,end}=trendWindow(input.start,input.end,localPreferences.lookback);
  const prefs=weatherPreferences(),gust=gustCacheMinutes(),nextPrefs=JSON.stringify([prefs,gust]);
  if(history!==historyRef||nextPrefs!==prefKey){historyRef=history;prefKey=nextPrefs;cache=JSON.stringify([history,nextPrefs]);series=weatherSeries(history,prefs,gust);replay=createWeatherReplay(history);}
  const now=historical?time*1000:Date.now(),rows=weatherReadings(state,now,{historical,preferences:prefs,gustMinutes:gust});
@@ -42,9 +46,10 @@ export function paintWeatherTrends(input){
    svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
   }
  }
- const selectedTime=Math.max(start,Math.min(end,time??end)),selected=weatherReadings(replay.weather(selectedTime),selectedTime*1000,{historical:true,preferences:prefs,gustMinutes:gust});
+ const valueHistory=input.valueHistory??history;if(valueHistory!==valueHistoryRef){valueHistoryRef=valueHistory;valueReplay=createWeatherReplay(valueHistory);}
+ const selectedTime=time??end,selected=weatherReadings(valueReplay.weather(selectedTime),selectedTime*1000,{historical:true,preferences:prefs,gustMinutes:gust});
  for(const [i,[id]]of fields.entries()){
-  const cursor=$('trend-cursor-'+id),x=1+(selectedTime-start)/(end-start)*(sizes[i][0]-2);if(cursor){cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);}
+  const cursor=$('trend-cursor-'+id),x=1+(selectedTime-start)/(end-start)*(sizes[i][0]-2);if(cursor){cursor.style.display=captureInWindow(selectedTime,start,end)?'':'none';cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);}
   $('trend-value-'+id).textContent=selected[id].text+(['wind','gust','visibility','pressure'].includes(id)?' '+selected[id].unit:'');
  }
 }
@@ -69,28 +74,28 @@ try{detached=localStorage.getItem('radar-weather-charts-detached')==='true';}cat
 const windows=new Map();
 for(const [index,{id,label}] of controls.entries()){
  const panel=document.createElement('aside');panel.id='detached-'+id;panel.className='detached-trend';panel.tabIndex=0;panel.hidden=true;panel.setAttribute('aria-label',label+' history');
- const edit=document.createElement('button');edit.className='trend-edit';edit.type='button';edit.textContent='Edit';
+ const edit=document.createElement('button');edit.className='trend-edit';edit.type='button';editIcon(edit,'Edit Weather trends');
  edit.addEventListener('click',()=>{if(!document.body.classList.contains('screen-locked'))$('trend-editor').showModal();});
  const resize=document.createElement('button');resize.id=panel.id+'-resize';resize.className='detached-resize';resize.type='button';resize.textContent='◢';resize.setAttribute('aria-label','Resize '+label+' history. Drag or use arrow keys.');
- panel.append(resize);$('weather-trends').parentElement.append(panel);
+ panel.append(edit,resize);setupAffordances(panel,$('trend-editor'));$('weather-trends').parentElement.append(panel);
  const widget=setupFloatingWidget({id:panel.id,storageKey:'radar-chart-window-'+id,width:320,height:110,minWidth:180,minHeight:85,maxHeight:420,rememberVisibility:false,startX:28+(index%3)*36,startY:150+(index%5)*65});
  windows.set(id,{panel,edit,resize,widget});new ResizeObserver(()=>{if(latestInput)paintWeatherTrends(latestInput);}).observe(panel);
 }
 function apply() {
  const stack=$('trend-plots'),visible=mainWidget.isVisible(),hasCharts=layout.some(item=>item.visible);
  $('weather-trends').classList.toggle('charts-detached',detached&&hasCharts);
- $('trend-edit-store').append($('trend-edit'));
+ $('weather-trends').append($('trend-edit'));
  const last=layout.filter(item=>item.visible).at(-1)?.id;
  for(const {id,visible:enabled} of layout){
   const plot=document.querySelector(`.trend-mini[data-field="${id}"]`),entry=windows.get(id);
   plot.hidden=!enabled;
   const legend=plot.querySelector('.trend-mini-legend');
   plot.classList.toggle('chart-bottom',id===last);
-  if(detached){entry.panel.insertBefore(plot,entry.resize);legend.append(entry.edit);}
-  else{entry.edit.remove();stack.append(plot);if(id===last)legend.append($('trend-edit'));}
+  if(detached){entry.panel.insertBefore(plot,entry.resize);entry.panel.append(entry.edit);}
+  else{entry.panel.append(entry.edit);stack.append(plot);}
   entry.widget.setVisible(detached&&visible&&enabled);
  }
- if(!hasCharts)stack.append($('trend-edit'));
+
  $('trend-detach').checked=detached;
  chartKey='';if(latestInput)paintWeatherTrends(latestInput);
 }

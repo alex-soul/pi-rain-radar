@@ -1,5 +1,5 @@
 import { widgetBottom, setupWidgetLayer } from "./display.js";
-export function setupFloatingWidget({id, storageKey, width = 410, height = 138, minWidth = 300, minHeight = 108, maxHeight = 420, onVisibility = () => {}, rememberVisibility = true, startX = 18, startY = 230}) {
+export function setupFloatingWidget({id, storageKey, width = 410, height = 138, minWidth = 300, maxWidth = 640, minHeight = 108, maxHeight = 420, onVisibility = () => {}, rememberVisibility = true, startX = 18, startY = 230}) {
 const panel = document.getElementById(id);
 const raise = setupWidgetLayer(panel);
 const toggle = document.getElementById(`${id}-toggle`);
@@ -10,7 +10,7 @@ let preferredWidth = width, preferredHeight = height;
 const resizeHandle = document.getElementById(`${id}-resize`);
 try {
   const saved = JSON.parse(localStorage.getItem(storageKey));
-  if (Number.isFinite(saved?.width)) preferredWidth = Math.max(minWidth, Math.min(640, saved.width));
+  if (Number.isFinite(saved?.width)) preferredWidth = Math.max(minWidth, Math.min(maxWidth, saved.width));
   if (Number.isFinite(saved?.height)) preferredHeight = Math.max(minHeight, Math.min(maxHeight, saved.height));
   if (rememberVisibility && saved && typeof saved.visible === "boolean") visible = saved.visible;
   if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) position = saved;
@@ -33,7 +33,7 @@ function layout() {
   const footerTop = widgetBottom();
   panel.style.width = `${Math.max(20, Math.min(preferredWidth, innerWidth - 16))}px`;
   panel.style.height = `${Math.max(20, Math.min(preferredHeight, footerTop - 16))}px`;
-  const ratio=aspect();if(ratio){const extra=panel.querySelector('.camera-caption').offsetHeight+2;const w=Math.min(preferredWidth,innerWidth-16,Math.max(20,footerTop-16-extra)*ratio+2,640,(maxHeight-extra)*ratio+2);panel.style.width=w+'px';panel.style.height=((w-2)/ratio+extra)+'px';}
+  const ratio=aspect();if(ratio){const extra=panel.querySelector('.camera-caption').offsetHeight+2;const w=Math.min(preferredWidth,innerWidth-16,Math.max(20,footerTop-16-extra)*ratio+2,maxWidth,(maxHeight-extra)*ratio+2);panel.style.width=w+'px';panel.style.height=((w-2)/ratio+extra)+'px';}
   place(position?.x ?? startX, position?.y ?? startY);
 }
 function paint() {
@@ -89,7 +89,7 @@ resizeHandle.addEventListener("pointerdown", event => {
 });
 function resizeTo(width, height) {
   const ratio=aspect();if(ratio&&Math.abs(height-panel.offsetHeight)>Math.abs(width-panel.offsetWidth))width=(height-panel.querySelector('.camera-caption').offsetHeight-2)*ratio;
-  preferredWidth = Math.max(minWidth, Math.min(640, width));
+  preferredWidth = Math.max(minWidth, Math.min(maxWidth, width));
   preferredHeight = Math.max(minHeight, Math.min(maxHeight, height));
   layout();
 }

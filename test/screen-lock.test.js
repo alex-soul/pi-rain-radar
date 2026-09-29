@@ -46,6 +46,15 @@ test('external URL titles follow changed destinations',()=>{
   assert.equal(f.optional.title,'https://example.org/new');
 });
 
+test('locked playback exception is limited to slider, play, gaps and capture stepping',()=>{
+  const f=fixture('true');
+  for(const id of ['timeline','play','frame-count','availability-panel','capture-previous','capture-next','playback-mode','top-edit','bottom-edit','side-edit','history-action']){
+    let stopped=false;
+    f.handlers.click({type:'click',target:{closest:selector=>selector.split(',').map(s=>s.trim()).includes('#'+id)?{}:null},stopImmediatePropagation(){stopped=true;}});
+    assert.equal(stopped,['playback-mode','top-edit','bottom-edit','side-edit','history-action'].includes(id),id);
+  }
+});
+
 test('external navigation warns only for an explicitly marked kiosk',()=>{
   for(const search of ['', '?kiosk=0', '?kiosk=1']) {
     const f=fixture('false',search);let prevented=false;

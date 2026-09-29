@@ -10,6 +10,14 @@ import {createWeatherReplay} from '../public/history-weather-model.js';
 const T=Date.UTC(2026,8,20,12)/1000;
 const snapshot=(time,points)=>({time,receivedAt:(T+3600)*1000,points:points.map(([time,precipitation])=>({time,precipitation}))});
 
+test('independent trend read excludes forecast payloads and bounds retained observation queries',async()=>{
+  const queries=[];
+  const store={range:async q=>{queries.push(q);return{records:[],next:null};},contextBefore:async()=>null,weatherState:async()=>null};
+  const result=await loadWeatherHistory(store,{lat:1,lon:2},T,24,{includeForecasts:false});
+  assert.deepEqual(result.forecasts,[]);assert.equal(queries.some(q=>q.kind==='forecast'),false);
+  assert.ok(queries.every(q=>q.start>=(T-24*3600-11400)*1000&&q.end===T*1000));
+});
+
 test('comparison matching is backward-only, inclusive at ten minutes, and uses exact point times',()=>{
   for(const drift of [0,600,601]){
     const replay=createWeatherReplay({forecasts:[snapshot(T-3600-drift,[[T,7]]),snapshot(T,[[T,2]])]});

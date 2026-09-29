@@ -58,7 +58,6 @@
 
 #api-weather #openweather-config {width:100%;box-sizing:border-box;}
 
-#api-radar label[for="radar-settling"] {margin-top:18px;}
 #review-ha-mappings label[for="review-fallback"] {margin-top:20px;}
 #review-ha-mappings label[for="review-fallback"]:has(input:disabled) {opacity:.45;}
 #review-weather-collection > .misc-option {margin:16px 0;}
@@ -69,8 +68,6 @@
 #api-radar .review-radar-providers > div {width:100%;box-sizing:border-box;margin:0;}
 
 #api-radar .review-radar-selection {margin:0;min-width:0;box-sizing:border-box;}
-#api-radar .review-settling {margin:0;}
-#api-radar .review-settling label[for="radar-settling"] {margin:0;}
 #settings-panel-diagnostics .status-groups {gap:12px;}
 #settings-panel-diagnostics .settings-group {min-width:0;padding:12px;margin:0;}
 #settings-panel-diagnostics .settings-group-title {margin:0 0 8px;}

@@ -12,7 +12,7 @@ Geography is pinned in assets and rendered locally by a short-lived worker. Map 
 
 src/radar-sources.js coordinates Main and Overview workers. RainViewer is the default; optional Rainbow can serve either or both views. A five-minute acquisition cycle shares provider metadata and matching tile promises across views. Each healthy view may publish independently; a failed view retains its previous frame. Source changes are prepared before committing, and failure leaves the existing selection in place. There is no automatic provider substitution.
 
-One persisted settling switch applies globally. New observations use per-provider first-seen times shared between both views and restored across restart. This avoids restarting the settling wait when a provider moves between views. Disabling settling removes the extra delay, not the provider's own publication delay or the polling interval.
+Every newly offered observation is attempted during the current acquisition, without an extra settling wait. Provider publication timing and the polling interval still apply. Legacy first-seen records remain readable for pending acquisition metadata; they do not delay downloads.
 
 src/rainbow.js confines outbound requests to the fixed provider host, uses header authentication, validates snapshots and PNG tiles, serializes request pacing and persists backoff and usage before dispatch. Monthly total-call and tile counts are separate from the lifetime development-test ceiling. The optional monthly limit includes snapshots and failed calls and resets on the UTC calendar month. See [setup, estimates and billing assumptions](radar-providers.md).
 
