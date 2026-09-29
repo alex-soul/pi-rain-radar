@@ -8,7 +8,7 @@ You will put the parts together, prepare a memory card on your computer, then pa
 
 ![Pi, touchscreen, cooler, power supply and memory card laid out before assembly](images/ludicrous-quick-start/hardware-01.jpg)
 
-**Tested walkthrough:** I completed this guided installation on a Raspberry Pi 5 with 2 GB RAM, the official 7-inch Touch Display 2 and a fresh 128 GB card, including the optional Home Assistant controls. The installer is still a public test version. Pi 4B is supported by the script and is the app's existing reference platform, but its fresh-card installer walkthrough is pending. The official 10-inch Touch Display 2 is Pi 5 only and remains best-effort, physically untested here. These assembly photos show the **7-inch display and Pi 5**.
+**Tested walkthrough:** I completed this guided installation on a Raspberry Pi 5 with 2 GB RAM, the official 7-inch Touch Display 2 and a fresh 128 GB card, including the optional Home Assistant controls. That physical walkthrough used app v0.8.0. New installs now pin v0.9.0, validated separately through automated installer/image checks and Pi app acceptance; the complete fresh-card walkthrough has not been repeated for this pin update. The installer is still a public test version. Pi 4B is supported by the script and is the app's existing reference platform, but its fresh-card installer walkthrough is pending. The official 10-inch Touch Display 2 is Pi 5 only and remains best-effort, physically untested here. These assembly photos show the **7-inch display and Pi 5**.
 
 Already using your Pi for other things? Use the [manual installation guide](raspberry-pi.md) instead. This guided route is for a freshly flashed, dedicated radar Pi.
 

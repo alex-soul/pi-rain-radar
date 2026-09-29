@@ -39,7 +39,7 @@ The bootstrap resolves one public `main` commit, downloads all runner/MQTT files
 from that exact snapshot, and caches the complete bundle. The selected commit and
 application manifest are saved in `~/.local/state/pi-rain-radar/install.json`.
 Reboots/retries reuse that snapshot. `release.json` explicitly pairs this runner
-with published v0.8.0, its immutable image digest, and checksummed Compose/Power
+with published v0.9.0, its immutable image digest, and checksummed Compose/Power
 files from the release source commit. No `latest` app image or unrelated main
 helper is used. This supports prereleases without relying on GitHub's stable-only
 latest-release endpoint.
@@ -108,3 +108,20 @@ cooling, card and exact OS, plus bounded temperatures/memory and any failures.
 Docker repository setup follows the [official Debian instructions](https://docs.docker.com/engine/install/debian/).
 The app's existing manual Raspberry Pi guide remains the ordinary installation path
 until this guided flow is accepted.
+
+## Updating the app pin for a release
+
+A full fresh-card installation is not required for every application release.
+
+For an app-only change with unchanged installer, Compose, host helpers and startup contract:
+
+1. Wait for the published release's AMD64/ARM64 builds and fresh-start/restart checks to pass, and complete the normal Pi app acceptance.
+2. Update `release.json` with the exact app tag, source commit and published index digest. Verify every pinned file checksum against that source; never replace the digest with `latest`.
+3. Update the manifest expectation in installer tests. Run the Linux installer/display-control tests and shell checks, verify published file hashes, and smoke-test the selected image on empty disposable data.
+4. Review resume/refresh compatibility and the guide, then publish the pin update after review. Existing installations resume their saved snapshot; this is not an app updater.
+
+Repeat affected hardware checks when installer stages, OS support/packages, Docker setup, Compose/mounts/permissions, kiosk/autologin, display/touch, Power/MQTT helpers or the app startup/data contract change. A new OS baseline, hardware route or major installation-flow change warrants a full fresh-card walkthrough. Record what was actually tested; do not relabel an older physical walkthrough as testing the new combination.
+
+The v0.9.0 pin update retains the existing installer logic and unchanged Compose/Device Power files. The original Pi 5 walkthrough used v0.8.0; v0.9.0 has separate app acceptance and targeted pin validation.
+
+Pin validation on 29 September 2026: 22 installer and 21 display-control tests passed in isolated Linux, shell checks passed, all four published-source checksums matched, and the exact published image passed fresh startup/restart with retained disposable data on AMD64. Release CI already passed startup/restart on both AMD64 and ARM64; the published app was accepted on the Pi. No new physical installation or Pi modification was performed.

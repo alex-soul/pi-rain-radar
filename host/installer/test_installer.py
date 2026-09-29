@@ -148,7 +148,7 @@ HDMI-A-1 "HDMI"
     def test_release_is_digest_and_source_pinned(self):
         manifest = json.loads((Path(__file__).parent / 'release.json').read_text())
         app.validate_release(manifest)
-        self.assertEqual(manifest['app_release'], 'v0.8.0')
+        self.assertEqual(manifest['app_release'], 'v0.9.0')
         for key, value in [('app_digest', 'latest'), ('app_commit', 'main'), ('app_release', 'latest')]:
             changed = dict(manifest, **{key: value})
             with self.assertRaises(app.Stop):
