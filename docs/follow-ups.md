@@ -1,12 +1,23 @@
 # Release follow-ups
 
+## After 0.9.0
+
+I accepted the published 0.9.0 image on my Pi. Further minor UI refinements await specific observations; no additional changes are scoped yet. Longer soak, cloud-delay observation and the remaining validation below stay open.
+
+## Delivered in 0.9.0
+
+- **First-launch layout:** fresh browsers start with the clock first and open, the agreed button order and dark theme. Existing saved layouts are preserved.
+- **Cold-start loading feedback:** initial acquisition progress is shown and covered by cold-start checks; cached startup/restart and map-change handling were reviewed. The original Pi 5 observation prompted this work but does not establish independent Pi 5 acceptance of this release.
+- **Stats for nerds:** the six-group layout, Clouds/Camera detail, resize range and opacity editor were delivered and accepted. Further redesign is not currently scoped.
+
+See [release notes](release-0.9.0.md) and [validation](validation.md).
+
 ## After 0.8.0
 
 I accepted RC3 after Pi skim tests: no obvious issues and all new features behaved as expected. Future UI refinements are non-blocking and will be recorded once supplied.
 
 - Observe cloud publication delays for several days or weeks before changing thresholds. The current 30-minute stale threshold may be too aggressive; retain honest gaps and total colour independently of any later health allowance.
 - Continue longer Pi soak, including memory/swap, recovery and retained history. Short successful checks are not prolonged soak.
-- Keep the broader Stats for nerds redesign for a later release.
 
 The RC2 camera-label alignment, 24-hour counter spacing and shared Rainbow API limit placement were addressed in 0.8.0. No threshold change is included.
 
