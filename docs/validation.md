@@ -1,5 +1,14 @@
 # Validation and remaining work
 
+## 0.9.0 published-image acceptance — 29 September 2026
+
+[Release CI 36612590391](https://github.com/alex-soul/pi-rain-radar/actions/runs/36612590391) passed release tests, AMD64/ARM64 builds and startup/restart checks on both architectures. Published index: `sha256:ed34506e33bccf6698a8cfe32fca963f741a97568bd16956de76041f245d6767`, source/tag `8c3d90d9fb1557688892f6009f87546bd2e99149` / `v0.9.0`. All 370 final-version tests passed locally. Native RC validation covered 369 passes in the full run plus a successful focused recheck after correcting one clock-dependent test fixture; runtime was unchanged.
+
+Published copied-data startup/restart preserved 16,686 records, 6,052 assets, settings and archive generation. Normal Compose plus Device Power handover passed. I confirmed About 0.9.0 and accepted the display and playback on my Pi. Chromium briefly appeared windowed after handover; restarting only the kiosk browser restored fullscreen, which I confirmed. The cause was not established.
+
+Short post-install checks found 820 MiB available, no swap-out, 68.1°C and no throttling. These do not establish extended soak. Host memory-limit enforcement and cloud-delay observation remain separate follow-ups; the cloud stale threshold is unchanged.
+
+
 ## 0.8.0 published-image acceptance — 24 September 2026
 
 [Release CI 36050970878](https://github.com/alex-soul/pi-rain-radar/actions/runs/36050970878) passed tests, AMD64/ARM64 builds and fresh-start/restart checks on both architectures. Published index: `sha256:e4b60a8e5ff27b0256d40f83722f0ea2b2df6b6ecdcf879d025f45ae4ba34ace`, source/tag `a6b5f9d4c0ca9a9cd447a53a9dcb88912991f31f` / `v0.8.0`.

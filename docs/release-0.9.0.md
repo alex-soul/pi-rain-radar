@@ -14,3 +14,5 @@ I tested RC1 on my Pi and accepted the UI and touch experience. All 370 final-ve
 Existing compatible archives and saved browser preferences are preserved. Fresh defaults do not overwrite your layout. Back up application data and browser preferences before upgrading, and retain the optional Device Power override. The older archive migration warning still applies to upgrades from 0.6.0 or earlier. Cloud freshness thresholds are unchanged.
 
 See the [user manual](https://github.com/alex-soul/pi-rain-radar/blob/v0.9.0/docs/manual.md), [upgrade guide](https://github.com/alex-soul/pi-rain-radar/blob/v0.9.0/docs/upgrading.md) and [Stats for nerds reference](https://github.com/alex-soul/pi-rain-radar/blob/v0.9.0/docs/stats-for-nerds.md).
+
+Published-image handover is complete: both-architecture CI passed, and I confirmed About 0.9.0 with normal playback and fullscreen kiosk operation. See [validation](https://github.com/alex-soul/pi-rain-radar/blob/main/docs/validation.md#090-published-image-acceptance--29-september-2026) for the evidence and limits.
