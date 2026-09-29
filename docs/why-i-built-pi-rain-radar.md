@@ -364,7 +364,7 @@ But even that was not the whole appliance experience.
 
 A fresh Raspberry Pi still needs operating-system preparation. Docker has to be installed. The display may need rotating. Kiosk behaviour needs configuring. The machine needs updating and setting up properly.
 
-So I eventually built a guided installer and a photographed walkthrough called the **Ludicrously Quick Start**.
+So I eventually built a guided installer and a photographed walkthrough called the **[Ludicrously Quick Start](ludicrous-quick-start.md)**.
 
 The target user for that guide is, in a way, the person I used to be when I first installed Eric's project.
 
