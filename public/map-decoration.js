@@ -27,7 +27,7 @@ export function setupMapDecoration(overview,main){
   for(const [host,key,title]of [[overview,'overviewRect','Main map outline'],[overview,'overviewDot','Centre dot'],[main,'mainLabel','Location label'],[main,'mainDot','Centre dot']]){
     const label=document.createElement('label');label.className='map-option';label.textContent=title;const input=document.createElement('input');input.type='checkbox';input.className='control-switch';input.setAttribute('role','switch');input.checked=prefs[key];input.onchange=()=>{prefs[key]=input.checked;save();};label.append(input);host.append(label);
   }
-  const field=document.createElement('div');field.className='local-opacity';field.innerHTML='<label for="town-density">Town labels <output></output></label><input id="town-density" type="range" min="0" max="5" step="1"><button type="button">Reset labels</button>';main.append(field);
+  const field=document.createElement('div');field.className='local-opacity';field.innerHTML='<label for="town-density">Town labels <output></output></label><input id="town-density" type="range" min="0" max="5" step="1">';main.append(field);
   const input=field.querySelector('input'),output=field.querySelector('output');const update=()=>{input.value=prefs.density;output.textContent=['None','Fewer','Default','More','Dense','Most'][prefs.density];};
-  input.oninput=()=>{prefs.density=Number(input.value);save();update();};field.querySelector('button').onclick=()=>{prefs.density=2;save();update();};update();paint();
+  input.oninput=()=>{prefs.density=Number(input.value);save();update();};update();paint();
 }

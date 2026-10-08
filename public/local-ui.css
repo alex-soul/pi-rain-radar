@@ -5,7 +5,7 @@
 .screen-locked [data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
 
 :root :is(#astronomy-resize,[id$="-resize"]){width:32px;height:32px;right:0;bottom:0;padding:5px;font-size:20px;color:inherit;opacity:.4;}
-:root :is(#astronomy-resize,[id$="-resize"]):is(:hover,:focus-visible,:active),:root .local-cog:is(:hover,:focus-visible,:active){opacity:1;filter:brightness(1.25);}
+:root :is(#astronomy-resize,[id$="-resize"]):is(:hover,:focus-visible,:active),:root :is(.local-cog,.widget-close):is(:hover,:focus-visible,:active){opacity:1;filter:brightness(1.25);}
 :root #top-edit{top:100%;right:auto;left:50%;transform:translateX(-50%);}
 :root #bottom-edit{top:auto;bottom:calc(100% + 18px);right:auto;left:50%;transform:translateX(-50%);}
 :root #side-edit{position:fixed!important;right:auto;}
@@ -165,3 +165,7 @@
 :root .weather-reading .reading-value-slot[data-reading=humidity]{width:calc(4.6ch + 9px);}
 :root .weather-reading .reading-value-slot > [id]{display:block;width:calc(100% - 9px)!important;text-align:right;}
 :root .weather-reading .reading-value-slot[data-reading=direction] > [id]{width:100%!important;}
+
+/* Equal toggle rows keep Location label centred between Scale and Centre dot. */
+#layers-panel label[for=show-map-scale],#layers-panel .map-option{min-height:40px;margin-bottom:0;}
+#layers-panel .map-option{margin-top:0;}
