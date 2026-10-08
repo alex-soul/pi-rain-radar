@@ -65,7 +65,7 @@ bash -n install-pi.sh
 Tests require paho-mqtt 2.x and Jinja2; runtime requires Debian's python3-paho-mqtt,
 wlopm and swayidle. Do not run live acceptance scripts against another appliance.
 
-## Screen bridge — 0.10.0 candidate
+## Screen bridge — 0.10.0
 
 The guided runner now provisions the local controller independently of MQTT (`setup.py --local-only`) and installs `install_bridge.py` / `bridge.py`. The app's Appliance → Screen uses this authenticated bridge; MQTT and app settings reach the same controller and persistent store. Brightness, automatic sleep and timeout are exposed locally; explicit Sleep/Wake and screen-state entities remain MQTT-only.
 
@@ -73,6 +73,6 @@ The system `pi-rain-radar-screen.service` owns `/run/pi-rain-radar-screen/contro
 
 For an existing private controller, explicitly select its compatible socket/protocol and retain its service/settings/MQTT identity. The bridge does not require replacing it. Keep the Screen override in operational Compose commands alongside Power. To remove bridge access, stop/disable the bridge and remove its app override together; preserve controller/settings and do not stop the display controller as an incidental app change.
 
-Automated installation/socket tests and the existing-controller Pi upgrade passed. The new portable fresh-install/reboot combination remains unverified; see [validation](../../docs/validation.md). The installer app manifest still selects v0.9.0 until the new release is published and verified.
+Automated installation/socket tests and the existing-controller Pi upgrade passed. The new portable fresh-install/reboot combination remains unverified; see [validation](../../docs/validation.md). New installer snapshots select verified v0.10.0; existing snapshots retain their saved release.
 
 **0.10.0 fresh-install limitation:** the changed portable local-Screen setup and reboot route remain experimental. Fresh-card hardware testing is deferred for this release; existing-appliance RC acceptance and isolated automated tests do not prove that route.
