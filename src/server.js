@@ -145,6 +145,7 @@ const staticFiles = new Map([
   ["/you-rock.png", ["you-rock.png", "image/png"]],
   ["/", ["index.html", "text/html"]],
     ["/control-layout.js", ["control-layout.js", "text/javascript"]],
+    ["/direct-reorder.js", ["direct-reorder.js", "text/javascript"]],
     ["/display.js", ["display.js", "text/javascript"]],
   ["/settings.js", ["settings.js", "text/javascript"]],
   ["/radar-settings-ui.js", ["radar-settings-ui.js", "text/javascript"]],

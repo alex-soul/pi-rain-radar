@@ -1,4 +1,5 @@
 import {shared,change} from './integrations-state.js';
+import {setupDirectReorder, moveRelative} from './direct-reorder.js';
 import { defaultReadings, readingNames, windUnits, playbackSpeeds, lastFrameMultipliers, weatherOptions } from './weather-format.js';
 const gustChoices = [0, 15, 30, 45, 60, 90, 120, 180];
 function normalizeGust(value) {
@@ -77,7 +78,10 @@ export function setupReadingEditor(canEdit) {
     }
     for (const name of ['pointerup','pointercancel','lostpointercapture']) handle.addEventListener(name,finish);
   }
-  arrange(); return cancel;
+  const cancelDirect = setupDirectReorder(document.querySelector('.weather-readings'),
+    new Map(Object.keys(readingNames).map(id => [id,document.getElementById(`weather-${id}`).closest('.weather-reading')])), canEdit,
+    (source,target,after) => { preferences.readingOrder = moveRelative(preferences.readingOrder,source,target,after); arrange(); save(); });
+  arrange(); return () => { cancelDirect(); cancel(); };
 }
 
 let footerHidden = false;

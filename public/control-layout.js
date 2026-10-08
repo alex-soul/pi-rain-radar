@@ -1,3 +1,4 @@
+import {setupDirectReorder, moveRelative} from './direct-reorder.js';
 const controls = [
   { id: 'clock-toggle', label: 'Clock' },
   { id: 'history-toggle', label: 'Archive' },
@@ -104,7 +105,11 @@ export function setupControlEditor(canEdit) {
     }
   }
   render();
+  const cancelDirect = setupDirectReorder(document.querySelector('.map-controls'),
+    new Map(controls.map(({id}) => [id, document.getElementById(id)])), canEdit,
+    (source,target,after) => { layout = moveRelative(layout,source,target,after,item=>item.id); save(); render(); }, true);
   return () => {
+    cancelDirect();
     if (drag) { layout = drag.original; drag = null; render(); }
     feedback.textContent = '';
   };

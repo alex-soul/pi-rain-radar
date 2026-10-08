@@ -173,3 +173,8 @@
 :root #stats-close{border-radius:50%;}
 #screen-preview-controls .screen-group{border:1px solid #78998a66;border-radius:9px;padding:14px;margin:0 0 16px;min-width:0;}
 #screen-preview-controls .screen-group legend{padding:0 6px;}
+
+.direct-reorder-item{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
+.direct-reorder-item.direct-dragging{opacity:.55;cursor:grabbing;outline:2px solid currentColor;outline-offset:2px}
+.direct-drop-marker{position:fixed;z-index:10000;pointer-events:none;background:#46c8ff;border-radius:2px;box-shadow:0 0 3px #123}
+.screen-locked .direct-reorder-item{cursor:inherit}
