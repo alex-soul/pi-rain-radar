@@ -149,3 +149,9 @@ The release workflow tests fresh startup and persistent data across container re
 Migration from the source build to the published v0.1.2 ARM64 image, reboot, retained configuration, a map change back to Coventry, the preparation popup and the OpenWeather waiting hint were confirmed on my Pi. Later published-image handovers and on-screen version confirmation are recorded in [validation](validation.md). Automatic reload is covered by browser-logic tests; controlled verification of every reload path, including Settings-open deferral, remains separate.
 
 See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.
+
+## 0.10.0 candidate notes
+
+0.10.0-rc.1 preserves retained radar history and browser preferences; town-label density does not invalidate the archive. The main menu uses a three-line icon; the map cog owns main-map options, and Overview has its own settings. Power is under Appliance.
+
+Local Screen controls require the authenticated [Screen bridge and display controller](../host/display-controls/README.md). An existing private controller needs an explicit compatible bridge route; do not install a competing controller. Keep the Screen Compose override alongside any Power override. App-only image replacement does not install these host components. Guided-installer reruns remain resume/reconfiguration operations, not app upgrades. Final published release and installer pin are pending.

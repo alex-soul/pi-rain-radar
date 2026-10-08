@@ -18,6 +18,8 @@ Pi Rain Radar focuses on rain: recent radar playback, a small overview map, opti
 
 See [what’s next](docs/follow-ups.md) for planned improvements and ideas for future releases.
 
+The accepted **0.10.0-rc.1** candidate is not yet published. See the [draft 0.10.0 notes](docs/release-0.10.0.md) for changes and remaining installer validation.
+
 ## Build your first Raspberry Pi radar screen
 
 Start with the **[Ludicrously Quick Start](docs/ludicrous-quick-start.md)**: a photographed guide to assembly, preparing the memory card, connecting from your computer and running the guided installer. No previous Pi experience needed. The fresh-install walkthrough is tested on Pi 5 with the official 7-inch Touch Display 2; Pi 4 installer testing remains pending.

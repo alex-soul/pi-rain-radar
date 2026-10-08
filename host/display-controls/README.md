@@ -1,4 +1,4 @@
-# Optional MQTT display controls
+# Local display controls and optional MQTT
 
 Optional component of the public hardware-test installer. The control policy was tested
 on a Raspberry Pi 4 with the official 7-inch Touch Display 2. The portable
@@ -14,7 +14,7 @@ persist across controller restarts; restart starts the screen on.
 
 Use the [guided installer](../installer/README.md); its `--reconfigure` option can
 add or configure these controls later.
-An existing broker/account and Home Assistant MQTT integration are prerequisites.
+For the optional MQTT adapter, an existing broker/account and Home Assistant MQTT integration are prerequisites. Local Screen control does not require them.
 Setup asks for hostname, port, username and a hidden password. TLS defaults to No;
 plain MQTT sends credentials/data unencrypted over the LAN. TLS verifies the
 broker using system trust or your supplied CA file. It never creates certificates,
@@ -64,3 +64,13 @@ bash -n install-pi.sh
 
 Tests require paho-mqtt 2.x and Jinja2; runtime requires Debian's python3-paho-mqtt,
 wlopm and swayidle. Do not run live acceptance scripts against another appliance.
+
+## Screen bridge — 0.10.0 candidate
+
+The guided runner now provisions the local controller independently of MQTT (`setup.py --local-only`) and installs `install_bridge.py` / `bridge.py`. The app's Appliance → Screen uses this authenticated bridge; MQTT and app settings reach the same controller and persistent store. Brightness, automatic sleep and timeout are exposed locally; explicit Sleep/Wake and screen-state entities remain MQTT-only.
+
+The system `pi-rain-radar-screen.service` owns `/run/pi-rain-radar-screen/control.sock`. Root-owned configuration and a restricted token live in `/etc/pi-rain-radar-screen`; `/etc/pi-rain-radar-screen/compose.screen.yaml` provides the app connection. Non-secret parent directories must be traversable even when installation inherits umask 077; the token stays restricted. The sandbox hides home directories and binds only the selected user's runtime directory to reach the controller socket. Do not grant broad container privileges or expose host commands.
+
+For an existing private controller, explicitly select its compatible socket/protocol and retain its service/settings/MQTT identity. The bridge does not require replacing it. Keep the Screen override in operational Compose commands alongside Power. To remove bridge access, stop/disable the bridge and remove its app override together; preserve controller/settings and do not stop the display controller as an incidental app change.
+
+Automated installation/socket tests and the existing-controller Pi upgrade passed. The new portable fresh-install/reboot combination remains unverified; see [validation](../../docs/validation.md). The installer app manifest still selects v0.9.0 until the new release is published and verified.

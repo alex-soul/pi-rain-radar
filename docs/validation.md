@@ -115,3 +115,13 @@ The complete flash-to-kiosk route was rehearsed manually; the later published-im
 Keep rain as the focus. This repository documents implemented behaviour and known validation gaps; speculative enhancements are not a public release commitment. Private host preferences, power-saving experiments and other personal stack integrations belong outside the public product repo. The beginner baseline keeps the screen on continuously.
 
 Docs-only edits do not need an image release. App releases should bump the package version, pass the release workflow and update this evidence when new hardware results are available.
+
+## 8 October 2026 — 0.10.0-rc.1
+
+Native ARM64 full-suite run: 381/383 passed initially; two existing VM harnesses needed the new module import. After correction, all 17 affected tests passed on local/native reruns, resolving the full set of cases. This was not a second complete-suite run. Targeted Linux checks covered 25 installer, 25 display and four Power tests. Isolated bridge install/reinstall and authenticated socket checks passed under restrictive umask; native sandbox socket visibility passed.
+
+Fresh candidate startup/restart and copied-data upgrade checks passed. Copied-data checks verified SQLite integrity, every original record/asset row hash, settings, archive generation and five served media samples while allowing normal additive acquisition/state writes. Live app restart and settings/history preservation passed. Local Screen read/write also worked with the MQTT adapter stopped; reconnect rediscovered six entities. Power status was authenticated and ready; no Power action was performed.
+
+Desktop and physical-phone reviews covered resizing, direct ordering and layout refinements. I accepted all new features on my Pi 4 / 2 GB with the 7-inch Touch Display 2, including Screen/MQTT synchronization. Short resource samples showed no throttling; they do not establish sustained performance or resilience. The existing deployment's container memory limit remains unenforced, so it was not treated as protection.
+
+No RC reboot, fresh portable installer walkthrough or final published-image handover was performed. Changes to controller provisioning, bridge mounts/permissions and startup require affected hardware/reboot validation. Older installer hardware evidence must not be relabelled as validation of this combination. Publication and the verified installer release pin remain pending.

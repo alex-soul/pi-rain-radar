@@ -2,7 +2,7 @@
 
 ## Display controls
 
-**Layers** controls visibility and opacity separately for Main and Overview. Only enabled layers appear; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
+**Main-map settings** and **Overview settings** control their respective rain/cloud visibility and opacity. Only enabled layers appear; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
 
 **Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap or hover over the widget to reveal its **cog**, then use toggles and draggable rows to select and order nine readings: those three plus Wind, Gust, T−Td, Visibility, Pressure and UV. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
 
@@ -44,14 +44,14 @@ Dark theme; clock expanded; other widgets closed. Button order is Clock, Archive
 
 The app starts on Coventry. Previously saved browser preferences keep their own order and visibility.
 
-Tap the screen to reveal the **settings cog at the bottom right**. It disappears after 15 seconds of inactivity. Tap the cog to open settings. Display preferences apply immediately; Map, key and PIN changes use their own Preview/Apply or Save actions. No PIN is required by default.
+Tap the screen to reveal the **three-line menu at the bottom right**. It disappears after 15 seconds of inactivity. Tap it to open settings. Display preferences apply immediately; Map, key and PIN changes use their own Preview/Apply or Save actions. No PIN is required by default.
 
 Choose a section from the Settings selector:
 
 - **Map:** Location, Regional, Embed
 - **Interface:** Display, Radar, Weather, Clouds, Camera
 - **System:** Status, API (OpenWeather / Rainbow / HA), Storage, PIN, Log
-- **Power**
+- **Appliance** (Power and Screen)
 - **About**
 
 Small information icons beside setting titles explain their purpose without leaving the page.
@@ -83,7 +83,7 @@ The shared HA connection uses the address reachable from the appliance. The brow
 
 ### Device Power
 
-Restart and Shutdown are under **Power**. Each asks for confirmation. The optional host helper must be installed first; without it, the buttons provide setup guidance. PIN protection follows the existing optional Settings PIN. See [Device Power setup and recovery](device-power.md).
+Restart and Shutdown are under **Appliance → Power**. Each asks for confirmation. The optional host helper must be installed first; without it, the buttons provide setup guidance. PIN protection follows the existing optional Settings PIN. See [Device Power setup and recovery](device-power.md).
 
 ### PIN: optional settings protection
 
@@ -119,7 +119,7 @@ Changing coordinates or either zoom selects a different history; it **does not d
 
 Drag rows up or down to change the order of the left-side controls. Turn a row off to hide that button. **Hiding a button does not close its widget:** to leave Overview permanently visible, open it first, then hide its button here. To close it later, show the button again.
 
-The two dock handles remain available for API status; screen interaction reveals the settings cog independently. Button order, theme and widget layout are remembered in this browser; another browser may have a different layout. Map settings and the weather key belong to the installation and are shared.
+The two dock handles remain available for API status; screen interaction reveals the main menu independently. Button order, theme and widget layout are remembered in this browser; another browser may have a different layout. Map settings and the weather key belong to the installation and are shared.
 
 ### System → API → OpenWeather: add current weather and Rain forecast (optional)
 
@@ -131,7 +131,7 @@ Two requests supply current conditions and the minute forecast, normally every 1
 
 The key stays on the computer running the app and is not displayed again. **Remove key** disables these features; radar continues working.
 
-### Playback dock, Layers and UI lock
+### Playback dock, map settings and UI lock
 
 Open the cog above the bottom-dock handle for playback and footer preferences. **Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
 
@@ -139,7 +139,7 @@ Open the cog above the bottom-dock handle for playback and footer preferences. *
 
 **Lock screen controls** under **Interface → Display** freezes layout editing and dashboard buttons while animation and updates continue. Playback slider, play/pause, paused Previous/Next and the gaps popup remain usable. After 15 seconds without interaction, playback resumes and the gaps popup closes. Settings stays reachable, with the PIN if enabled. A tap still reveals auto-hidden docks; a dock manually hidden with auto-hide off remains tucked away. Provider credits remain visible and their links remain active through an external-page warning. UI lock is a per-browser interaction guard, not a security boundary or an operating-system kiosk lock.
 
-**Show map scale** under **Layers → Main map** controls the distance scale (on by default). Maps always face north; Preview omits the scale.
+**Show map scale** under **Main-map settings** controls the distance scale (on by default). Maps always face north; Preview omits the scale.
 
 **Auto-hide footer dock** is off by default. Enable it to hide the footer after 15 seconds of inactivity; tap the screen to bring it back. It stays visible while you interact with controls or have a dialog open. The scale moves down when the footer hides. Widgets can use the full screen regardless of auto-hide. Docks can cover them without moving their saved positions; tuck a dock away to reach covered controls. These preferences are remembered on this browser, like button layout. Refreshing briefly shows the footer again and starts a new 15-second idle period.
 
@@ -179,19 +179,19 @@ Newly offered radar images are attempted on the current acquisition, without an 
 | Light / dark | Switches theme. The icon shows what pressing it will do: sun for light, moon for dark. |
 | Sun and Moon | Shows/hides the combined local astronomy widget. |
 | Weather trends | Shows/hides all enabled trend charts, including detached charts. |
-| Layers, bottom left | Reveals per-map rain/cloud visibility and opacity controls for enabled layers. |
+| Map-settings cog, bottom left | Main-map rain/cloud visibility and opacity, scale, location label/dot and town-label density. Overview has its own settings cog. |
 | Camera | Shows/hides the configured camera widget; collection is independent. |
 | Stats for nerds | Shows/hides provider and acquisition diagnostics. |
 | Folded map | Shows or hides **Overview**, a wider map with matching radar. The dot marks your centre; the dashed box marks the main map's area. |
 | Rain cloud | Shows or hides **Rain forecast**, the forecast for approximately the next hour at your chosen coordinates. |
 | Clock with backward arrow | Opens stored radar **Archive**. See below. |
 | Footer handle | Shows or hides the footer. Its indicator reports selected radar sources and enabled clouds even while hidden; see [indicators](indicators.md). |
-| Settings cog, bottom right | Appears on screen interaction for 15 seconds. Opens settings; asks for a PIN only when protection is enabled. |
+| Main menu (three horizontal lines), bottom right | Appears on screen interaction for 15 seconds. Opens settings; asks for a PIN only when protection is enabled. |
 | Weather drawer handle | Shows/hides the selected readings in their saved order and units. The handle indicates weather health even when all readings are hidden. |
 | Play / pause, bottom | Starts or pauses the radar animation. Pausing does not stop new data being collected. |
 | Slider | Drag to inspect a radar image and pause playback. Live normally has 13, 25 or 37 ten-minute positions for its 2/4/6-hour window; Archive supports 1–24 hours. See [indicators](indicators.md) for gap colours. Playback skips gaps; dragging selects the nearest available frame. |
 
-Drag **Overview** or **Rain forecast** from anywhere on its map or chart to move it. Drag its bottom-right triangle to resize it. A small movement threshold separates taps from dragging. Tab to a widget and use arrow keys to move it; the resize corner has its own keyboard control. Overlapping widgets work like windows: click, drag, resize or focus a widget to bring it forward. Opening a widget also brings it forward. Dashboard controls remain above both widgets. See [indicators](indicators.md) for toolbar outline meanings.
+Drag **Overview** or **Rain forecast** from anywhere on its map or chart to move it. Drag its bottom-right triangle to resize it: flexible widgets allow independent width/height changes, while Overview and Camera preserve their aspect ratio. Mouse dragging an edge changes that dimension; aspect-locked widgets adjust both dimensions. Two-finger pinch preserves proportions. The combined Weather Trends widget can grow to available screen height so more enabled charts fit; small screens may still need scrolling. A small movement threshold separates taps from dragging. Tab to a widget and use arrow keys to move it; the resize corner has its own keyboard control. Overlapping widgets work like windows: click, drag, resize or focus a widget to bring it forward. Opening a widget also brings it forward. Dashboard controls remain above both widgets. See [indicators](indicators.md) for toolbar outline meanings.
 
 The **large time and date at bottom left belong to the radar image currently playing**, not the present moment. The top-left clock shows the current time. All dates and clocks follow **Settings → Map → Regional → Time zone**, defaulting to Europe/London. Daylight-saving changes are automatic. Changing the map coordinates does not automatically choose a time zone.
 
@@ -205,7 +205,7 @@ Tap **Archive** to start replay immediately using the saved playback window. Tap
 
 The date/time panel opens beside the button without dimming the screen. Drag its heading to move it; closing the panel preserves Archive playback. Tap the Archive icon again, or the bottom-dock **LIVE/ARCHIVE** indicator, to return to Live. There is no countdown or automatic return to Live. Temporary Archive overrides reset when you return to Live. The provider-name switch starts off on each Archive visit.
 
-When paused, **Previous** beside Layers and **Next** beside Settings step between playable capture positions. Tap the total/availability counter to open the gaps popup, and tap it again to close; clicking elsewhere leaves it open. Its whole outline stays highlighted while open. On a locked screen the separate 15-second inactivity rule resumes playback and dismisses gaps.
+When paused, **Previous** beside map settings and **Next** beside the main menu step between playable capture positions. Tap the total/availability counter to open the gaps popup, and tap it again to close; clicking elsewhere leaves it open. Its whole outline stays highlighted while open. On a locked screen the separate 15-second inactivity rule resumes playback and dismisses gaps.
 
 Archive never substitutes an older frame for a missing one. Live may borrow earlier compatible radar for less than 30 minutes; its gaps remain visible. Both modes include late arrivals and skip positions missing both maps. See [playback rules](playback-conventions.md) for endpoint grace and automatic pause/recovery.
 
@@ -240,3 +240,19 @@ Direct snapshot transport supports LAN HTTP or HTTPS with valid certificates. Im
 Set shared retention under **System → Storage**, default seven days, or use available storage as the limit. Reducing retention removes older history immediately when saved. Storage pressure rolls the oldest history sooner, across all captured streams, to keep Live playable. Status shows usage and warnings; expand **Archive retention** for estimates and detail. Retention is a target, not permission to exhaust the filesystem.
 
 A browser may finish playing already-loaded frames after they roll out of storage. Loading a different window uses what remains available. See [archive backup](archive-backup.md) for preserving older archives before the new SQLite-storage upgrade; upgrading from a compatible 0.7.0 candidate does not reset the archive again.
+
+## Controls introduced in 0.10.0
+
+These controls are included in 0.10.0-rc.1; the guided installer release pin may still select an earlier published version. Check About and the [installer version contract](../host/installer/README.md#version-and-retry-contract).
+
+Widget settings are at the top left; the top-right cross hides the widget just like its side button, keeping its saved preferences and size. Controls share the existing hover/touch reveal, idle hiding and layout-lock behaviour. Text-bearing widgets have font-size controls with their original defaults. Background/font Reset buttons have been removed from widgets, docks and side-button settings.
+
+Drag readings directly within the top dock, or side buttons up/down, to reorder them. On touch, hold briefly before dragging, then release at the insertion marker. The settings editors remain available. Ordering, fonts, widget geometry and map decorations are saved separately for each browser. Numeric changes and scrubbing retain stable reading positions at a fixed dock configuration.
+
+Main-map settings offer town density from **None**, through the original **Default**, to higher steps. This changes visible town labels without discarding history or changing the setup preview. Available settlements depend on the map geography. The configured location label and centre dot have independent switches. Overview's own settings hold its rain/cloud opacity and visibility, dashed viewport rectangle and centre dot.
+
+**Appliance → Power** contains Restart and Shutdown. **Appliance → Screen** contains Brightness and Sleep timer groups: brightness 10–100%, automatic sleep on/off and idle timeout 1–120 minutes. These target the screen attached to the appliance, even when using a phone remotely; they do not control your phone. Screen sleep leaves radar collection running. The host display helper must be installed; see [display controls](../host/display-controls/README.md).
+
+Screen settings are shared by the app and optional MQTT integration, with applied values reflected in both directions. Local controls work without MQTT. Sleep/Wake buttons and screen-state reporting remain MQTT-only. New portable installations start automatic sleep off with a saved 15-minute timeout; existing settings are preserved. Local touch wakes the screen; remote browser activity does not reset the appliance idle timer.
+
+System Status shows filesystem Used/Total with a shaded capacity bar. It represents the filesystem containing the data, not just the app's files. Unavailable readings are shown as unavailable.

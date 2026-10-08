@@ -331,3 +331,11 @@ Use the actual hostname or IP you connect with. If you did not reflash the Pi, i
 </details>
 
 Still stuck? See [troubleshooting](troubleshooting.md) or [open an issue](https://github.com/alex-soul/pi-rain-radar/issues) with your Pi model, OS, installer stage and error. Leave passwords and private connection details out of screenshots and logs you share.
+
+## Screen controls in the upcoming 0.10.0 release
+
+The installer still pins verified **v0.9.0** while the new release is prepared. The updated runner prepares local display controls without requiring MQTT, but **Appliance → Screen requires the 0.10.0 app**. Do not rerun the installer expecting an app upgrade; saved installs retain their selected release.
+
+With 0.10.0 and the Screen helper installed, set brightness and automatic sleep/idle timeout in **Appliance → Screen**, including when you declined MQTT. Automatic sleep starts off on new installations, with a saved 15-minute timeout. Touch wakes the screen. If MQTT is enabled, the shared settings stay synchronized with HA; Wake/Sleep buttons and screen-state reporting remain in MQTT. Restart/Shutdown move under **Appliance → Power**.
+
+The new portable setup/reboot route still needs affected hardware validation. The guide's installer pin will change only after the published release image and source checksums have been verified; see the [version contract](../host/installer/README.md#version-and-retry-contract).

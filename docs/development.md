@@ -208,3 +208,9 @@ With Node24 and dependencies installed, run `npm run dev:scenarios -- --availabi
 For an existing OWM export, run `npm run dev:scenarios -- --forecast-recording "<local-export.json>"`. Personal recordings stay outside the public repository. Do not run acquisition/trial commands merely to replay recorded data.
 
 Optional `RADAR_DEV_SETTINGS_FROM` points to a previous synthetic studio session to preserve its test PIN/camera/policy settings in a fresh session. Never use production data. Browser preferences remain associated with the same loopback origin. Stop the owned supervisor/backend after review and retain useful fixtures. The studio does not run on the Pi.
+
+## 0.10.0 review coverage
+
+The synthetic scenario studio includes `/__astronomy` and `/__screen`. Astronomy uses the production renderer, ten-minute slider/play increments and exact event buttons; include polar/missing-inner-event and resized-lane cases. Screen fixtures exercise applied settings and unavailable/error states without controlling a physical display.
+
+Keep normal development binding private/loopback. A deliberately configured private LAN preview can support physical phone tests; do not expose it publicly or use deployed credentials in fixtures. Review flexible corner versus proportional pinch resizing, all aspect-locked edge paths, touch hold/reorder/cancellation, stable dock readings, both themes and small screens. Synthetic acceptance does not replace live controller, MQTT, physical display or Pi resource checks.

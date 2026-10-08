@@ -27,7 +27,7 @@ selected helpers. A final reboot tests automatic startup. A third run is optiona
 it performs checks, not another installation. The first reboot handoff prints the
 detected SSH login separately from the command to run inside the Pi terminal.
 
-New MQTT installs start automatic blanking OFF, with a saved 15-minute timeout.
+New local display installations start automatic blanking OFF, with a saved 15-minute timeout; MQTT is optional.
 Setup verifies broker authentication/TLS before replacing an existing configuration.
 HA discovery/controls and physical behaviour still require user confirmation.
 No HA/broker installation, certificate provisioning, maintenance scheduler, app
@@ -125,3 +125,11 @@ Repeat affected hardware checks when installer stages, OS support/packages, Dock
 The v0.9.0 pin update retains the existing installer logic and unchanged Compose/Device Power files. The original Pi 5 walkthrough used v0.8.0; v0.9.0 has separate app acceptance and targeted pin validation.
 
 Pin validation on 29 September 2026: 22 installer and 21 display-control tests passed in isolated Linux, shell checks passed, all four published-source checksums matched, and the exact published image passed fresh startup/restart with retained disposable data on AMD64. Release CI already passed startup/restart on both AMD64 and ARM64; the published app was accepted on the Pi. No new physical installation or Pi modification was performed.
+
+## Pending 0.10.0 release dependency
+
+The current development runner provisions local Screen controls even when MQTT is declined: a local display controller plus authenticated bridge and Screen Compose override. Its snapshot bundle includes both `install_bridge.py` and `bridge.py`; retries retain the cached runner and selected application manifest. MQTT adds its adapter to the same settings/controller.
+
+The checked-in app manifest intentionally remains v0.9.0 while 0.10.0-rc.1 is evaluated. Do not promise Appliance → Screen when the installed app still reports 0.9.0. Once the new published image is verified and accepted, update the exact tag/source/index digest and checksummed source files in `release.json`, validate public file hashes and installer CI, and update the Quick Start note. Do not use `latest` or change existing saved installation targets during resume.
+
+Targeted Linux installer/display tests and isolated bridge installation passed, including restrictive umask and runtime socket access. The accepted private-controller Pi upgrade is not a fresh portable installation. Validate local control with MQTT declined, optional MQTT consistency, startup/reboot, touch wake and saved settings on the affected hardware route before reporting it accepted. Existing fresh Pi 4 and longer resilience gaps remain open.
