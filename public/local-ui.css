@@ -157,3 +157,11 @@
 /* Extreme provider values must not paint over neighbouring readings. */
 :root .weather-reading .reading-value-slot > [id]{max-width:calc(100% - 9px);overflow:hidden;text-overflow:ellipsis;}
 :root .weather-reading .reading-value-slot[data-reading=direction] > [id]{max-width:100%;}
+
+/* Compact numeric columns, aligned at the trend gutter so short values do not
+   leave uneven blank space before the following icon. Widths never follow data. */
+:root .weather-reading .reading-value-slot:is([data-reading=temperature],[data-reading=feels],[data-reading=dew]){width:calc(5.2ch + 9px);}
+:root .weather-reading .reading-value-slot[data-reading=depression]{width:calc(4.5ch + 9px);}
+:root .weather-reading .reading-value-slot[data-reading=humidity]{width:calc(4.6ch + 9px);}
+:root .weather-reading .reading-value-slot > [id]{display:block;width:calc(100% - 9px)!important;text-align:right;}
+:root .weather-reading .reading-value-slot[data-reading=direction] > [id]{width:100%!important;}

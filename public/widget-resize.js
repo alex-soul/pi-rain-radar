@@ -20,7 +20,7 @@ export function setupWidgetResize(panel,{limits,ratio=()=>null,apply,save,cancel
     const node=document.createElement('span');node.className='widget-edge';node.dataset.edge=edge;node.setAttribute('aria-hidden','true');panel.append(node);
   }
   const constrain=(s,w,h,edge,lock)=>resizedRect(s,w,h,{...limits,edge,...lock,viewportWidth:innerWidth,viewportHeight:innerHeight});
-  function begin(edge,e){panel.dataset.resizing='true';panel.dispatchEvent(new Event('radar-widget-gesture'));const start=rect(),locked=ratio();gesture={edge,start,x:e.clientX,y:e.clientY,id:e.pointerId,lock:locked??(edge==='corner'?{ratio:start.width/start.height,extra:0}:null)};cancelDrag();}
+  function begin(edge,e){panel.dataset.resizing='true';panel.dispatchEvent(new Event('radar-widget-gesture'));const start=rect(),locked=ratio();gesture={edge,start,x:e.clientX,y:e.clientY,id:e.pointerId,lock:locked};cancelDrag();}
   panel.addEventListener('pointerdown',e=>{
     if(!editable()||e.button!==0)return;
     const edge=e.target.closest('.widget-edge')?.dataset.edge;
@@ -52,8 +52,10 @@ export function setupWidgetResize(panel,{limits,ratio=()=>null,apply,save,cancel
   const cancel=()=>{gesture=null;points.clear();delete panel.dataset.resizing;panel.dispatchEvent(new Event('radar-widget-gesture'));cancelDrag();save();};
   window.addEventListener('radar-screen-lock',cancel);window.addEventListener('blur',cancel);
   corner.addEventListener('keydown',e=>{
-    const sign={ArrowRight:1,ArrowDown:1,ArrowLeft:-1,ArrowUp:-1}[e.key];if(!sign||!editable())return;
-    e.preventDefault();e.stopPropagation();const s=rect(),lock=ratio()??{ratio:s.width/s.height,extra:0},w=s.width+sign*(e.shiftKey?40:10);
-    apply(constrain(s,w,w/lock.ratio+lock.extra,'corner',lock));save();
+    const delta={ArrowRight:[1,0],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowUp:[0,-1]}[e.key];if(!delta||!editable())return;
+    e.preventDefault();e.stopPropagation();const s=rect(),lock=ratio(),step=e.shiftKey?40:10;
+    let w=s.width+delta[0]*step,h=s.height+delta[1]*step;
+    if(lock){if(delta[1])w=(h-lock.extra)*lock.ratio;h=w/lock.ratio+lock.extra;}
+    apply(constrain(s,w,h,'corner',lock));save();
   });
 }

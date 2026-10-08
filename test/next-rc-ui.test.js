@@ -5,7 +5,7 @@ import {selectPlaces} from '../public/map-decoration.js';
 import {storageMeter} from '../public/storage-meter.js';
 const start={x:100,y:100,width:400,height:200};
 const limits={minWidth:100,minHeight:50,maxWidth:640,maxHeight:480,viewportWidth:844,viewportHeight:390};
-test('corner and pinch maintain ratio at viewport and minimum limits',()=>{
+test('explicit ratio constraints maintain proportions at viewport and minimum limits',()=>{
   for(const edge of ['corner','pinch'])for(const width of [-20,100,450,900]){
     const r=resizedRect(start,width,width/2,{...limits,edge,ratio:2});
     assert.equal(r.width/r.height,2);assert.ok(r.x>=8&&r.y>=8&&r.x+r.width<=836&&r.y+r.height<=382);
@@ -30,4 +30,11 @@ test('label levels retain exact default and add candidates without removing base
 test('storage uses occupied bytes, never caller-available bytes; unknown stays unknown',()=>{
   assert.deepEqual(storageMeter({capacityBytes:100,usedBytes:70,availableBytes:20}),{total:100,used:70,percent:70});
   for(const v of [null,{capacityBytes:100,availableBytes:20},{capacityBytes:0,usedBytes:0},{capacityBytes:100,usedBytes:101}])assert.equal(storageMeter(v),null);
+});
+
+test('unlocked corner dimensions are independent',()=>{
+  const wider=resizedRect(start,450,200,{...limits,edge:'corner'});
+  assert.equal(wider.width,450);assert.equal(wider.height,200);assert.equal(wider.x,start.x);assert.equal(wider.y,start.y);
+  const taller=resizedRect(start,400,240,{...limits,edge:'corner'});
+  assert.equal(taller.width,400);assert.equal(taller.height,240);
 });
