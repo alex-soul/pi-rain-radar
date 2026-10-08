@@ -140,7 +140,7 @@
 .storage-meter[data-level=full]>span{background:#bf784b;}
 #review-storage-short{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums;}
 
-.weather-readings{column-gap:5px;padding-inline:20px;}
+.weather-readings{column-gap:5px;padding-inline:68px;}
 #weather-dock{transition:none;}
 :root .weather-reading .reading-value-slot{position:relative;width:calc(6ch + 9px);}
 :root .weather-reading .reading-value-slot .reading-trend{position:absolute;right:0;}
@@ -169,3 +169,7 @@
 /* Equal toggle rows keep Location label centred between Scale and Centre dot. */
 #layers-panel label[for=show-map-scale],#layers-panel .map-option{min-height:40px;margin-bottom:0;}
 #layers-panel .map-option{margin-top:0;}
+
+:root #stats-close{border-radius:50%;}
+#screen-preview-controls .screen-group{border:1px solid #78998a66;border-radius:9px;padding:14px;margin:0 0 16px;min-width:0;}
+#screen-preview-controls .screen-group legend{padding:0 6px;}

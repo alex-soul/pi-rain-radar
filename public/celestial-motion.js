@@ -9,11 +9,12 @@ export function celestialPosition(time, events, width, radius) {
   const times=complete?[rise,riseEnd,peak,setStart,set]:[rise,peak,set];
   const positions=complete?[-radius,radius,width/2,width-radius,width+radius]:[-radius,width/2,width+radius];
   const slopes=times.slice(1).map((t,i)=>(positions[i+1]-positions[i])/(t-times[i]));
+  const centre=.65*Math.min(...(complete?[slopes[1],slopes[2]]:slopes));
   let velocities;
   if(complete){
-    const left=Math.min(3*slopes[1],slopes[0]),right=Math.min(3*slopes[2],slopes[3]);
-    velocities=[2*slopes[0]-left,left,0,right,2*slopes[3]-right];
-  }else velocities=[2*slopes[0],0,2*slopes[1]];
+    const left=Math.min(3*slopes[1]-2*centre,slopes[0]),right=Math.min(3*slopes[2]-2*centre,slopes[3]);
+    velocities=[2*slopes[0]-left,left,centre,right,2*slopes[3]-right];
+  }else velocities=[3*slopes[0]-2*centre,centre,3*slopes[1]-2*centre];
   if(time<=rise)return -radius;if(time>=set)return width+radius;
   const i=times.findIndex((t,j)=>j<times.length-1&&time>=t&&time<=times[j+1]);
   const h=times[i+1]-times[i],u=(time-times[i])/h;

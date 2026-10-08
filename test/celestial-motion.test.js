@@ -16,6 +16,7 @@ test('both bodies hit all five limb/transit anchors at actual resized disc geome
    for(const key of ['riseEnd','transit','setStart']){
     const t=e[key],before=x(t)-x(t-1),after=x(t+1)-x(t);assert.ok(Math.abs(before-after)<1e-6,`${name} smooth ${key}`);
    }
+   assert.ok(x(e.transit+600000)-x(e.transit)>.5*Math.min((w/2-r)/(e.transit-e.riseEnd),(w/2-r)/(e.setStart-e.transit))*600000,`${name} advances through transit`);
    assert.ok(x(e.rise+1000)-x(e.rise)>x(e.transit+1000)-x(e.transit));
   }
  }

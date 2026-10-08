@@ -43,18 +43,17 @@ function attachCog(area,dialog,id,label){
 }
 function opacityControl(dialog,key){
   const box=document.createElement('div');box.className='local-opacity';
-  box.innerHTML=`<label for="opacity-${key}">Background opacity <output></output></label><input id="opacity-${key}" type="range" min="0" max="100" step="5"><button type="button">Reset background</button>`;
+  box.innerHTML=`<label for="opacity-${key}">Background opacity <output></output></label><input id="opacity-${key}" type="range" min="0" max="100" step="5">`;
   const input=box.querySelector('input'),output=box.querySelector('output');
   const paint=()=>{input.value=localPreferences.opacity[key]??(key==='buttons'?(document.documentElement.dataset.theme==='dark'?90:80):70);output.textContent=key in localPreferences.opacity?localPreferences.opacity[key]+'%':'Default';};
   input.oninput=()=>{if(canEditLocal()){localPreferences.opacity[key]=Number(input.value);saveLocalPreferences();paint();}};
-  box.querySelector('button').onclick=()=>{if(canEditLocal()){delete localPreferences.opacity[key];saveLocalPreferences();paint();}};
   dialog.append(box);window.addEventListener('radar-local-preferences',paint);new MutationObserver(paint).observe(dialog,{attributes:true,attributeFilter:['open']});paint();
 }
 function fontControl(dialog,key){
-  const box=document.createElement('div');box.className='local-opacity';box.innerHTML=`<label for="font-${key}">Font size <output></output></label><input id="font-${key}" type="range" min="75" max="150" step="5"><button type="button">Reset font size</button>`;
+  const box=document.createElement('div');box.className='local-opacity';box.innerHTML=`<label for="font-${key}">Font size <output></output></label><input id="font-${key}" type="range" min="75" max="150" step="5">`;
   const input=box.querySelector('input'),output=box.querySelector('output');const paint=()=>{input.value=localPreferences.fonts[key]??100;output.textContent=input.value+'%'+(Number(input.value)===100?' (default)':'');};
   input.oninput=()=>{if(canEditLocal()){localPreferences.fonts[key]=Number(input.value);saveLocalPreferences();paint();}};
-  box.querySelector('button').onclick=()=>{if(canEditLocal()){delete localPreferences.fonts[key];saveLocalPreferences();paint();}};dialog.append(box);paint();
+  dialog.append(box);paint();
 }
 const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle,#history-toggle time'};
 function paintFont(key){for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}

@@ -6,9 +6,9 @@ export const lastFrameMultipliers=Array.from({length:21},(_,i)=>Number((1+i*0.2)
 export const playbackFrameDelay=(last,speed=1,multiplier=2.4)=>650*(last?multiplier:1)/speed;
 export function dockOutline(width, height) {
   const centre = width / 2, body = Math.max(0, height - 18);
-  // Keep shoulders inside 20px content padding, including wrapped rows.
+  // Restore the original broad shoulders inside 68px content padding.
   // During collapse, reserve the whole 76px grip before allocating side depth.
-  const depth = Math.min(14, Math.max(0, (width - 76) / 2));
+  const depth = Math.min(56, Math.max(0, (width - 76) / 2));
   const grip = `H${centre+38}Q${centre+33} ${body} ${centre+29} ${body+4}L${centre+21} ${body+12}Q${centre+15} ${height} ${centre+9} ${height}H${centre-9}Q${centre-15} ${height} ${centre-21} ${body+12}L${centre-29} ${body+4}Q${centre-33} ${body} ${centre-38} ${body}`;
   return body < 1 ? `M0 0${grip}H0Z` : `M0 0H${width}C${width-depth*.45} 0 ${width-depth*.55} ${body} ${width-depth} ${body}${grip}H${depth}C${depth*.55} ${body} ${depth*.45} 0 0 0Z`;
 }
