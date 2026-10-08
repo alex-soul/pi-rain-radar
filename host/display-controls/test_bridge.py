@@ -82,7 +82,9 @@ class BridgeTests(unittest.TestCase):
         for path in ['/run/user/0/display.sock','/tmp/display.sock','/run/user/1234/../display.sock']:
             with self.assertRaises(ValueError):
                 install_bridge.definition('tester',1234,path,'')
-        unit=install_bridge.unit('tester')
+        unit=install_bridge.unit('tester',1234)
+        self.assertIn('ProtectHome=tmpfs',unit)
+        self.assertIn('BindReadOnlyPaths=/run/user/1234',unit)
         self.assertIn('User=tester\n',unit);self.assertIn('LoadCredential=token:',unit)
         self.assertIn('CapabilityBoundingSet=\n',unit)
         self.assertNotIn('AF_INET',unit)

@@ -30,7 +30,7 @@ def definition(username, uid, controller, events):
     return {'controller_socket': controller, 'events_address': events}
 
 
-def unit(username):
+def unit(username, uid):
     return f'''[Unit]
 Description=Pi Rain Radar Screen bridge
 After=systemd-user-sessions.service
@@ -45,7 +45,8 @@ Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=tmpfs
+BindReadOnlyPaths=/run/user/{uid}
 PrivateTmp=true
 PrivateDevices=true
 RestrictAddressFamilies=AF_UNIX
@@ -118,7 +119,7 @@ def install(username, controller, events):
     # Atomic replacements prevent partial source/config after interruption.
     files = {saved: json.dumps(settings) + '\n', ETC / 'compose.screen.yaml': compose(group.gr_gid),
              LIB / 'bridge.py': Path(__file__).with_name('bridge.py').read_text(),
-             Path('/etc/systemd/system') / SERVICE: unit(username)}
+             Path('/etc/systemd/system') / SERVICE: unit(username, account.pw_uid)}
     for target, content in files.items():
         with tempfile.NamedTemporaryFile(mode='w', dir=target.parent, delete=False) as stream:
             temporary = Path(stream.name)
