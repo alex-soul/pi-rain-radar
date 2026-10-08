@@ -101,7 +101,7 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
-  ...['local-ui','local-idle','local-preferences','dock-format','trend-history-client'].map(name=>['/'+name+'.js',[name+'.js','text/javascript']]),
+  ...['screen-preview','widget-resize','map-decoration','storage-meter','local-ui','local-idle','local-preferences','dock-format','trend-history-client'].map(name=>['/'+name+'.js',[name+'.js','text/javascript']]),
   ['/local-ui.css',['local-ui.css','text/css']],
   ['/suncalc.js',['suncalc.js','text/javascript']],
   ['/suncalc-license.txt',['suncalc-license.txt','text/plain']],

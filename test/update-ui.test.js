@@ -12,7 +12,7 @@ test('browser reloads after an app upgrade, waits for Settings to close and igno
     $:()=>dialog,location:{reload(){reloads++;}},paintStatus(){},paintMapUpdate(){},ageLiveWindow(){},playbackHours:()=>2,
     fetch:async()=>{if(fail)throw Error('restarting');return {ok:true,json:async()=>({appVersion:'0.1.2',mapId:'map'})};}
   });
-  vm.runInContext(`let generation=0,status,serverReachable=true,displayed={},mapUpdateVisible=false;\n${app.slice(app.indexOf('let pollRunning = false;'),app.indexOf('try {\n  const response = await fetch(`/maps/'))}`,context);
+  vm.runInContext(`let generation=0,status,serverReachable=true,displayed={},mapUpdateVisible=false;\n${app.slice(app.indexOf('let pollRunning = false;'),app.indexOf('void loadMapPlaces(assetIdentity);'))}`,context);
   await context.poll();assert.equal(reloads,0);
   fail=true;dialog.open=false;
   await context.poll();assert.equal(reloads,0);

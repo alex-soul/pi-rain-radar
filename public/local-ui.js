@@ -1,3 +1,4 @@
+import {setupMapDecoration} from './map-decoration.js';
 import {localPreferences,saveLocalPreferences,opacityNames,lookbacks} from './local-preferences.js';
 import {createLocalIdle,AFFORDANCE_IDLE_MS} from './local-idle.js';
 const $=id=>document.getElementById(id);
@@ -10,13 +11,13 @@ export function setupAffordances(area,editor=null){
   area.dataset.localArea='';const pointers=new Set();let hovered=false;
   const idle=createLocalIdle({delayMs:AFFORDANCE_IDLE_MS,show:()=>{if(canEditLocal())area.classList.add('local-awake');},hide:()=>{
     const active=document.activeElement;
-    if(area.contains(active)&&active.matches('.local-cog,[id$="-resize"]')){area.tabIndex=0;area.focus({preventScroll:true});}
+    if(area.contains(active)&&active.matches('.local-cog,.widget-close,[id$="-resize"]')){area.tabIndex=0;area.focus({preventScroll:true});}
     area.classList.remove('local-awake');
-  },held:()=>hovered||pointers.size>0||!!editor?.open||(document.hasFocus()&&area.contains(document.activeElement)&&document.activeElement.matches(':focus-visible'))});
+  },held:()=>hovered||pointers.size>0||area.dataset.resizing==='true'||!!editor?.open||(document.hasFocus()&&area.contains(document.activeElement)&&document.activeElement.matches(':focus-visible'))});
   area.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'||e.pointerType==='pen')hovered=true;idle.activity();});
   area.addEventListener('pointerleave',()=>{hovered=false;idle.schedule();});
   area.addEventListener('focusout',()=>queueMicrotask(idle.schedule));
-  for(const name of ['pointermove','click','keydown','focusin','input','change'])area.addEventListener(name,idle.activity);
+  for(const name of ['pointermove','click','keydown','focusin','input','change','radar-widget-gesture'])area.addEventListener(name,idle.activity);
   area.addEventListener('pointerdown',e=>{pointers.add(e.pointerId);idle.activity();});
   for(const name of ['pointerup','pointercancel','lostpointercapture'])window.addEventListener(name,e=>{if(pointers.delete(e.pointerId))idle.schedule();});
   if(editor){new MutationObserver(()=>{if(editor.open)idle.activity();else idle.schedule();}).observe(editor,{attributes:true,attributeFilter:['open']});}
@@ -49,6 +50,15 @@ function opacityControl(dialog,key){
   box.querySelector('button').onclick=()=>{if(canEditLocal()){delete localPreferences.opacity[key];saveLocalPreferences();paint();}};
   dialog.append(box);window.addEventListener('radar-local-preferences',paint);new MutationObserver(paint).observe(dialog,{attributes:true,attributeFilter:['open']});paint();
 }
+function fontControl(dialog,key){
+  const box=document.createElement('div');box.className='local-opacity';box.innerHTML=`<label for="font-${key}">Font size <output></output></label><input id="font-${key}" type="range" min="75" max="150" step="5"><button type="button">Reset font size</button>`;
+  const input=box.querySelector('input'),output=box.querySelector('output');const paint=()=>{input.value=localPreferences.fonts[key]??100;output.textContent=input.value+'%'+(Number(input.value)===100?' (default)':'');};
+  input.oninput=()=>{if(canEditLocal()){localPreferences.fonts[key]=Number(input.value);saveLocalPreferences();paint();}};
+  box.querySelector('button').onclick=()=>{if(canEditLocal()){delete localPreferences.fonts[key];saveLocalPreferences();paint();}};dialog.append(box);paint();
+}
+const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle,#history-toggle time'};
+function paintFont(key){for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
+function paintFonts(){for(const key of Object.keys(fontTargets))paintFont(key);window.dispatchEvent(new Event('radar-display-change'));document.getElementById('camera')?.dispatchEvent(new Event('snapshot-size'));}
 // Share the same two-tab structure across the browser-local list editors.
 function tabbedEditor(dialog,listTitle,listNodes){
   dialog.classList.add('local-editor');
@@ -68,6 +78,7 @@ function tabbedEditor(dialog,listTitle,listNodes){
 }
 function paintOpacity(){for(const key of opacityNames){const prop='--local-'+key+'-alpha';if(key in localPreferences.opacity)document.documentElement.style.setProperty(prop,localPreferences.opacity[key]/100);else document.documentElement.style.removeProperty(prop);}}
 export function setupLocalEditors(){
+  $('layers-toggle').innerHTML=cog;$('settings-toggle').innerHTML='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';$('settings-toggle').setAttribute('aria-label','Open main menu');
   const top=editor('top-editor','Top dock'),bottom=editor('bottom-editor','Playback dock'),side=editor('side-editor','Side buttons');
   top.append($('weather-choices'));
   for(const id of ['auto-hide-weather','gust-cache-minutes'])top.append($(id).closest('label'));
@@ -93,12 +104,13 @@ export function setupLocalEditors(){
   speedField.append(bottom.querySelector('label[for="playback-speed"]'),speed,bottom.querySelector('.speed-labels'));
   playbackOptions.append(speedField,...[...bottom.children].filter(node=>!node.classList.contains('archive-heading')));bottom.append(playbackOptions);
   for(const [id,title]of [['rain-forecast','Rain forecast'],['astronomy','Sun and Moon'],['stats','Stats for nerds']]){
-    const dialog=editor(id+'-editor',title);opacityControl(dialog,id);attachCog($(id),dialog,id+'-edit','Edit '+title);
+    const dialog=editor(id+'-editor',title);opacityControl(dialog,id);fontControl(dialog,id);attachCog($(id),dialog,id+'-edit','Edit '+title);
   }
   const select=document.createElement('select');select.id='trends-lookback';select.append(new Option('Follow main playback','follow'),...lookbacks.map(h=>new Option(h+' hours',String(h))));select.value=String(localPreferences.lookback??'follow');
   const label=document.createElement('label');label.className='misc-option';label.textContent='Chart lookback';label.append(select);$('trend-editor').insertBefore(label,$('trend-editor').querySelector('.local-opacity'));
   select.onchange=()=>{if(canEditLocal()){localPreferences.lookback=lookbacks.includes(Number(select.value))?Number(select.value):null;saveLocalPreferences();}};
   for(const id of ['astro-sun-mode','astro-moon-mode'])$(id).parentElement.classList.add('local-option-row');
+  for(const [dialog,key]of [[top,'top'],[side,'buttons'],[bottom.querySelector('.local-options'),'bottom'],[$('trend-editor'),'trends']])fontControl(dialog,key);
   tabbedEditor(top,'Readings',[$('weather-choices')]);
   tabbedEditor(side,'Buttons',[$('control-list'),$('control-feedback')]);
   tabbedEditor($('trend-editor'),'Charts',[$('trend-list'),$('trend-feedback')]);
@@ -106,7 +118,12 @@ export function setupLocalEditors(){
   editIcon($('trend-edit'),'Edit Weather trends');
   setupAffordances($('weather-trends'),$('trend-editor'));
   for(const area of document.querySelectorAll('.detached-trend')){editIcon(area.querySelector('.trend-edit')??area.editButton,'Edit Weather trends');setupAffordances(area,$('trend-editor'));}
-  for(const id of ['overview','camera'])setupAffordances($(id));
+  const overview=editor('overview-editor','Overview map'),camera=editor('camera-editor','Camera');
+  overview.append($('layer-overview-rain').closest('fieldset'));attachCog($('overview'),overview,'overview-edit','Edit Overview map');
+  fontControl(camera,'camera');attachCog($('camera'),camera,'camera-edit','Edit Camera');
+  setupMapDecoration(overview,$('layer-main-rain').closest('fieldset'));
+  paintFonts();window.addEventListener('radar-local-preferences',paintFonts);window.addEventListener('resize',paintFonts);
+  new MutationObserver(()=>paintFont('stats')).observe($('stats-data'),{childList:true,subtree:true});
   // Remove relocated tabs, retaining shared configuration and protected lock management.
   for(const id of ['settings-tab-readings','settings-tab-buttons'])$(id)?.remove();
   for(const id of ['settings-panel-readings','settings-panel-buttons'])$(id)?.remove();
@@ -117,10 +134,8 @@ export function setupLocalEditors(){
   for(const id of ['cloud-enabled','review-camera-enabled']){
     const row=$(id).closest('label'),group=document.createElement('div');group.className='settings-group';row.before(group);group.append(row);
   }
-
   paintOpacity();window.addEventListener('radar-local-preferences',paintOpacity);
 }
-
 export function movablePanel(panel,handle){
   let drag=null;handle.tabIndex=0;handle.setAttribute('aria-label','Move Archive panel. Drag or use arrow keys.');
   const place=(x,y)=>{panel.style.left=Math.max(8,Math.min(x,innerWidth-panel.offsetWidth-8))+'px';panel.style.top=Math.max(8,Math.min(y,innerHeight-panel.offsetHeight-8))+'px';};

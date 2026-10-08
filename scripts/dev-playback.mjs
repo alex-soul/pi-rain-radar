@@ -9,7 +9,7 @@ import {createHistoryStore} from '../src/history-store.js';
 import {createDiagnostics} from '../src/diagnostics.js';
 import {createHealthEvents} from '../src/health-events.js';
 import { scenarios as scenarioCatalog, controlsPage } from './dev-scenarios.mjs';
-// Disposable, loopback-only playback fixture; no provider acquisition.
+// Disposable playback fixture; no provider acquisition.
 import {createServer as http} from 'node:http';
 import {createServer as net} from 'node:net';
 import {mkdtemp,mkdir,writeFile,readFile,cp} from 'node:fs/promises';
@@ -21,7 +21,12 @@ import {promisify} from 'node:util';
 import sharp from 'sharp';
 import {defaultSettings,defaultViews,hash,makeViews} from '../src/map.js';
 
+const previewBind=process.env.RADAR_DEV_BIND||'127.0.0.1';
+if(!/^(127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/.test(previewBind)||previewBind.split('.').some(n=>Number(n)>255))throw Error('RADAR_DEV_BIND must be loopback or a specific private IPv4 address');
+const previewUrl=`http://${previewBind}:3091`;
+let simulatedScreen={synthetic:true,brightness:75,sleep:true,timeout:10};
 const cloudSeed=process.argv[2]==='--clouds'?process.argv[3]:null;
+if(previewBind!=='127.0.0.1'&&(cloudSeed||process.env.RADAR_DEV_SETTINGS_FROM))throw Error('LAN preview requires fresh synthetic fixtures without imported settings or real clouds');
 const trial=cloudSeed?join(cloudSeed,'continuous-trial-500'):null;
 const recordingArg=process.argv.indexOf('--forecast-recording');
 if(recordingArg>=0&&(!process.argv[recordingArg+1]||cloudSeed))throw Error('Use --forecast-recording with a local export, without --clouds');
@@ -31,7 +36,7 @@ if(trial){await mkdir(trial,{recursive:true});try{directory=JSON.parse(await rea
 if(!directory){directory=await mkdtemp(join(tmpdir(),'pi-rain-radar-next-release-preview-'));if(trial)await writeFile(join(trial,'preview.json'),JSON.stringify({directory}));}
 const simulationId=Date.now().toString(36);
 await mkdir(join(directory,'settings'),{recursive:true});
-await writeFile(join(directory,'settings/embed.json'),JSON.stringify({enabled:true,origins:['http://127.0.0.1:3091'],hours:2,speed:1,theme:'dark'}));
+await writeFile(join(directory,'settings/embed.json'),JSON.stringify({enabled:true,origins:[previewUrl],hours:2,speed:1,theme:'dark'}));
 await writeFile(join(directory,'settings/map.json'),JSON.stringify({...defaultSettings,name:'DEV · Synthetic radar'}));
 await writeFile(join(directory,'settings/radar.json'),JSON.stringify({main:'rainviewer',overview:'same',monthlyLimit:null}));
 const seedStore=await createHistoryStore(directory);
@@ -69,7 +74,7 @@ if(process.env.RADAR_DEV_SETTINGS_FROM){
 const reservation=net();reservation.listen(0,'127.0.0.1');await once(reservation,'listening');
 const internalPort=reservation.address().port;await new Promise(r=>reservation.close(r));
 const origin=`http://127.0.0.1:${internalPort}`;
-const child=spawn(process.execPath,['src/server.js'],{env:{...process.env,DATA_DIR:directory,PORT:String(internalPort),BIND_ADDRESS:'127.0.0.1',RADAR_MANUAL_REFRESH:'1',...(trial?{RADAR_DEV_CLOUDS:'1',RADAR_DEV_CLOUD_USAGE:trial,RAINBOW_TEST_REQUEST_LIMIT:'500'}:{})},windowsHide:true,stdio:[trial?'pipe':'ignore','pipe','pipe']});
+const child=spawn(process.execPath,['src/server.js'],{env:{...process.env,DATA_DIR:directory,PORT:String(internalPort),BIND_ADDRESS:'127.0.0.1',RADAR_MANUAL_REFRESH:'1',POWER_HELPER_SOCKET:'',POWER_HELPER_TOKEN_FILE:'',...(trial?{RADAR_DEV_CLOUDS:'1',RADAR_DEV_CLOUD_USAGE:trial,RAINBOW_TEST_REQUEST_LIMIT:'500'}:{})},windowsHide:true,stdio:[trial?'pipe':'ignore','pipe','pipe']});
 child.stderr.on('data',data=>process.stderr.write(data));
 if(trial){
  try{let buffer=(await promisify(execFile)('ssh',['-o','BatchMode=yes','pi-weather','sudo cat /var/lib/docker/volumes/pi-rain-radar_radar-data/_data/settings/rainbow.json'],{encoding:'buffer',maxBuffer:4096,timeout:20000,windowsHide:true})).stdout;
@@ -180,6 +185,10 @@ const server=http(async(req,res)=>{
       if(req.method==='POST'){let body='';for await(const chunk of req)body+=chunk;const hadKey=demoKey;demoKey=!!JSON.parse(body).apiKey;if(!hadKey||!demoKey){await devWeather.configure('/weather',{rainbowCollect:false});demoRadar=disableRadarProviders(demoRadar,source=>source!=='rainbow');}}
       return send({configured:demoKey,usage:{tiles:0,requests:0},tilesPerView:{main:6,overview:6}});
     }
+    if(path.pathname==='/__dev/screen'){
+      if(req.method==='POST'){let body='';for await(const chunk of req){body+=chunk;if(body.length>1024){res.writeHead(413);return res.end();}}const v=JSON.parse(body);if(!Number.isInteger(v.brightness)||v.brightness<10||v.brightness>100||typeof v.sleep!=='boolean'||!Number.isInteger(v.timeout)||v.timeout<1||v.timeout>120){res.writeHead(400);return res.end();}simulatedScreen={synthetic:true,...v};}
+      return send(simulatedScreen);
+    }
     // Synthetic acknowledgements only; power actions never reach the real host.
     if(path.pathname==='/api/settings/power') {
       if(req.method==='GET')return send({state:'ready',version:'synthetic-no-host-actions'});
@@ -217,6 +226,8 @@ const server=http(async(req,res)=>{
       if(path.pathname==='/api/status'){
         data.camera=devCamera.camera.status();
         data.cameraHistory=await devCamera.camera.live(Number(path.searchParams.get('hours')??2),data.end*1000);
+        if(scenario==='storage-unknown')data.storage={...data.storage,capacityBytes:null,usedBytes:null};
+        if(scenario==='storage-full')data.storage={...data.storage,capacityBytes:32*1073741824,usedBytes:31*1073741824,pressure:true};
         if(scenario==='archive-rollover'&&data.storage)data.storage={...data.storage,pressure:true,oldest:(end-21600)*1000};
         data.archiveRevision=`fixture-${revision}-${data.archiveRevision}`;
         if(data.sources)for(const source of Object.values(data.sources)){source.time=Math.floor(Date.now()/600000)*600;source.checkedAt=new Date(end*1000).toISOString();source.nextCheckAt=Math.ceil(Date.now()/300000)*300000;source.state=scenario==='source-error'?'warning':'ready';source.error=scenario==='source-error'?'Synthetic provider unavailable':null;}
@@ -257,6 +268,6 @@ const server=http(async(req,res)=>{
     res.writeHead(response.status,headers);res.end(body);
   }catch{res.writeHead(502);res.end('Synthetic backend unavailable');}
 });
-server.listen(3091,'127.0.0.1',()=>console.log(JSON.stringify({preview:'http://127.0.0.1:3091',controls:'http://127.0.0.1:3091/__dev',directory,backendPid:child.pid,pid:process.pid})));
+server.listen(3091,previewBind,()=>console.log(JSON.stringify({preview:previewUrl,controls:previewUrl+'/__dev',directory,backendPid:child.pid,pid:process.pid})));
 server.on('error',error=>{console.error(error.message);child.kill();process.exitCode=1;});
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{child.kill();server.close(async()=>{await devCamera.close();await devWeather.close();process.exit(0);});});

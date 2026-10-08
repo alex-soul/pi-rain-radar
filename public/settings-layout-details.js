@@ -43,7 +43,6 @@ export function setupReviewRadar(){
  radar.querySelector('.radar-source-column').classList.add('settings-group','review-radar-selection');
  const enable=$('review-rainbow-collect').closest('.review-collection');rainbow.insertBefore(enable,$('rainbow-cap').closest('label'));
  target.append($('rainbow-cap').closest('label'),$('rainbow-limit-fields'),$('rainbow-limit-save'),$('rainbow-limit-note'));
- target.append(make('<p class="review-muted">One monthly request allowance shared by Rainbow rain and clouds.</p>'));
  const group=$('settings-radar-sources');
  for(const [id,label]of [['rainviewer','RainViewer rain'],['rainbow','Rainbow rain']])group.append(make(`<div class="source-status-row"><span>${label}</span><span id="review-${id}-status" data-health="ready"></span></div>`));
  for(const [id,label]of [['owm','OpenWeather collection'],['ha-collection','HA weather collection']])$('settings-api-status').closest('.settings-group').append(make(`<div class="source-status-row"><span>${label}</span><span id="review-${id}-status" data-health="neutral"></span></div>`));

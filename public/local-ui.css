@@ -1,8 +1,8 @@
 /* Browser-local controls sit outside layout flow; appearance cannot move data. */
 .local-cog{position:absolute!important;display:grid;place-items:center;width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;top:3px;right:3px;border:0!important;border-radius:50%;background:transparent!important;color:inherit;font:16px Arial!important;cursor:pointer;z-index:3;opacity:.55;touch-action:manipulation;}
-[data-local-area] > :is(.local-cog,[id$="-resize"]){visibility:hidden;pointer-events:none;}
-[data-local-area].local-awake > :is(.local-cog,[id$="-resize"]){visibility:visible;pointer-events:auto;}
-.screen-locked [data-local-area] > :is(.local-cog,[id$="-resize"]){visibility:hidden;pointer-events:none;}
+[data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
+[data-local-area].local-awake > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:visible;pointer-events:auto;}
+.screen-locked [data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
 
 :root :is(#astronomy-resize,[id$="-resize"]){width:32px;height:32px;right:0;bottom:0;padding:5px;font-size:20px;color:inherit;opacity:.4;}
 :root :is(#astronomy-resize,[id$="-resize"]):is(:hover,:focus-visible,:active),:root .local-cog:is(:hover,:focus-visible,:active){opacity:1;filter:brightness(1.25);}
@@ -118,3 +118,42 @@
 #camera-config > .settings-group{margin-bottom:20px;}
 
 :root[style*="--local-stats-alpha"] #stats{background:rgb(var(--local-widget-rgb)/var(--local-stats-alpha,.678));}
+
+/* Widget controls share one reveal/idle/lock policy; edges stay clear of buttons. */
+:root aside > .local-cog{left:3px;right:auto;}
+.widget-close{position:absolute;right:3px;top:3px;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;font:24px Arial;cursor:pointer;z-index:4;opacity:.55;touch-action:manipulation;}
+.widget-edge{position:absolute;z-index:2;touch-action:none;}
+.widget-edge[data-edge=left],.widget-edge[data-edge=right]{width:8px;top:36px;bottom:36px;cursor:ew-resize;}
+.widget-edge[data-edge=left]{left:0;}.widget-edge[data-edge=right]{right:0;}
+.widget-edge[data-edge=top],.widget-edge[data-edge=bottom]{height:8px;left:36px;right:36px;cursor:ns-resize;}
+.widget-edge[data-edge=top]{top:0;}.widget-edge[data-edge=bottom]{bottom:0;}
+@media(pointer:coarse){.widget-edge{display:none;}}
+#cloud-options>label{padding-top:16px;}
+#overview-editor fieldset{border:0;padding:0;margin:12px 0;min-width:0;}
+#overview-editor .layer-choice{margin-bottom:16px;}
+#overview-editor .layer-choice>label:first-child,.map-option{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px;}
+#layers-panel{max-height:calc(100dvh - 140px);overflow:auto;}
+#layers-panel input[type=range]{width:100%;}
+.storage-meter{height:10px;background:#78998a30;border:1px solid #78998a60;border-radius:6px;overflow:hidden;margin-top:12px;}
+.storage-meter>span{display:block;height:100%;background:#389488;}
+.storage-meter[data-unknown=true]{background:repeating-linear-gradient(135deg,#78998a20 0 6px,#78998a45 6px 12px);}
+.storage-meter[data-level=full]>span{background:#bf784b;}
+#review-storage-short{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums;}
+
+.weather-readings{column-gap:5px;padding-inline:20px;}
+#weather-dock{transition:none;}
+:root .weather-reading .reading-value-slot{position:relative;width:calc(6ch + 9px);}
+:root .weather-reading .reading-value-slot .reading-trend{position:absolute;right:0;}
+:root .weather-reading .reading-value-slot[data-reading=direction]{width:3.5ch;}
+:root .weather-reading .reading-value-slot:is([data-reading=wind],[data-reading=gust]){width:calc(3ch + 9px);}
+:root .weather-reading .reading-value-slot:is([data-reading=humidity],[data-reading=uv]){width:calc(3.7ch + 9px);}
+:root .weather-reading .reading-value-slot[data-reading=visibility]{width:calc(4.4ch + 9px);}
+#screen-preview-controls{border:0;padding:0;margin:16px 0;min-width:0;}
+#screen-preview-controls input[type=range]{padding:0;min-height:36px;}
+
+:root .astro-reading>span:last-child{width:8ch;min-width:8ch;flex:none;white-space:nowrap;}
+:root .astro-reading small{font-size:.5em;}
+
+/* Extreme provider values must not paint over neighbouring readings. */
+:root .weather-reading .reading-value-slot > [id]{max-width:calc(100% - 9px);overflow:hidden;text-overflow:ellipsis;}
+:root .weather-reading .reading-value-slot[data-reading=direction] > [id]{max-width:100%;}

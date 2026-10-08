@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const formatSource = (await readFile(new URL('../public/weather-format.js', import.meta.url), 'utf8')).replaceAll('export ', '');
-const floatingSource = (await readFile(new URL('../public/floating-widget.js', import.meta.url), 'utf8')).replace(/^import[^\n]+\n/,'').replace('export function','function');
+const floatingSource = (await readFile(new URL('../public/floating-widget.js', import.meta.url), 'utf8')).replace(/^import[^\n]+\n/gm,'').replace('export function','function');
 const source = 'const shared={initialized:false,units:{}};\n' + formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
 test('display preferences suspend idle hiding during interaction and dialogs, and recover on tap', () => {
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
@@ -82,16 +82,16 @@ for (const widget of ['overview', 'rain-forecast']) {
   test(`${widget} retains low saved positions regardless of dock auto-hide`, () => {
     for (const autoHide of [true, false]) {
       const nodes = {}, events = {};
-      const node = id => nodes[id] ??= {dataset:{},style:{}, offsetWidth:200, offsetHeight:170, setAttribute(){}, addEventListener(){}};
+      const node = id => nodes[id] ??= {dataset:{},style:{}, offsetWidth:200, offsetHeight:170, append(){},getAttribute(){return null;},setAttribute(){}, addEventListener(){}};
       const context = vm.createContext({
-        document:{getElementById:node, querySelector:()=>({getBoundingClientRect:()=>({top:644})})},
+        setupWidgetResize(){},document:{body:{classList:{contains:()=>false}},createElement:()=>({setAttribute(){},addEventListener(){}}),getElementById:node, querySelector:()=>({getBoundingClientRect:()=>({top:644})})},
         window:{addEventListener:(event,fn)=>events[event]=fn}, innerWidth:1280, innerHeight:720,
         localStorage:{getItem:key=>JSON.stringify(key==='radar-display'?{autoHide}:{visible:true,x:20,y:530,width:200,height:170}),setItem(){}},
         ResizeObserver:class {observe(){}},
       });
       vm.runInContext(source.replaceAll('export function','function'),context);
       if(widget==='rain-forecast')vm.runInContext(floatingSource,context);
-      vm.runInContext(widgetSource.replace(/^import[^\n]+\n/,''),context);
+      vm.runInContext(widgetSource.replace(/^import[^\n]+\n/gm,''),context);
       assert.equal(node(widget).style.top, '530px');
       events.resize();
       assert.equal(node(widget).style.top, '530px');
@@ -123,16 +123,16 @@ for (const widget of ['overview', 'rain-forecast']) {
   test(`${widget} surface drag ignores taps and resize controls`, async () => {
     const nodes = {};
     const node = id => nodes[id] ??= {dataset:{},style:{}, handlers:{}, offsetWidth:300, offsetHeight:170,
-      setAttribute(){}, focus(){}, setPointerCapture(){}, getBoundingClientRect:()=>({left:20,top:100}),
+      append(){},getAttribute(){return null;},setAttribute(){}, focus(){}, setPointerCapture(){}, getBoundingClientRect:()=>({left:20,top:100}),
       addEventListener(k,fn){this.handlers[k]=fn;}};
-    const context = vm.createContext({document:{getElementById:node,querySelector:()=>({})},
+    const context = vm.createContext({setupWidgetResize(){},document:{body:{classList:{contains:()=>false}},createElement:()=>({setAttribute(){},addEventListener(){}}),getElementById:node,querySelector:()=>({})},
       widgetBottom:()=>720,setupWidgetLayer:()=>()=>{},innerWidth:1280,innerHeight:720,
       window:{addEventListener(){}},ResizeObserver:class{observe(){}},
       localStorage:{getItem:()=>JSON.stringify({visible:true,x:20,y:100,width:300,height:170}),setItem(){}},
     });
     const code = await readFile(new URL(`../public/${widget}.js`, import.meta.url),'utf8');
     if(widget==='rain-forecast')vm.runInContext(floatingSource,context);
-    vm.runInContext(code.replace(/^import[^\n]+\n/,''),context);
+    vm.runInContext(code.replace(/^import[^\n]+\n/gm,''),context);
     const panel=node(widget), target={closest:()=>null};
     const down={button:0,isPrimary:true,pointerId:1,clientX:100,clientY:150,target};
     panel.handlers.pointerdown(down);

@@ -1,6 +1,8 @@
 import {availabilityCases} from './dev-availability.mjs';
 // Stable scenario IDs are part of the local review workflow. Preserve old cases.
 export const scenarios = [
+  ['storage-unknown','Presentation','Storage unavailable','Filesystem metrics are unknown.','System > Status shows an unknown bar, never 0% used.','Return to Healthy display to recover.'],
+  ['storage-full','Presentation','Storage almost full','31 GiB used of a synthetic 32 GiB filesystem.','System > Status shows a mostly filled bar and retains low-storage warning.','No real disk is filled.'],
   ['archive-empty','Archive','Archive - no retained history','A synthetic empty Archive response; Live stays available.','Click Archive or LIVE: show honest no-history feedback and stay in Live.','Repeat, then select Healthy display and retry.'],
   ['archive-delayed','Archive','Archive - delayed response','Adds a three-second delay to Archive reads without any provider request.','Click Archive, then click again before loading finishes. The late response must not reopen Archive.','Also close the date/time panel while its choices load; return to Live and reopen.'],
   ['weather-trends','Weather','Weather history · gaps and sources','Synthetic temperature, humidity and dew point with missing readings and OWM/HA transitions.','Open Weather history. Use Archive playback to see arrows change; lines break during gaps and source changes. Left axis humidity %, right axis degrees.','Resize the widget, try both themes, hide Dock readings, and compare Live with Archive. No provider calls.'],

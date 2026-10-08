@@ -78,7 +78,7 @@ for(const [index,{id,label}] of controls.entries()){
  edit.addEventListener('click',()=>{if(!document.body.classList.contains('screen-locked'))$('trend-editor').showModal();});
  const resize=document.createElement('button');resize.id=panel.id+'-resize';resize.className='detached-resize';resize.type='button';resize.textContent='◢';resize.setAttribute('aria-label','Resize '+label+' history. Drag or use arrow keys.');
  panel.append(edit,resize);setupAffordances(panel,$('trend-editor'));$('weather-trends').parentElement.append(panel);
- const widget=setupFloatingWidget({id:panel.id,storageKey:'radar-chart-window-'+id,width:320,height:110,minWidth:180,minHeight:85,maxHeight:420,rememberVisibility:false,startX:28+(index%3)*36,startY:150+(index%5)*65});
+ const widget=setupFloatingWidget({id:panel.id,storageKey:'radar-chart-window-'+id,width:320,height:110,minWidth:180,minHeight:85,maxHeight:420,rememberVisibility:false,onClose:()=>{window.dispatchEvent(new CustomEvent('radar-hide-chart',{detail:id}));},startX:28+(index%3)*36,startY:150+(index%5)*65});
  windows.set(id,{panel,edit,resize,widget});new ResizeObserver(()=>{if(latestInput)paintWeatherTrends(latestInput);}).observe(panel);
 }
 function apply() {
@@ -118,6 +118,7 @@ export function setupTrendEditor(onChange) {
     try { localStorage.setItem(key, JSON.stringify(layout)); feedback.textContent = 'Saved on this screen'; }
     catch { feedback.textContent = 'Applied for now; browser storage is unavailable.'; }
   }
+  window.addEventListener('radar-hide-chart',e=>{if(!canEdit())return;const row=layout.find(c=>c.id===e.detail);if(row){row.visible=false;save();render();}});
   function render() {
     list.replaceChildren();
     for (const { id, visible } of layout) {

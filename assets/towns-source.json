@@ -1,0 +1,15 @@
+{
+  "source": "https://download.geonames.org/export/dump/cities15000.zip",
+  "retrieved": "2026-10-08",
+  "sourceSha256": "f181f7cb9e180b31f5e38e15fd4522895c9a6b628f8568d8277be05cab01daf2",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "GeoNames",
+  "records": 34155,
+  "fields": [
+    "name",
+    "population",
+    "longitude",
+    "latitude"
+  ],
+  "outputSha256": "15c15ffc972a010b2359af951ff25f0e52c612ce77832ea08570c67f4d0a912a"
+}

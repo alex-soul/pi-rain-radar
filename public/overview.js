@@ -1,3 +1,4 @@
+import {setupWidgetResize} from './widget-resize.js';
 import { widgetBottom, setupWidgetLayer } from "./display.js";
 const panel = document.getElementById("overview");
 const raise = setupWidgetLayer(panel);
@@ -39,7 +40,7 @@ function paint() {
 toggle.addEventListener("click", () => { visible = !visible; paint(); if (visible) raise(); save(); });
 let drag = null;
 handle.addEventListener("pointerdown", event => {
-  if (event.button !== 0 || !event.isPrimary) return;
+  if (event.button !== 0 || !event.isPrimary || document.body.classList.contains('screen-locked')) return;
   if (event.target.closest("button")) return;
   panel.focus({ preventScroll: true });
   const rect = panel.getBoundingClientRect();
@@ -69,39 +70,6 @@ handle.addEventListener("keydown", event => {
 new ResizeObserver(layout).observe(document.querySelector("footer"));
 window.addEventListener("resize", layout);
 window.addEventListener("radar-display-change", layout);
-let resizing = null;
-resizeHandle.addEventListener("pointerdown", event => {
-  if (event.button !== 0 || !event.isPrimary) return;
-  resizing = { id: event.pointerId, x: event.clientX, y: event.clientY, width: panel.offsetWidth };
-  resizeHandle.setPointerCapture(event.pointerId);
-  event.preventDefault();
-});
-function resizeTo(width) {
-  preferredWidth = Math.max(200, Math.min(480, width));
-  layout();
-}
-resizeHandle.addEventListener("pointermove", event => {
-  if (resizing?.id !== event.pointerId) return;
-  const dx = event.clientX - resizing.x, dy = (event.clientY - resizing.y) * 390 / 280;
-  resizeTo(resizing.width + (Math.abs(dx) >= Math.abs(dy) ? dx : dy));
-});
-function finishResize() { if (resizing) { resizing = null; save(); } }
-resizeHandle.addEventListener("pointerup", finishResize);
-resizeHandle.addEventListener("pointercancel", finishResize);
-resizeHandle.addEventListener("lostpointercapture", finishResize);
-resizeHandle.addEventListener("keydown", event => {
-  const direction = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
-  if (!direction) return;
-  event.preventDefault();
-  resizeTo(panel.offsetWidth + direction * (event.shiftKey ? 40 : 10));
-  save();
-});
+setupWidgetResize(panel,{limits:{minWidth:200,maxWidth:480,minHeight:20,maxHeight:Infinity},ratio:()=>({ratio:390/280,extra:2-2*280/390}),apply:r=>{preferredWidth=r.width;position={x:r.x,y:r.y};layout();},save,cancelDrag:()=>{drag=null;}});
+const close=document.createElement('button');close.id='overview-close';close.type='button';close.className='widget-close';close.textContent='×';close.setAttribute('aria-label','Hide map overview');panel.append(close);close.onclick=()=>{if(!document.body.classList.contains('screen-locked'))toggle.click();};
 paint();
-
-window.addEventListener("radar-screen-lock", () => {
-  finish(); finishResize();
-  for (const element of [handle, resizeHandle]) {
-    // Lost capture clears gesture state before any subsequent movement.
-    element.dispatchEvent(new Event("lostpointercapture"));
-  }
-});

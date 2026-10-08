@@ -1,3 +1,5 @@
+import {loadMapPlaces} from './map-decoration.js';
+import {paintStorageMeter} from './storage-meter.js';
 import {localPreferences} from './local-preferences.js';
 import {createTrendHistoryClient} from './trend-history-client.js';
 import {movablePanel} from './local-ui.js';
@@ -447,6 +449,7 @@ async function poll() {
       $('map-apply').disabled=!!status.mapUpdate.busy;
     }
     if($('status-camera'))$('status-camera').textContent=cameraSummary(status.camera,timeZone);
+    paintStorageMeter(status.storage);
     if($('status-storage'))$('status-storage').textContent=storageSummary(status.storage,timeZone);
     serverReachable = true;
     recordConnection(true);
@@ -487,26 +490,7 @@ async function poll() {
     if (epoch !== generation && !historyWindow && !historyLoading) void poll();
   }
 }
-try {
-  const response = await fetch(`/maps/${assetIdentity}/places.json`);
-  for (const place of await response.json()) {
-    const [x, y] = place.position;
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", x + 7);
-    text.setAttribute("y", y + 4);
-    text.textContent = place.name;
-    const point = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "circle",
-    );
-    point.setAttribute("cx", x);
-    point.setAttribute("cy", y);
-    point.setAttribute("r", 2);
-    $("places").append(point, text);
-  }
-} catch {
-  /* Map and radar remain usable without place labels. */
-}
+void loadMapPlaces(assetIdentity);
 void poll();
 setInterval(() => void poll(), 15000);
 schedulePlayback();

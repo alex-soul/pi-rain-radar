@@ -31,7 +31,7 @@ export async function regularFile(path) {
 }
 export async function diskSpace(path) {
   const s=await statfs(path);
-  return {capacity:s.blocks*s.bsize,available:s.bavail*s.bsize};
+  return {capacity:s.blocks*s.bsize,available:s.bavail*s.bsize,used:(s.blocks-s.bfree)*s.bsize};
 }
 export function reserveBytes(capacity) {
   const MiB=1024*1024;

@@ -73,7 +73,7 @@ test('second Archive toggle cancels availability lookup and ignores its late res
 test('live status polling does not decode or replace images during historical playback', async () => {
   let decoded = 0, adopted = 0;
   const context = vm.createContext({movablePanel:()=>()=>{},setupArchiveCalendar:()=>({sync(){},close(){}}),comparisonLead:0,weatherReplay:null,createWeatherReplay,resetHistoricalForecast(){},paintStatus(){},timeZone:'Europe/London',recordConnection(){},playbackHours:()=>6,mapIdentity:"test-map", AbortSignal, fetch: async () => ({ok:true,json:async()=>({frames:[{time:3000000,url:'/new',overviewUrl:'/new-overview'}]})}), decodeFrames: async () => {decoded++;}, adopt: () => adopted++, paintStatus() {}, paintHistory() {}, paintMapUpdate() {}, ageLiveWindow(){}, performance, serverClock:null, archiveRevision:undefined, $:()=>({dataset:{}}), mapUpdateVisible:false});
-  const pollCode = app.slice(app.indexOf('let pollRunning = false;'), app.indexOf('try {\n  const response = await fetch(`/maps/'));
+  const pollCode = app.slice(app.indexOf('let pollRunning = false;'), app.indexOf('void loadMapPlaces(assetIdentity);'));
   vm.runInContext(`let generation=1, historyWindow={end:2000000}, historyLoading=false, sequence=[{time:2000000,url:'/old',overviewUrl:'/old-overview'}], pending=null, status=null, serverReachable=false, displayed=sequence[0], returningLive=false;\n${pollCode}\nglobalThis.runPoll=poll; globalThis.readStatus=()=>status;`,context);
   await context.runPoll();
   assert.equal(context.readStatus().frames[0].time,3000000);

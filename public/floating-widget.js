@@ -1,5 +1,6 @@
+import {setupWidgetResize} from './widget-resize.js';
 import { widgetBottom, setupWidgetLayer } from "./display.js";
-export function setupFloatingWidget({id, storageKey, width = 410, height = 138, minWidth = 300, maxWidth = 640, minHeight = 108, maxHeight = 420, onVisibility = () => {}, rememberVisibility = true, startX = 18, startY = 230}) {
+export function setupFloatingWidget({id, storageKey, width = 410, height = 138, minWidth = 300, maxWidth = 640, minHeight = 108, maxHeight = 420, onVisibility = () => {}, rememberVisibility = true, startX = 18, startY = 230, onClose = null}) {
 const panel = document.getElementById(id);
 const raise = setupWidgetLayer(panel);
 const toggle = document.getElementById(`${id}-toggle`);
@@ -27,7 +28,7 @@ function place(x, y) {
   panel.style.top = `${position.y}px`;
 }
 let lastAspect=null;
-function aspect(){const image=id==='camera'?panel.querySelector('img'):null;if(image&&!image.hidden&&image.naturalWidth)lastAspect=image.naturalWidth/image.naturalHeight;return lastAspect;}
+function aspect(){const image=id==='camera'?panel.querySelector('img'):null;if(image&&!image.hidden&&image.naturalWidth)lastAspect=image.naturalWidth/image.naturalHeight;return id==='camera'?(lastAspect??16/9):null;}
 function layout() {
   if (!visible) return;
   const footerTop = widgetBottom();
@@ -44,10 +45,11 @@ function paint() {
   onVisibility(visible);
 }
 toggle?.addEventListener("click", () => { visible = !visible; paint(); if (visible) raise(); save(); });
-document.getElementById(`${id}-close`)?.addEventListener("click", () => { visible = false; paint(); save(); toggle?.focus(); });
+const close=document.createElement('button');close.id=id+'-close';close.type='button';close.className='widget-close';close.textContent='×';close.setAttribute('aria-label','Hide '+(panel.getAttribute('aria-label')||id));panel.append(close);
+close.addEventListener('click',()=>{if(document.body.classList.contains('screen-locked'))return;if(onClose)onClose();else {visible=false;paint();save();toggle?.focus();}});
 let drag = null;
 handle.addEventListener("pointerdown", event => {
-  if (event.button !== 0 || !event.isPrimary) return;
+  if (event.button !== 0 || !event.isPrimary || document.body.classList.contains('screen-locked')) return;
   if (event.target.closest("button")) return;
   const plots=event.target.closest("#trend-plots");if(plots&&plots.scrollHeight>plots.clientHeight)return;
   panel.focus({ preventScroll: true });
@@ -80,45 +82,9 @@ window.addEventListener("resize", layout);
 panel.addEventListener("snapshot-size",layout);
 window.addEventListener("radar-display-change", layout);
 
-let resizing = null;
-resizeHandle.addEventListener("pointerdown", event => {
-  if (event.button !== 0 || !event.isPrimary) return;
-  resizing = { id: event.pointerId, x: event.clientX, y: event.clientY, width: panel.offsetWidth, height: panel.offsetHeight };
-  resizeHandle.setPointerCapture(event.pointerId);
-  event.preventDefault();
-});
-function resizeTo(width, height) {
-  const ratio=aspect();if(ratio&&Math.abs(height-panel.offsetHeight)>Math.abs(width-panel.offsetWidth))width=(height-panel.querySelector('.camera-caption').offsetHeight-2)*ratio;
-  preferredWidth = Math.max(minWidth, Math.min(maxWidth, width));
-  preferredHeight = Math.max(minHeight, Math.min(maxHeight, height));
-  layout();
-}
-resizeHandle.addEventListener("pointermove", event => {
-  if (resizing?.id !== event.pointerId) return;
-  resizeTo(resizing.width + event.clientX - resizing.x, resizing.height + event.clientY - resizing.y);
-});
-function finishResize() { if (resizing) { resizing = null; save(); } }
-resizeHandle.addEventListener("pointerup", finishResize);
-resizeHandle.addEventListener("pointercancel", finishResize);
-resizeHandle.addEventListener("lostpointercapture", finishResize);
-resizeHandle.addEventListener("keydown", event => {
-  const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
-  if (!delta) return;
-  event.preventDefault();
-  const step = event.shiftKey ? 40 : 10;
-  resizeTo(panel.offsetWidth + delta[0] * step, panel.offsetHeight + delta[1] * step);
-  save();
-});
+setupWidgetResize(panel,{limits:{minWidth,maxWidth,minHeight,maxHeight},ratio:()=>{const r=aspect();return r?{ratio:r,extra:panel.querySelector('.camera-caption').offsetHeight+2-2/r}:null;},apply:r=>{preferredWidth=r.width;preferredHeight=r.height;position={x:r.x,y:r.y};layout();},save,cancelDrag:()=>{drag=null;}});
 
 paint();
-
-window.addEventListener("radar-screen-lock", () => {
-  finish(); finishResize();
-  for (const element of [handle, resizeHandle]) {
-    // Lost capture clears gesture state before any subsequent movement.
-    element.dispatchEvent(new Event("lostpointercapture"));
-  }
-});
 
 return {isVisible: () => visible, setVisible(value) {visible=!!value;paint();}};
 }

@@ -35,3 +35,7 @@ Sun and Moon calculations use [SunCalc](https://github.com/mourner/suncalc), cop
 ## On-screen credits and UI lock
 
 Displayed RainViewer/Rainbow, Natural Earth and configured OpenWeather credits remain visible when the dock is hidden, and their links remain usable during UI lock through an external-page warning. No RainViewer exception to disable its link has been obtained or is relied upon. The app uses “Weather by OpenWeatherMap” as its weather credit.
+
+## GeoNames town labels
+
+`assets/towns.json.gz` is a reduced copy of the [GeoNames cities15000 extract](https://download.geonames.org/export/dump/cities15000.zip), retrieved 8 October 2026, under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). Credit: [GeoNames](https://www.geonames.org/). Only names, population and coordinates are retained; the data is compressed and filtered for each map. Source and output checksums are recorded in `assets/towns-source.json`. The default labels remain the existing Natural Earth labels; GeoNames supplies additional candidates at higher density settings.

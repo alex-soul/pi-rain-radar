@@ -4,7 +4,8 @@ export const lookbacks=[2,4,6,12,24];
 export function normalizeLocal(value={}) {
   const opacity={};
   for(const key of opacityNames)if(Number.isFinite(value?.opacity?.[key])&&value.opacity[key]>=0&&value.opacity[key]<=100)opacity[key]=value.opacity[key];
-  return {opacity,lookback:lookbacks.includes(value?.lookback)?value.lookback:null};
+  const fonts={};for(const key of ['top','bottom','buttons','rain-forecast','astronomy','trends','stats','camera'])if(Number.isFinite(value?.fonts?.[key])&&value.fonts[key]>=75&&value.fonts[key]<=150)fonts[key]=value.fonts[key];
+  return {opacity,fonts,lookback:lookbacks.includes(value?.lookback)?value.lookback:null};
 }
 let saved;try{saved=JSON.parse(localStorage.getItem('radar-local-ui'));}catch{}
 export const localPreferences=normalizeLocal(saved);

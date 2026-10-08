@@ -322,7 +322,7 @@ async function status(){
   return {schema:SCHEMA_VERSION,generation:marker.generation,retentionDays:meta('retentionDays'),cutoff,oldest,newest,...totals,databaseBytes,recoveryDatabaseBytes,recoveryMediaBytes,
     // No fabricated total: unindexed legacy/recovery media is explicitly unknown.
     accountedBytes:totals.mediaBytes+databaseBytes+recoveryDatabaseBytes+recoveryMediaBytes,accountingComplete:!marker.legacyPending&&marker.recoveries.every(r=>r.mediaReclaimed),
-    availableBytes:disk.available,capacityBytes:disk.capacity,reserveBytes:reserveBytes(disk.capacity),pressure:!!meta('pressure'),warning:storageError,
+    availableBytes:disk.available,capacityBytes:disk.capacity,usedBytes:disk.used,reserveBytes:reserveBytes(disk.capacity),pressure:!!meta('pressure'),warning:storageError,
     legacyPending:marker.legacyPending,recoveryCount:marker.recoveries.length,recoveryBlocked:marker.recoveryBlocked};
 }
 const methods={

@@ -4,7 +4,7 @@ import {Worker,workerData,parentPort,isMainThread} from 'node:worker_threads';
 import {join} from 'node:path';
 import {defaultSettings,makeViews,world} from './map.js';
 
-export const assetNames = ['basemap.svg','basemap-dark.svg','overview.svg','overview-dark.svg','places.json'];
+export const assetNames = ['basemap.svg','basemap-dark.svg','overview.svg','overview-dark.svg','places.json','places-candidates.json'];
 export function mapAnnotations(settings) {
   const {view,overviewView} = makeViews(settings);
   const ratio = 2 ** (overviewView.zoom-view.zoom);
@@ -45,11 +45,12 @@ function paths(rings,target,closed) {
   }
   return output;
 }
-async function render(settings,directory,useBundled=true) {
+async function render(settings,directory,useBundled=true,labelsOnly=false) {
   await mkdir(directory,{recursive:true});
+  if(!labelsOnly){
   if(useBundled && JSON.stringify(makeViews(settings))===JSON.stringify(makeViews(defaultSettings))) {
     // Preserve the approved Coventry appearance byte-for-byte on initial setup.
-    for(const name of assetNames) await writeFile(join(directory,name),await readFile(new URL(`../public/${name}`,import.meta.url)));
+    for(const name of assetNames.filter(n=>n!=='places-candidates.json')) await writeFile(join(directory,name),await readFile(new URL(`../public/${name}`,import.meta.url)));
   } else {
     const geography=JSON.parse(gunzipSync(await readFile(new URL('../assets/geography.json.gz',import.meta.url))));
     const views=makeViews(settings);
@@ -74,18 +75,27 @@ async function render(settings,directory,useBundled=true) {
     }
     await writeFile(join(directory,'places.json'),JSON.stringify(selected));
   }
-  await writeFile(join(directory,'ready.json'),JSON.stringify({settings}));
+  }
+  const towns=JSON.parse(gunzipSync(await readFile(new URL('../assets/towns.json.gz',import.meta.url)))),view=makeViews(settings).view;
+  const candidates=[];
+  for(const city of towns.sort((a,b)=>b.population-a.population)){
+    const position=projected([city.coordinates],view)[0],size=256*2**view.zoom;position[0]+=Math.round((640-position[0])/size)*size;
+    const [x,y]=position;if(x<50||x>1230||y<35||y>610||Math.hypot(x-640,y-360)<65)continue;candidates.push({name:city.name,position});
+  }
+  await writeFile(join(directory,'places-candidates.json'),JSON.stringify(candidates));
+  if(!labelsOnly)await writeFile(join(directory,'ready.json'),JSON.stringify({settings}));
 }
 export async function prepareMapAssets(settings,directory,{force=false,useBundled=true}={}) {
   if(!force) try { await Promise.all([...assetNames,'ready.json'].map(name=>access(join(directory,name)))); return; } catch {}
+  let labelsOnly=false;if(!force)try{await Promise.all([...assetNames.filter(n=>n!=='places-candidates.json'),'ready.json'].map(name=>access(join(directory,name))));labelsOnly=true;}catch{}
   // Geometry preparation is one-off work; keep it off the HTTP/playback thread.
   await new Promise((resolve,reject)=>{
-    const worker=new Worker(new URL(import.meta.url),{workerData:{settings,directory,useBundled}});
+    const worker=new Worker(new URL(import.meta.url),{workerData:{settings,directory,useBundled,labelsOnly}});
     worker.once('error',reject);
     worker.once('exit',code=>code===0?resolve():reject(new Error('Map preparation failed')));
   });
 }
 if(!isMainThread && workerData) {
-  await render(workerData.settings,workerData.directory,workerData.useBundled);
+  await render(workerData.settings,workerData.directory,workerData.useBundled,workerData.labelsOnly);
   parentPort.close();
 }

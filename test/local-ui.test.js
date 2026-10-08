@@ -35,8 +35,8 @@ test('local idle is independent per area and held gestures/editors defer the ful
 });
 
 test('local preferences preserve zero opacity, reject invalid input and anchor all trend windows at playback end',()=>{
-  assert.deepEqual(normalizeLocal(null),{opacity:{},lookback:null});
-  assert.deepEqual(normalizeLocal({opacity:{top:0,bottom:100,trends:101,buttons:'50',unknown:50},lookback:24}),{opacity:{top:0,bottom:100},lookback:24});
+  assert.deepEqual(normalizeLocal(null),{opacity:{},fonts:{},lookback:null});
+  assert.deepEqual(normalizeLocal({opacity:{top:0,bottom:100,trends:101,buttons:'50',unknown:50},lookback:24}),{opacity:{top:0,bottom:100},fonts:{},lookback:24});
   assert.deepEqual(trendWindow(100,100000,2),{start:92800,end:100000});
   assert.deepEqual(trendWindow(100,100000,null),{start:100,end:100000});
   assert.equal(captureInWindow(92799,92800,100000),false);
