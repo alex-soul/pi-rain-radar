@@ -135,4 +135,3 @@ All 383 application tests passed on the final version locally. Linux checks pass
 The Pi was switched to the verified published image with the same data volume and browser profile. Normal Compose now retains both Power and Screen integration. Startup and manual app restart checks passed: HTTP/frame readiness, version 0.10.0, saved configuration, archive generation and SQLite integrity. Authenticated Screen read/write and Power readiness passed; MQTT remained active. The first attempt restored the accepted RC after an over-broad check compared changing camera snapshot data as configuration; the corrected configuration-only check passed on retry.
 
 I confirmed About 0.10.0, all functions working and full MQTT synchronization on the published image. The release handover is accepted. No Pi reboot was performed; fresh portable installer/reboot validation remains explicitly deferred and experimental. Recovery is retained; bounded resource checks are not a soak test.
-
