@@ -43,7 +43,8 @@ export function setupDirectReorder(root, items, canEdit, commit, vertical = fals
     if (!drag || drag.pointer !== event.pointerId) return;
     if (!canEdit()) { clear(); return; }
     if (!drag.active) {
-      if (Math.hypot(event.clientX-drag.x, event.clientY-drag.y) < 7) return;
+      // Allow natural finger drift during the hold without changing mouse precision.
+      if (Math.hypot(event.clientX-drag.x, event.clientY-drag.y) < (drag.touch ? 16 : 7)) return;
       if (drag.touch) { clear(); return; }
       activate();
     }
@@ -76,7 +77,12 @@ export function setupDirectReorder(root, items, canEdit, commit, vertical = fals
     clear();
     if (previous.active && previous.target && canEdit()) commit(previous.id, previous.target.id, previous.target.after);
   });
-  for (const name of ['pointercancel','lostpointercapture']) root.addEventListener(name, event => { if (drag?.pointer === event.pointerId) clear(); });
+  root.addEventListener('pointercancel', event => { if (drag?.pointer === event.pointerId) clear(); });
+  // Touch implicitly captures the inner icon/text. Transferring capture to its
+  // reorder item emits a bubbling loss from that child, not a cancelled drag.
+  root.addEventListener('lostpointercapture', event => {
+    if (drag?.pointer === event.pointerId && event.target === drag.element) clear();
+  });
   document.addEventListener('pointerdown', event => { if (drag && event.pointerId !== drag.pointer) clear(); }, true);
   root.addEventListener('click', event => {
     if (event.detail && performance.now() < suppressUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
