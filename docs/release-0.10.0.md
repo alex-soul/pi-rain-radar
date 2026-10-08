@@ -1,6 +1,6 @@
 # Pi Rain Radar 0.10.0
 
-This pre-release brings more flexible screen controls, gentler astronomy motion and local appliance display settings. The accepted RC was tested on the existing Pi appliance. Both architecture builds and published-image startup/restart checks passed. The installer is pinned to the verified release; final device handover is separate.
+This pre-release brings more flexible screen controls, gentler astronomy motion and local appliance display settings. The accepted RC was tested on the existing Pi appliance. Both architecture builds and published-image startup/restart checks passed. The installer is pinned to the verified release. I confirmed About 0.10.0 with all functions working and full MQTT synchronization after the published-image handover.
 
 - Sun/Moon motion follows horizon limb crossings with a gentler passage through the centre. Astronomy review uses the production renderer and ten-minute slider steps.
 - Tighter, stable weather dock spacing retains the broad curved outline. Reorder dock readings and side buttons directly by dragging; touch uses hold then drag.

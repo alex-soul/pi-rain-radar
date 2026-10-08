@@ -10,7 +10,7 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.10.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.10.0) is the current pre-release.** It adds gentler astronomy motion, flexible widget resizing, direct dock/button ordering and local Appliance Screen settings synchronized with optional MQTT. I accepted RC1 on my Pi 4 / 2 GB. Both published-image architecture checks passed; final device handover is separate. The changed portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.10.0.md) and [validation](docs/validation.md).
+**[v0.10.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.10.0) is the current pre-release.** It adds gentler astronomy motion, flexible widget resizing, direct dock/button ordering and local Appliance Screen settings synchronized with optional MQTT. I accepted RC1 on my Pi 4 / 2 GB. Both published-image architecture checks passed. I confirmed About 0.10.0, all functions and full MQTT synchronization after the published-image handover. The changed portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.10.0.md) and [validation](docs/validation.md).
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 

@@ -129,3 +129,10 @@ No RC reboot, fresh portable installer walkthrough or final published-image hand
 ## 9 October 2026 — final 0.10.0 preparation
 
 All 383 application tests passed on the final version locally. Linux checks passed 25 installer and 25 display tests plus shell syntax. The retained isolated bridge test image passed install/reinstall, permissions and authenticated socket checks against mocked controller/systemd; helper code is unchanged from that tested image. Fresh-card hardware/reboot testing is explicitly deferred and the portable route remains experimental. Published-image CI and device handover are not claimed by these checks.
+
+## 9 October 2026 — 0.10.0 published-image acceptance
+
+The Pi was switched to the verified published image with the same data volume and browser profile. Normal Compose now retains both Power and Screen integration. Startup and manual app restart checks passed: HTTP/frame readiness, version 0.10.0, saved configuration, archive generation and SQLite integrity. Authenticated Screen read/write and Power readiness passed; MQTT remained active. The first attempt restored the accepted RC after an over-broad check compared changing camera snapshot data as configuration; the corrected configuration-only check passed on retry.
+
+I confirmed About 0.10.0, all functions working and full MQTT synchronization on the published image. The release handover is accepted. No Pi reboot was performed; fresh portable installer/reboot validation remains explicitly deferred and experimental. Recovery is retained; bounded resource checks are not a soak test.
+
