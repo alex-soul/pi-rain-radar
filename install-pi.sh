@@ -39,7 +39,8 @@ if [[ ! -f "$bundle/.complete" ]]; then
     trap 'rm -rf -- "${temporary:?}"' EXIT
     files=(host/installer/installer.py host/installer/release.json
         host/display-controls/config.py host/display-controls/controller.py
-        host/display-controls/receiver.py host/display-controls/setup.py host/display-controls/start.sh)
+        host/display-controls/receiver.py host/display-controls/setup.py host/display-controls/start.sh
+        host/display-controls/install_bridge.py host/display-controls/bridge.py)
     for file in "${files[@]}"; do
         mkdir -p "$temporary/$(dirname "$file")"
         curl --fail --silent --show-error --retry 3 --connect-timeout 15 --max-time 120 \

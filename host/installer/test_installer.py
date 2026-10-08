@@ -12,6 +12,25 @@ import installer as app
 
 
 class InstallerTests(unittest.TestCase):
+    def test_bootstrap_bundle_can_install_screen_bridge_without_repo_checkout(self):
+        import re
+        import shlex
+        import shutil
+        import subprocess
+        root = Path(__file__).resolve().parents[2]
+        bootstrap = (root / 'install-pi.sh').read_text()
+        files = shlex.split(re.search(r'files=\((.*?)\)', bootstrap, re.S).group(1))
+        with tempfile.TemporaryDirectory() as folder:
+            bundle = Path(folder)
+            for name in files:
+                target = bundle / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(root / name, target)
+            bridge = bundle / 'host/display-controls/install_bridge.py'
+            result = subprocess.run([app.sys.executable, str(bridge), '--help'], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((bridge.parent / 'bridge.py').is_file())
+
     def test_progress_resets_column_when_terminal_newline_mapping_is_disabled(self):
         import pty
         import termios

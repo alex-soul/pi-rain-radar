@@ -334,7 +334,8 @@ class Installer:
         UI.say('Screen first, then OS updates, then your radar kiosk.')
         UI.say('Expect two reboots: one to resume setup, one to test startup.')
         UI.say('The first OS update can take a while. Progress stays visible; details are logged.')
-        UI.say('This sets up desktop auto-login and an always-on screen. Future updates are manual.')
+        UI.say('This sets up desktop auto-login and local brightness/sleep controls. Sleep starts OFF.')
+        UI.say('Future updates are manual.')
         UI.say('Press Enter to accept a capital-letter default, or type y / n.')
         UI.say('If sudo asks for a password, use your Pi login password. Typing stays hidden.')
         UI.say()
@@ -344,7 +345,7 @@ class Installer:
         UI.say('Device Power adds safe shutdown and restart buttons to the app. You can set a PIN later.')
         power = ask('Enable Device Power?', True)
         UI.say('\nHome Assistant display controls use MQTT to connect to your existing broker.')
-        UI.say('Adds brightness, idle timeout, Wake, Sleep, screen state and automatic blanking.')
+        UI.say('Shares local brightness and sleep settings with HA; also adds Wake, Sleep and screen state.')
         UI.say('Blanking starts OFF. Connection details are requested later; you can also add this later.')
         mqtt = ask('Enable MQTT display controls?')
         UI.say('\nYour choices: Device Power ' + ('ON' if power else 'OFF') +
