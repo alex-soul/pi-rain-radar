@@ -26,6 +26,8 @@ const selector=$('settings-section');selector.querySelector('[value="embed"]').r
 const power=make('<section id="settings-panel-power" class="settings-content settings-tab-panel" role="region" aria-label="Appliance" hidden></section>');const powerGroup=make('<div class="settings-group"></div>');powerGroup.append($('device-power-title'),document.querySelector('.power-buttons'));power.append(powerGroup);parent.insertBefore(power,$('settings-panel-about'));
 const applianceTabs=make('<div class="settings-tabs settings-subtabs" role="tablist" aria-label="Appliance categories"></div>');
 powerGroup.id='appliance-power';powerGroup.setAttribute('role','tabpanel');powerGroup.setAttribute('aria-labelledby','appliance-power-tab');
+const powerOutline=make('<fieldset class="screen-group"><legend id="device-power-title">Device Power</legend></fieldset>');
+$('device-power-title').remove();powerOutline.append(powerGroup.querySelector('.power-buttons'));powerGroup.append(powerOutline);
 const screen=make('<section id="appliance-screen" role="tabpanel" aria-labelledby="appliance-screen-tab" hidden></section>');
 applianceTabs.append(button('appliance-power-tab','Power','appliance-power',true),button('appliance-screen-tab','Screen','appliance-screen'));power.prepend(applianceTabs);power.append(screen);
 // Move storage detail to its drawer; keep status identifiers for existing painters.
