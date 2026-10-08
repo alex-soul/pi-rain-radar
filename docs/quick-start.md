@@ -74,7 +74,7 @@ LAN access is intended for a trusted home network. HTTP does not encrypt API-key
 
 ## 4. Configure from the laptop
 
-Move the pointer or tap the page to reveal the settings cog at the bottom right. Open Settings. It is unlocked on a fresh installation.
+Move the pointer or tap the page to reveal the three-line main menu at the bottom right. Open Settings. It is unlocked on a fresh installation.
 
 1. **Map:** choose a label, latitude/longitude and time zone. Typing a place name does not find its coordinates. Preview if you want, then Apply. The progress popup stays visible while the new view is prepared. All connected screens adopt the change. Coventry is ready to use if you prefer to try it first.
 2. **System → API → OpenWeather, optional:** paste your [OpenWeather One Call 4.0](https://openweathermap.org/api/one-call-4) key and Save key. Follow the saved-key link to enable current readings under Interface → Weather → Readings and minute forecasts independently under Forecast, and confirm shared Units. Activate the separate 4.0 subscription first, even if you already use 3.0. Check the provider's access/pricing and set the daily limit to 1,000 to stay within its currently advertised free allowance; the default 2,000 limit permits charges. After moving the map, allow 10–15 minutes for the next weather request. Radar works without a key.

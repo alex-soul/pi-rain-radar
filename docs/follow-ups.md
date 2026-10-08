@@ -1,8 +1,15 @@
 # Release follow-ups
 
-## After 0.9.0
+## After 0.10.0
 
-I accepted the published 0.9.0 image on my Pi. Further minor UI refinements await specific observations; no additional changes are scoped yet. Longer soak, cloud-delay observation and the remaining validation below stay open.
+I accepted the published 0.10.0 image with all functions working and full MQTT synchronization. Astronomy motion, flexible widget resizing/font controls, direct dock/button ordering, map-label density, local Screen controls and the agreed UI refinements are delivered. See [release notes](release-0.10.0.md).
+
+- **Fresh portable installer and reboot validation:** explicitly deferred for 0.10.0. The changed local-controller/Screen bridge route remains experimental. On a spare supported card/device, verify orientation/touch, saved-stage resume, kiosk/controller/bridge startup after reboot, brightness/sleep/wake without MQTT, optional MQTT synchronization and persistence. Preserve the existing working card. Earlier Pi 5 walkthrough and private-controller upgrade acceptance do not validate this combination.
+- Longer soak, cloud-delay observations, wider hardware coverage and the remaining validation below stay open. No additional UI implementation is currently scoped.
+
+## After 0.9.0 (historical)
+
+The published 0.9.0 image was accepted; its subsequent UI refinements were delivered in 0.10.0. Longer validation items continue below.
 
 ## Delivered in 0.9.0
 
@@ -34,10 +41,10 @@ Rolling SQLite archive, shared retention and storage status; historical weather/
 
 ## Long-term possible improvements
 
-- **Complete remote appliance management over MQTT — important future direction:** investigate replacing the current custom Device Power helper installation/interface with a properly secured MQTT adapter. Restart and shutdown are only the starting point: the intended direction is a coherent management interface for brightness, screen wake, backup creation and restore, app update checks and installation, status/diagnostics, and other appliance controls as needs emerge. Aim for routine operation and maintenance through Home Assistant or the kiosk app without a keyboard, mouse or SSH terminal. Consider one optional installation with MQTT discovery and shared host-control logic behind both interfaces. Keep recovery access available for failures; the goal of remote management does not assume every recovery can be performed remotely.
+- **Complete remote appliance management over MQTT — important future direction:** investigate replacing the current custom Device Power helper installation/interface with a properly secured MQTT adapter. Restart and shutdown are only the starting point: the intended direction is a coherent management interface for brightness, screen wake, backup creation and restore, app update checks and installation, status/diagnostics, and other appliance controls as needs emerge. Aim for routine operation and maintenance through Home Assistant or the kiosk app without a keyboard, mouse or SSH terminal. The 0.10.0 Screen bridge already shares display settings with optional MQTT; broader power/update/backup management remains separate. Consider one optional installation with MQTT discovery and shared host-control logic behind both interfaces. Keep recovery access available for failures; the goal of remote management does not assume every recovery can be performed remotely.
 
   MQTT carries requests; a narrowly privileged local executor is still required, even if packaged with the adapter. Preserve or strengthen action allowlists, authorization, request expiry, replay protection and cooldowns; design dedicated broker identities/topic permissions, verified encrypted transport, non-retained action commands and explicit confirmation/automation policy. Do not silently bypass the app's PIN or give the adapter unrestricted shell access. Design progress/results, errors and retry behaviour for longer operations, and an appropriate secure transfer/storage path for backup artifacts rather than assuming they belong in MQTT messages. Keep standalone operation available while evaluating expected Home Assistant adoption. Research architecture, migration from existing installations and failure/recovery behaviour before implementation; this is a product direction, not a change to current controls or a commitment to a release.
-- **Appliance management from kiosk Settings:** investigate physical screen brightness, user-initiated backup/restore, and checking for and installing app updates without leaving the app. Build on the existing About release checks where appropriate. Research supported hardware and host-helper permissions, backup contents (including settings, credentials and optional history), restore compatibility, and update verification/recovery before scoping implementation. Keep controls touch-friendly and distinguish application updates from host OS maintenance. These are exploratory product ideas, not committed release scope.
+- **Appliance management from kiosk Settings:** local brightness and automatic sleep settings are delivered in 0.10.0 with optional MQTT synchronization. User-initiated backup/restore and checking for/installing app updates without leaving the app remain exploratory. Build on the existing About release checks where appropriate. Research supported hardware and host-helper permissions, backup contents (including settings, credentials and optional history), restore compatibility, and update verification/recovery before scoping implementation. Keep controls touch-friendly and distinguish application updates from host OS maintenance. These are exploratory product ideas, not committed release scope.
 
 ## Remaining validation
 

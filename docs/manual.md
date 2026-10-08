@@ -243,7 +243,7 @@ A browser may finish playing already-loaded frames after they roll out of storag
 
 ## Controls introduced in 0.10.0
 
-These controls are included in 0.10.0-rc.1; the guided installer release pin may still select an earlier published version. Check About and the [installer version contract](../host/installer/README.md#version-and-retry-contract).
+These controls are included in published 0.10.0, which new installer snapshots now select. Existing saved installer snapshots retain their earlier release. Check About and the [installer version contract](../host/installer/README.md#version-and-retry-contract).
 
 Widget settings are at the top left; the top-right cross hides the widget just like its side button, keeping its saved preferences and size. Controls share the existing hover/touch reveal, idle hiding and layout-lock behaviour. Text-bearing widgets have font-size controls with their original defaults. Background/font Reset buttons have been removed from widgets, docks and side-button settings.
 

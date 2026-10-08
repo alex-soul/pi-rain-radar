@@ -271,7 +271,7 @@ Give the first radar images roughly two or three minutes to arrive; your connect
 http://pi-rain-radar.local:3080
 ```
 
-Change the hostname if you chose another one. Tap the page or move the pointer to reveal the settings cog at the bottom right. Open **Settings → Map**. Enter a place label, latitude, longitude and time zone, then **Apply**. The label alone does not look up your location: use coordinates from your preferred map service, or keep the Coventry default while trying the app. Start with the included RainViewer radar; optional weather providers and keys can wait. You can set a six-digit settings PIN under **Settings → System → PIN**. The [user guide](manual.md) explains the maps, buttons and optional features.
+Change the hostname if you chose another one. Tap the page or move the pointer to reveal the three-line main menu at the bottom right. Open **Settings → Map**. Enter a place label, latitude, longitude and time zone, then **Apply**. The label alone does not look up your location: use coordinates from your preferred map service, or keep the Coventry default while trying the app. Start with the included RainViewer radar; optional weather providers and keys can wait. You can set a six-digit settings PIN under **Settings → System → PIN**. The [user guide](manual.md) explains the maps, buttons and optional features.
 
 **Core settings are shared; layout is personal to each screen.** Location, provider/API settings and the settings PIN apply everywhere. Widget positions, button choices and theme stay in each browser, so arranging them on your phone or computer will not rearrange the Pi—customise each screen separately. See [one installation, multiple screens](manual.md#one-installation-multiple-screens).
 
