@@ -7,7 +7,8 @@ import {weatherSeries,trendsAt,chartSegments,gridInterval,smoothPath,trendRange,
 import {createWeatherReplay} from './history-weather-model.js';
 import {formatTime} from './time.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
-const mainWidget=setupFloatingWidget({id:'weather-trends',storageKey:'radar-weather-trends',width:440,height:220,minWidth:180,minHeight:150,maxHeight:420,startY:200});
+// Stacked charts may need the full screen height; the shared resizer keeps it within the viewport.
+const mainWidget=setupFloatingWidget({id:'weather-trends',storageKey:'radar-weather-trends',width:440,height:220,minWidth:180,minHeight:150,maxHeight:Infinity,startY:200});
 let valueHistoryRef=null,valueReplay=createWeatherReplay();
 let latestInput=null,replay=createWeatherReplay(),cache='',series={},chartKey='',historyRef=null,prefKey='',credits={openweather:false,other:''};
 export const weatherTrendCredits=()=>credits;
