@@ -23,7 +23,9 @@ while True:
 controller=$!
 trap 'kill "$controller" ${bridge:-} 2>/dev/null || true' EXIT
 for n in 1 2 3 4 5; do [ ! -S /run/user/1234/display.sock ] || break; sleep 1; done
-python3 host/display-controls/install_bridge.py --user displaytest --controller-socket /run/user/1234/display.sock
+(umask 077; python3 host/display-controls/install_bridge.py --user displaytest --controller-socket /run/user/1234/display.sock)
+test "$(stat -c %a /etc/pi-rain-radar-screen)" = 755
+test "$(stat -c %a /usr/local/lib/pi-rain-radar-screen)" = 755
 cp /etc/pi-rain-radar-screen/token /tmp/screen-original
 python3 host/display-controls/install_bridge.py --user displaytest --controller-socket /run/user/1234/display.sock
 cmp /tmp/screen-original /etc/pi-rain-radar-screen/token

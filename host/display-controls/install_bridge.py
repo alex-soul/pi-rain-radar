@@ -108,6 +108,9 @@ def install(username, controller, events):
         group = grp.getgrnam('radar-screen')
     for path in (ETC, LIB):
         path.mkdir(mode=0o755, parents=True, exist_ok=True)
+        # Bootstrap/operational callers use umask 077; these non-secret parents
+        # must still be traversable by the unprivileged bridge service.
+        path.chmod(0o755)
     token = ETC / 'token'
     if not token.exists():
         with open(token, 'x', opener=lambda p, f: os.open(p, f, 0o600)) as stream:
