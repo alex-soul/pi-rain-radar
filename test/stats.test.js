@@ -21,7 +21,7 @@ test('Archive completeness stays separate from current acquisition; stale values
   assert.equal(statsSnapshot({...input,selected:null},201000).counts.main.available,13);
 });
 test('new Stats control preserves existing order and visibility, and is hidden by default',async()=>{
-  const source=(await readFile(new URL('../public/control-layout.js',import.meta.url),'utf8')).split('export function setupControlEditor')[0];
+  const source=(await readFile(new URL('../public/control-layout.js',import.meta.url),'utf8')).replace(/^import[^\n]+\n/gm,'').split('export function setupControlEditor')[0];
   const saved=[{id:'theme-toggle',visible:false},{id:'history-toggle',visible:true}];
   const nodes={},order=[];
   vm.runInNewContext(source,{localStorage:{getItem:()=>JSON.stringify(saved)},document:{getElementById:id=>nodes[id]??={id},querySelector:()=>({insertBefore:node=>order.push(node.id)})}});

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
+import {moveRelative} from '../public/direct-reorder.js';
 const formatSource = (await readFile(new URL('../public/weather-format.js', import.meta.url), 'utf8')).replaceAll('export ', '');
 const floatingSource = (await readFile(new URL('../public/floating-widget.js', import.meta.url), 'utf8')).replace(/^import[^\n]+\n/gm,'').replace('export function','function');
 const source = 'const shared={initialized:false,units:{}};\n' + formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
@@ -186,17 +187,21 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
     const row={dataset:{readingRow:id},handle,classList:{add(){},remove(){}},querySelector:()=>handle,getBoundingClientRect:()=>({left:Math.floor(children.indexOf(row)/5)*320,right:Math.floor(children.indexOf(row)/5)*320+300,top:(children.indexOf(row)%5)*60,bottom:(children.indexOf(row)%5)*60+54})};return row;
   });
   children=[...rows];
-  const c=vm.createContext({document:{getElementById:id=>id==='reading-list'?list:{}},window:{dispatchEvent(){}},Event:class{},localStorage:{getItem:()=>null,setItem:(_,value)=>{saved=JSON.parse(value);writes++;}}});
+  let directCommit, directCancelled=0;
+  const c=vm.createContext({moveRelative,setupDirectReorder(root,items,canEdit,commit){assert.equal(items.size,ids.length);directCommit=commit;return ()=>directCancelled++;},document:{querySelector:()=>({}),getElementById:id=>id==='reading-list'?list:{closest(){return this;}}},window:{dispatchEvent(){}},Event:class{},localStorage:{getItem:()=>null,setItem:(_,value)=>{saved=JSON.parse(value);writes++;}}});
   vm.runInContext(source.replaceAll('export function','function'),c);
   const cancel=c.setupReadingEditor(()=>editable), handle=rows[0].handle;
   handle.handlers.pointerdown({button:0,isPrimary:true,pointerId:1});handle.handlers.pointermove({pointerId:1,clientX:100,clientY:90});
   assert.equal(children[1],rows[0]);
   handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
-  cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);
+  cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);assert.equal(directCancelled,1);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
   assert.deepEqual(saved.readingOrder,['humidity','temperature','dew','wind','direction','feels','gust','visibility','pressure','uv','depression','sun','moon']);
   assert.deepEqual(saved.readings,['temperature','humidity','dew','wind','direction']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
+  editable=true;directCommit('temperature','wind',true);
+  assert.deepEqual(saved.readingOrder.slice(0,4),['humidity','dew','wind','temperature']);
+  assert.deepEqual(saved.readings,['temperature','humidity','dew','wind','direction']);
 });
 
 test('new weather preferences default safely and preserve old reading choices',()=>{
