@@ -1,6 +1,6 @@
-# 0.10.0 — draft release notes
+# Pi Rain Radar 0.10.0
 
-**Unpublished.** 0.10.0-rc.1 has been tested and accepted on the existing Pi appliance. The final release image and installer pin are still pending.
+This pre-release brings more flexible screen controls, gentler astronomy motion and local appliance display settings. The accepted RC was tested on the existing Pi appliance. Published-image verification and installer pinning follow publication; final device handover is separate.
 
 - Sun/Moon motion follows horizon limb crossings with a gentler passage through the centre. Astronomy review uses the production renderer and ten-minute slider steps.
 - Tighter, stable weather dock spacing retains the broad curved outline. Reorder dock readings and side buttons directly by dragging; touch uses hold then drag.
@@ -11,4 +11,6 @@
 
 I tested the revised controls on desktop and phone and accepted the new features on my Pi, including Screen settings synchronized with MQTT. See [validation](validation.md) for automated checks and limits.
 
-The portable installer now prepares a local display controller and authenticated Screen bridge independently of MQTT. Its new fresh-install/reboot route still needs affected hardware validation; the accepted existing-controller upgrade does not establish that result. The installer manifest remains pinned to verified v0.9.0 until a new published image is verified and its exact source/digest/checksums are recorded. See [installer notes](../host/installer/README.md).
+The portable installer now prepares a local display controller and authenticated Screen bridge independently of MQTT. **The changed fresh-install/reboot route remains experimental.** Fresh-card hardware testing is deferred for this release; the accepted existing-controller upgrade does not establish that result. The installer manifest remains pinned to verified v0.9.0 until a new published image is verified and its exact source/digest/checksums are recorded. See [installer notes](../host/installer/README.md).
+
+Final-version checks: all 383 application tests passed locally; 25 installer and 25 display tests passed on Linux, along with shell syntax and isolated authenticated bridge installation checks. The latter use a mocked controller/systemd and do not replace hardware validation. Compatible archives and browser preferences are preserved; retain both Power and Screen overrides when upgrading an installation using those helpers.

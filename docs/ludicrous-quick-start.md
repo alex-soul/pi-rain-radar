@@ -339,3 +339,5 @@ The installer still pins verified **v0.9.0** while the new release is prepared. 
 With 0.10.0 and the Screen helper installed, set brightness and automatic sleep/idle timeout in **Appliance → Screen**, including when you declined MQTT. Automatic sleep starts off on new installations, with a saved 15-minute timeout. Touch wakes the screen. If MQTT is enabled, the shared settings stay synchronized with HA; Wake/Sleep buttons and screen-state reporting remain in MQTT. Restart/Shutdown move under **Appliance → Power**.
 
 The new portable setup/reboot route still needs affected hardware validation. The guide's installer pin will change only after the published release image and source checksums have been verified; see the [version contract](../host/installer/README.md#version-and-retry-contract).
+
+**0.10.0 fresh-install limitation:** the changed portable local-Screen setup and reboot route remain experimental. Fresh-card hardware testing is deferred for this release; existing-appliance RC acceptance and isolated automated tests do not prove that route.
