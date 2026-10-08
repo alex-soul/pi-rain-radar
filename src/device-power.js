@@ -2,9 +2,7 @@ import { request as httpRequest } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createHmac, randomUUID } from 'node:crypto';
 
-export function createDevicePower({socketPath=process.env.POWER_HELPER_SOCKET,tokenFile=process.env.POWER_HELPER_TOKEN_FILE,read=readFile,transport=httpRequest,now=Date.now,onEvent=()=>{}}={}) {
-  let busy=false;
-  const ids=new Map();
+export function createHelperClient({socketPath,tokenFile,read=readFile,transport=httpRequest,now=Date.now}) {
   async function call(method,path,body='',id=randomUUID()) {
     const token=(await read(tokenFile,'utf8')).trim();
     if(!/^[a-f0-9]{64}$/.test(token))throw Error('configuration');
@@ -18,6 +16,13 @@ export function createDevicePower({socketPath=process.env.POWER_HELPER_SOCKET,to
       req.setTimeout(4000,()=>req.destroy(Error('timeout')));req.on('error',reject);req.end(body);
     });
   }
+  return call;
+}
+
+export function createDevicePower({socketPath=process.env.POWER_HELPER_SOCKET,tokenFile=process.env.POWER_HELPER_TOKEN_FILE,read=readFile,transport=httpRequest,now=Date.now,onEvent=()=>{}}={}) {
+  let busy=false;
+  const ids=new Map();
+  const call=createHelperClient({socketPath,tokenFile,read,transport,now});
   return {
     async status(){
       if(!socketPath&&!tokenFile)return {state:'unconfigured'};

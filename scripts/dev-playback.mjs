@@ -1,3 +1,4 @@
+import {validScreenCommand} from '../src/screen-control.js';
 import {trendFixture} from './dev-weather-trends.mjs';
 import {syntheticAvailability,syntheticMedia} from './dev-availability.mjs';
 import {loadForecastRecording,applyForecastRecording} from './dev-forecast-recording.mjs';
@@ -24,7 +25,7 @@ import {defaultSettings,defaultViews,hash,makeViews} from '../src/map.js';
 const previewBind=process.env.RADAR_DEV_BIND||'127.0.0.1';
 if(!/^(127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/.test(previewBind)||previewBind.split('.').some(n=>Number(n)>255))throw Error('RADAR_DEV_BIND must be loopback or a specific private IPv4 address');
 const previewUrl=`http://${previewBind}:3091`;
-let simulatedScreen={synthetic:true,brightness:75,sleep:true,timeout:10};
+let simulatedScreen={synthetic:true,state:'ready',brightness:75,automatic_blanking:false,idle_timeout:15,persistence_ok:true,persistence_pending:false};
 const cloudSeed=process.argv[2]==='--clouds'?process.argv[3]:null;
 if(previewBind!=='127.0.0.1'&&(cloudSeed||process.env.RADAR_DEV_SETTINGS_FROM))throw Error('LAN preview requires fresh synthetic fixtures without imported settings or real clouds');
 const trial=cloudSeed?join(cloudSeed,'continuous-trial-500'):null;
@@ -74,7 +75,7 @@ if(process.env.RADAR_DEV_SETTINGS_FROM){
 const reservation=net();reservation.listen(0,'127.0.0.1');await once(reservation,'listening');
 const internalPort=reservation.address().port;await new Promise(r=>reservation.close(r));
 const origin=`http://127.0.0.1:${internalPort}`;
-const child=spawn(process.execPath,['src/server.js'],{env:{...process.env,DATA_DIR:directory,PORT:String(internalPort),BIND_ADDRESS:'127.0.0.1',RADAR_MANUAL_REFRESH:'1',POWER_HELPER_SOCKET:'',POWER_HELPER_TOKEN_FILE:'',...(trial?{RADAR_DEV_CLOUDS:'1',RADAR_DEV_CLOUD_USAGE:trial,RAINBOW_TEST_REQUEST_LIMIT:'500'}:{})},windowsHide:true,stdio:[trial?'pipe':'ignore','pipe','pipe']});
+const child=spawn(process.execPath,['src/server.js'],{env:{...process.env,DATA_DIR:directory,PORT:String(internalPort),BIND_ADDRESS:'127.0.0.1',RADAR_MANUAL_REFRESH:'1',POWER_HELPER_SOCKET:'',POWER_HELPER_TOKEN_FILE:'',SCREEN_HELPER_SOCKET:'',SCREEN_HELPER_TOKEN_FILE:'',...(trial?{RADAR_DEV_CLOUDS:'1',RADAR_DEV_CLOUD_USAGE:trial,RAINBOW_TEST_REQUEST_LIMIT:'500'}:{})},windowsHide:true,stdio:[trial?'pipe':'ignore','pipe','pipe']});
 child.stderr.on('data',data=>process.stderr.write(data));
 if(trial){
  try{let buffer=(await promisify(execFile)('ssh',['-o','BatchMode=yes','pi-weather','sudo cat /var/lib/docker/volumes/pi-rain-radar_radar-data/_data/settings/rainbow.json'],{encoding:'buffer',maxBuffer:4096,timeout:20000,windowsHide:true})).stdout;
@@ -126,9 +127,15 @@ const server=http(async(req,res)=>{
     const path=new URL(req.url,'http://127.0.0.1:3091');
     if(trial&&req.method==='POST'&&path.pathname.startsWith('/api/settings/')&&(req.headers['content-type']!=='application/json'||req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host||req.headers['sec-fetch-site']==='cross-site')){res.writeHead(403);return res.end('{}');}
     if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
-    const controlAssets={'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
+    const controlAssets={'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
     if(controlAssets[path.pathname]) {const [file,type]=controlAssets[path.pathname];res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});return res.end(await readFile(new URL(file,import.meta.url)));}
     if(path.pathname==='/__dev'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(controls());}
+    if(path.pathname==='/__astronomy'){
+      const response=await fetch(origin+'/');let html=await response.text();
+      html=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace('</head>','<link rel="stylesheet" href="/__dev/astronomy.css"><script type="module" src="/__dev/astronomy.js"></script></head>');
+      html=html.replace(/(<meta name="latitude" content=")[^"]+/, '$1'+(path.searchParams.has('polar')?'80':'52.40801')).replace(/(<meta name="longitude" content=")[^"]+/, '$1'+(path.searchParams.has('polar')?'20':'-1.51041'));
+      res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(html);
+    }
     if(path.pathname==='/__embed'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end('<!doctype html><html><head><title>Embed review · synthetic radar</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="background:#142623;color:#e1eee7;font:16px system-ui"><h1>Embed review · synthetic radar</h1><p>Change scenarios in the studio; both cards follow. Only Main radar affects their LEDs.</p><iframe title="Small embed" src="/embed" width="320" height="180"></iframe><iframe title="Tall embed" src="/embed" width="240" height="360"></iframe><p><a style="color:inherit" href="/__dev">Scenario studio</a></p></body></html>');}
     if(path.pathname==='/__scenario'&&req.method==='POST'){
       let body='';for await(const chunk of req)body+=chunk;
@@ -185,8 +192,25 @@ const server=http(async(req,res)=>{
       if(req.method==='POST'){let body='';for await(const chunk of req)body+=chunk;const hadKey=demoKey;demoKey=!!JSON.parse(body).apiKey;if(!hadKey||!demoKey){await devWeather.configure('/weather',{rainbowCollect:false});demoRadar=disableRadarProviders(demoRadar,source=>source!=='rainbow');}}
       return send({configured:demoKey,usage:{tiles:0,requests:0},tilesPerView:{main:6,overview:6}});
     }
-    if(path.pathname==='/__dev/screen'){
-      if(req.method==='POST'){let body='';for await(const chunk of req){body+=chunk;if(body.length>1024){res.writeHead(413);return res.end();}}const v=JSON.parse(body);if(!Number.isInteger(v.brightness)||v.brightness<10||v.brightness>100||typeof v.sleep!=='boolean'||!Number.isInteger(v.timeout)||v.timeout<1||v.timeout>120){res.writeHead(400);return res.end();}simulatedScreen={synthetic:true,...v};}
+    if(path.pathname==='/__dev/screen-mode'&&req.method==='POST'){
+      if(req.headers.origin&&req.headers.origin!==previewUrl){res.writeHead(403);return res.end('{}');}
+      let body='';for await(const chunk of req){body+=chunk;if(body.length>256){res.writeHead(413);return res.end();}}
+      const {mode}=JSON.parse(body);if(!['ready','unavailable','save-failed','saving'].includes(mode)){res.writeHead(400);return res.end('{}');}
+      simulatedScreen={...simulatedScreen,state:mode==='unavailable'?'unavailable':'ready',error:mode==='unavailable'?'Synthetic controller unavailable.':undefined,persistence_ok:mode!=='save-failed',persistence_pending:mode==='saving'};
+      return send(simulatedScreen);
+    }
+    if(path.pathname==='/api/settings/screen'||path.pathname==='/__dev/screen'){
+      if(path.pathname.startsWith('/api/')){
+        const allowed=await fetch(origin+'/api/settings/power',{headers:{authorization:req.headers.authorization||''}});
+        if(!allowed.ok){res.writeHead(allowed.status);return res.end('{}');}
+      }
+      if(req.method==='POST'){
+        if(simulatedScreen.state!=='ready'){res.writeHead(503);return res.end(JSON.stringify(simulatedScreen));}
+        if(req.headers.origin&&req.headers.origin!==previewUrl){res.writeHead(403);return res.end('{}');}
+        let body='';for await(const chunk of req){body+=chunk;if(body.length>256){res.writeHead(413);return res.end();}}
+        const command=JSON.parse(body);if(!validScreenCommand(command)){res.writeHead(400);return res.end('{}');}
+        simulatedScreen={...simulatedScreen,[command.action]:command.value};
+      }
       return send(simulatedScreen);
     }
     // Synthetic acknowledgements only; power actions never reach the real host.

@@ -25,6 +25,10 @@ jobs:
           bash install-pi.sh --help
           /tmp/radar-installer-test/bin/python -m unittest discover -s host/installer -p 'test_*.py'
           /tmp/radar-installer-test/bin/python -m unittest discover -s host/display-controls -p 'test_*.py'
+      - name: Verify isolated Screen bridge installation and socket permissions
+        run: |
+          docker build -f host/display-controls/test.Dockerfile -t radar-screen-test .
+          docker run --rm --network none radar-screen-test
       - name: Verify pinned release files
         run: |
           python3 - <<'PY'

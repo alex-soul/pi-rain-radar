@@ -1,3 +1,4 @@
+import {setupScreenControls} from './screen-controls.js';
 import './settings-layout.js';
 import {setupLocalEditors,canEditLocal} from './local-ui.js';
 import {setupReviewRadar} from './settings-layout-details.js';
@@ -54,6 +55,7 @@ const embedUI=setupEmbedSettings(canEdit,request);
 const storageUI=setupStorageSettings(canEdit,request);
 const cameraUI=setupCameraSettings(canEdit,request);
 const powerUI=setupDevicePower(canEdit,request);
+const screenUI=setupScreenControls(canEdit,request);
 const resetButtons = setupControlEditor(canEditLocal);
 const resetReadings = setupReadingEditor(canEditLocal);
 const resetControlEditor = () => { resetButtons(); resetReadings(); };
@@ -128,6 +130,7 @@ function lock() {
   cameraUI.reset();
   embedUI.clear();
   powerUI.clear();
+  screenUI.clear();
   radarUI.clear();
   pinIdle.clear();
   closePreview();

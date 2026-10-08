@@ -1,3 +1,4 @@
+import {createScreenControl} from './screen-control.js';
 import {collectionRecorder,collectionPeriods} from './collection-history.js';
 import {playbackHistory} from './playback-history.js';
 import {createClouds} from './clouds.js';
@@ -75,13 +76,14 @@ if(!rainbow.configured())await savePolicy({rainbowCollect:false});
 await guardRadarPolicy(weatherSettings.current());
 weather = await createWeather(directory,{store:history,location:maps.current().settings,onEvent:diagnostics.record,enabled:()=>weatherSettings.current().owmCollect,forecastEnabled:()=>weatherSettings.current().forecastCollect,mappings:()=>weatherSettings.current().mappings,onNewKey:()=>savePolicy({owmCollect:false,forecastCollect:false,fallback:false}),onData:async()=>{await haWeather?.record();}});
 haWeather=await createHaWeather({ha,settings:weatherSettings,weather,store:history,location:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1',onEvent:diagnostics.record});
+const screen=createScreenControl();
 const power=createDevicePower({onEvent:diagnostics.record});
 const embed=await createEmbedSettings(directory);
 const releases=await createReleaseCheck(directory,packageInfo.version);
 camera=await createCamera(directory,{store:history,ha,onEvent:diagnostics.record,onPolicy:collectionRecorder(history,'camera-collection'),autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'});
 if(!ha.status().configured&&camera.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});
 clouds=await createClouds(directory,{onPolicy:collectionRecorder(history,'cloud-collection'),store:history,provider:rainbow,settings:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'||process.env.RADAR_DEV_CLOUDS==='1',rainBusy:()=>maps.status().busy||maps.current().radar.status().fetching,onEvent:diagnostics.record});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, embed, storage, camera, ha, weatherSettings, clouds });
+const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, clouds });
 const observeHealth=createHealthEvents(diagnostics.record);
 const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());
 let maintaining=false,nextMaintenance=0;
@@ -101,7 +103,7 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
-  ...['screen-preview','widget-resize','map-decoration','storage-meter','local-ui','local-idle','local-preferences','dock-format','trend-history-client'].map(name=>['/'+name+'.js',[name+'.js','text/javascript']]),
+  ...['celestial-motion','screen-controls','widget-resize','map-decoration','storage-meter','local-ui','local-idle','local-preferences','dock-format','trend-history-client'].map(name=>['/'+name+'.js',[name+'.js','text/javascript']]),
   ['/local-ui.css',['local-ui.css','text/css']],
   ['/suncalc.js',['suncalc.js','text/javascript']],
   ['/suncalc-license.txt',['suncalc-license.txt','text/plain']],

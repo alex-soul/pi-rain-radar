@@ -111,6 +111,7 @@ def backlight_rule(backlight, gid):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--local-only', action='store_true', help='Set up local controls without adding MQTT')
     args = parser.parse_args()
     if os.geteuid() == 0:
         raise SystemExit('Run as the desktop user; sudo is used for host installation.')
@@ -119,10 +120,11 @@ def main():
     for binary in ('wlopm', 'swayidle', 'systemctl', 'sudo'):
         if not shutil.which(binary):
             raise SystemExit(f'Missing {binary}; install the optional dependencies first.')
-    # Dependency check before changing the host.
-    import paho.mqtt.client as mqtt
-    if not hasattr(mqtt, 'CallbackAPIVersion'):
-        raise SystemExit('python3-paho-mqtt 2.x is required.')
+    if not args.local_only:
+        # Dependency check before changing the host.
+        import paho.mqtt.client as mqtt
+        if not hasattr(mqtt, 'CallbackAPIVersion'):
+            raise SystemExit('python3-paho-mqtt 2.x is required.')
     run('wlopm', capture_output=True, text=True)
     uid, gid, username = os.getuid(), os.getgid(), getpass.getuser()
     mqtt_unit(username, uid)  # Validate before any changes.
@@ -133,67 +135,69 @@ def main():
     if len(backlights) != 1:
         raise SystemExit('Expected exactly one display backlight. Resolve the hardware setup first.')
     backlight = str(backlights[0].parent)
-    print('MQTT adds six Home Assistant controls: brightness, idle timeout, screen state,')
-    print('Wake, Sleep and Automatic screen blanking. New installs leave blanking OFF.')
-    print('Turning it ON uses the saved timeout (initially 15 minutes). Sleep still works')
-    print('when it is OFF; touch or Wake resumes. No HA automations are created.')
+    print('Local Screen settings: brightness, sleep timer and idle timeout.')
+    print('New installs leave automatic blanking OFF; touch resumes the screen.')
     settings.update(owner_uid=uid, device_id=settings.get('device_id', 'radar_' + uuid.uuid4().hex),
                     output=args.output, backlight=backlight)
-    print('Use the address and MQTT login for your existing broker, such as the')
-    print('Mosquitto broker in Home Assistant. This does not install a broker.')
-    settings['mqtt_host'] = ask('MQTT broker address (hostname or IP)', settings.get('mqtt_host', ''))
-    print('\nTLS encrypts the connection to your MQTT broker.')
-    print('If you have not configured certificates/encryption on your broker, choose no.')
-    print('Choose yes only if your broker already accepts TLS connections.')
-    settings['mqtt_tls'] = yes('Does your broker use TLS encryption?', settings.get('mqtt_tls', False))
-    default_port = settings.get('mqtt_port', 8883 if settings['mqtt_tls'] else 1883)
-    settings['mqtt_port'] = int(ask('Broker port', str(default_port)))
     ca_source = None
-    if settings['mqtt_tls']:
-        print('For a certificate issued by a public authority, leave this empty.')
-        print('For a private certificate authority, enter the path to its CA file on this Pi.')
-        ca = ask('CA certificate file on the Pi (optional)', settings.get('mqtt_ca', ''))
-        if ca:
-            ca_source = Path(ca).expanduser().resolve(strict=True)
-            settings['mqtt_ca'] = str(ETC / 'broker-ca.pem')
+    if not args.local_only:
+        print('Use the address and MQTT login for your existing broker, such as the')
+        print('Mosquitto broker in Home Assistant. This does not install a broker.')
+        settings['mqtt_host'] = ask('MQTT broker address (hostname or IP)', settings.get('mqtt_host', ''))
+        print('\nTLS encrypts the connection to your MQTT broker.')
+        print('If you have not configured certificates/encryption on your broker, choose no.')
+        print('Choose yes only if your broker already accepts TLS connections.')
+        settings['mqtt_tls'] = yes('Does your broker use TLS encryption?', settings.get('mqtt_tls', False))
+        default_port = settings.get('mqtt_port', 8883 if settings['mqtt_tls'] else 1883)
+        settings['mqtt_port'] = int(ask('Broker port', str(default_port)))
+        ca_source = None
+        if settings['mqtt_tls']:
+            print('For a certificate issued by a public authority, leave this empty.')
+            print('For a private certificate authority, enter the path to its CA file on this Pi.')
+            ca = ask('CA certificate file on the Pi (optional)', settings.get('mqtt_ca', ''))
+            if ca:
+                ca_source = Path(ca).expanduser().resolve(strict=True)
+                settings['mqtt_ca'] = str(ETC / 'broker-ca.pem')
+            else:
+                settings['mqtt_ca'] = ''
         else:
             settings['mqtt_ca'] = ''
-    else:
-        settings['mqtt_ca'] = ''
+        config.validate(settings, require_mqtt=True)
+        username_mqtt = ask('MQTT username')
+        password = getpass.getpass('MQTT password (hidden): ')
+        if not username_mqtt or not password:
+            raise SystemExit('An authenticated broker account is required.')
+        print('\nReady to connect to ' + settings['mqtt_host'] + ':' + str(settings['mqtt_port']))
+        print('Connection: ' + ('TLS encrypted, broker certificate verified.' if settings['mqtt_tls']
+                                else 'unencrypted MQTT on your LAN.'))
+        print('Your MQTT login will be saved on this Pi, readable only by the administrator.')
+        print('Next: test the login, then enable the six display controls in Home Assistant.')
+        print('Existing Pi display settings will be updated if already configured.')
+        print('Choose no to cancel this MQTT setup without changing its existing configuration.')
+        if not yes('Connect and save these MQTT settings?', True):
+            raise SystemExit(2)
+        # Validate authentication and TLS before stopping any existing controller.
+        # This probe neither publishes discovery nor operates the display.
+        connected = threading.Event()
+        accepted = []
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id='radar-setup-' + uuid.uuid4().hex)
+        client.username_pw_set(username_mqtt, password)
+        if settings['mqtt_tls']:
+            client.tls_set(ca_certs=str(ca_source) if ca_source else None)
+        def on_connect(client, userdata, flags, reason, properties):
+            accepted.append(not reason.is_failure)
+            connected.set()
+        client.on_connect = on_connect
+        client.connect_async(settings['mqtt_host'], settings['mqtt_port'], 30)
+        client.loop_start()
+        try:
+            if not connected.wait(20) or not accepted[0]:
+                raise SystemExit('Broker authentication/TLS connection did not succeed. No display services were changed; check broker details and retry.')
+        finally:
+            client.disconnect()
+            client.loop_stop()
     config.validate(settings)
-    username_mqtt = ask('MQTT username')
-    password = getpass.getpass('MQTT password (hidden): ')
-    if not username_mqtt or not password:
-        raise SystemExit('An authenticated broker account is required.')
-    print('\nReady to connect to ' + settings['mqtt_host'] + ':' + str(settings['mqtt_port']))
-    print('Connection: ' + ('TLS encrypted, broker certificate verified.' if settings['mqtt_tls']
-                            else 'unencrypted MQTT on your LAN.'))
-    print('Your MQTT login will be saved on this Pi, readable only by the administrator.')
-    print('Next: test the login, then enable the six display controls in Home Assistant.')
-    print('Existing Pi display settings will be updated if already configured.')
-    print('Choose no to cancel this MQTT setup without changing its existing configuration.')
-    if not yes('Connect and save these MQTT settings?', True):
-        raise SystemExit(2)
-    # Validate authentication and TLS before stopping any existing controller.
-    # This probe neither publishes discovery nor operates the display.
-    connected = threading.Event()
-    accepted = []
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id='radar-setup-' + uuid.uuid4().hex)
-    client.username_pw_set(username_mqtt, password)
-    if settings['mqtt_tls']:
-        client.tls_set(ca_certs=str(ca_source) if ca_source else None)
-    def on_connect(client, userdata, flags, reason, properties):
-        accepted.append(not reason.is_failure)
-        connected.set()
-    client.on_connect = on_connect
-    client.connect_async(settings['mqtt_host'], settings['mqtt_port'], 30)
-    client.loop_start()
-    try:
-        if not connected.wait(20) or not accepted[0]:
-            raise SystemExit('Broker authentication/TLS connection did not succeed. No display services were changed; check broker details and retry.')
-    finally:
-        client.disconnect()
-        client.loop_stop()
+    mqtt_enabled = bool(settings.get('mqtt_host'))
     run('sudo', '-v')
     source = Path(__file__).resolve().parent
     # Capture pre-change hardware permission state once for documented recovery.
@@ -210,7 +214,8 @@ def main():
                 raise SystemExit(f'Unmanaged existing path: {target}. Resolve manually before setup.')
     # Setup is serialized by the calling installer; stop writers before replacing code.
     if config.CONFIG_PATH.exists():
-        run('sudo', 'systemctl', 'stop', MQTT_SERVICE)
+        if Path('/etc/systemd/system', MQTT_SERVICE).exists():
+            run('sudo', 'systemctl', 'stop', MQTT_SERVICE)
         run('systemctl', '--user', 'stop', SERVICE)
         backup = Path('/var/lib/pi-rain-radar-display-backups') / str(time.time_ns())
         run('sudo', 'install', '-d', '-m', '0700', str(backup))
@@ -226,8 +231,9 @@ def main():
         staging = Path(folder)
         staging.chmod(0o700)
         atomic(staging / 'config.json', json.dumps(settings) + '\n')
-        atomic(staging / 'mqtt.json', json.dumps({'username': username_mqtt, 'password': password}), 0o600)
-        atomic(staging / MQTT_SERVICE, mqtt_unit(username, uid))
+        if not args.local_only:
+            atomic(staging / 'mqtt.json', json.dumps({'username': username_mqtt, 'password': password}), 0o600)
+            atomic(staging / MQTT_SERVICE, mqtt_unit(username, uid))
         atomic(staging / '90-pi-rain-radar-display.rules', backlight_rule(backlight, gid))
         run('sudo', 'install', '-d', '-m', '0755', str(ETC), str(LIBRARY))
         for filename in ('controller.py', 'receiver.py', 'config.py', 'start.sh'):
@@ -240,7 +246,8 @@ def main():
             ('mqtt.json', ETC / 'mqtt.json', '0600'),
             (MQTT_SERVICE, Path('/etc/systemd/system') / MQTT_SERVICE, '0644'),
             ('90-pi-rain-radar-display.rules', Path('/etc/udev/rules.d/90-pi-rain-radar-display.rules'), '0644')):
-            run('sudo', 'install', '-m', mode, str(staging / filename), str(target))
+            if (staging / filename).exists():
+                run('sudo', 'install', '-m', mode, str(staging / filename), str(target))
     run('sudo', 'chgrp', str(gid), str(backlights[0]))
     run('sudo', 'chmod', '0660', str(backlights[0]))
     run('sudo', 'udevadm', 'control', '--reload-rules')
@@ -255,14 +262,17 @@ X-Pi-Rain-Radar-Managed=true
     run('systemctl', '--user', 'daemon-reload')
     run('sh', str(LIBRARY / 'start.sh'))
     run('sudo', 'systemctl', 'daemon-reload')
-    run('sudo', 'systemctl', 'enable', '--now', MQTT_SERVICE)
+    if mqtt_enabled:
+        run('sudo', 'systemctl', 'enable', '--now', MQTT_SERVICE)
     time.sleep(2)
     run('systemctl', '--user', 'is-active', '--quiet', SERVICE)
-    run('sudo', 'systemctl', 'is-active', '--quiet', MQTT_SERVICE)
+    if mqtt_enabled:
+        run('sudo', 'systemctl', 'is-active', '--quiet', MQTT_SERVICE)
     # A running transport is not proof of broker authentication/discovery.
-    print('Local services started. Check the six controls in Home Assistant and test touch.')
-    print('If absent, inspect: sudo journalctl -u pi-rain-radar-mqtt -n 30 --no-pager')
-    print('Reboot persistence, broker reconnect and physical controls still require acceptance.')
+    print('Local display controls started. Test brightness, idle timeout and touch wake.')
+    if mqtt_enabled:
+        print('Also check the six controls in Home Assistant and broker reconnect.')
+    print('Reboot persistence and physical controls still require acceptance.')
 
 
 if __name__ == '__main__':

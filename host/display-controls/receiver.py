@@ -105,7 +105,7 @@ def request(data):
         return result
 
 def main():
-    settings = host_config.load()
+    settings = host_config.load(require_mqtt=True)
     configure(settings)
     running, ready = True, False
     last_state, last_error = None, None

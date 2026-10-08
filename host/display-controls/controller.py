@@ -144,7 +144,8 @@ def main():
         return {'ok': True, 'brightness': round(actual * 100 / maximum),
                 'brightness_raw': actual, 'idle_timeout': policy.seconds // 60,
                 'automatic_blanking': policy.automatic_blanking,
-                'display_on': display_state(), 'persistence_ok': persistence_ok}
+                'display_on': display_state(), 'persistence_ok': persistence_ok,
+                'persistence_pending': dirty_at is not None}
 
     def stop(signum, frame):
         nonlocal running
@@ -199,6 +200,8 @@ def main():
                     elif action != 'status':
                         raise ValueError('Unknown action')
                     power(policy.awake(now))
+                    if action in ('brightness', 'idle_timeout', 'automatic_blanking'):
+                        notify_display()
                     reply = status() if address else None
                 except (ValueError, TypeError, UnicodeError, OSError, subprocess.SubprocessError):
                     reply = {'ok': False, 'error': 'Display request rejected or failed'}

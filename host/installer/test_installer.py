@@ -283,6 +283,35 @@ HDMI-A-1 "HDMI"
             instance.run.assert_not_called()
             instance.apt.assert_not_called()
 
+    def test_screen_without_mqtt_and_resume_preserve_one_controller(self):
+        with tempfile.TemporaryDirectory() as directory:
+            instance = self.fixture(Path(directory))
+            instance.home=Path(directory)
+            instance.state.update(mqtt=False, display={'output':'DSI-2'})
+            instance.run, instance.apt, instance.compose = Mock(), Mock(), Mock()
+            instance.screen()
+            calls = str(instance.run.call_args_list)
+            self.assertIn('--local-only', calls)
+            self.assertNotIn('paho', str(instance.apt.call_args_list))
+            self.assertTrue(instance.state['screen_ready'])
+            instance.run.reset_mock();instance.apt.reset_mock()
+            instance.screen()
+            instance.run.assert_not_called();instance.apt.assert_not_called()
+            instance.state = {'mqtt_ready':True}
+            instance.screen()
+            self.assertNotIn('setup.py',str(instance.run.call_args_list))
+            self.assertIn('install_bridge.py',str(instance.run.call_args_list))
+
+    def test_screen_setup_failure_is_not_marked_ready(self):
+        with tempfile.TemporaryDirectory() as directory:
+            instance=self.fixture(Path(directory))
+            instance.home=Path(directory)
+            instance.state={'mqtt_ready':True}
+            instance.run=Mock(side_effect=app.Stop('bridge unavailable'))
+            with self.assertRaises(app.Stop):
+                instance.screen()
+            self.assertNotIn('screen_ready',instance.state)
+
     def test_mismatched_release_download_stops(self):
         with tempfile.TemporaryDirectory() as directory:
             instance = self.fixture(Path(directory))

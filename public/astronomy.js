@@ -1,3 +1,4 @@
+import {celestialPosition} from './celestial-motion.js';
 import {createAstronomy,bearing} from './astronomy-model.js';
 import {weatherPreferences} from './display.js';
 import {setupFloatingWidget} from './floating-widget.js';
@@ -22,10 +23,12 @@ function drawMoon(moon){
  ctx.putImageData(im,0,0);
 }
 export function paintAstronomy(time){
- lastTime=time;const key=Math.floor(time/60000);if(key!==lastKey){lastKey=key;data=calculate(time);}if(!data)return;
+ lastTime=time;const key=Math.floor(time/1000);if(key!==lastKey){lastKey=key;data=calculate(time);}if(!data)return;
  for(const id of ['sun','moon']){
   const value=data[id],row=$('astro-'+id),icon=$('astro-'+id+'-icon'),lane=row.querySelector('.astro-lane');
-  icon.style.visibility=value.up?'visible':'hidden';icon.style.left=(value.continuous?18+Math.max(0,lane.clientWidth-36)*value.progress:-17+(lane.clientWidth+34)*value.progress)+'px';
+  const radius=icon.getBoundingClientRect().width/2*(id==='moon'?60/64:1),width=lane.clientWidth;
+  const x=value.continuous?radius+Math.max(0,width-2*radius)*value.progress:celestialPosition(time,value,width,radius);
+  icon.style.visibility=value.up&&x!==null?'visible':'hidden';if(x!==null)icon.style.left=x+'px';
   const label=id==='sun'?'Sun':'Moon',position=`${value.altitude.toFixed(1)}° ${bearing(value.azimuth)}`,state=value.up?(value.continuous?'above horizon; no bounding rise/set':'above horizon'):'below horizon';
   row.setAttribute('aria-label',`${label}: ${position}, ${state}. Rise ${dateStamp(value.rise)}. Highest ${dateStamp(value.transit)}. Set ${dateStamp(value.set)}.`);
   const events=row.querySelector('.astro-events');events.replaceChildren(...[['↑','rise'],['⌃','transit'],['↓','set']].map(([symbol,event])=>{const e=document.createElement('span');e.textContent=symbol+' '+stamp(value[event]);e.title=label+' '+(event==='transit'?'highest point':event)+' · '+dateStamp(value[event]);return e;}));

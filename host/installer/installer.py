@@ -474,7 +474,14 @@ class Installer:
             self.save()
 
     def compose(self, title, *args):
-        self.run(title, 'sudo', 'docker', 'compose', '--project-directory', str(self.app), *args)
+        files = []
+        if self.state.get('screen_ready'):
+            files = ['-f', str(self.app / 'compose.yaml')]
+            override = self.app / 'compose.override.yaml'
+            if override.exists():
+                files += ['-f', str(override)]
+            files += ['-f', '/etc/pi-rain-radar-screen/compose.screen.yaml']
+        self.run(title, 'sudo', 'docker', 'compose', '--project-directory', str(self.app), *files, *args)
 
     def application(self):
         for name in ('compose.override.yaml', 'compose.override.yml', 'docker-compose.override.yaml', 'docker-compose.override.yml'):
@@ -537,6 +544,22 @@ class Installer:
         self.state['mqtt_ready'] = True
         self.save()
 
+    def screen(self):
+        if not self.state.get('display_ready') and not self.state.get('mqtt_ready'):
+            self.apt('Install local Screen prerequisites', 'install', '-y', 'swayidle', 'wlopm')
+            self.run('Set up local Screen controls', 'python3', str(SOURCE / 'host/display-controls/setup.py'),
+                     '--output', self.state['display']['output'], '--local-only', interactive=True)
+        self.state['display_ready'] = True
+        self.save()
+        if not self.state.get('screen_ready'):
+            self.run('Install local Screen bridge', 'sudo', 'python3', str(SOURCE / 'host/display-controls/install_bridge.py'),
+                     '--user', self.home.name, '--controller-socket', f'/run/user/{os.getuid()}/pi-rain-radar-display.sock',
+                     '--events-address', f'pi-rain-radar-display-events-{os.getuid()}')
+            self.state['screen_ready'] = True
+            self.compose('Validate Screen wiring', 'config', '-q')
+            self.compose('Enable Screen controls in the app', 'up', '-d')
+            self.save()
+
     def kiosk(self):
         launcher = self.home / '.local/bin/pi-rain-radar-kiosk'
         self.owned(launcher, '''#!/bin/sh
@@ -593,6 +616,9 @@ exec systemctl --user start pi-rain-radar-kiosk.service
         self.run('Check kiosk service', 'systemctl', '--user', 'is-active', '--quiet', 'pi-rain-radar-kiosk.service')
         if self.state['power']:
             self.run('Check Device Power', 'sudo', 'systemctl', 'is-active', '--quiet', 'pi-rain-radar-power.service')
+        if self.state.get('screen_ready'):
+            self.run('Check Screen bridge', 'sudo', 'systemctl', 'is-active', '--quiet', 'pi-rain-radar-screen.service')
+            self.run('Check local display controller', 'systemctl', '--user', 'is-active', '--quiet', 'pi-rain-radar-display.service')
         if self.state.get('mqtt_ready'):
             self.run('Check MQTT adapter process', 'sudo', 'systemctl', 'is-active', '--quiet', 'pi-rain-radar-mqtt.service')
             self.run('Check local display controller', 'systemctl', '--user', 'is-active', '--quiet', 'pi-rain-radar-display.service')
@@ -648,6 +674,7 @@ exec systemctl --user start pi-rain-radar-kiosk.service
         with UI.stage('[5/6] Set up your extras and kiosk'):
             self.power()
             self.mqtt()
+            self.screen()
             self.kiosk()
         with UI.stage('[6/6] Check radar services'):
             self.health(wait=60)

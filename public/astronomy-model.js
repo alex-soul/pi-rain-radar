@@ -1,3 +1,4 @@
+import {limbCrossing} from './celestial-motion.js';
 import {getPosition,getTimes,getMoonPosition,getMoonTimes,getMoonIllumination} from './suncalc.js';
 const day=86400000;
 const epoch=value=>value instanceof Date&&Number.isFinite(+value)?+value:null;
@@ -19,6 +20,7 @@ export function createAstronomy(lat,lon){
     const date=new Date(utcDay+offset*day),sun=getTimes(date,lat,lon),moon=getMoonTimes(date,lat,lon);
     for(const [body,data,keys] of [['sun',sun,[['rise','sunrise'],['transit','solarNoon'],['set','sunset']]],['moon',moon,[['rise','rise'],['set','set']]]])for(const [type,key]of keys){const t=epoch(data[key]);if(t!==null&&!cache[body].some(e=>e.type===type&&Math.abs(e.time-t)<1000))cache[body].push({type,time:t});}
    }
+   for(const event of cache.sun)if(event.type==='rise'||event.type==='set'){const times=getTimes(new Date(event.time),lat,lon);event.inner=epoch(times[event.type==='rise'?'sunriseEnd':'sunsetStart']);}
    cache.sun.sort((a,b)=>a.time-b.time);cache.moon.sort((a,b)=>a.time-b.time);
    const lunarPosition=t=>getMoonPosition(new Date(t),lat,lon);
    const peaks=[];
@@ -27,6 +29,7 @@ export function createAstronomy(lat,lon){
     if(peak>start+1000&&peak<start+day-1000&&!peaks.some(t=>Math.abs(t-peak)<3600000))peaks.push(peak);
    }
    cache.moon.push(...peaks.map(time=>({type:'transit',time})));cache.moon.sort((a,b)=>a.time-b.time);
+   for(const rise of cache.moon.filter(e=>e.type==='rise')){const set=cache.moon.find(e=>e.type==='set'&&e.time>rise.time);if(!set)continue;const peak=maximum(rise.time,set.time,lunarPosition);rise.inner=limbCrossing(rise.time,peak,lunarPosition,true);set.inner=limbCrossing(peak,set.time,lunarPosition,false);}
   }
   const result={time};
   for(const [body,position]of [['sun',getPosition],['moon',getMoonPosition]]){
@@ -38,7 +41,7 @@ export function createAstronomy(lat,lon){
    const transit=rise&&set?events.find(e=>e.type==='transit'&&e.time>=rise.time&&e.time<=set.time):events.filter(e=>e.type==='transit').reduce((best,e)=>!best||Math.abs(e.time-time)<Math.abs(best.time-time)?e:best,null);
    const continuous=up&&(!rise||!set||!(before?.type==='rise'));
    const progress=up&&rise&&set&&!continuous?(time-rise.time)/(set.time-rise.time):((time-(transit?.time??utcDay)+day/2)%day+day)%day/day;
-   result[body]={...pos,up,continuous,progress:Math.max(0,Math.min(1,progress)),rise:rise?.time??null,set:set?.time??null,transit:transit?.time??null,next:events.find(e=>e.time>time)??null};
+   result[body]={...pos,up,continuous,progress:Math.max(0,Math.min(1,progress)),rise:rise?.time??null,riseEnd:rise?.inner??null,setStart:set?.inner??null,set:set?.time??null,transit:transit?.time??null,next:events.find(e=>e.time>time)??null};
   }
   result.moon.illumination=getMoonIllumination(new Date(time));return result;
  };

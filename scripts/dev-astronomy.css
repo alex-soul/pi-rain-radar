@@ -1,0 +1,10 @@
+html,body{background:#142623;color:#e1eee7;font:15px system-ui;overflow:auto;min-height:100vh;margin:0}
+body>main,body>footer,body>.source,body>button,body>aside:not(#astronomy),#weather-dock{display:none!important}
+#astronomy-review{position:relative;margin:16px;max-width:680px;z-index:2}
+#astronomy-review h1{font-size:24px;margin:0 0 8px}
+#astronomy-review p{margin:10px 0}
+#astronomy-review input{display:block;width:100%;margin:15px 0}
+#astronomy-review button,#astronomy-review select{font:inherit;color:inherit;background:#243c33;border:1px solid #78998a;border-radius:5px;padding:5px;margin:2px}
+#astronomy-review a{color:#c7e8d8}
+#astro-anchors{display:flex;flex-wrap:wrap}
+#astronomy{z-index:3;max-width:calc(100vw - 32px);left:16px!important;top:var(--preview-widget-top,400px)!important}

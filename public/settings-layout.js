@@ -1,4 +1,3 @@
-import {setupScreenPreview} from './screen-preview.js';
 import {connectionSaved} from './integration-onboarding.js';
 import {refineReview} from './settings-layout-details.js';
 import {shared,change} from './integrations-state.js';
@@ -28,7 +27,7 @@ const power=make('<section id="settings-panel-power" class="settings-content set
 const applianceTabs=make('<div class="settings-tabs settings-subtabs" role="tablist" aria-label="Appliance categories"></div>');
 powerGroup.id='appliance-power';powerGroup.setAttribute('role','tabpanel');powerGroup.setAttribute('aria-labelledby','appliance-power-tab');
 const screen=make('<section id="appliance-screen" role="tabpanel" aria-labelledby="appliance-screen-tab" hidden></section>');
-applianceTabs.append(button('appliance-power-tab','Power','appliance-power',true),button('appliance-screen-tab','Screen','appliance-screen'));power.prepend(applianceTabs);power.append(screen);setupScreenPreview(screen);
+applianceTabs.append(button('appliance-power-tab','Power','appliance-power',true),button('appliance-screen-tab','Screen','appliance-screen'));power.prepend(applianceTabs);power.append(screen);
 // Move storage detail to its drawer; keep status identifiers for existing painters.
 const storage=make('<details class="estimate-drawer"><summary>Storage status</summary><div id="review-storage-details"></div></details>');storage.querySelector('div').append($('storage-summary'));$('settings-panel-storage').append(storage);
 const oldStorage=$('status-storage');oldStorage.previousElementSibling.remove();oldStorage.hidden=true;

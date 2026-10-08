@@ -1,0 +1,5 @@
+const $=id=>document.getElementById(id);
+async function send(path,value){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!r.ok)throw Error('Simulation rejected');return r.json();}
+for(const [id,action]of [['external-brightness','brightness'],['external-sleep','automatic_blanking'],['external-timeout','idle_timeout']])$(id).onchange=async()=>{try{await send('/__dev/screen',{action,value:action==='automatic_blanking'?$(id).checked:Number($(id).value)});$('screen-simulation-status').textContent='External change applied.';}catch(e){$('screen-simulation-status').textContent=e.message;}};
+$('screen-condition').onchange=async()=>{try{await send('/__dev/screen-mode',{mode:$('screen-condition').value});$('screen-simulation-status').textContent='Condition updated.';}catch(e){$('screen-simulation-status').textContent=e.message;}};
+fetch('/__dev/screen').then(r=>r.json()).then(s=>{$('external-brightness').value=s.brightness;$('external-sleep').checked=s.automatic_blanking;$('external-timeout').value=s.idle_timeout;});
