@@ -23,7 +23,7 @@ const fetchedStamp = time => {
   return `${part({day:'numeric'})} ${part({month:'short'}).slice(0,3)} ${part({year:'numeric'})} ${stamp(time/1000)}`;
 };
 export function paintWeather(state, now = Date.now(), {historical=false,operational=state}={}) {
-  const prefs = {...weatherPreferences(),...(historical?state?.units:{})};
+  const livePreferences=weatherPreferences(),prefs = {...livePreferences,...(historical?state?.units:{}),rainUnit:livePreferences.rainUnit};
   const nextSignature = JSON.stringify([state?.units,state?.presentation,historical,historical?Math.floor(Date.now()/60000):null,operational, state?.data?.current?.time,operational?.fetchedAt,operational?.error,operational?.failures,prefs,state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust,gustCacheMinutes()]);
   if (signature === nextSignature) return;
   signature = nextSignature;

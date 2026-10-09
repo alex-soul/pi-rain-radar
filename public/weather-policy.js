@@ -32,8 +32,8 @@ export function filterCurrent(current,mappings={}){
   for(const [field,key] of Object.entries(weatherKeys))if(mappings[field]==='disabled')delete result[key];
   return result;
 }
-export const defaultUnits={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa'};
-export const unitChoices={temperatureUnit:['C','F'],windUnit:['mph','km/h','m/s','kn'],visibilityUnit:['km','mi'],pressureUnit:['hPa','inHg','mmHg']};
+export const defaultUnits={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa',rainUnit:'mm'};
+export const unitChoices={temperatureUnit:['C','F'],windUnit:['mph','km/h','m/s','kn'],visibilityUnit:['km','mi'],pressureUnit:['hPa','inHg','mmHg'],rainUnit:rainUnits};
 export function canonicalUnit(value){
   const key=String(value??'').trim().toLowerCase();
   return ({'°c':'C','c':'C','celsius':'C','°f':'F','f':'F','fahrenheit':'F','mph':'mph','mi/h':'mph','km/h':'km/h','kph':'km/h','m/s':'m/s','kn':'kn','kt':'kn','kts':'kn','knots':'kn','%':'%','°':'°','deg':'°','degrees':'°','km':'km','mi':'mi','hpa':'hPa','inhg':'inHg','mmhg':'mmHg','':'index','index':'index','uv index':'index'})[key]??null;

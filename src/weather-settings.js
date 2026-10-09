@@ -28,7 +28,7 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
   }
   if(settingsFile){await mkdir(dirname(settingsFile),{recursive:true,mode:0o700});await atomicJson(settingsFile,state);}
   let busy=false,initializing=null;
-  const current=()=>structuredClone({rainAccumulation:'disabled',...state});
+  const current=()=>structuredClone({rainAccumulation:'disabled',...state,units:{...defaultUnits,...state.units}});
   return {current,
     async initialize(units){
       if(state.initialized)return {status:200,...current()};

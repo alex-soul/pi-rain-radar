@@ -49,7 +49,7 @@ function sync(){
     $('review-unit-'+id).textContent=row.reason.startsWith('Unit mismatch')?row.reason:'';
   }
   $('shared-unit-note').textContent=shared.initialized?'':'Adopting this screen’s saved units…';
-  for(const id of ['temperature-unit','wind-unit','visibility-unit','pressure-unit'])$(id).disabled=!shared.initialized;
+  for(const id of ['temperature-unit','wind-unit','visibility-unit','pressure-unit','rain-unit'])$(id).disabled=!shared.initialized;
 }
 async function save(input){
   $('review-weather-note').textContent='';

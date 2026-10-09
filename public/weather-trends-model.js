@@ -5,7 +5,7 @@ import {weatherReadings} from './weather-readings.js';
 export function observationKey(row,state){
  const policy=state?.presentation?.policy??state?.policy;
  if(row.inputs)return row.inputs.map(r=>observationKey(r,state)).join('|');
- if(row.id==='rainAccumulation')return JSON.stringify([row.source,row.expected,row.unit,row.entity,row.resetAt??null]);
+ if(row.id==='rainAccumulation')return JSON.stringify([row.source,row.expected,row.unit,row.observedUnit,row.entity,row.resetAt??null]);
  return JSON.stringify([row.source,row.expected,row.unit,policy?.mappings?.[row.id]??'owm']);
 }
 export function observationTime(row){return row.inputs?Math.max(...row.inputs.map(r=>r.time??0)):row.time;}
@@ -69,7 +69,7 @@ export function smoothPath(points){
 export function trendRange(values,id,unit){
  const valid=values.filter(Number.isFinite);if(!valid.length)return [0,1];
  const low=Math.min(...valid),high=Math.max(...valid),centre=(low+high)/2;
- const floor=id==='humidity'?2:id==='pressure'?(unit==='inHg'?.06:unit==='mmHg'?1.5:2):id==='visibility'?.2:['wind','gust'].includes(id)?1:['temperature','dew','depression'].includes(id)?(unit==='°F'?1.8:1):1;
+ const floor=id==='rainAccumulation'?(unit==='in'?1/25.4:unit==='cm'?.1:1):id==='humidity'?2:id==='pressure'?(unit==='inHg'?.06:unit==='mmHg'?1.5:2):id==='visibility'?.2:['wind','gust'].includes(id)?1:['temperature','dew','depression'].includes(id)?(unit==='°F'?1.8:1):1;
  const span=Math.max(high-low,floor)*1.16;return [id==='rainAccumulation'?Math.max(0,centre-span/2):centre-span/2,centre+span/2];
 }
 

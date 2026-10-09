@@ -7,7 +7,7 @@ function normalizeGust(value) {
   if (!Number.isInteger(value) || value < 1) return 60;
   return gustChoices.slice(1).reduce((best, pick) => Math.abs(pick-value) < Math.abs(best-value) ? pick : best, 15);
 }
-const preferences = { showScale: true, autoHide: false, autoHideWeather: false, autoHideButtons: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
+const preferences = { showScale: true, autoHide: false, autoHideWeather: false, autoHideButtons: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', rainUnit: 'mm', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
 preferences.readingOrder = [...defaultReadings,...Object.keys(readingNames).filter(id=>!defaultReadings.includes(id))];
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));

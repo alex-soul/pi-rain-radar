@@ -25,6 +25,7 @@ export function directionText(value) {
 }
 
 export const weatherOptions = {
+  rainUnit: ['mm', 'cm', 'in'],
   visibilityUnit: ['km', 'mi'], pressureUnit: ['hPa', 'inHg', 'mmHg'],
   directionFormat: ['compass', 'degrees'], directionConvention: ['flow', 'meteorological'],
 };

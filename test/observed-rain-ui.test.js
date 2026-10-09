@@ -15,9 +15,20 @@ test('rain dock reading uses observed units, explains the running total and expo
  assert.match(readingExplanation(row,()=> 'today'),/running total.*not rain intensity/);
  const stale=weatherReadings(state,(start+601)*1000).rainAccumulation;
  assert.equal(stale.value,null);assert.equal(stale.text,'—');assert.equal(stale.health,'error');
- for(const unit of ['cm','in'])assert.equal(weatherReadings({presentation:snapshot(start,0,{unit})},start*1000).rainAccumulation.unit,unit);
+ for(const unit of ['cm','in'])assert.equal(weatherReadings({presentation:snapshot(start,0,{unit})},start*1000).rainAccumulation.unit,'mm');
  assert.equal(weatherReadings({},start*1000).rainAccumulation.expected,'disabled');
  assert.equal(weatherReadings({presentation:snapshot(start,4,{unit:'mm/h'})},start*1000).rainAccumulation.value,null);
+});
+test('rain display units convert dock and all saved trend points without changing raw observations',()=>{
+ const sample=snapshot(start,25.4),before=JSON.stringify(sample);
+ for(const [unit,value,text] of [['mm',25.4,'25.4'],['cm',2.54,'2.54'],['in',1,'1.00']]){
+  const row=weatherReadings({presentation:sample},start*1000,{preferences:{rainUnit:unit}}).rainAccumulation;
+  assert.equal(row.unit,unit);assert.equal(row.value,value);assert.equal(row.text,text);
+  const points=weatherSeries({presentations:[sample,snapshot(start+300,50.8)]},{rainUnit:unit}).rainAccumulation;
+  assert.deepEqual(chartSegments(points,start,start+300,unit).flat().map(p=>p.value),[value,value*2]);
+ }
+ assert.equal(JSON.stringify(sample),before);
+ assert.equal(weatherReadings({presentation:snapshot(start,1,{unit:'in'})},start*1000,{preferences:{rainUnit:'mm'}}).rainAccumulation.value,25.4);
 });
 test('rain history retains dry plateaus and breaks on gaps, resets, sensor changes and implicit decreases',()=>{
  const presentations=[snapshot(start,0),snapshot(start+300,0),snapshot(start+600,1.5),snapshot(start+900,null),snapshot(start+1200,2),snapshot(start+1500,0,{resetAt:(start+1500)*1000}),snapshot(start+1800,.5,{resetAt:(start+1500)*1000}),snapshot(start+2100,.75,{sensor:'sensor.other'}),snapshot(start+2400,.25,{sensor:'sensor.other'})];

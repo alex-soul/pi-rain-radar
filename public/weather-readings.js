@@ -56,10 +56,11 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
   const health=inputs.some(row=>row.health==='error'||row.expected==='disabled'||row.health==='unconfigured')?'error':inputs.some(row=>row.health==='warning')?'warning':'ready';
   rows.depression={inputs,id:'depression',name:'T−Td',expected:'derived',source:'derived',sourceLabel:'Temperature − dew point',value,text:value===null?'—':value.toFixed(1)+'°',unit:'°'+units.temperatureUnit,time:null,receivedAt:null,health,retained:inputs.some(row=>row.retained),fallback:false,attribution:inputs.map(row=>row.attribution).filter(Boolean).join(' · '),reason:'Dew point depression. '+inputs.map(row=>row.name+': '+row.text+' · '+row.sourceLabel+(row.reason?' · '+row.reason:'')).join('; ')};
   const rainPolicy=policy??{},rain=selectObservedRain(rainPolicy,state?.presentation?.observations??state?.observations,now);
-  const enabled=!!rain.entity,valueRain=rain.eligible?rain.value:null;
+  const rainFactors={mm:1,cm:10,in:25.4},rainUnit=preferences.rainUnit??units.rainUnit??'mm';
+  const enabled=!!rain.entity,valueRain=rain.eligible?rain.value*rainFactors[rain.unit]/rainFactors[rainUnit]:null;
   rows.rainAccumulation={...rain,id:'rainAccumulation',name:'Rain accumulation',expected:enabled?'ha':'disabled',
     source:rain.eligible?'ha':null,sourceLabel:enabled?'Home Assistant':'Disabled',value:valueRain,
-    text:valueRain===null?'—':valueRain.toFixed(1),unit:rain.unit??'',retained:false,fallback:false,
+    text:valueRain===null?'—':valueRain.toFixed(rainUnit==='mm'?1:2),unit:rainUnit,observedUnit:rain.unit,retained:false,fallback:false,
     health:!enabled||!rainPolicy.haCollect?'unconfigured':rain.eligible?'ready':'error',
     attribution:rain.attribution??'',reason:rain.reason??'Observed running total since the sensor’s last reset; not rain intensity or a forecast.'};
   return rows;
