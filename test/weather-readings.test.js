@@ -10,7 +10,7 @@ test('partial HA assignments with optional missing OWM gust remain healthy for a
   const state=fixture(),rows=weatherReadings(state,now);
   // The previous renderer used this predicate and incorrectly turned red.
   assert.equal(Object.values(selectHaReadings(state.presentation.policy,state.presentation.observations,state,now)).some(row=>!row.source),true);
-  assert.equal(Object.keys(rows).length,11);assert.equal(rows.temperature.source,'ha');assert.equal(rows.wind.source,'openweather');
+  assert.equal(Object.keys(rows).length,12);assert.equal(rows.rainAccumulation.expected,'disabled');assert.equal(rows.temperature.source,'ha');assert.equal(rows.wind.source,'openweather');
   assert.equal(rows.gust.text,'—');assert.equal(rows.gust.health,'ready');assert.equal(weatherHealth(rows).health,'ready');
   for(const field of ['temperature','feels','wind','gust']){
     const s=fixture();s.presentation.policy.mappings=Object.fromEntries(weatherFields.map(f=>[f,'owm']));s.presentation.policy.mappings[field]='sensor.single';

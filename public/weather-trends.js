@@ -25,7 +25,7 @@ export function paintWeatherTrends(input){
   marker.textContent=arrow;marker.title=arrow==='↑'?'Higher than the previous observation':arrow==='↓'?'Lower than the previous observation':'';
  }
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return;
- const fields=[["temperature", "Temperature", "temp"], ["humidity", "Humidity", "rh"], ["dew", "Dew point", "dew"], ["wind", "Wind", "wind"], ["depression", "T−Td", "depression"], ["visibility", "Visibility", "visibility"], ["pressure", "Pressure", "pressure"], ["uv", "UV index", "uv"], ["gust", "Wind gusts", "gust"]];
+ const fields=[["temperature", "Temperature", "temp"], ["humidity", "Humidity", "rh"], ["dew", "Dew point", "dew"], ["wind", "Wind", "wind"], ["depression", "T−Td", "depression"], ["visibility", "Visibility", "visibility"], ["pressure", "Pressure", "pressure"], ["uv", "UV index", "uv"], ["gust", "Wind gusts", "gust"], ["rainAccumulation", "Rain accumulation", "rain"]];
  const sizes=fields.map(([id])=>{const e=$('trend-'+id);return [e.clientWidth,e.clientHeight];});
  const renderKey=JSON.stringify([cache,start,end,fields.map(([id])=>rows[id].unit),zone,sizes]);
  const stamp=t=>formatTime(t,{hour:'2-digit',minute:'2-digit'},zone);
@@ -51,14 +51,14 @@ export function paintWeatherTrends(input){
  const selectedTime=time??end,selected=weatherReadings(valueReplay.weather(selectedTime),selectedTime*1000,{historical:true,preferences:prefs,gustMinutes:gust});
  for(const [i,[id]]of fields.entries()){
   const cursor=$('trend-cursor-'+id),x=1+(selectedTime-start)/(end-start)*(sizes[i][0]-2);if(cursor){cursor.style.display=captureInWindow(selectedTime,start,end)?'':'none';cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);}
-  $('trend-value-'+id).textContent=selected[id].text+(['wind','gust','visibility','pressure'].includes(id)?' '+selected[id].unit:'');
+  $('trend-value-'+id).textContent=selected[id].text+(['wind','gust','visibility','pressure','rainAccumulation'].includes(id)?' '+selected[id].unit:'');
  }
 }
 new ResizeObserver(()=>{if(latestInput)paintWeatherTrends(latestInput);}).observe($('weather-trends'));
 
 
 
-const controls = [{"id": "temperature", "label": "Temperature", "visible": true}, {"id": "humidity", "label": "Humidity", "visible": true}, {"id": "dew", "label": "Dew point", "visible": true}, {"id": "wind", "label": "Wind", "visible": false}, {"id": "depression", "label": "T−Td", "visible": false}, {"id": "visibility", "label": "Visibility", "visible": false}, {"id": "pressure", "label": "Pressure", "visible": false}, {"id": "uv", "label": "UV index", "visible": false}, {"id": "gust", "label": "Wind gusts", "visible": false}];
+const controls = [{"id": "temperature", "label": "Temperature", "visible": true}, {"id": "humidity", "label": "Humidity", "visible": true}, {"id": "dew", "label": "Dew point", "visible": true}, {"id": "wind", "label": "Wind", "visible": false}, {"id": "depression", "label": "T−Td", "visible": false}, {"id": "visibility", "label": "Visibility", "visible": false}, {"id": "pressure", "label": "Pressure", "visible": false}, {"id": "uv", "label": "UV index", "visible": false}, {"id": "gust", "label": "Wind gusts", "visible": false}, {"id": "rainAccumulation", "label": "Rain accumulation", "visible": false}];
 const key = 'radar-weather-charts';
 let layout = controls.map(({ id, visible = true }) => ({ id, visible }));
 try {

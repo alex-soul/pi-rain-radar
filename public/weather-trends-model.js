@@ -5,6 +5,7 @@ import {weatherReadings} from './weather-readings.js';
 export function observationKey(row,state){
  const policy=state?.presentation?.policy??state?.policy;
  if(row.inputs)return row.inputs.map(r=>observationKey(r,state)).join('|');
+ if(row.id==='rainAccumulation')return JSON.stringify([row.source,row.expected,row.unit,row.entity,row.resetAt??null]);
  return JSON.stringify([row.source,row.expected,row.unit,policy?.mappings?.[row.id]??'owm']);
 }
 export function observationTime(row){return row.inputs?Math.max(...row.inputs.map(r=>r.time??0)):row.time;}
@@ -12,6 +13,7 @@ export function readingTrend(previous,current){
  if(!previous||!current||previous.key!==current.key||!Number.isFinite(previous.row.value)||!Number.isFinite(current.row.value)||!current.row.source||previous.row.retained||current.row.retained||current.row.id==='direction')return '';
  const a=observationTime(previous.row),b=observationTime(current.row);
  if(!a||!b||b<=a||b-a>=1800000||current.row.source==='ha'&&b-a>600000)return '';
+ if(current.row.id==='rainAccumulation'&&current.row.value<previous.row.value)return '';
  return current.row.value>previous.row.value?'↑':current.row.value<previous.row.value?'↓':'';
 }
 export function weatherSeries(history={},preferences={},gustMinutes=60){
@@ -40,7 +42,7 @@ export function chartSegments(points,start,end,unit){
  for(const p of points??[]){
   const r=p.row,t=observationTime(r)/1000;
   const valid=Number.isFinite(r.value)&&r.source&&!r.retained&&r.unit===unit&&t>=start&&t<=end;
-  if(!valid||previous&&(p.key!==previous.key||t-observationTime(previous.row)/1000>=1800||r.source==='ha'&&t-observationTime(previous.row)/1000>600)) {if(line.length)segments.push(line);line=[];}
+  if(!valid||previous&&(p.key!==previous.key||t-observationTime(previous.row)/1000>=1800||r.source==='ha'&&t-observationTime(previous.row)/1000>600||r.id==='rainAccumulation'&&r.value<previous.row.value)) {if(line.length)segments.push(line);line=[];}
   if(valid){let value=['wind','gust'].includes(r.id)&&r.source==='openweather'?r.value*(windUnits[unit]??1):['temperature','dew'].includes(r.id)&&r.source==='openweather'&&unit==='°F'?r.value*1.8+32:r.value;if(r.source==='openweather'&&r.id==='visibility')value=Math.min(value,10000)/(unit==='mi'?1609.344:1000);
    if(r.source==='openweather'&&r.id==='pressure')value*=unit==='inHg'?0.0295299830714:unit==='mmHg'?0.750061683:1;
    line.push({time:t,value,source:r.sourceLabel});}
@@ -68,7 +70,7 @@ export function trendRange(values,id,unit){
  const valid=values.filter(Number.isFinite);if(!valid.length)return [0,1];
  const low=Math.min(...valid),high=Math.max(...valid),centre=(low+high)/2;
  const floor=id==='humidity'?2:id==='pressure'?(unit==='inHg'?.06:unit==='mmHg'?1.5:2):id==='visibility'?.2:['wind','gust'].includes(id)?1:['temperature','dew','depression'].includes(id)?(unit==='°F'?1.8:1):1;
- const span=Math.max(high-low,floor)*1.16;return [centre-span/2,centre+span/2];
+ const span=Math.max(high-low,floor)*1.16;return [id==='rainAccumulation'?Math.max(0,centre-span/2):centre-span/2,centre+span/2];
 }
 
 export function chartCredits(series,visibleFields,start,end){

@@ -91,6 +91,7 @@ export function setupWeatherLayout(){
     const value=$(id).checked;$(id).disabled=true;await save({[key]:value});sync();if(key==='haCollect'&&value)await loadWeatherChoices();
   };
   const derivedLabel=$('reading-depression').previousElementSibling;derivedLabel.prepend(make('<span id="reading-health-depression" class="reading-health" role="img" aria-label="Calculated reading"></span>'));derivedLabel.append(make('<small id="reading-source-depression" class="reading-source">Temperature minus dew point</small>'));
+  const rainLabel=$('reading-rainAccumulation').previousElementSibling;rainLabel.prepend(make('<span id="reading-health-rainAccumulation" class="reading-health" role="img" aria-label="Not configured"></span>'));rainLabel.append(make('<small id="reading-source-rainAccumulation" class="reading-source"></small>'));
   built=true;window.addEventListener('integration-change',sync);sync();
   $('settings-dialog').addEventListener('settings-tab-change',()=>{if(readingOpen())void loadWeatherChoices();else generation++;});
   $('settings-dialog').addEventListener('close',()=>{generation++;entities=[];});

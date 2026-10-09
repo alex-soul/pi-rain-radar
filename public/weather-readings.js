@@ -1,4 +1,4 @@
-import {weatherFields,weatherKeys,selectHaReadings,defaultUnits} from './weather-policy.js';
+import {weatherFields,weatherKeys,selectHaReadings,selectObservedRain,defaultUnits} from './weather-policy.js';
 import {readingNames,temperatureText,windText,windDirectionText,visibilityText,pressureText} from './weather-format.js';
 
 // One source/freshness model for visible readings, hidden-reading health and
@@ -55,6 +55,13 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
   const value=inputs.every(row=>Number.isFinite(row.value))?inUnit(inputs[0])-inUnit(inputs[1]):null;
   const health=inputs.some(row=>row.health==='error'||row.expected==='disabled'||row.health==='unconfigured')?'error':inputs.some(row=>row.health==='warning')?'warning':'ready';
   rows.depression={inputs,id:'depression',name:'T−Td',expected:'derived',source:'derived',sourceLabel:'Temperature − dew point',value,text:value===null?'—':value.toFixed(1)+'°',unit:'°'+units.temperatureUnit,time:null,receivedAt:null,health,retained:inputs.some(row=>row.retained),fallback:false,attribution:inputs.map(row=>row.attribution).filter(Boolean).join(' · '),reason:'Dew point depression. '+inputs.map(row=>row.name+': '+row.text+' · '+row.sourceLabel+(row.reason?' · '+row.reason:'')).join('; ')};
+  const rainPolicy=policy??{},rain=selectObservedRain(rainPolicy,state?.presentation?.observations??state?.observations,now);
+  const enabled=!!rain.entity,valueRain=rain.eligible?rain.value:null;
+  rows.rainAccumulation={...rain,id:'rainAccumulation',name:'Rain accumulation',expected:enabled?'ha':'disabled',
+    source:rain.eligible?'ha':null,sourceLabel:enabled?'Home Assistant':'Disabled',value:valueRain,
+    text:valueRain===null?'—':valueRain.toFixed(1),unit:rain.unit??'',retained:false,fallback:false,
+    health:!enabled||!rainPolicy.haCollect?'unconfigured':rain.eligible?'ready':'error',
+    attribution:rain.attribution??'',reason:rain.reason??'Observed running total since the sensor’s last reset; not rain intensity or a forecast.'};
   return rows;
 }
 export function weatherHealth(rows){
@@ -75,7 +82,7 @@ export function weatherProviderHealth(state,provider,now,{configured=true}={}){
   if(!configured)return {health:'unconfigured',summary:'Not configured'};
   if(policy?.[provider==='ha'?'haCollect':'owmCollect']===false)return {health:'unconfigured',summary:'Configured · Collection disabled'};
   const raw=provider==='ha'?state:{...state,presentation:policy?{policy:{...policy,source:'openweather'},observations:{}}:undefined};
-  const rows=Object.values(weatherReadings(raw,now)).filter(row=>!['gust','depression'].includes(row.id)&&(provider==='ha'?row.expected==='ha':row.expected!=='disabled'));
+  const rows=Object.values(weatherReadings(raw,now)).filter(row=>!['gust','depression'].includes(row.id)&&(provider==='ha'?row.expected==='ha':row.expected!=='disabled'&&row.id!=='rainAccumulation'));
   if(!rows.length)return {health:'unconfigured',summary:'Configured · No assigned readings'};
   if(provider==='ha')return rows.some(row=>row.source!=='ha')?{health:'error',summary:'Some HA readings unavailable'}:{health:'ready',summary:'Collecting'};
   return weatherHealth(Object.fromEntries(rows.map(row=>[row.id,row])));

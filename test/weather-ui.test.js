@@ -42,7 +42,7 @@ test('Rain forecast uses baselines for zero and missing minutes, and replaces fa
 test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   assert.equal(f.nodes.get('weather-visibility').textContent,'0.0');assert.equal(f.nodes.get('weather-uv').textContent,'0.0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
-  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
+  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
   assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
   const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);
   for(const convention of ['flow','meteorological'])for(const value of [0,0.1,45,179.9,180,245.25,359.9,360]) {

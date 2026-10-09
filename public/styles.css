@@ -1487,3 +1487,6 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 
 #stats .stats-content{padding-top:18px;}
 #stats .stats-grid > div:nth-child(3) > strong{padding-right:20px;}
+
+#weather-trends,.detached-trend{--trend-rain:#68b9d0;}
+.trend-mini[data-field=rainAccumulation]{--mini-color:var(--trend-rain);}

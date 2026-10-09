@@ -50,7 +50,7 @@
 .trend-cursor{opacity:.7;}
 .weather-readings{column-gap:8px;padding-inline:clamp(20px,3.2vw,40px);}
 @media(max-width:560px){.weather-readings{column-gap:6px;}}
-.weather-reading :is(.wind-unit-label,#weather-visibility-unit,#weather-pressure-unit){display:none;}
+.weather-reading :is(.wind-unit-label,#weather-visibility-unit,#weather-pressure-unit,#weather-rainAccumulation-unit){display:none;}
 :root .weather-reading .reading-value-slot{width:calc(6ch + 11px);font-variant-numeric:tabular-nums;}
 :root .weather-reading .reading-value-slot[data-reading=direction]{width:4ch;}
 :root .weather-reading .reading-value-slot[data-reading=direction] .reading-trend{display:none;}

@@ -43,6 +43,7 @@ export function paintWeather(state, now = Date.now(), {historical=false,operatio
   for(const unit of document.querySelectorAll('.wind-unit-label'))unit.textContent=prefs.windUnit;
   $('weather-visibility-unit').textContent=prefs.visibilityUnit||'km';
   $('weather-pressure-unit').textContent=prefs.pressureUnit||'hPa';
+  $('weather-rainAccumulation-unit').textContent=rows.rainAccumulation.unit||'mm';
   description=weatherHealth(rows).summary;
   const minuteNow = Math.floor(now/60000)*60;
   const forecastFetchedAt = state?.forecastFetchedAt ?? state?.fetchedAt;
