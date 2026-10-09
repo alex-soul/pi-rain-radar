@@ -1344,9 +1344,10 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 .trend-mini[data-field=temperature]{--mini-color:var(--trend-temp)}
 .trend-mini[data-field=humidity]{--mini-color:var(--trend-rh)}
 .trend-mini[data-field=dew]{--mini-color:var(--trend-dew)}
-.trend-mini-legend{display:flex;justify-content:space-between;gap:8px;font:10px/16px Arial;flex:none;height:16px;font-variant-numeric:tabular-nums;}
-.trend-mini-legend span:first-child{opacity:.8;}
-.trend-mini-legend span:last-child{color:var(--mini-color);}
+.trend-mini-legend{display:flex;justify-content:flex-start;gap:4px;font:10px/1.45 Arial;flex:none;min-height:16px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.trend-mini-legend span:first-child{opacity:.8;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.trend-mini-legend [id^="trend-value-"]{color:var(--mini-color);flex:none;}
+.trend-mini-legend .trend-range{opacity:.65;flex:none;font:inherit;}
 .trend-mini-legend span:first-child:before{content:'';display:inline-block;width:10px;height:1px;margin-right:5px;vertical-align:middle;background:var(--mini-color);}
 .trend-grid,.trend-axis,.trend-curve,.trend-cursor{vector-effect:non-scaling-stroke;fill:none;}
 .trend-grid{stroke:currentColor;stroke-width:.4;opacity:.18;}
@@ -1354,7 +1355,6 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 .trend-curve{stroke-width:1;stroke-linecap:round;stroke-linejoin:round;}
 .trend-cursor{stroke:currentColor;stroke-width:.6;opacity:.25;}
 .trend-scale{fill:currentColor;font:400 9px Arial;}
-.trend-extrema{fill:currentColor;font:400 9px Arial;font-variant-numeric:tabular-nums;opacity:.65;}
 .trend-times{display:flex;justify-content:space-between;font:9px/12px Arial;opacity:.65;margin-top:3px;padding-right:16px;}
 .weather-reading .reading-value-slot{display:inline-flex;align-items:baseline;flex:none;width:calc(5ch + 11px);white-space:nowrap;gap:2px;}
 .weather-reading .reading-value-slot > [id]{width:auto!important;min-width:0!important;flex:none;}
@@ -1424,9 +1424,9 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 
 /* One compact legend row; the playback dock owns the time labels. */
 #weather-trends,.detached-trend{padding-bottom:5px;}
-.trend-mini-legend{align-items:center;gap:6px;height:20px;line-height:20px;}
+.trend-mini-legend{align-items:center;gap:4px;height:auto;min-height:20px;line-height:1.45;}
 .trend-mini-legend>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-.trend-mini-legend>span:last-child{margin-left:auto;white-space:nowrap;flex:none;}
+.trend-mini-legend>span:last-child{margin-left:0;white-space:nowrap;flex:none;}
 .trend-mini-legend #trend-edit,.trend-mini-legend .trend-edit{padding:0 3px;font:9px/20px Arial;opacity:.7;flex:none;}
 .detached-trend .trend-mini-legend,.chart-bottom .trend-mini-legend{padding-right:20px;}
 .detached-resize,#weather-trends-resize{height:25px;width:25px;padding:2px;}

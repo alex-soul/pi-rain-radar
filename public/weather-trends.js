@@ -36,7 +36,7 @@ export function paintWeatherTrends(input){
   for(const [i,[id,label,color]]of fields.entries()){
    const svg=$('trend-'+id),[width,height]=sizes[i];if(width<5||height<12)continue;
    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
-   const unit=rows[id].unit,top=Math.min(20,height*.4),bottom=height-4;
+   const unit=rows[id].unit,top=6,bottom=height-4;
    const [min,max]=trendRange(segments[id].flat().map(p=>p.value),id,unit),x=t=>1+(t-start)/(end-start)*(width-2),y=v=>bottom-(v-min)/(max-min)*(bottom-top),nodes=[];
    const add=(tag,attrs,text)=>{const e=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;nodes.push(e);return e;};
    for(let n=1;n<4;n++){const yy=top+(bottom-top)*n/4;add('line',{class:'trend-grid',x1:1,x2:width-1,y1:yy,y2:yy});}
@@ -44,14 +44,17 @@ export function paintWeatherTrends(input){
    for(let t=Math.ceil(start/interval)*interval;t<end;t+=interval)if(t>start)add('line',{class:'trend-grid',x1:x(t),x2:x(t),y1:top,y2:bottom});
    add('path',{class:'trend-axis',d:`M1,${top}V${bottom} M1,${bottom}H${width-1}`});
    for(const line of segments[id]){const curve=add('path',{class:'trend-curve',d:smoothPath(line.map(p=>[x(p.time),y(p.value)])),stroke:`var(--trend-${color})`});const tip=document.createElementNS(ns,'title');tip.textContent=`${label} · ${line[0]?.source??''} · ${line.length} saved observations`;curve.append(tip);}
-   const extrema=chartExtrema(segments[id]),captions=[];
+   const extrema=chartExtrema(segments[id]),captions=[],values=[];
    for(const kind of ['min','max']){
     const point=extrema[kind],name=(kind==='min'?'Min':'Max')+(id==='rainAccumulation'?' total':'');
     const precision=['temperature','dew','depression','uv'].includes(id)?1:id==='rainAccumulation'?(unit==='mm'?1:2):id==='visibility'?1:id==='pressure'&&unit!=='hPa'?2:0;
-    const value=point?point.value.toFixed(precision)+(unit?(unit.startsWith('°')||unit==='%'?'':' ')+unit:''):'—';
-    const caption=`${name} ${value}`,node=add('text',{class:'trend-extrema',x:kind==='min'?1:width-1,y:11,'text-anchor':kind==='min'?'start':'end'},caption);
-    const tip=document.createElementNS(ns,'title');tip.textContent=point?`${caption} · ${formatTime(point.time,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'},zone)} · ${point.source}`:'No stored readings in this chart window';node.append(tip);captions.push(caption);
+    const value=point?point.value.toFixed(precision):'—';values.push(value);
+    const caption=`${name} ${value}${point&&unit?' '+unit:''}`;
+    captions.push(point?`${caption} · ${formatTime(point.time,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'},zone)} · ${point.source}`:'No stored readings in this chart window');
    }
+   const legend=$('trend-value-'+id).parentElement;
+   let range=legend.querySelector('.trend-range');if(!range){range=document.createElement('span');range.className='trend-range';legend.append(range);}
+   range.textContent=`(${values.join('–')})`;range.title=captions.join('\n');range.setAttribute('aria-label',captions.join('. '));
    add('line',{id:'trend-cursor-'+id,class:'trend-cursor',y1:top,y2:bottom});svg.replaceChildren(...nodes);
    svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)}. ${captions.join('. ')}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
   }
