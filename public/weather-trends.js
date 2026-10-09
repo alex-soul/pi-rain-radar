@@ -55,8 +55,6 @@ export function paintWeatherTrends(input){
    const currentValue=$('trend-value-'+id),legend=currentValue.parentElement;
    let range=legend.querySelector('.trend-range');if(!range){range=document.createElement('span');range.className='trend-range';legend.insertBefore(range,currentValue);}
    range.textContent=`(${values.join(' · ')})`;range.title=captions.join('\n');range.setAttribute('aria-label',captions.join('. '));
-   const suffix=['temperature','dew','depression'].includes(id)?'°':id==='humidity'?'%':['wind','gust','visibility','pressure','rainAccumulation'].includes(id)?' '+unit:'';
-   currentValue.style.width=`calc(${Math.max(...values.map(value=>value.length))+suffix.length}ch + 1em)`;
    add('line',{id:'trend-cursor-'+id,class:'trend-cursor',y1:top,y2:bottom});svg.replaceChildren(...nodes);
    svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)}. ${captions.join('. ')}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
   }

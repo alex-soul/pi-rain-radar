@@ -1433,7 +1433,7 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 
 .trend-mini-legend>span[id^="trend-value-"]{margin-left:auto;white-space:nowrap;flex:none;color:var(--mini-color);}
 
-.trend-mini-legend>span[id^="trend-value-"]{margin-left:0;}
+.trend-mini-legend>span[id^="trend-value-"]{margin-left:auto;}
 .trend-mini-legend #trend-edit,.trend-mini-legend .trend-edit{margin-left:auto;}
 .trend-mini-legend{justify-content:flex-start;}
 
