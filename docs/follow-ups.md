@@ -4,6 +4,9 @@
 
 I accepted the published 0.11.0 image on my Pi and phone. Consolidated screen settings, consistent dock spacing, optional rain readings/units, compact trend min/max legends and the transient connection-warning recovery fix are delivered. See [release notes](release-0.11.0.md).
 
+These follow-ups are the starting point for future release planning; no next version or implementation is assigned. Pick them up when relevant, with comparison UI requirements still to discuss.
+
+- **Observed-rain validation during rainfall:** verify the corrected daily accumulation helper against consecutive source rainfall amounts over a real rainy interval. Acquisition and restart persistence passed; wet-weather accuracy remains unproven. A manual-reset day is partial, and inherited totals from the earlier helper are unsuitable for evaluation. See [observed rain](observed-rain.md) for the source and reset requirements.
 - **Archive forecast reliability:** observed accumulated-rain collection now uses the existing five-minute HA cycle and shared retention. The existing Archive comparison still compares forecasts; a later release should compare forecasts with measured interval rainfall, including actual lead times such as +10 versus +50 minutes. Keep original ten-minute forecast captures, raw accumulated totals, acquisition/report timestamps, source/location and reset boundaries. Align forecast and observation intervals; preserve missing polls, resets and source changes as unknown boundaries rather than invented rainfall. Five-minute accumulated totals do not recover exact onset or peak intensity. Review retention before expecting a long evaluation dataset. I have further comparison UI requirements to discuss before choosing metrics/charts or replacing the existing comparison; no future version or design is assigned yet. See [observed rain](observed-rain.md).
 - **Development studio review:** retain the dock tuning tool for specific future needs. Keep the studio lean; no routine playground build/deployment or ongoing expansion is required. Review the accumulated reusable material separately when needed.
 - Fresh portable installer/reboot validation and longer soak/cloud/storage/hardware observations remain open below. This app release does not close those gaps.
@@ -59,6 +62,7 @@ Rolling SQLite archive, shared retention and storage status; historical weather/
 - **Prolonged Pi soak:** remains deferred after 0.6.0. Observe several-hour/overnight split-provider playback, memory growth, swap, recovery, retained history and request counters. Short successful checks are not a soak.
 - **Rainbow billing:** revisit no earlier than November 2026 after a full billing cycle. Snapshot billing and estimates remain conditional until confirmed.
 - **Reference hardware and wider installation feedback:** retained seven-day fixture startup was tested, but full long-running collection and independent fresh-install walkthroughs remain useful. Narrow phones receive best-effort layout support; minor attribution overlap may remain.
+- **Host memory-limit enforcement:** verify that the host exposes the required cgroup memory controller and Docker actually enforces configured limits before relying on them. Review any host boot changes separately, preserve the working appliance and choose limits from measured application, browser and host needs. Short release checks do not establish sustained memory behaviour.
 
 ## Delivered in 0.5.0
 
