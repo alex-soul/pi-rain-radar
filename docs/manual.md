@@ -2,9 +2,9 @@
 
 ## Display controls
 
-**Main-map settings** and **Overview settings** control their respective rain/cloud visibility and opacity. Only enabled layers appear; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
+**Main-map settings** and **Overview settings** control their respective rain/cloud visibility and opacity. Unavailable layers show their explanation; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
 
-**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap or hover over the widget to reveal its **cog**, then use toggles and draggable rows to select and order nine readings: those three plus Wind, Gust, T−Td, Visibility, Pressure and UV. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
+**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap or hover over the widget to reveal its **cog**, then use toggles and draggable rows to select and order readings: those three plus Wind, Gust, T−Td, Visibility, Pressure, UV and optional Rain accumulation. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
 
 **Sun/Moon** uses bundled local calculations for the configured location/time zone, without provider downloads. Live uses current time; Archive uses its selected time. The compact widget shows the bodies rising/setting through its border and Moon phase; expand vertically to reveal event times. The **top-dock editor** has Sun/Moon visibility/order rows, off by default. Its **Options** tab selects Next event (default) or Altitude/direction for each. Compact Dock suffixes **r**, **s**, **p** mean rise, set and peak; the Dock retains its themed Moon icon. Widget information remains available through its help.
 
@@ -28,13 +28,15 @@ Use the same browser profile and address each time. Hostname, IP address and loc
 
 ## Personalise this screen
 
-Tap or hover over the top dock, bottom dock or side buttons to reveal their small cog. It sits centred below the top-dock handle or last side button, and above the bottom-dock handle. Widget cogs sit at the top right; resize corners sit at the bottom right. Only interaction with that area reveals its controls, without reserving layout space. The one-second edit-control timeout is separate from the 15-second global inactivity behaviour.
+Tap the screen to reveal the large bottom-left **Screen settings** cog for 15 seconds. Its selector contains Main map, Top dock, Bottom dock and Side buttons; their options appear in tabs across the top. Widget cogs sit at the bottom left and resize corners at the bottom right. Widget controls retain their separate one-second edit-control timeout.
 
 Top dock, side buttons and Weather trends use a first tab for visibility/order and **Options** for other preferences. Order runs down the first column, then down the second; narrow screens use one column. Local editors work without the shared Settings PIN when this browser is unlocked. Locking this browser blocks editing here, without locking other browsers.
 
 Background opacity is adjustable from 0–100% in 5% steps for both docks, side buttons, Rain forecast, Sun/Moon, Weather trends and Stats for nerds. Reset restores the original themed background. Weather trends uses one opacity across all charts. Overview and Camera have no background-opacity editor.
 
 Weather trends can follow the main playback window or use a separate 2, 4, 6, 12 or 24-hour lookback. This uses retained local data, without extra provider collection. The capture cursor disappears outside the chart window. **Detach** is in Options and gives enabled charts independent positions and sizes.
+
+Chart legends show the name and displayed-window min/max on the left, with the current scrubbed value on the right: `Temperature (11.0 · 16.8)       14.2°`. Min/max omit units and share the chart font setting. Optional [Rain accumulation](observed-rain.md) adds an observed running-total chart and dock reading. Side-button font scaling also controls the clock; Stats for nerds has a smaller 280px minimum width for phones.
 
 ## Fresh-browser defaults
 

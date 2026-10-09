@@ -1,5 +1,11 @@
 # Upgrades and migration
 
+## 0.11.0
+
+Compatible history, keys, PIN, map and saved browser preferences are preserved. Keep the same volume, browser origin/profile and both Power/Screen overrides where installed. The bottom-left Screen settings cog now owns Main map, Top dock, Bottom dock and Side buttons; existing visibility/order choices remain.
+
+Observed accumulated rain is optional and starts disabled. Configure a cumulative HA sensor under **Interface → Weather → Readings**, then enable it in the dock/trends if desired. It shares the five-minute HA cycle and existing archive retention; no old observations are invented. Shared display units can be mm, cm or in. See [observed rain](observed-rain.md) and [release notes](release-0.11.0.md). Archive comparison changes remain future work.
+
 ## 0.10.0
 
 0.10.0 preserves retained radar history and browser preferences; town-label density does not invalidate the archive. The main menu uses a three-line icon; the map cog owns main-map options, and Overview has its own settings. Power is under Appliance.

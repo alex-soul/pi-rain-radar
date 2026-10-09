@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0 — 9 October 2026
+
+- One Screen settings popup for Main map, Top dock, Bottom dock and Side buttons, with a bottom-left cog and consistent dropdown/tabs.
+- Compact dock spacing, consistent reading sizes, bottom-left widget cogs, a smaller mobile Stats minimum and clock font scaling.
+- Optional observed accumulated rain from Home Assistant, collected on the existing five-minute cycle and available in the dock and trends with mm/cm/in display units.
+- Trend legends show the displayed window's unitless min/max beside the name, with the current value aligned right; all follow the font slider.
+- Cleaner Screen/reading labels and automatic clearing of a recovered connection warning even when the radar window is unchanged.
+
+I accepted RC4 on my Pi and phone. All 392 application tests passed locally; affected native checks and image startup/restart passed. Settings and compatible history are preserved. See [release notes](docs/release-0.11.0.md) and [upgrade guidance](docs/upgrading.md).
+
 ## 0.9.0 — 29 September 2026
 
 - Browser-local editors, consistent cogs/resize controls, background opacity and cleaner shared Settings.
