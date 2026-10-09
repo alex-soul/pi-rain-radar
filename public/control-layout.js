@@ -37,7 +37,7 @@ export function setupControlEditor(canEdit) {
   let drag = null;
   function save() {
     apply();
-    try { localStorage.setItem(key, JSON.stringify(layout)); feedback.textContent = 'Saved on this screen'; }
+    try { localStorage.setItem(key, JSON.stringify(layout)); feedback.textContent = ''; }
     catch { feedback.textContent = 'Applied for now; browser storage is unavailable.'; }
   }
   function render() {
