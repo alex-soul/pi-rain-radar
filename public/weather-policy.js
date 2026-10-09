@@ -10,7 +10,10 @@ export function normalizeObservedRain(state,receivedAt){
   const sample=normalizeHaReading(state,receivedAt),attrs=state?.attributes??{};
   const unit=String(attrs.unit_of_measurement??'').trim().toLowerCase();
   const reset=Date.parse(attrs.last_reset),previous=Number(attrs.last_period);
-  return {...sample,unit:rainUnits.includes(unit)?unit:null,stateClass:attrs.state_class??null,
+  // A cumulative counter can remain unchanged for hours. Record the successful
+  // acquisition as its snapshot time while preserving HA's original report time.
+  return {...sample,reportedAt:sample.time,time:sample.time===null?null:receivedAt,
+    basis:sample.time===null?'unknown':'ha-acquired-total',unit:rainUnits.includes(unit)?unit:null,stateClass:attrs.state_class??null,
     resetAt:Number.isFinite(reset)?reset:null,previousPeriod:attrs.last_period!=null&&Number.isFinite(previous)&&previous>=0?previous:null};
 }
 export function selectObservedRain(policy,observations,time){
@@ -22,7 +25,7 @@ export function selectObservedRain(policy,observations,time){
   else if(sample.value<0||!['total','total_increasing'].includes(sample.stateClass))reason='Choose an accumulated precipitation sensor';
   else if(!rainUnits.includes(sample.unit))reason='Accumulated rain must use mm, cm or in';
   else if(!Number.isFinite(sample.time))reason='HA report timestamp unavailable';
-  else if(sample.time>time+300000||sample.receivedAt>time)reason='HA report timestamp is in the future';
+  else if((sample.reportedAt??sample.time)>time+300000||sample.time>time||sample.receivedAt>time)reason='HA report timestamp is in the future';
   else if(time-sample.time>600000)reason='HA report is older than ten minutes';
   return {entity:entity==='disabled'?null:entity,source:'ha',...sample,eligible:!reason,reason};
 }

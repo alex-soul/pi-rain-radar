@@ -22,7 +22,7 @@ test('accumulated rain persists five-minute dry and wet observations, reset meta
   assert.equal((await settings.configure({confirmUnits:true,haCollect:true,rainAccumulation:entity})).status,200);
   const ha={status:()=>({configured:true,revision:0}),json:async path=>{
     calls++;assert.equal(path,'/api/states/'+entity);if(offline)throw Error('offline');
-    return {entity_id:entity,state:value,last_reported:new Date(time).toISOString(),attributes:{unit_of_measurement:'mm',state_class:'total_increasing',last_reset:new Date(reset).toISOString(),last_period:previous}};
+    return {entity_id:entity,state:value,last_reported:new Date(start-10800000).toISOString(),attributes:{unit_of_measurement:'mm',state_class:'total_increasing',last_reset:new Date(reset).toISOString(),last_period:previous}};
   }};
   const weather={status:()=>({configured:true,data:{current:{time:time/1000,precipitation:99}},failures:0})};
   const make=()=>createHaWeather({ha,settings,weather,store,location:()=>location,now:()=>time,autoStart:false});
@@ -41,6 +41,8 @@ test('accumulated rain persists five-minute dry and wet observations, reset meta
   const rain=history.presentations.map(row=>row.observedRain);
   assert.deepEqual(rain.map(row=>row.value),[0,0,1.25,0,null,0.5]);
   assert.equal(rain[1].time,start+300000);assert.equal(rain[1].receivedAt,start+300000);
+  assert.equal(rain[1].reportedAt,start-10800000);assert.equal(rain[1].basis,'ha-acquired-total');
+  assert.equal(rain[1].eligible,true);assert.equal(rain[5].reportedAt,start-10800000);
   assert.equal(rain[3].resetAt,reset);assert.equal(rain[3].previousPeriod,1.25);
   assert.equal(rain[4].eligible,false);assert.equal(rain[5].eligible,true);
   await settings.configure({rainAccumulation:'sensor.other_rain'});await collector.changed();
@@ -54,6 +56,10 @@ test('observed rain preserves raw totals but rejects stale, malformed, incompati
   const state={state:'0',last_reported:new Date(time).toISOString(),attributes:{unit_of_measurement:'mm',state_class:'total_increasing'}};
   const read=(s=state,at=time)=>selectObservedRain(policy,{[entity]:normalizeObservedRain(s,time)},at);
   assert.equal(read().eligible,true);
+  const unchanged=read({...state,last_reported:new Date(time-86400000).toISOString()});
+  assert.equal(unchanged.eligible,true);assert.equal(unchanged.time,time);
+  assert.equal(unchanged.reportedAt,time-86400000);
+  assert.equal(read(state,time-1).eligible,false);
   for(const stateClass of ['total','total_increasing'])for(const unit of ['mm','cm','in'])assert.equal(read({...state,attributes:{state_class:stateClass,unit_of_measurement:unit}}).eligible,true);
   for(const value of ['unknown','unavailable','','-1','NaN','Infinity'])assert.equal(read({...state,state:value}).eligible,false);
   assert.equal(read(state,time+600001).eligible,false);
