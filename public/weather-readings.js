@@ -94,6 +94,5 @@ export function readingSourceCaption(row){
     const sources=new Set(row.inputs.map(input=>input.source==='ha'?'HA':input.source==='openweather'?'OpenWeather':input.expected==='ha'?'HA':'OpenWeather'));
     return ['OpenWeather','HA'].filter(source=>sources.has(source)).join('/');
   }
-  if(row.id==='gust'&&row.expected==='openweather'&&row.health==='ready')return 'OpenWeather (optional)';
-  return row.sourceLabel+(row.reason&&row.reason!==row.sourceLabel?' · '+row.reason:'');
+  return row.sourceLabel;
 }
