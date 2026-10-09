@@ -84,7 +84,7 @@ export async function createHomeAssistant(directory,{now=Date.now,get=createCame
     async discover(){
       const rows=await json('/api/states');
       if(!Array.isArray(rows)||rows.length>20000)throw fail('HA_RESPONSE');
-      return rows.filter(r=>/^(?:camera|sensor)\.[a-z0-9_]+$/.test(r?.entity_id??'')).map(r=>({id:r.entity_id,name:String(r.attributes?.friendly_name??r.entity_id).slice(0,120),unit:String(r.attributes?.unit_of_measurement??'').slice(0,24),deviceClass:String(r.attributes?.device_class??'').slice(0,40)}));
+      return rows.filter(r=>/^(?:camera|sensor)\.[a-z0-9_]+$/.test(r?.entity_id??'')).map(r=>({id:r.entity_id,name:String(r.attributes?.friendly_name??r.entity_id).slice(0,120),unit:String(r.attributes?.unit_of_measurement??'').slice(0,24),deviceClass:String(r.attributes?.device_class??'').slice(0,40),stateClass:String(r.attributes?.state_class??'').slice(0,40)}));
     },
     close(){closed=true;if(timer)clearInterval(timer);for(const controller of controllers)controller.abort();},
   };

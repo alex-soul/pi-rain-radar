@@ -1,21 +1,21 @@
-import {normalizeHaReading,selectHaReadings,haEntities,filterCurrent} from '../public/weather-policy.js';
+import {normalizeHaReading,normalizeObservedRain,selectObservedRain,selectHaReadings,haEntities,filterCurrent} from '../public/weather-policy.js';
 import {weatherContext} from './weather-history.js';
 
-// Four mapped sensor states at most, polled independently of browsers and UI.
+// Mapped readings and accumulated rain share the five-minute HA collection cycle.
 export async function createHaWeather({ha,settings,weather,store,location,now=Date.now,autoStart=true,onEvent=()=>{}}){
   let saved=await store.weatherState('ha')??{observations:{},nextAttemptAt:0};
   let observations=saved.observations??{},nextAttemptAt=saved.nextAttemptAt??0,busy=false,closed=false,error=null;
   let lastRecord=0,recording=false,dirty=false,suspended=false,generation=0,controller=null;
   let policySignature='',connectionRevision=saved.connectionRevision??ha.status().revision;
   if(connectionRevision!==ha.status().revision){observations={};connectionRevision=ha.status().revision;}
-  const policyKey=()=>JSON.stringify([generation,settings.current().revision,settings.current().haCollect,settings.current().mappings,ha.status().revision]);
+  const policyKey=()=>JSON.stringify([generation,settings.current().revision,settings.current().haCollect,settings.current().mappings,settings.current().rainAccumulation,ha.status().revision]);
   const retained=()=>Object.fromEntries(haEntities(settings.current()).filter(entity=>observations[entity]).map(entity=>[entity,observations[entity]]));
   observations=retained();
   await store.saveWeatherState('ha',{observations,nextAttemptAt,connectionRevision});
   policySignature=policyKey();
   const data=()=>{
     const policy=settings.current(),owm=weather.status();
-    return {policy,observations:structuredClone(retained()),owm:{configured:owm.configured,data:{current:filterCurrent(owm.data?.current,policy.mappings)},gust:policy.mappings.gust==='owm'?owm.gust:null,fetchedAt:owm.fetchedAt,failures:owm.failures,error:owm.error},rows:selectHaReadings(policy,observations,owm,now())};
+    return {policy,observations:structuredClone(retained()),observedRain:selectObservedRain(policy,observations,now()),owm:{configured:owm.configured,data:{current:filterCurrent(owm.data?.current,policy.mappings)},gust:policy.mappings.gust==='owm'?owm.gust:null,fetchedAt:owm.fetchedAt,failures:owm.failures,error:owm.error},rows:selectHaReadings(policy,observations,owm,now())};
   };
   async function record(){
     dirty=true;if(recording||closed||suspended)return;recording=true;
@@ -44,7 +44,7 @@ export async function createHaWeather({ha,settings,weather,store,location,now=Da
         try{
           const row=await ha.json('/api/states/'+entity,{maxBytes:128*1024,signal:controller.signal});
           if(row?.entity_id!==entity)throw Error('Invalid entity');
-          return [entity,normalizeHaReading(row,now())];
+          return [entity,entity===policy.rainAccumulation?normalizeObservedRain(row,now()):normalizeHaReading(row,now())];
         }catch{return [entity,{value:null,unit:null,time:null,receivedAt:now(),basis:'unknown',reason:'HA reading unavailable',attribution:observations[entity]?.attribution??''}];}
       }));
       // Disable/reconfigure while requests run must not publish the old mapping.

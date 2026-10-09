@@ -1,17 +1,13 @@
 /* Browser-local controls sit outside layout flow; appearance cannot move data. */
-.local-cog{position:absolute!important;display:grid;place-items:center;width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;top:3px;right:3px;border:0!important;border-radius:50%;background:transparent!important;color:inherit;font:16px Arial!important;cursor:pointer;z-index:3;opacity:.55;touch-action:manipulation;}
+.local-cog{position:absolute!important;display:grid;place-items:center;width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;top:auto;right:auto;bottom:3px;left:3px;border:0!important;border-radius:50%;background:transparent!important;color:inherit;font:16px Arial!important;cursor:pointer;z-index:3;opacity:.55;touch-action:manipulation;}
 [data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
 [data-local-area].local-awake > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:visible;pointer-events:auto;}
 .screen-locked [data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
 
 :root :is(#astronomy-resize,[id$="-resize"]){width:32px;height:32px;right:0;bottom:0;padding:5px;font-size:20px;color:inherit;opacity:.4;}
 :root :is(#astronomy-resize,[id$="-resize"]):is(:hover,:focus-visible,:active),:root :is(.local-cog,.widget-close):is(:hover,:focus-visible,:active){opacity:1;filter:brightness(1.25);}
-:root #top-edit{top:100%;right:auto;left:50%;transform:translateX(-50%);}
-:root #bottom-edit{top:auto;bottom:calc(100% + 18px);right:auto;left:50%;transform:translateX(-50%);}
-:root #side-edit{position:fixed!important;right:auto;}
 .map-controls{max-height:max(44px,calc(100dvh - var(--footer-height,76px) - var(--controls-offset,0px) - 70px));}
 .footer-hidden .map-controls{max-height:max(44px,calc(100dvh - var(--controls-offset,0px) - 54px));}
-.map-controls.auto-hidden #side-edit{visibility:hidden;pointer-events:none;}
 .local-editor{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:16px;border:1px solid #78998a;border-radius:12px;background:#edf4ee;color:#284d47;font:14px Arial;}
 :root[data-theme=dark] .local-editor{background:#1d2b29;color:#e1eee7;color-scheme:dark;}
 .local-editor::backdrop{background:#07141055;}
@@ -179,3 +175,20 @@
 .direct-reorder-item.direct-dragging{opacity:.55;cursor:grabbing;outline:2px solid currentColor;outline-offset:2px}
 .direct-drop-marker{position:fixed;z-index:10000;pointer-events:none;background:#46c8ff;border-radius:2px;box-shadow:0 0 3px #123}
 .screen-locked .direct-reorder-item{cursor:inherit}
+
+/* Accepted compact dock: stable 60px values + 1px reserve at 100%. */
+:root{--dock-font-scale:1;}
+:root .weather-readings{column-gap:1px;row-gap:10px;padding:12px 40px;min-height:0;}
+:root .weather-reading{gap:5px;font-size:calc(20px * var(--dock-font-scale));flex:none;}
+:root .weather-reading>svg{width:18px;height:18px;flex:none;}
+:root #weather-dock .weather-reading .reading-value-slot{display:inline-flex;flex:none;width:calc(61px * var(--dock-font-scale));min-width:0;gap:0;align-items:center;position:relative;font-variant-numeric:tabular-nums;}
+:root .weather-reading .reading-value-slot>[id]{width:auto!important;min-width:0!important;max-width:none!important;overflow:visible!important;text-overflow:clip!important;flex:1!important;margin:0!important;font:inherit;text-align:left;}
+:root .weather-reading>.reading-trend{position:static;flex:0 0 5px!important;width:5px!important;min-width:0!important;margin:0 -4px 0 0!important;font:12px Arial;text-align:center;}
+:root .wind-direction>.reading-trend,:root .astro-reading>.reading-trend{display:none!important;}
+:root .weather-reading .reading-value-slot>:is(#weather-direction,#weather-sun,#weather-moon){font-size:calc(12px * var(--dock-font-scale));color:inherit;opacity:1;font-weight:400;}
+:root #weather-dock :is(#weather-sun,#weather-moon) small{font:inherit;opacity:1;margin-left:3px;color:inherit;}
+:root .astro-dock-icon{width:18px;font-size:calc(18px * var(--dock-font-scale));text-align:center;flex:none;}
+:root .astro-reading .reading-value-slot{min-width:0;}
+#ui-editor .archive-heading select{flex:1;margin-right:16px;}
+#ui-editor fieldset{border:1px solid #78998a66;border-radius:8px;padding:12px;}
+#ui-editor .local-editor-tabs{margin-top:12px;}

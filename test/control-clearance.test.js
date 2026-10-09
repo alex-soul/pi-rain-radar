@@ -16,7 +16,7 @@ test('controls clear expanded dock, return when collapsed, and stay still during
   c.setupResponsiveControls();draw();assert.equal(offset,88);
   handlers.pointerdown({pointerId:1});dockRect={left:157,right:233,top:0,bottom:18};observe();draw();assert.equal(offset,88);
   handlers.pointerup({pointerId:1});draw();assert.equal(offset,22);
-  c.window.innerWidth=1280;handlers.resize();draw();assert.equal(offset,0,'wide screens allow overlap');
+  c.window.innerWidth=1280;handlers.resize();draw();assert.equal(offset,22,'wide docks clear controls on appliance screens too');
   c.window.innerWidth=1024;handlers.resize();draw();assert.equal(offset,22,'tablet collisions displace');
   dockRect={left:450,right:526,top:0,bottom:18};observe();draw();assert.equal(offset,0);
 });

@@ -4,7 +4,28 @@ export const haUnitChoices={temperature:['C','F'],feels:['C','F'],dew:['C','F'],
 export const haUnitFor=(field,units)=>['temperature','feels','dew'].includes(field)?units.temperatureUnit:['wind','gust'].includes(field)?units.windUnit:field==='visibility'?units.visibilityUnit:field==='pressure'?units.pressureUnit:field==='humidity'?'%':field==='direction'?'°':'index';
 export const weatherKeys={temperature:'temperature',feels:'feelsLike',wind:'windMph',gust:'gustMph',humidity:'humidity',dew:'dewPoint',direction:'windDirection',visibility:'visibility',pressure:'pressure',uv:'uvi'};
 export const weatherFields=Object.keys(weatherKeys);
-export const haEntities=policy=>[...new Set(haFields.map(field=>policy.mappings?.[field]).filter(entity=>/^sensor\.[a-z0-9_]+$/.test(entity)))];
+export const haEntities=policy=>[...new Set([...haFields.map(field=>policy.mappings?.[field]),policy.rainAccumulation].filter(entity=>/^sensor\.[a-z0-9_]+$/.test(entity)))];
+export const rainUnits=['mm','cm','in'];
+export function normalizeObservedRain(state,receivedAt){
+  const sample=normalizeHaReading(state,receivedAt),attrs=state?.attributes??{};
+  const unit=String(attrs.unit_of_measurement??'').trim().toLowerCase();
+  const reset=Date.parse(attrs.last_reset),previous=Number(attrs.last_period);
+  return {...sample,unit:rainUnits.includes(unit)?unit:null,stateClass:attrs.state_class??null,
+    resetAt:Number.isFinite(reset)?reset:null,previousPeriod:attrs.last_period!=null&&Number.isFinite(previous)&&previous>=0?previous:null};
+}
+export function selectObservedRain(policy,observations,time){
+  const entity=policy.rainAccumulation??'disabled',sample=observations?.[entity];
+  let reason=null;
+  if(entity==='disabled')reason='Observed rain is not configured';
+  else if(!policy.haCollect)reason='Home Assistant collection is off';
+  else if(!sample||sample.reason||!Number.isFinite(sample.value))reason=sample?.reason??'HA reading unavailable';
+  else if(sample.value<0||!['total','total_increasing'].includes(sample.stateClass))reason='Choose an accumulated precipitation sensor';
+  else if(!rainUnits.includes(sample.unit))reason='Accumulated rain must use mm, cm or in';
+  else if(!Number.isFinite(sample.time))reason='HA report timestamp unavailable';
+  else if(sample.time>time+300000||sample.receivedAt>time)reason='HA report timestamp is in the future';
+  else if(time-sample.time>600000)reason='HA report is older than ten minutes';
+  return {entity:entity==='disabled'?null:entity,source:'ha',...sample,eligible:!reason,reason};
+}
 export function filterCurrent(current,mappings={}){
   if(!current)return null;
   const result={...current};

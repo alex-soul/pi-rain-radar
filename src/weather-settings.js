@@ -28,7 +28,7 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
   }
   if(settingsFile){await mkdir(dirname(settingsFile),{recursive:true,mode:0o700});await atomicJson(settingsFile,state);}
   let busy=false,initializing=null;
-  const current=()=>structuredClone(state);
+  const current=()=>structuredClone({rainAccumulation:'disabled',...state});
   return {current,
     async initialize(units){
       if(state.initialized)return {status:200,...current()};
@@ -40,6 +40,11 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
       if(busy)return {status:409,error:'Settings are being saved. Try again shortly.'};
       if(!input||typeof input!=='object')return {status:400,error:'Invalid weather settings.'};
       const next=current();
+      if(input.rainAccumulation!==undefined){
+        if(typeof input.rainAccumulation!=='string'||input.rainAccumulation.length>256||input.rainAccumulation!=='disabled'&&!/^sensor\.[a-z0-9_]+$/.test(input.rainAccumulation))return {status:400,error:'Choose an accumulated-rain HA sensor or Disabled.'};
+        if(input.rainAccumulation!=='disabled'&&!(input.haCollect??next.haCollect))return {status:400,error:'Enable Home Assistant collection first.'};
+        next.rainAccumulation=input.rainAccumulation;
+      }
       for(const key of ['fallback','owmCollect','forecastCollect','haCollect','rainviewerCollect','rainbowCollect']){
         if(input[key]===undefined)continue;
         if(typeof input[key]!=='boolean')return {status:400,error:'Invalid collection setting.'};next[key]=input[key];

@@ -1,4 +1,5 @@
 import {setupMapDecoration} from './map-decoration.js';
+import {readingNames} from './weather-format.js';
 import {localPreferences,saveLocalPreferences,opacityNames,lookbacks} from './local-preferences.js';
 import {createLocalIdle,AFFORDANCE_IDLE_MS} from './local-idle.js';
 const $=id=>document.getElementById(id);
@@ -56,7 +57,7 @@ function fontControl(dialog,key){
   dialog.append(box);paint();
 }
 const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle,#history-toggle time'};
-function paintFont(key){for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
+function paintFont(key){if(key==='top'){document.documentElement.style.setProperty('--dock-font-scale',(localPreferences.fonts.top??100)/100);return;}for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
 function paintFonts(){for(const key of Object.keys(fontTargets))paintFont(key);window.dispatchEvent(new Event('radar-display-change'));document.getElementById('camera')?.dispatchEvent(new Event('snapshot-size'));}
 // Share the same two-tab structure across the browser-local list editors.
 function tabbedEditor(dialog,listTitle,listNodes){
@@ -76,7 +77,41 @@ function tabbedEditor(dialog,listTitle,listNodes){
   new MutationObserver(()=>{if(dialog.open)select(0);}).observe(dialog,{attributes:true,attributeFilter:['open']});select(0);
 }
 function paintOpacity(){for(const key of opacityNames){const prop='--local-'+key+'-alpha';if(key in localPreferences.opacity)document.documentElement.style.setProperty(prop,localPreferences.opacity[key]/100);else document.documentElement.style.removeProperty(prop);}}
+function commonEditor(top,bottom,side){
+  const main=editor('main-editor','Main map'),field=$('layer-main-rain').closest('fieldset');
+  main.append(field);
+  const layers=[...field.querySelectorAll(':scope > .layer-choice')];
+  field.querySelector('legend')?.remove();
+  const layerBox=document.createElement('div');layerBox.className='local-options';layerBox.append(...layers);
+  main.append(layerBox);tabbedEditor(main,'Layers',[layerBox]);
+  const common=editor('ui-editor','Screen settings'),selector=document.createElement('select');selector.id='ui-settings-section';selector.setAttribute('aria-label','Screen settings category');
+  common.querySelector('h2').replaceWith(selector);
+  const categories=[['main','Main map',main],['top','Top dock',top],['bottom','Bottom dock',bottom],['side','Side buttons',side]],panels=[];
+  for(const [key,title,old]of categories){
+    selector.add(new Option(title,key));const panel=document.createElement('section');panel.id='ui-settings-'+key;panel.setAttribute('aria-label',title);
+    panel.append(...[...old.children].filter(node=>!node.classList.contains('archive-heading')));common.append(panel);panels.push(panel);old.remove();
+  }
+  const choose=()=>{panels.forEach((panel,i)=>{panel.hidden=categories[i][0]!==selector.value;if(!panel.hidden)panel.querySelector('[role=tab]')?.click();});common.scrollTop=0;};
+  selector.onchange=choose;choose();
+  const toggle=$('layers-toggle');toggle.setAttribute('aria-label','Open screen settings');toggle.title='Screen settings';toggle.setAttribute('aria-controls',common.id);toggle.removeAttribute('aria-expanded');
+  toggle.onclick=()=>{if(canEditLocal()){window.dispatchEvent(new Event('weather-explanation-close'));choose();common.showModal();}};
+  $('layers-panel').remove();
+  window.addEventListener('radar-screen-lock',()=>{if(!canEditLocal())common.close();});
+}
+function setupDockLayout(){
+  for(const id of Object.keys(readingNames)){
+    const value=$('weather-'+id),row=value.closest('.weather-reading');
+    let slot=row.querySelector('.reading-value-slot');
+    if(!slot){slot=document.createElement('span');slot.className='reading-value-slot';slot.dataset.reading=id;value.before(slot);slot.append(value);}
+    let marker=row.querySelector('.reading-trend');
+    if(!marker&&!['direction','sun','moon'].includes(id)){marker=document.createElement('span');marker.className='reading-trend';marker.setAttribute('aria-hidden','true');}
+    if(marker)row.prepend(marker);
+    // Remove empty wrappers left by the original number/unit markup.
+    for(const wrapper of [...row.children])if(wrapper.tagName==='SPAN'&&!wrapper.className&&!wrapper.textContent.trim()&&!wrapper.children.length)wrapper.remove();
+  }
+}
 export function setupLocalEditors(){
+  setupDockLayout();
   $('layers-toggle').innerHTML=cog;$('settings-toggle').innerHTML='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';$('settings-toggle').setAttribute('aria-label','Open main menu');
   const top=editor('top-editor','Top dock'),bottom=editor('bottom-editor','Playback dock'),side=editor('side-editor','Side buttons');
   top.append($('weather-choices'));
@@ -88,15 +123,6 @@ export function setupLocalEditors(){
   // Keep asynchronous playback feedback on-screen even with its editor closed.
   const note=$('playback-window-note');note.classList.add('playback-notice');document.querySelector('footer').append(note);
   $('layer-main-rain').closest('fieldset').append($('show-map-scale').closest('label'));
-  const recover=document.createElement('button');recover.type='button';recover.textContent='Side buttons…';recover.onclick=()=>{top.close();side.showModal();};top.append(recover);
-  attachCog($('weather-dock'),top,'top-edit','Edit top dock');
-  attachCog(document.querySelector('footer'),bottom,'bottom-edit','Edit playback dock');
-  const stack=document.querySelector('.map-controls');
-  const sideCog=attachCog(stack,side,'side-edit','Edit side buttons');
-  const positionSideCog=()=>{const r=stack.getBoundingClientRect();sideCog.style.left=(r.left+7)+'px';sideCog.style.top=(r.bottom+2)+'px';};
-  new ResizeObserver(positionSideCog).observe(stack);
-  new MutationObserver(positionSideCog).observe(stack,{attributes:true,attributeFilter:['style','class']});
-  window.addEventListener('resize',positionSideCog);positionSideCog();
   for(const [dialog,key]of [[top,'top'],[bottom,'bottom'],[side,'buttons'],[$('trend-editor'),'trends']])opacityControl(dialog,key);
   const playbackOptions=document.createElement('div');playbackOptions.className='local-options';
   const speedField=document.createElement('div');speedField.className='local-slider-field';
@@ -111,6 +137,8 @@ export function setupLocalEditors(){
   for(const id of ['astro-sun-mode','astro-moon-mode'])$(id).parentElement.classList.add('local-option-row');
   for(const [dialog,key]of [[top,'top'],[side,'buttons'],[bottom.querySelector('.local-options'),'bottom'],[$('trend-editor'),'trends']])fontControl(dialog,key);
   tabbedEditor(top,'Readings',[$('weather-choices')]);
+  const playback=bottom.querySelector('.local-options');bottom.append(...playback.querySelectorAll(':scope > .local-opacity'));
+  tabbedEditor(bottom,'Playback',[playback]);
   tabbedEditor(side,'Buttons',[$('control-list'),$('control-feedback')]);
   tabbedEditor($('trend-editor'),'Charts',[$('trend-list'),$('trend-feedback')]);
   for(const id of ['reading-list','control-list','trend-list'])setupOrderedList($(id));
@@ -121,6 +149,7 @@ export function setupLocalEditors(){
   overview.append($('layer-overview-rain').closest('fieldset'));attachCog($('overview'),overview,'overview-edit','Edit Overview map');
   fontControl(camera,'camera');attachCog($('camera'),camera,'camera-edit','Edit Camera');
   setupMapDecoration(overview,$('layer-main-rain').closest('fieldset'));
+  commonEditor(top,bottom,side);
   paintFonts();window.addEventListener('radar-local-preferences',paintFonts);window.addEventListener('resize',paintFonts);
   new MutationObserver(()=>paintFont('stats')).observe($('stats-data'),{childList:true,subtree:true});
   // Remove relocated tabs, retaining shared configuration and protected lock management.

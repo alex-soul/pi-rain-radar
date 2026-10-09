@@ -72,5 +72,5 @@ function render() {
   provider.append(usageList);grid.append(provider);
   data.replaceChildren(grid);
 }
-setupFloatingWidget({id:'stats',storageKey:'radar-stats',width:1000,minWidth:560,maxWidth:1100,height:600,maxHeight:640,minHeight:220,startX:80,startY:160,onVisibility(value){visible=value;render();}});
+setupFloatingWidget({id:'stats',storageKey:'radar-stats',width:1000,minWidth:280,maxWidth:1100,height:600,maxHeight:640,minHeight:220,startX:80,startY:160,onVisibility(value){visible=value;render();}});
 export function updateStats(value) { input=value;render(); }

@@ -130,7 +130,7 @@ export function setupResponsiveControls() {
       const rect=button.getBoundingClientRect();
       return rect.left < weather.right+8 && rect.right > weather.left-8 && rect.top-previous < weather.bottom+8 && rect.bottom-previous > weather.top-8;
     });
-    const offset = window.innerWidth < 1100 && collide ? Math.max(0, weather.bottom + 12 - naturalTop) : 0;
+    const offset = collide ? Math.max(0, weather.bottom + 12 - naturalTop) : 0;
     stack.style.setProperty('--controls-offset', `${offset}px`);
   }
   function schedule() { if (!queued) queued = requestAnimationFrame(update); }

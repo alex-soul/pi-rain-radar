@@ -34,7 +34,7 @@ export function paintAstronomy(time){
   const events=row.querySelector('.astro-events');events.replaceChildren(...[['↑','rise'],['⌃','transit'],['↓','set']].map(([symbol,event])=>{const e=document.createElement('span');e.textContent=symbol+' '+stamp(value[event]);e.title=label+' '+(event==='transit'?'highest point':event)+' · '+dateStamp(value[event]);return e;}));
   const holder=$('astro-'+id+'-reading');holder.hidden=!weatherPreferences().readings.includes(id);const dockValue=$('weather-'+id),number=document.createElement('span'),unit=document.createElement('small');
   if(modes[id]==='event'){number.textContent=value.next?stamp(value.next.time):'No event';unit.className='astro-event-unit';unit.textContent=value.next?{rise:'r',transit:'p',set:'s'}[value.next.type]:'';unit.title=value.next?{rise:'Rise',transit:'Peak',set:'Set'}[value.next.type]:'';}
-  else{number.textContent=value.altitude.toFixed(1)+'°';unit.textContent=bearing(value.azimuth);}
+  else{number.textContent=Math.round(value.altitude)+'°';unit.textContent=bearing(value.azimuth);}
   dockValue.replaceChildren(number,unit);
   holder.setAttribute('aria-label',row.getAttribute('aria-label')+' · Calculated locally'+(id==='moon'?` · ${Math.round(value.illumination.fraction*100)}% illuminated`:''));
  }

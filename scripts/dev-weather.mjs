@@ -1,10 +1,11 @@
 import {join} from 'node:path';
 import {createHistoryStore} from '../src/history-store.js';
 import {createWeatherSettings} from '../src/weather-settings.js';
-import {weatherFields,filterCurrent,haEntities,canonicalUnit} from '../public/weather-policy.js';
+import {weatherFields,filterCurrent,haEntities,canonicalUnit,selectObservedRain} from '../public/weather-policy.js';
 const sensors=[{id:'sensor.demo_temperature',name:'Demo temperature',unit:'°C'},{id:'sensor.demo_feels',name:'Demo feels like',unit:'°C'},{id:'sensor.demo_wind',name:'Demo wind',unit:'mph'},{id:'sensor.demo_gust',name:'Demo gust',unit:'mph'},...Object.entries({humidity:['%',65],dew:['°C',8],direction:['°',245],visibility:['km',8],pressure:['hPa',1012],uv:['',3]}).map(([field,[unit,value]])=>({id:'sensor.demo_'+field,name:'Demo '+field,unit,value}))];
 // Real policy module, synthetic connections/observations. Never forwards keys,
 // discovery or weather acquisition to a real provider.
+sensors.push({id:'sensor.demo_rain_total',name:'Demo accumulated rain',unit:'mm',deviceClass:'precipitation',stateClass:'total_increasing',value:2.75});
 export async function createDevWeather(directory){
   const store=await createHistoryStore(join(directory,'weather-fixture'));
   const settings=await createWeatherSettings(store,{settingsFile:join(directory,'weather-fixture','policy.json'),owmEnabled:true});
@@ -34,7 +35,8 @@ export async function createDevWeather(directory){
       if(policy.owmCollect){lastCurrent=weather.data?.current??null;fetchedAt=weather.fetchedAt;}
       if(policy.forecastCollect){lastForecast=weather.data?.minutely??[];forecastFetchedAt=weather.forecastFetchedAt;}
       const observations=Object.fromEntries(haEntities(policy).map(entity=>[entity,{value:sensors.find(s=>s.id===entity)?.value??(entity===sensors[1].id?20:21),unit:id==='ha-unit-mismatch'?'F':canonicalUnit(sensors.find(s=>s.id===entity)?.unit),time:now,receivedAt:now,basis:'ha-reported',reason:id==='ha-missing'||id==='ha-fallback'?'HA reading unavailable':null,attribution:'Synthetic Home Assistant'}]));
-      const value={...weather,configured:owm&&id!=='no-key',enabled:policy.owmCollect,forecastEnabled:policy.forecastCollect,fetchedAt,forecastFetchedAt,data:{current:filterCurrent(lastCurrent,policy.mappings),minutely:lastForecast},presentation:{policy,observations}};
+      if(observations['sensor.demo_rain_total'])Object.assign(observations['sensor.demo_rain_total'],{unit:'mm',stateClass:'total_increasing',resetAt:new Date(now).setHours(0,0,0,0),previousPeriod:1.25});
+      const value={...weather,configured:owm&&id!=='no-key',enabled:policy.owmCollect,forecastEnabled:policy.forecastCollect,fetchedAt,forecastFetchedAt,data:{current:filterCurrent(lastCurrent,policy.mappings),minutely:lastForecast},presentation:{policy,observations,observedRain:selectObservedRain(policy,observations,now)}};
       return {weather:value,weatherPolicy:policy,homeAssistant:{configured:ha,url:ha?'http://synthetic-home-assistant.invalid':'',revision:0,state:ha?'connected':'unconfigured',checkedAt:now}};
     },
   };

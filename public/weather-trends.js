@@ -21,7 +21,7 @@ export function paintWeatherTrends(input){
  const trends=trendsAt(series,rows,state);
  for(const [id,arrow] of Object.entries(trends)){
   const holder=$('weather-'+id)?.closest('.weather-reading');if(!holder)continue;
-  let marker=holder.querySelector('.reading-trend');if(!marker){marker=document.createElement('span');marker.className='reading-trend';marker.setAttribute('aria-hidden','true');const value=$('weather-'+id),slot=document.createElement('span');slot.className='reading-value-slot';slot.dataset.reading=id;value.before(slot);slot.append(value,marker);}
+  let marker=holder.querySelector('.reading-trend');if(!marker){marker=document.createElement('span');marker.className='reading-trend';marker.setAttribute('aria-hidden','true');holder.prepend(marker);}
   marker.textContent=arrow;marker.title=arrow==='↑'?'Higher than the previous observation':arrow==='↓'?'Lower than the previous observation':'';
  }
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return;
