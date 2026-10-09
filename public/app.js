@@ -425,6 +425,7 @@ function ageLiveWindow() {
 }
 window.addEventListener('radar-sources-change',()=>{generation++;pending=null;liveRequestKey='';void poll();});
 let pollRunning = false;
+const liveWindowError = 'Could not load the selected window. Keeping available radar; retrying shortly.';
 async function poll() {
   if (pollRunning) return;
   pollRunning = true;
@@ -470,11 +471,14 @@ async function poll() {
       returningLive=false;paintHistory();
       $('playback-window-note').textContent='';
     }
+    if(epoch===generation&&!historyWindow&&!historyLoading&&$('playback-window-note').textContent===liveWindowError) {
+      $('playback-window-note').textContent='';
+    }
   } catch {
     if (epoch !== generation) return;
     serverReachable = false;
     recordConnection(false);
-    if (epoch === generation && !historyWindow && !historyLoading) $('playback-window-note').textContent = 'Could not load the selected window. Keeping available radar; retrying shortly.';
+    if (epoch === generation && !historyWindow && !historyLoading) $('playback-window-note').textContent = liveWindowError;
     if (mapUpdateVisible) {
       $('empty').querySelector('p').textContent = 'Connection interrupted. Checking map progress again automatically.';
     } else if (!displayed) {
