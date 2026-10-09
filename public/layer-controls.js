@@ -34,7 +34,7 @@ export function updateLayerAvailability(status,archive=null){
  layerStatus=status;archiveState=archive;
  for(const role of ['main','overview'])for(const layer of ['rain','cloud']){
   const enabled=archive?(layer==='rain'?archive.coverage?.some(s=>s.sources?.[role]!=='disabled'):archive.cloudHistory?.roles?.includes(role)||archive.cloudHistory?.frames?.some(f=>f[role==='main'?'url':'overviewUrl'])):layer==='rain'?status?.sources?.[role]?.enabled!==false&&status?.sources?.[role]?.source!=='disabled':current?.enabled&&(current.map==='both'||current.map===role);
-  const key='layer-'+role+'-'+layer;$(key).closest('.layer-choice').hidden=!enabled;$(key).disabled=!enabled;$(key+'-opacity').disabled=!enabled;$(key+'-reason').textContent=enabled?'':archive?'No layer in this archive':'Collection is off for this map';
+  const key='layer-'+role+'-'+layer;$(key).closest('.layer-choice').hidden=false;$(key).disabled=!enabled;$(key+'-opacity').disabled=!enabled;$(key+'-reason').textContent=enabled?'':archive?'No layer in this archive':'Collection is off for this map';
  }
 
 }

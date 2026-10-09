@@ -189,6 +189,9 @@
 :root #weather-dock :is(#weather-sun,#weather-moon) small{font:inherit;opacity:1;margin-left:3px;color:inherit;}
 :root .astro-dock-icon{width:18px;font-size:calc(18px * var(--dock-font-scale));text-align:center;flex:none;}
 :root .astro-reading .reading-value-slot{min-width:0;}
-#ui-editor .archive-heading select{flex:1;margin-right:16px;}
+#ui-editor{padding:0;}
+#ui-editor>.settings-heading{position:sticky;top:0;z-index:3;margin:0;}
+#ui-editor>.settings-heading h2{font-weight:400;}
+#ui-editor>section{padding:0 20px 20px;}
 #ui-editor fieldset{border:1px solid #78998a66;border-radius:8px;padding:12px;}
 #ui-editor .local-editor-tabs{margin-top:12px;}

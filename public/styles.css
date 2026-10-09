@@ -540,10 +540,10 @@ footer .eyebrow {
 #settings-dialog::backdrop { background: #07141070; }
 .settings-heading { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 8px 20px; background: #dfeae3; }
 .settings-heading h2 { margin: 0; font-size: 18px; font-weight: 400; }
-#settings-section { margin-left: auto; margin-right: 12px; min-width: 128px; max-width: 50%; min-height: 44px; padding: 8px 10px; border: 1px solid #a6bfb560; border-radius: 8px; background: #ffffff40; color: inherit; font: 14px Arial, sans-serif; cursor: pointer; }
-#settings-section[hidden] { display: none; }
-#settings-section:focus-visible { outline: 2px solid #389488; outline-offset: 2px; }
-:root[data-theme="dark"] #settings-section { background: #142623; color-scheme: dark; }
+:is(#settings-section, #ui-settings-section) { margin-left: auto; margin-right: 12px; min-width: 128px; max-width: 50%; min-height: 44px; padding: 8px 10px; border: 1px solid #a6bfb560; border-radius: 8px; background: #ffffff40; color: inherit; font: 14px Arial, sans-serif; cursor: pointer; }
+:is(#settings-section, #ui-settings-section)[hidden] { display: none; }
+:is(#settings-section, #ui-settings-section):focus-visible { outline: 2px solid #389488; outline-offset: 2px; }
+:root[data-theme="dark"] :is(#settings-section, #ui-settings-section) { background: #142623; color-scheme: dark; }
 #settings-close { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 26px; cursor: pointer; }
 .settings-content { padding: 22px 20px; }
 .settings-content label { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; }
@@ -1091,9 +1091,9 @@ body:not(.footer-hidden) .source { z-index: 5; }
 /* Prefer a downward picker on desktop; touch devices retain their native menu. */
 @supports (appearance: base-select) {
   @media (min-width: 760px) and (pointer: fine) {
-    #settings-section, #settings-section::picker(select) { appearance: base-select; }
-    #settings-section { align-items: center; }
-    #settings-section::picker(select) {
+    :is(#settings-section, #ui-settings-section), :is(#settings-section, #ui-settings-section)::picker(select) { appearance: base-select; }
+    :is(#settings-section, #ui-settings-section) { align-items: center; }
+    :is(#settings-section, #ui-settings-section)::picker(select) {
       inset: auto;
       top: calc(anchor(bottom) + 4px);
       left: anchor(left);
@@ -1107,9 +1107,9 @@ body:not(.footer-hidden) .source { z-index: 5; }
       color: #284d47;
       box-shadow: 0 4px 18px #0003;
     }
-    #settings-section option { padding: 10px 14px; min-height: 44px; }
-    #settings-section option:hover, #settings-section option:focus { background: #38948830; }
-    :root[data-theme="dark"] #settings-section::picker(select) { background: #142623; color: #e1eee7; }
+    :is(#settings-section, #ui-settings-section) option { padding: 10px 14px; min-height: 44px; }
+    :is(#settings-section, #ui-settings-section) option:hover, :is(#settings-section, #ui-settings-section) option:focus { background: #38948830; }
+    :root[data-theme="dark"] :is(#settings-section, #ui-settings-section)::picker(select) { background: #142623; color: #e1eee7; }
   }
 }
 

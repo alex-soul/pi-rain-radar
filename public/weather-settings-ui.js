@@ -37,9 +37,9 @@ function sync(){
   $('review-fallback').checked=shared.fallback;$('review-fallback').disabled=!shared.owm||!shared.owmCollect;
   $('review-fallback-row').hidden=!haFields.some(field=>shared.mappings[field]?.startsWith('sensor.'));
   const rain=shared.presentation?.observedRain;
-  $('review-rain-status').textContent=rain?.entity?(rain.eligible?`${rain.value} ${rain.unit} · Captured every five minutes`:rain.reason):'Choose a running rain total. Stored for future Archive comparisons; forecast fallback is not used.';
+  $('review-rain-status').textContent=rain?.entity?(rain.eligible?`${rain.value} ${rain.unit}`:rain.reason):'';
   const gust=shared.mappings.gust==='owm';$('review-gust-cache').hidden=!gust;$('gust-cache-minutes').disabled=!gust;
-  $('review-reading-options').hidden=$('review-fallback-row').hidden;
+  $('review-reading-options').hidden=true;
   $('review-reading-options').classList.add('single-option');
   const rows=weatherReadings(shared.weather,Date.now(),{preferences:weatherPreferences(),gustMinutes:gustCacheMinutes()});
   for(const [id,row] of Object.entries(rows).filter(([id])=>weatherFields.includes(id))){
@@ -70,6 +70,7 @@ export function setupWeatherLayout(){
   units.append(...panel.children);panel.append(units);units.append(make('<p id="shared-unit-note" role="status"></p>'));
   const readings=make(`<section id="review-weather-readings" role="tabpanel" aria-labelledby="review-readings-tab" hidden><div class="weather-provider-switches settings-group" id="review-weather-collection"></div><div class="weather-source-grid">${weatherFields.map(field=>`<div><label for="review-map-${field}">${readingNames[field]}</label><select id="review-map-${field}"></select><small id="review-unit-${field}" role="status"></small></div>`).join('')}</div><div id="review-reading-options" class="weather-reading-options"><label id="review-fallback-row" class="misc-option" for="review-fallback">OWM fallback<input id="review-fallback" type="checkbox" class="control-switch" role="switch"></label><div id="review-gust-cache"></div></div><p id="review-weather-note" role="status"></p></section>`);
   readings.querySelector('.weather-source-grid').append(make('<div><label for="review-rain-accumulation">Observed rain (accumulated)</label><select id="review-rain-accumulation"></select><small id="review-rain-status" role="status"></small></div>'));
+  const fallback=make('<div></div>');fallback.append(readings.querySelector('#review-fallback-row'));readings.querySelector('.weather-source-grid').append(fallback);
   readings.querySelector('#review-rain-accumulation').onchange=()=>save({rainAccumulation:$('review-rain-accumulation').value});
   for(const [id,label] of [['review-owm-collect','OpenWeather'],['review-ha-collect','Home Assistant']]){const row=$(id).closest('label');row.firstChild.textContent=label;readings.querySelector('#review-weather-collection').append(row);}
   $('openweather-config').querySelector('.review-collection')?.remove();

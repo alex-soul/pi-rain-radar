@@ -1,4 +1,5 @@
 export const helpText = {
+ observedRain:'Stores measured rain every five minutes for future Archive comparisons. Choose a running total (mm, cm or in), not intensity (mm/h). Tempest example: a daily Utility Meter fed by sensor.tempest_station_precipitation (previous-minute rain), with Delta values enabled. Select its daily accumulation sensor: the total should rise with rain and reset at midnight.',
   embed: "Just the main radar, status light and credits in an iframe. Trust your dashboard’s origin (scheme, host and port), one per line, without paths. Settings save automatically; origins save when you leave the field. Reload the embed after changes. Tested in Home Assistant on LAN over HTTP and remotely through Nabu Casa with Tailscale Serve. HTTPS dashboards need an HTTPS radar address; this remote setup needs Tailscale connected on your device. For a full setup guide, follow the Embed setup guide below.",
  astronomy:'Calculated locally from the map location using SunCalc. Live follows now; Archive follows the selected frame. In the top dock editor, choose the next rise (r), highest point/peak (p) or set (s), or altitude above the horizon and compass direction. A negative altitude is below the horizon. Hiding this Dock reading does not hide the Sun/Moon widget. Format and visibility are saved on this screen.',
  dewPointDepression:'T−Td is called dew point depression: air temperature (T) minus dew point (Td). A smaller difference means the air is closer to saturation; zero means the two temperatures are equal. It is a temperature difference, not a rain measurement. It uses the sources selected under Readings for Temperature and Dew point, even when Dew point is hidden from the dock.',
@@ -52,6 +53,7 @@ export function setupSettingsHelp(dialog) {
  ['label[for="review-weather-source"]','reviewSource'],
  ['#review-map-warning','reviewMap'],['label[for="review-ha-url"]','reviewHA'],
  ['label[for="review-fallback"]','reviewFallback'],['label[for="review-owm-collect"]','reviewOWM'],['label[for="review-ha-collect"]','reviewCollect'],
+ ['label[for="review-rain-accumulation"]','observedRain'],
  ['label[for="review-rainviewer-collect"]','reviewRadar'],['label[for="review-rainbow-collect"]','reviewRadar'],
     ['#device-power-title',29],
     ['label[for="rainbow-key"]',9], ['label[for="rainbow-cap"]',30],

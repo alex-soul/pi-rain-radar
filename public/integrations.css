@@ -1,12 +1,21 @@
 [id^="review-"][hidden] {display:none!important;}
 .weather-provider-switches {display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:0 0 14px;align-items:center;}
 #settings-fields .weather-provider-switches .misc-option {margin:0;}
-.weather-source-grid {display:grid;grid-template-rows:repeat(5,auto);grid-auto-flow:column;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;border:1px solid #809c8d66;border-radius:8px;padding:16px;}
+.weather-source-grid {display:grid;grid-template-rows:repeat(6,auto);grid-auto-flow:column;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;border:1px solid #809c8d66;border-radius:8px;padding:16px;}
 .weather-source-grid label {display:block;margin-bottom:6px;}
 .weather-source-grid select {width:100%;box-sizing:border-box;}
 #settings-fields .weather-source-grid select {min-height:36px;margin-top:4px;padding:6px 8px;}
 .weather-source-grid small:empty {display:none;}
 .weather-source-grid small {color:#c49343;display:block;font-size:12px;line-height:1.4;}
+.weather-source-grid .misc-option {display:flex;align-items:center;justify-content:space-between;margin:0;min-height:36px;}
+#review-weather-note:empty {display:none;}
+@media(min-width:760px){
+  #settings-panel-weather {padding-top:14px;padding-bottom:14px;}
+  #settings-fields #review-weather-collection {margin-bottom:12px;}
+  .weather-source-grid {row-gap:6px;padding:12px 16px;}
+  .weather-source-grid label {margin-bottom:2px;}
+  #settings-fields .weather-source-grid select {margin-top:2px;}
+}
 #review-reading-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;margin-top:24px;padding:16px;border:1px solid #809c8d66;border-radius:8px;align-items:center;}
 #review-reading-options.single-option {grid-template-columns:1fr;}
 #settings-fields #review-reading-options .misc-option {display:flex;justify-content:flex-start;margin:0;gap:12px;}

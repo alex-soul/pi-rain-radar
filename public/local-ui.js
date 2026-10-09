@@ -56,7 +56,7 @@ function fontControl(dialog,key){
   input.oninput=()=>{if(canEditLocal()){localPreferences.fonts[key]=Number(input.value);saveLocalPreferences();paint();}};
   dialog.append(box);paint();
 }
-const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle,#history-toggle time'};
+const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle time,#history-toggle time'};
 function paintFont(key){if(key==='top'){document.documentElement.style.setProperty('--dock-font-scale',(localPreferences.fonts.top??100)/100);return;}for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
 function paintFonts(){for(const key of Object.keys(fontTargets))paintFont(key);window.dispatchEvent(new Event('radar-display-change'));document.getElementById('camera')?.dispatchEvent(new Event('snapshot-size'));}
 // Share the same two-tab structure across the browser-local list editors.
@@ -85,7 +85,7 @@ function commonEditor(top,bottom,side){
   const layerBox=document.createElement('div');layerBox.className='local-options';layerBox.append(...layers);
   main.append(layerBox);tabbedEditor(main,'Layers',[layerBox]);
   const common=editor('ui-editor','Screen settings'),selector=document.createElement('select');selector.id='ui-settings-section';selector.setAttribute('aria-label','Screen settings category');
-  common.querySelector('h2').replaceWith(selector);
+  const heading=common.querySelector('.archive-heading');heading.classList.add('settings-heading');heading.querySelector('h2').after(selector);
   const categories=[['main','Main map',main],['top','Top dock',top],['bottom','Bottom dock',bottom],['side','Side buttons',side]],panels=[];
   for(const [key,title,old]of categories){
     selector.add(new Option(title,key));const panel=document.createElement('section');panel.id='ui-settings-'+key;panel.setAttribute('aria-label',title);
