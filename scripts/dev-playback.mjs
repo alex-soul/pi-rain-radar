@@ -243,6 +243,11 @@ const server=http(async(req,res)=>{
     }
     if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(403);return res.end('Playback fixture is read-only');}
     const response=await fetch(origin+req.url,{method:req.method,headers:req.headers.authorization?{Authorization:req.headers.authorization}:{}});
+    if(path.pathname==='/api/weather-history'&&scenario==='weather-trends'&&response.ok){
+      const selectedEnd=Number(path.searchParams.get('end')),hours=Number(path.searchParams.get('hours'));
+      const history=await response.json();
+      return send({...history,...trendFixture({start:selectedEnd-hours*3600,end:selectedEnd}).weatherHistory});
+    }
     if(path.pathname==='/api/settings/diagnostics'&&response.ok) return send(scenarioLog.snapshot());
     if(path.pathname==='/api/settings'&&response.ok){const data=await response.json();return send({...data,radar:demoRadar});}
     if(path.pathname==='/api/status'||path.pathname==='/api/archive'){
