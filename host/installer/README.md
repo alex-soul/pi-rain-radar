@@ -39,7 +39,7 @@ The bootstrap resolves one public `main` commit, downloads all runner/MQTT files
 from that exact snapshot, and caches the complete bundle. The selected commit and
 application manifest are saved in `~/.local/state/pi-rain-radar/install.json`.
 Reboots/retries reuse that snapshot. `release.json` explicitly pairs this runner
-with published v0.10.0, its immutable image digest, and checksummed Compose/Power
+with published v0.11.0, its immutable image digest, and checksummed Compose/Power
 files from the release source commit. No `latest` app image or unrelated main
 helper is used. This supports prereleases without relying on GitHub's stable-only
 latest-release endpoint.
@@ -130,8 +130,12 @@ Pin validation on 29 September 2026: 22 installer and 21 display-control tests p
 
 The current development runner provisions local Screen controls even when MQTT is declined: a local display controller plus authenticated bridge and Screen Compose override. Its snapshot bundle includes both `install_bridge.py` and `bridge.py`; retries retain the cached runner and selected application manifest. MQTT adds its adapter to the same settings/controller.
 
-The checked-in app manifest pins published v0.10.0 to its verified image index digest and release source checksums. Both architecture startup/restart checks passed. New installations receive Appliance → Screen; older saved installer snapshots retain their selected app release. Do not use `latest` or change existing saved installation targets during resume.
+The checked-in app manifest pins published v0.11.0 to its verified image index digest and release source checksums. Both architecture startup/restart checks passed, and I accepted the published app on my existing Pi. New installations receive Appliance → Screen; older saved installer snapshots retain their selected app release. Installer logic, Compose, Power/Screen helpers and the snapshot/resume contract are unchanged. Do not use `latest` or change existing saved installation targets during resume.
 
 Targeted Linux installer/display tests and isolated bridge installation passed, including restrictive umask and runtime socket access. The accepted private-controller Pi upgrade is not a fresh portable installation. Validate local control with MQTT declined, optional MQTT consistency, startup/reboot, touch wake and saved settings on the affected hardware route before reporting it accepted. Existing fresh Pi 4 and longer resilience gaps remain open.
 
 **0.10.0 fresh-install limitation:** the changed portable local-Screen setup and reboot route remain experimental. Fresh-card hardware testing is deferred for this release; existing-appliance RC acceptance and isolated automated tests do not prove that route.
+
+## 0.11.0 pin validation
+
+On 9 October 2026, 25 installer and 25 display-control tests passed in isolated Linux, shell syntax/help checks passed, and the isolated Screen bridge install/reinstall and authenticated socket checks passed. All four pinned file checksums match release source `c6db6c2e2dd26535a67ff72d7a294a4aa28d72ff`. Release CI passed fresh startup/restart on AMD64 and ARM64; I accepted the exact published image on my existing Pi 4 / 2 GB and phone. This pin-only update retains installer version `0.1.0-test.2` and existing saved selections. No new fresh-card walkthrough or hardware combination is claimed.
