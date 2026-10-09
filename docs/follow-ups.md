@@ -1,6 +1,14 @@
 # Release follow-ups
 
-## After 0.10.0
+## After 0.11.0
+
+I accepted the published 0.11.0 image on my Pi and phone. Consolidated screen settings, consistent dock spacing, optional rain readings/units, compact trend min/max legends and the transient connection-warning recovery fix are delivered. See [release notes](release-0.11.0.md).
+
+- **Archive forecast reliability:** observed accumulated-rain collection now uses the existing five-minute HA cycle and shared retention. The existing Archive comparison still compares forecasts; a later release should compare forecasts with measured interval rainfall, including actual lead times such as +10 versus +50 minutes. Keep original ten-minute forecast captures, raw accumulated totals, acquisition/report timestamps, source/location and reset boundaries. Align forecast and observation intervals; preserve missing polls, resets and source changes as unknown boundaries rather than invented rainfall. Five-minute accumulated totals do not recover exact onset or peak intensity. Review retention before expecting a long evaluation dataset. I have further comparison UI requirements to discuss before choosing metrics/charts or replacing the existing comparison; no future version or design is assigned yet. See [observed rain](observed-rain.md).
+- **Development studio review:** retain the dock tuning tool for specific future needs. Keep the studio lean; no routine playground build/deployment or ongoing expansion is required. Review the accumulated reusable material separately when needed.
+- Fresh portable installer/reboot validation and longer soak/cloud/storage/hardware observations remain open below. This app release does not close those gaps.
+
+## After 0.10.0 (historical)
 
 I accepted the published 0.10.0 image with all functions working and full MQTT synchronization. Astronomy motion, flexible widget resizing/font controls, direct dock/button ordering, map-label density, local Screen controls and the agreed UI refinements are delivered. See [release notes](release-0.10.0.md).
 
