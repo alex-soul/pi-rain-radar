@@ -1428,7 +1428,7 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 .trend-mini-legend>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .trend-mini-legend>span:last-child{margin-left:0;white-space:nowrap;flex:none;}
 .trend-mini-legend #trend-edit,.trend-mini-legend .trend-edit{padding:0 3px;font:9px/20px Arial;opacity:.7;flex:none;}
-.detached-trend .trend-mini-legend,.chart-bottom .trend-mini-legend{padding-right:20px;}
+.detached-trend .trend-mini-legend,.chart-bottom .trend-mini-legend{padding-right:0;}
 .detached-resize,#weather-trends-resize{height:25px;width:25px;padding:2px;}
 
 .trend-mini-legend>span[id^="trend-value-"]{margin-left:auto;white-space:nowrap;flex:none;color:var(--mini-color);}
