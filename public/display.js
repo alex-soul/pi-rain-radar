@@ -36,7 +36,7 @@ export function setupReadingEditor(canEdit) {
   let drag;
   function arrange() { for (const id of preferences.readingOrder) list.append(rows.get(id)); }
   function save() {
-    try { localStorage.setItem('radar-display', JSON.stringify(preferences)); feedback.textContent = 'Saved on this screen'; }
+    try { localStorage.setItem('radar-display', JSON.stringify(preferences)); feedback.textContent = ''; }
     catch { feedback.textContent = 'Applied for now; browser storage is unavailable.'; }
     window.dispatchEvent(new Event('radar-reading-order'));
   }
