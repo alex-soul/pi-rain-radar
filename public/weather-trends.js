@@ -54,7 +54,7 @@ export function paintWeatherTrends(input){
    }
    const legend=$('trend-value-'+id).parentElement;
    let range=legend.querySelector('.trend-range');if(!range){range=document.createElement('span');range.className='trend-range';legend.append(range);}
-   range.textContent=`(${values.join('–')})`;range.title=captions.join('\n');range.setAttribute('aria-label',captions.join('. '));
+   range.textContent=`(${values.join(' · ')})`;range.title=captions.join('\n');range.setAttribute('aria-label',captions.join('. '));
    add('line',{id:'trend-cursor-'+id,class:'trend-cursor',y1:top,y2:bottom});svg.replaceChildren(...nodes);
    svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)}. ${captions.join('. ')}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
   }

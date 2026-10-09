@@ -1347,7 +1347,7 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 .trend-mini-legend{display:flex;justify-content:flex-start;gap:4px;font:10px/1.45 Arial;flex:none;min-height:16px;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .trend-mini-legend span:first-child{opacity:.8;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .trend-mini-legend [id^="trend-value-"]{color:var(--mini-color);flex:none;}
-.trend-mini-legend .trend-range{opacity:.65;flex:none;font:inherit;}
+.trend-mini-legend .trend-range{color:var(--mini-color);flex:none;font:inherit;}
 .trend-mini-legend span:first-child:before{content:'';display:inline-block;width:10px;height:1px;margin-right:5px;vertical-align:middle;background:var(--mini-color);}
 .trend-grid,.trend-axis,.trend-curve,.trend-cursor{vector-effect:non-scaling-stroke;fill:none;}
 .trend-grid{stroke:currentColor;stroke-width:.4;opacity:.18;}
