@@ -51,6 +51,16 @@ export function chartSegments(points,start,end,unit){
  if(line.length)segments.push(line);return segments;
 }
 
+export function chartExtrema(segments){
+ let min=null,max=null;
+ for(const line of segments)for(const point of line){
+  if(!Number.isFinite(point.value))continue;
+  if(!min||point.value<min.value)min=point;
+  if(!max||point.value>max.value)max=point;
+ }
+ return {min,max};
+}
+
 export function gridInterval(span,width){
  const hours=span/3600,base=hours<=2?600:hours<=6?1800:hours<=12?3600:7200;
  const choices=[600,1800,3600,7200,10800,14400,21600,43200,86400];

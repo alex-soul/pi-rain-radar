@@ -1,4 +1,4 @@
-import {trendRange,chartCredits} from '../public/weather-trends-model.js';
+import {trendRange,chartCredits,chartExtrema} from '../public/weather-trends-model.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {weatherSeries,readingTrend,chartSegments,trendsAt,gridInterval,smoothPath} from '../public/weather-trends-model.js';
@@ -6,6 +6,15 @@ import {weatherReadings} from '../public/weather-readings.js';
 import {createWeatherReplay} from '../public/history-weather-model.js';
 import {trendFixture} from '../scripts/dev-weather-trends.mjs';
 const start=2000000,end=start+7200;
+test('chart extrema use only eligible displayed points after unit conversion, including boundary samples',()=>{
+ const points=[[-1,-90],[0,0],[300,10],[600,20],[900,99],[1200,-99],[1500,90]].map(([time,value])=>({key:'owm:F',row:{id:'temperature',time:(start+time)*1000,value,source:'openweather',unit:'°F',retained:time===900}}));
+ const result=chartExtrema(chartSegments(points,start,start+900,'°F'));
+ assert.equal(result.min.value,32);assert.equal(result.min.time,start);
+ assert.equal(result.max.value,68);assert.equal(result.max.time,start+600);
+ const narrowed=chartExtrema(chartSegments(points,start+300,start+600,'°F'));
+ assert.equal(narrowed.min.value,50);assert.equal(narrowed.max.value,68);
+ assert.deepEqual(chartExtrema(chartSegments(points,start+900,start+900,'°F')),{min:null,max:null});
+});
 test('chart preserves missing samples and source changes; hidden Dock preferences do not remove series',()=>{
  const h=trendFixture({start,end}).weatherHistory,s=weatherSeries(h,{readings:[]});
  const lines=chartSegments(s.temperature,start,end,'°C');
