@@ -3,13 +3,16 @@ import {dockText} from '/dock-format.js';
 const $=id=>document.getElementById(id),ids=Object.keys(readingNames);
 const samples=Array.from({length:289},(_,i)=>{
   const p=i/288,temperature=-4+22*Math.sin(p*Math.PI)**2;
-  return {temperature,feels:temperature-3-3*Math.sin(i/11),dew:temperature-2-8*Math.abs(Math.sin(i/21)),wind:Math.max(0,12+13*Math.sin(i/19)),gust:Math.max(0,25+24*Math.sin(i/17)),humidity:Math.round(50+50*Math.cos(i/43)**2),direction:(i*17)%360,visibility:Math.round(80+11000*Math.abs(Math.sin(i/29))),pressure:998+24*Math.sin(p*Math.PI*2),uv:Math.max(0,11*Math.sin((p-.25)*Math.PI*2)),sun:p,moon:p};
+  return {temperature,feels:temperature-3-3*Math.sin(i/11),dew:temperature-2-8*Math.abs(Math.sin(i/21)),wind:Math.max(0,12+13*Math.sin(i/19)),gust:Math.max(0,25+24*Math.sin(i/17)),humidity:Math.round(50+50*Math.cos(i/43)**2),direction:(i*17)%360,visibility:Math.round(80+11000*Math.abs(Math.sin(i/29))),pressure:998+24*Math.sin(p*Math.PI*2),uv:Math.max(0,11*Math.sin((p-.25)*Math.PI*2)),rainAccumulation:i===288?0:Math.max(0,i-72)*.03,sun:p,moon:p};
 });
 // Deliberate digit/sign boundaries across the day, beyond ordinary smooth readings.
 for(let i=0;i<samples.length;i+=24)Object.assign(samples[i],{temperature:[-.1,0,9.9,10,-10.1,29.9,30][(i/24)%7],wind:[0,9,10,99,100][(i/24)%5],gust:[9,10,99,100][(i/24)%4],humidity:[9,10,99,100][(i/24)%4],visibility:[0,990,9990,10000][(i/24)%4],pressure:i%48?999:1000,uv:i%48?9.9:10});
-const config={gap:5,iconGap:3,directionFont:24,padX:68,padY:8,rowGap:10,font:24,fontScale:100,icon:26,trend:9,trendGap:2,extra:0,width:1280,alignment:'right',visible:[...ids],slots:{}};
+const config={gap:1,iconGap:5,padX:40,padY:12,rowGap:10,font:20,fontScale:100,icon:18,trend:5,trendGap:1,extra:1,width:1280,alignment:'left',visible:[...ids],slots:{}};
 try{Object.assign(config,JSON.parse(localStorage.getItem('radar-dock-playground')||'{}'));}catch{}
 delete config.directionGap;
+delete config.directionFont;
+delete config.astroValueFont;
+config.slots={...Object.fromEntries(ids.map(id=>[id,['sun','moon'].includes(id)?100:60])),...config.slots};
 config.order=[...new Set([...(Array.isArray(config.order)?config.order:ids),...ids])].filter(id=>ids.includes(id));
 let dock,playing=null,frame=0,previousPositions=null,maxShift=0;
 function text(id,s,i){
@@ -21,20 +24,19 @@ function text(id,s,i){
   if(id==='visibility')return dockText({id,value:s.visibility,text:visibilityText(s.visibility),unit:'km'});
   if(id==='pressure')return pressureText(s.pressure);
   if(id==='uv')return dockText({id,value:s.uv,text:String(s.uv),unit:'index'});
+  if(id==='rainAccumulation')return s.rainAccumulation.toFixed(1);
   if($('astro').value==='position')return `${Math.round(45*Math.sin(i/46))}° ${windDirectionText(i*3,'compass')}`;
   return `${i<84?'↑':'↓'} ${id==='sun'?(i<84?'07:00':'18:25'):(i<140?'11:40':'22:05')}`;
 }
 function widestText(id){
-  const fixed={temperature:'-88.8°',feels:'-88.8°',dew:'-88.8°',wind:'999',gust:'999',humidity:'100%',depression:'88.8°',visibility:'10.0+',pressure:'1088',uv:'99.9'};
+  const fixed={temperature:'-88.8°',feels:'-88.8°',dew:'-88.8°',wind:'999',gust:'999',humidity:'100%',depression:'88.8°',visibility:'10.0+',pressure:'1088',uv:'99.9',rainAccumulation:'999.9'};
   if(id in fixed)return fixed[id];
   if(id==='direction')return $('direction').value==='degrees'?'359°':'WNW';
   return $('astro').value==='position'?'-88° WNW':'↓ 23:59';
 }
 function save(){const selected={...config,layout:$('layout').value,direction:$('direction').value,astronomy:$('astro').value,widest:$('widest').checked};localStorage.setItem('radar-dock-playground',JSON.stringify(selected));$('settings').value=JSON.stringify(selected,null,2);}
-const measure=document.createElement('span');measure.className='measure';document.body.append(measure);
-function widths(only=null){for(const id of ids){if(only&&id!==only)continue;measure.style.fontSize=(id==='direction'?config.directionFont:config.font)+'px';const widest=Math.max(...samples.map((s,i)=>{measure.textContent=text(id,s,i);return measure.getBoundingClientRect().width;}));config.slots[id]=Math.ceil(widest);}}
 function controls(){
-  const specs=[['gap','Between readings',0,40],['iconGap','Icon → value gap',0,20],['directionFont','Wind / Sun / Moon direction font at 100%',10,36],['padX','Side padding',0,90],['padY','Vertical padding',0,24],['rowGap','Between wrapped rows',0,30],['font','Base font size at 100%',14,32],['fontScale','User font size',75,150],['icon','Icon size',16,36],['trend','Trend arrow width',0,18],['trendGap','Trend → icon gap',0,12],['extra','Extra width per value slot',0,30],['width','Preview width',320,1600]];
+  const specs=[['gap','Between readings',0,40],['iconGap','Icon → value gap',0,20],['padX','Side padding',0,90],['padY','Vertical padding',0,24],['rowGap','Between wrapped rows',0,30],['font','Base font size at 100%',14,32],['fontScale','User font size',75,150],['icon','Icon size',16,36],['trend','Trend arrow width',0,18],['trendGap','Trend → icon gap',0,12],['extra','Extra width per value slot',0,30],['width','Preview width',320,1600]];
   for(const [key,label,min,max]of specs){const row=document.createElement('div');row.className='slider-row';row.innerHTML=`<label for="tune-${key}">${label}<output id="out-${key}"></output></label><input id="tune-${key}" type="range" min="${min}" max="${max}" value="${config[key]}">`;$('sliders').append(row);if(key==='fontScale')row.querySelector('input').step=5;row.querySelector('input').oninput=e=>{config[key]=Number(e.target.value);previousPositions=null;maxShift=0;render();};}
   const label=document.createElement('label');label.textContent='Value alignment ';const select=document.createElement('select');for(const v of ['right','left','center'])select.add(new Option(v,v));select.value=config.alignment;select.onchange=()=>{config.alignment=select.value;render();};label.append(select);$('sliders').append(label);
   readingControls();
@@ -44,7 +46,7 @@ function render(){
   const tuned=$('layout').value==='tuned';dock.classList.toggle('tuned',tuned);dock.classList.toggle('show-bounds',$('bounds').checked);document.documentElement.dataset.theme=$('theme').value;
   dock.classList.toggle('astro-position',$('astro').value==='position');
   for(const id of config.order)dock.querySelector('.weather-readings').append($('weather-'+id).closest('.weather-reading'));
-  for(const [css,key]of Object.entries({'item-gap':'gap','icon-gap':'iconGap','pad-x':'padX','pad-y':'padY','row-gap':'rowGap','reading-font':'font','icon-size':'icon','trend-width':'trend','trend-gap':'trendGap'}))dock.style.setProperty('--'+css,config[key]+'px');dock.style.setProperty('--alignment',config.alignment);dock.style.setProperty('--reading-font',config.font*config.fontScale/100+'px');dock.style.setProperty('--direction-font',config.directionFont*config.fontScale/100+'px');dock.style.setProperty('--astro-font',config.icon*config.fontScale/100+'px');
+  for(const [css,key]of Object.entries({'item-gap':'gap','icon-gap':'iconGap','pad-x':'padX','pad-y':'padY','row-gap':'rowGap','reading-font':'font','icon-size':'icon','trend-width':'trend','trend-gap':'trendGap'}))dock.style.setProperty('--'+css,config[key]+'px');dock.style.setProperty('--alignment',config.alignment);dock.style.setProperty('--reading-font',config.font*config.fontScale/100+'px');dock.style.setProperty('--astro-font',config.icon*config.fontScale/100+'px');
   $('preview').style.width=config.width+'px';dock.style.setProperty('--preview-width',config.width+'px');
   for(const id of ids){const value=$('weather-'+id),row=value.closest('.weather-reading'),slot=value.closest('.reading-value-slot');row.hidden=!config.visible.includes(id);row.title=readingNames[id];row.setAttribute('aria-label',readingNames[id]);slot.style.setProperty('--slot',(tuned?(config.slots[id]+config.extra)*config.fontScale/100:config.slots[id]+config.extra)+(!tuned&&!['direction','sun','moon'].includes(id)?config.trend+config.trendGap:0)+'px');value.textContent=$('widest').checked?widestText(id):text(id,samples[frame],frame);const marker=row.querySelector('.reading-trend');if(marker){if(tuned)row.prepend(marker);else slot.append(marker);}if(marker)marker.textContent=$('widest').checked?'↑':frame%5===0?'':frame%3===0?'↓':'↑';}
   $('weather-direction-arrow').setAttribute('visibility','visible');$('weather-direction-arrow').setAttribute('transform',`rotate(${(samples[frame].direction+180)%360} 14 14)`);
@@ -61,7 +63,7 @@ try{
   for(const id of ids){const value=$('weather-'+id),slot=document.createElement('span'),marker=document.createElement('span');slot.className='reading-value-slot';slot.dataset.reading=id;marker.className='reading-trend';marker.setAttribute('aria-hidden','true');value.before(slot);slot.append(value,marker);if(['sun','moon'].includes(id))marker.remove();}
   for(const [id,key]of [['layout','layout'],['direction','direction'],['astro','astronomy']])if(config[key])$(''+id).value=config[key];
   $('widest').checked=!!config.widest;
-  if(!Object.keys(config.slots).length)widths();controls();render();
+  controls();render();
   $('scrub').oninput=e=>{frame=Number(e.target.value);render();};$('play').onclick=()=>playing?stop():play();$('speed').onchange=()=>{if(playing)play();};
   for(const id of ['layout','theme','bounds','direction','astro','widest'])$(id).onchange=()=>{previousPositions=null;maxShift=0;render();};
   $('all').onclick=()=>{config.visible=[...ids];previousPositions=null;maxShift=0;readingControls();render();};$('defaults').onclick=()=>{config.visible=[...defaultReadings];previousPositions=null;maxShift=0;readingControls();render();};

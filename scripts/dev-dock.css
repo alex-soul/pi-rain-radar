@@ -10,10 +10,11 @@ html[data-theme=light] #sticky-preview{background:#e8efeb}
 #sticky-preview #preview{min-height:0!important}
 :root .tuned .weather-reading > .reading-trend{position:static!important;width:var(--trend-width)!important;margin:0 calc(var(--trend-gap) - var(--icon-gap)) 0 0!important;text-align:center;font-size:12px}
 :root .tuned .wind-direction{gap:var(--icon-gap)!important}
-:root .tuned .wind-direction .reading-value-slot > [id]{font-size:var(--direction-font)!important}
+:root .tuned .wind-direction .reading-value-slot > [id]{font-size:var(--reading-font)!important}
 :root .tuned .wind-direction > .reading-trend{display:none!important}
 .playground{overflow:visible!important}
 :root .tuned .astro-dock-icon{font-size:var(--astro-font)!important}
-:root .tuned.astro-position .astro-reading .reading-value-slot > [id]{font-size:var(--direction-font)!important}.reading-row{grid-template-columns:145px minmax(70px,1fr) 55px 70px}.order-buttons{display:flex;gap:4px}.order-buttons button{padding:4px 8px;min-width:30px}.order-buttons button:disabled{opacity:.3}
+:root .tuned.astro-position .astro-reading .reading-value-slot > [id]{font-size:var(--reading-font)!important}.reading-row{grid-template-columns:145px minmax(70px,1fr) 55px 70px}.order-buttons{display:flex;gap:4px}.order-buttons button{padding:4px 8px;min-width:30px}.order-buttons button:disabled{opacity:.3}
 html{scroll-padding-top:calc(var(--sticky-height,350px) + 12px)}.reading-row,.slider-row{scroll-margin-top:calc(var(--sticky-height,350px) + 12px)}
-:root .tuned .weather-reading .reading-value-slot > :is(#weather-direction,#weather-sun,#weather-moon){font-size:var(--direction-font)!important;color:inherit!important;opacity:1!important;font-weight:400!important}
+:root .tuned .weather-reading .reading-value-slot > #weather-direction{font-size:var(--reading-font)!important;color:inherit!important;opacity:1!important;font-weight:400!important}
+:root .tuned .weather-reading .reading-value-slot > :is(#weather-sun,#weather-moon){font-size:var(--reading-font)!important;color:inherit!important;opacity:1!important;font-weight:400!important}
