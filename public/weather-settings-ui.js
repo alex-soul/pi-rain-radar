@@ -85,7 +85,7 @@ export function setupWeatherLayout(){
     const label=$('reading-'+field).previousElementSibling;
     label.prepend(make(`<span id="reading-health-${field}" class="reading-health" role="img" aria-label="Not configured"></span>`));
     label.append(make(`<small id="reading-source-${field}" class="reading-source"></small>`));
-    $('review-map-'+field).onchange=()=>save({mappings:{[field]:$('review-map-'+field).value}});
+    $('review-map-'+field).onchange=()=>{const entity=$('review-map-'+field).value,sensor=entities.find(e=>e.id===entity),unit=canonicalUnit(sensor?.unit);return save({mappings:{[field]:entity},...(sensor&&haUnitChoices[field]?.includes(unit)?{sourceUnits:{[field]:unit}}:{})});};
   }
   for(const [id,key] of [['review-owm-collect','owmCollect'],['review-ha-collect','haCollect'],['review-forecast-collect','forecastCollect'],['review-fallback','fallback']])$(id).onchange=async()=>{
     const value=$(id).checked;$(id).disabled=true;await save({[key]:value});sync();if(key==='haCollect'&&value)await loadWeatherChoices();

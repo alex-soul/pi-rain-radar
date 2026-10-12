@@ -1,14 +1,15 @@
 import {weatherFields,weatherKeys,selectHaReadings,selectObservedRain,defaultUnits} from './weather-policy.js';
 import {readingNames,temperatureText,windText,windDirectionText,visibilityText,pressureText} from './weather-format.js';
+import {readingValues} from './reading-units.js';
 
 // One source/freshness model for visible readings, hidden-reading health and
 // Settings. Call separately with current operational data during Archive replay.
 export function weatherReadings(state,now,{historical=false,preferences={},gustMinutes=60}={}){
-  const policy=state?.presentation?.policy??state?.policy,units={...defaultUnits,...preferences,...(historical?state?.units:policy?.units)};
+  const policy=state?.presentation?.policy??state?.policy,units={...defaultUnits,...(historical?state?.units:policy?.units),...preferences};
   const current=state?.data?.current,failures=state?.failures??(state?.error?1:0);
   const fresh=!!current&&current.time*1000>now-1800000&&current.time*1000<=now+(historical?0:300000);
   const usable=!!state?.configured&&fresh&&failures<2,cached=usable&&(failures>0||!!state?.error);
-  const ha=policy?selectHaReadings({...policy,units},state.presentation?.observations,state,now,{historical}):{};
+  const ha=policy?selectHaReadings(policy,state.presentation?.observations,state,now,{historical}):{};
   const rows={};
   for(const id of weatherFields){
     const selected=policy?.mappings?.[id]??'owm',mapped=ha[id];
@@ -38,28 +39,30 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
       else{health='error';reason='Reading not reported';}
       if(policy?.owmCollect===false){health=source?'warning':'unconfigured';reason='Collection disabled';}
     }
+    const observedUnit=source==='ha'?mapped.unit:['temperature','feels','dew'].includes(id)?'C':['wind','gust'].includes(id)?'mph':id==='visibility'?'m':id==='pressure'?'hPa':mapped?.unit;
+    const {canonicalValue,displayValue}=readingValues(value,id,source,observedUnit,units);
     let text='—',unit='';
-    if(['temperature','feels','dew'].includes(id)){unit='°'+units.temperatureUnit;if(Number.isFinite(value))text=source==='ha'?value.toFixed(1)+'°':temperatureText(value,units.temperatureUnit);}
-    else if(['wind','gust'].includes(id)){unit=units.windUnit;if(Number.isFinite(value))text=source==='ha'?String(Math.round(value)):windText(value,units.windUnit);}
+    if(['temperature','feels','dew'].includes(id)){unit='°'+units.temperatureUnit;if(Number.isFinite(displayValue))text=(Math.abs(displayValue)<.05?0:displayValue).toFixed(1)+'°';}
+    else if(['wind','gust'].includes(id)){unit=units.windUnit;if(Number.isFinite(displayValue))text=String(Math.round(displayValue));}
     else if(id==='humidity'){unit='%';if(Number.isFinite(value))text=Math.round(value)+'%';}
     else if(id==='direction'){if(Number.isFinite(value))text=windDirectionText(value,units.directionFormat,units.directionConvention);}
-    else if(id==='visibility'){unit=units.visibilityUnit;text=source==='ha'&&Number.isFinite(value)?String(Number(value.toFixed(1))):visibilityText(value,unit);}
-    else if(id==='pressure'){unit=units.pressureUnit;text=source==='ha'&&Number.isFinite(value)?String(Number(value.toFixed(2))):pressureText(value,unit);}
+    else if(id==='visibility'){unit=units.visibilityUnit;text=Number.isFinite(displayValue)?String(Number(displayValue.toFixed(1)))+(source==='openweather'&&value>=10000?'+':''):'—';}
+    else if(id==='pressure'){unit=units.pressureUnit;text=Number.isFinite(displayValue)?(unit==='hPa'?String(Math.round(displayValue)):unit==='inHg'?displayValue.toFixed(2):displayValue.toFixed(1)):'—';}
     else if(Number.isFinite(value))text=String(Number(value.toFixed(1)));
     const fallback=expected==='ha'&&source==='openweather';
     const sourceLabel=expected==='disabled'?'Disabled':fallback?'OpenWeather fallback':source==='ha'||expected==='ha'?'Home Assistant':'OpenWeather';
-    rows[id]={id,name:readingNames[id],expected,source,sourceLabel,value:Number.isFinite(value)?value:null,text,unit,time,receivedAt,retained:!!retained,fallback,reason,health,attribution};
+    rows[id]={id,name:readingNames[id],expected,source,sourceLabel,value:Number.isFinite(value)?value:null,canonicalValue,displayValue,observedUnit,text,unit,time,receivedAt,retained:!!retained,fallback,reason,health,attribution};
   }
   const inputs=[rows.temperature,rows.dew];
-  const inUnit=row=>row.source==='ha'?row.value:units.temperatureUnit==='F'?row.value*1.8+32:row.value;
+  const inUnit=row=>row.displayValue;
   const value=inputs.every(row=>Number.isFinite(row.value))?inUnit(inputs[0])-inUnit(inputs[1]):null;
   const health=inputs.some(row=>row.health==='error'||row.expected==='disabled'||row.health==='unconfigured')?'error':inputs.some(row=>row.health==='warning')?'warning':'ready';
-  rows.depression={inputs,id:'depression',name:'T−Td',expected:'derived',source:'derived',sourceLabel:'Temperature − dew point',value,text:value===null?'—':value.toFixed(1)+'°',unit:'°'+units.temperatureUnit,time:null,receivedAt:null,health,retained:inputs.some(row=>row.retained),fallback:false,attribution:inputs.map(row=>row.attribution).filter(Boolean).join(' · '),reason:'Dew point depression. '+inputs.map(row=>row.name+': '+row.text+' · '+row.sourceLabel+(row.reason?' · '+row.reason:'')).join('; ')};
+  rows.depression={inputs,id:'depression',name:'Dew point depression',expected:'derived',source:'derived',sourceLabel:'Temperature − dew point',value,displayValue:value,canonicalValue:inputs.every(r=>Number.isFinite(r.canonicalValue))?inputs[0].canonicalValue-inputs[1].canonicalValue:null,text:value===null?'—':value.toFixed(1)+'°',unit:'°'+units.temperatureUnit,time:null,receivedAt:null,health,retained:inputs.some(row=>row.retained),fallback:false,attribution:inputs.map(row=>row.attribution).filter(Boolean).join(' · '),reason:'Dew point depression. '+inputs.map(row=>row.name+': '+row.text+' · '+row.sourceLabel+(row.reason?' · '+row.reason:'')).join('; ')};
   const rainPolicy=policy??{},rain=selectObservedRain(rainPolicy,state?.presentation?.observations??state?.observations,now);
   const rainFactors={mm:1,cm:10,in:25.4},rainUnit=preferences.rainUnit??units.rainUnit??'mm';
   const enabled=!!rain.entity,valueRain=rain.eligible?rain.value*rainFactors[rain.unit]/rainFactors[rainUnit]:null;
   rows.rainAccumulation={...rain,id:'rainAccumulation',name:'Rain accumulation',expected:enabled?'ha':'disabled',
-    source:rain.eligible?'ha':null,sourceLabel:enabled?'Home Assistant':'Disabled',value:valueRain,
+    source:rain.eligible?'ha':null,sourceLabel:enabled?'Home Assistant':'Disabled',value:valueRain,displayValue:valueRain,canonicalValue:rain.eligible?rain.value*rainFactors[rain.unit]:null,
     text:valueRain===null?'—':valueRain.toFixed(rainUnit==='mm'?1:2),unit:rainUnit,observedUnit:rain.unit,retained:false,fallback:false,
     health:!enabled||!rainPolicy.haCollect?'unconfigured':rain.eligible?'ready':'error',
     attribution:rain.attribution??'',reason:rain.reason??'Observed running total since the sensor’s last reset; not rain intensity or a forecast.'};
@@ -72,7 +75,7 @@ export function weatherHealth(rows){
   return {health,summary};
 }
 export function readingExplanation(row,stamp){
-  if(row.inputs)return 'T−Td: '+row.text+' · Dew point depression (temperature minus dew point). '+row.inputs.map(input=>readingExplanation(input,stamp)).join(' · ');
+  if(row.inputs)return row.name+': '+row.text+' · Dew point depression (T−Td, temperature minus dew point). '+row.inputs.map(input=>readingExplanation(input,stamp)).join(' · ');
   const value=row.text==='—'?'—':row.text.replace(/[°%]$/,'')+(row.unit?' '+row.unit:'');
   return [row.name+': '+value,row.sourceLabel,
     row.time?(row.source==='ha'?'Reported to HA ':'Observed ')+stamp(row.time):null,

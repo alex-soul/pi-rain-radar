@@ -4,11 +4,13 @@ const root=document.createElement('div');root.id='availability';root.innerHTML='
 let expanded=false,signature='',current=[],active=null,pinned=false,zone='Europe/London';try{expanded=localStorage.getItem('radar-availability-open')==='true';}catch{}
 function hideDetail(){active=null;pinned=false;$('availability-detail').hidden=true;}
 function saveExpanded(){disclosure();try{localStorage.setItem('radar-availability-open',String(expanded));}catch{}}
-function disclosure(){if(!expanded)hideDetail(); $('availability-panel').hidden=!expanded;$('frame-count').setAttribute('aria-expanded',String(expanded));$('frame-count').setAttribute('aria-label',`${expanded?'Hide':'Show'} data availability`);}
+function positionPanel(){if(!expanded)return;const anchor=root.getBoundingClientRect(),handle=$('footer-toggle').getBoundingClientRect(),footer=document.querySelector('footer').getBoundingClientRect();const top=Math.min(handle.top-10,footer.top)-8;root.style.setProperty('--availability-clearance',Math.max(0,anchor.bottom-top)+'px');$('availability-panel').style.maxHeight=Math.max(40,top-8)+'px';}
+function disclosure(){if(!expanded)hideDetail(); $('availability-panel').hidden=!expanded;$('frame-count').setAttribute('aria-expanded',String(expanded));$('frame-count').setAttribute('aria-label',`${expanded?'Hide':'Show'} data availability`);positionPanel();}
 $('frame-count').onclick=()=>{expanded=!expanded;saveExpanded();};disclosure();
 // Only the counter toggles the popup; the locked-screen idle reset can dismiss it explicitly.
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&expanded){expanded=false;saveExpanded();}});
 window.addEventListener('resize',hideDetail);
+window.addEventListener('resize',positionPanel);new ResizeObserver(positionPanel).observe(document.querySelector('footer'));new MutationObserver(positionPanel).observe(document.body,{attributes:true,attributeFilter:['class']});
 export function dismissAvailability(){expanded=false;saveExpanded();}
 const clock=t=>new Date(t*1000).toLocaleTimeString('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit'});
 function detailCaption(d){
@@ -29,4 +31,5 @@ export function updateAvailability(input,onSelect){
  const steps=Math.round((input.end-input.start)/600),slot=Math.max(0,Math.min(steps,Math.round(((input.time??input.start)-input.start)/600)));
  root.style.setProperty('--availability-count',String(steps+1));
  const at=(slot+.5)/(steps+1)*100;root.style.setProperty('--availability-position',at+'%');
+ positionPanel();
 }

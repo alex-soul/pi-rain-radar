@@ -68,7 +68,7 @@ await seedStore.close();
 // Optional local fixture settings carry-over; never use a production data folder.
 if(process.env.RADAR_DEV_SETTINGS_FROM){
   const previous=process.env.RADAR_DEV_SETTINGS_FROM;
-  for(const relative of ['settings','camera-fixture/settings','weather-fixture/policy.json']){
+  for(const relative of ['settings','camera-fixture/settings','weather-fixture/policy.json','aviation-fixture/settings']){
     await mkdir(join(directory,relative,'..'),{recursive:true});
     await cp(join(previous,relative),join(directory,relative),{recursive:true});
   }
@@ -127,7 +127,7 @@ function filterWindow(data) {
 const server=http(async(req,res)=>{
   try {
     const path=new URL(req.url,'http://127.0.0.1:3091');
-    if(trial&&req.method==='POST'&&path.pathname.startsWith('/api/settings/')&&(req.headers['content-type']!=='application/json'||req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host||req.headers['sec-fetch-site']==='cross-site')){res.writeHead(403);return res.end('{}');}
+    if((trial||path.pathname==='/api/settings/display')&&req.method==='POST'&&path.pathname.startsWith('/api/settings/')&&(req.headers['content-type']!=='application/json'||req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host||req.headers['sec-fetch-site']==='cross-site')){res.writeHead(403);return res.end('{}');}
     if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
     const controlAssets={'/__dock':['dev-dock.html','text/html'],'/__dock.js':['dev-dock.js','text/javascript'],'/__dock.css':['dev-dock.css','text/css'],'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
     Object.assign(controlAssets,{'/__dev/chart-values.js':['dev-chart-values.js','text/javascript'],'/__dev/chart-values.css':['dev-chart-values.css','text/css']});
@@ -188,6 +188,10 @@ const server=http(async(req,res)=>{
       if(!path.pathname.endsWith('/initialize')){const check=await fetch(origin+'/api/settings',{headers:req.headers.authorization?{Authorization:req.headers.authorization}:{}});if(!check.ok){res.writeHead(check.status);return res.end('{}');}}
       let input;if(req.method==='POST'){let body='';for await(const chunk of req){body+=chunk;if(body.length>8192){res.writeHead(413);return res.end('{}');}}input=JSON.parse(body);}
       const result=await devWeather.configure(path.pathname,input);
+      if(input&&path.pathname==='/api/settings/weather/initialize'&&result.status===200){
+        const initialized=await fetch(origin+path.pathname,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({units:result.units})});
+        if(!initialized.ok)throw Error('DEV display initialization failed: '+initialized.status);
+      }
       if(input&&path.pathname==='/api/settings/weather'&&result.status===200)demoRadar=disableRadarProviders(demoRadar,source=>result[source+'Collect']);
       res.writeHead(result.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(result));
     }
@@ -258,7 +262,7 @@ const server=http(async(req,res)=>{
       if(!enabled(next.main)||!enabled(next.overview==='same'?next.main:next.overview)){res.writeHead(400);return res.end(JSON.stringify({error:'Enable the selected provider first.'}));}
       demoRadar={...demoRadar,...next};return send({status:200});
     }
-    if((trial&&['/api/settings/clouds','/api/settings/rainbow'].includes(path.pathname)||['/api/settings/unlock','/api/settings/lock','/api/settings/activity','/api/settings/pin','/api/settings/embed','/api/settings/storage'].includes(path.pathname))&&req.method==='POST') {
+    if((trial&&['/api/settings/clouds','/api/settings/rainbow'].includes(path.pathname)||['/api/settings/unlock','/api/settings/lock','/api/settings/activity','/api/settings/pin','/api/settings/embed','/api/settings/storage','/api/settings/display'].includes(path.pathname))&&req.method==='POST') {
       let body='';for await(const chunk of req)body+=chunk;
       const response=await fetch(origin+req.url,{method:'POST',headers:{'Content-Type':'application/json',...(req.headers.authorization?{Authorization:req.headers.authorization}:{})},body});
       res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(await response.text());

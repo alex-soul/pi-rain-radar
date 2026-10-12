@@ -226,7 +226,7 @@ function paintStatus() {
     paintHistoricalForecast(weatherReplay,displayed.time,comparisonLead,timeZone);
   }else paintWeather(serverReachable ? status?.weather : null);
   paintAstronomy(historyWindow&&displayed?displayed.time*1000:Date.now());
-  paintWeatherTrends({valueHistory:historyWindow?.weatherHistory??status?.weatherHistory,history:trendHistory.read({map:mapIdentity,end:historyWindow?.end??status?.end,hours:localPreferences.lookback,revision:status?.archiveRevision,mode:historyWindow?'archive':'live',fallback:historyWindow?.weatherHistory??status?.weatherHistory}),start:historyWindow?.start??status?.start,end:historyWindow?.end??status?.end,time:displayed?.time,state:historyWindow&&weatherReplay?weatherReplay.weather(displayed?.time):serverReachable?status?.weather:null,historical:!!historyWindow,zone:timeZone});
+  paintWeatherTrends({valueHistory:historyWindow?.weatherHistory??status?.weatherHistory,history:trendHistory.read({map:mapIdentity,end:historyWindow?.end??status?.end,hours:historyWindow?null:localPreferences.lookback,revision:status?.archiveRevision,mode:historyWindow?'archive':'live',fallback:historyWindow?.weatherHistory??status?.weatherHistory}),start:historyWindow?.start??status?.start,end:historyWindow?.end??status?.end,time:displayed?.time,state:historyWindow&&weatherReplay?weatherReplay.weather(displayed?.time):serverReachable?status?.weather:null,historical:!!historyWindow,zone:timeZone});
   paintAttribution();
 
   const sources = Object.fromEntries(['main','overview'].map(role => [role, radarSourceHealth(status?.sources?.[role], serverReachable)]));

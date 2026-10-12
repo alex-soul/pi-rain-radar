@@ -31,7 +31,7 @@ test('arrows use previous distinct observation and suppress repeated, missing, r
 });
 test('Archive arrows do not compare with later playback observations',()=>{
  const h=trendFixture({start,end}).weatherHistory,replay=createWeatherReplay(h),s=weatherSeries(h),time=start+600,state=replay.weather(time),rows=weatherReadings(state,time*1000,{historical:true});
- assert.equal(trendsAt(s,rows,state).temperature,'↑');
+ assert.equal(trendsAt(s,rows,state,time*1000).temperature,''); // Too little evidence; later data must not supply it.
  const gap=start+2400,missing=replay.weather(gap);assert.equal(trendsAt(s,weatherReadings(missing,gap*1000,{historical:true}),missing).temperature,'');
 });
 test('Fahrenheit axis converts OWM exactly once and keeps HA already in chosen units',()=>{

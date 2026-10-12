@@ -5,7 +5,7 @@ import {readFile} from 'node:fs/promises';
 import {moveRelative} from '../public/direct-reorder.js';
 const formatSource = (await readFile(new URL('../public/weather-format.js', import.meta.url), 'utf8')).replaceAll('export ', '');
 const floatingSource = (await readFile(new URL('../public/floating-widget.js', import.meta.url), 'utf8')).replace(/^import[^\n]+\n/gm,'').replace('export function','function');
-const source = 'const shared={initialized:false,units:{}};\n' + formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
+const source = 'const shared={initialized:false,units:{}};\nfunction screenDisplay(){return {...preferences};} function globalDisplay(){return {...preferences};}\n' + formatSource + '\n' + (await readFile(new URL('../public/display.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '');
 test('display preferences suspend idle hiding during interaction and dialogs, and recover on tap', () => {
   const events = {}, nodes = {}, classes = new Set(), content = [{}, {}, {}];
   let timer, open = false, observer, editable = true, saved;
@@ -142,7 +142,7 @@ for (const widget of ['overview', 'rain-forecast']) {
     panel.handlers.pointermove({...down,clientX:120,clientY:170});
     assert.equal(panel.style.left,'40px');assert.equal(panel.style.top,'120px');
     panel.handlers.pointerup();
-    panel.handlers.pointerdown({...down,target:{closest:selector=>selector==='button'?node(widget+'-resize'):null}});
+    panel.handlers.pointerdown({...down,target:{closest:selector=>selector.includes('button')?node(widget+'-resize'):null}});
     panel.handlers.pointermove({...down,clientX:200});
     assert.equal(panel.style.left,'40px');
     panel.handlers.keydown({key:'ArrowRight',target:node(widget+'-resize')});
@@ -196,11 +196,11 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
   cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);assert.equal(directCancelled,1);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
-  assert.deepEqual(saved.readingOrder,['humidity','temperature','dew','wind','direction','feels','gust','visibility','pressure','uv','depression','sun','moon','rainAccumulation']);
+  assert.deepEqual(saved.readingOrder,['feels','temperature','dew','wind','gust','humidity','visibility','pressure','uv','sun','moon','direction','depression','rainAccumulation']);
   assert.deepEqual(saved.readings,['temperature','humidity','dew','wind','direction']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
   editable=true;directCommit('temperature','wind',true);
-  assert.deepEqual(saved.readingOrder.slice(0,4),['humidity','dew','wind','temperature']);
+  assert.deepEqual(saved.readingOrder.slice(0,4),['feels','dew','wind','temperature']);
   assert.deepEqual(saved.readings,['temperature','humidity','dew','wind','direction']);
 });
 

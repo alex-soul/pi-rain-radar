@@ -1,4 +1,4 @@
-import {haFields,weatherFields,defaultUnits,unitChoices} from '../public/weather-policy.js';
+import {haFields,haUnitChoices,weatherFields,defaultUnits,unitChoices} from '../public/weather-policy.js';
 import {atomicJson,exists,readJson} from './history-files.js';
 import {mkdir} from 'node:fs/promises';
 import {dirname} from 'node:path';
@@ -59,6 +59,10 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
         if(input.source===undefined)next.source=haFields.some(field=>next.mappings[field].startsWith('sensor.'))?'ha':'openweather';
       }
       if(input.haCollect===false){for(const field of haFields)if(!['owm','disabled'].includes(next.mappings[field]))next.mappings[field]='owm';next.source='openweather';}
+      if(input.sourceUnits!==undefined){
+        if(!input.sourceUnits||typeof input.sourceUnits!=='object'||Array.isArray(input.sourceUnits)||Object.entries(input.sourceUnits).some(([field,unit])=>!Object.hasOwn(haUnitChoices,field)||!haUnitChoices[field].includes(unit)))return {status:400,error:'Choose supported HA source units.'};
+        next.sourceUnits={...next.sourceUnits,...input.sourceUnits};
+      }
       if(input.mappings&&!next.haCollect&&haFields.some(field=>next.mappings[field].startsWith('sensor.')))return {status:400,error:'Enable Home Assistant weather before choosing its readings.'};
       if(input.units!==undefined){
         if(!input.units||typeof input.units!=='object')return {status:400,error:'Invalid weather units.'};

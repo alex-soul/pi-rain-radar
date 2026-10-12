@@ -60,11 +60,11 @@ export function selectHaReadings(policy,observations,owm,time,{historical=false,
       result[field]={expected:'disabled',source:null,fallback:false,reason:null,unit:null,entity:null,value:null,time:null,receivedAt:null,basis:null,attribution:''};continue;
     }
     const entity=policy.mappings[field]??'owm',expected=!comparison&&policy.source==='ha'&&entity!=='owm'?'ha':'openweather';
-    const unit=haUnitFor(field,policy.units);
+    const unit=policy.sourceUnits?.[field]??haUnitFor(field,policy.units);
     const sample=observations?.[entity];let reason=null;
     if(expected==='ha'){
       if(!sample||sample.reason||!Number.isFinite(sample.value))reason=sample?.reason??'HA reading unavailable';
-      else if(sample.unit!==unit)reason='Unit mismatch. Change the unit in Home Assistant or in Settings to match.';
+      else if(sample.unit!==unit)reason='Unit mismatch. Check the sensor unit in Home Assistant, then reselect the reading.';
       else if(!Number.isFinite(sample.time))reason='HA report timestamp unavailable';
       else if(sample.time>time+(historical?0:300000)||sample.receivedAt>time)reason='HA report timestamp is in the future';
       else if(time-sample.time>600000)reason='HA report is older than ten minutes';

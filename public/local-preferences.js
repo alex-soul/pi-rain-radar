@@ -13,5 +13,5 @@ export function saveLocalPreferences(){
   try{localStorage.setItem('radar-local-ui',JSON.stringify(localPreferences));}catch{}
   window.dispatchEvent(new Event('radar-local-preferences'));
 }
-export function trendWindow(start,end,hours){return {start:lookbacks.includes(hours)?end-hours*3600:start,end};}
+export function trendWindow(start,end,hours,historical=false){return {start:!historical&&lookbacks.includes(hours)?end-hours*3600:start,end};}
 export function captureInWindow(time,start,end){return Number.isFinite(time)&&time>=start&&time<=end;}

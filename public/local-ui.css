@@ -80,8 +80,8 @@
 :root footer .playback #frame-count:is(:hover,[aria-expanded=true]){background:#809c8d22;}
 :root footer .playback #frame-total:hover{background:transparent;}
 /* Keep popup content and the two stepping hit areas separate at every width. */
-#availability-panel{bottom:100px;max-height:calc(100dvh - 180px);overflow-y:auto;}
-@media(max-width:760px){#availability-panel{left:50%;right:auto;width:calc(100vw - 24px);box-sizing:border-box;transform:translateX(-50%);bottom:100px;}}
+#availability-panel{bottom:var(--availability-clearance,60px);max-height:calc(100dvh - 100px);overflow-y:auto;}
+@media(max-width:760px){#availability-panel{left:50%;right:auto;width:calc(100vw - 24px);box-sizing:border-box;transform:translateX(-50%);}}
 
 /* Local editor review: clean visibility lists and consistent options rows. */
 :root :is(#weather-handle,#footer-toggle):is(:hover,:focus-visible,:active){box-shadow:none;background:transparent;filter:none;}
@@ -185,7 +185,8 @@
 :root .weather-reading .reading-value-slot>[id]{width:auto!important;min-width:0!important;max-width:none!important;overflow:visible!important;text-overflow:clip!important;flex:1!important;margin:0!important;font:inherit;text-align:left;}
 :root .weather-reading>.reading-trend{position:static;flex:0 0 5px!important;width:5px!important;min-width:0!important;margin:0 -4px 0 0!important;font:12px Arial;text-align:center;}
 :root .wind-direction>.reading-trend,:root .astro-reading>.reading-trend{display:none!important;}
-:root .weather-reading .reading-value-slot>:is(#weather-direction,#weather-sun,#weather-moon){font-size:calc(12px * var(--dock-font-scale));color:inherit;opacity:1;font-weight:400;}
+:root .weather-reading .reading-value-slot>:is(#weather-direction,#weather-sun,#weather-moon){font:inherit;color:inherit;opacity:1;font-weight:400;}
+:root #weather-dock .weather-reading .reading-value-slot:is([data-reading=sun],[data-reading=moon]){width:calc(101px * var(--dock-font-scale));}
 :root #weather-dock :is(#weather-sun,#weather-moon) small{font:inherit;opacity:1;margin-left:3px;color:inherit;}
 :root .astro-dock-icon{width:18px;font-size:calc(18px * var(--dock-font-scale));text-align:center;flex:none;}
 :root .astro-reading .reading-value-slot{min-width:0;}
@@ -194,4 +195,11 @@
 #ui-editor>.settings-heading h2{font-weight:400;}
 #ui-editor>section{padding:0 20px 20px;}
 #ui-editor fieldset{border:1px solid #78998a66;border-radius:8px;padding:12px;}
+.trend-label{display:flex;flex-direction:column;justify-content:center;}
+.trend-code{font-size:11px;line-height:1.3;opacity:.55;}
+#trend-feedback:empty{display:none;}
+.trend-help{cursor:help;}
+.trend-help:focus-visible{outline:1px solid currentColor;border-radius:3px;}
+.trend-mini-legend{flex-wrap:wrap;}
+.trend-mini-legend>span:first-child{flex:none;overflow:visible;text-overflow:clip;}
 #ui-editor .local-editor-tabs{margin-top:12px;}

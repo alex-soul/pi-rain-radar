@@ -25,7 +25,7 @@ export function setupWidgetResize(panel,{limits,ratio=()=>null,apply,save,cancel
     if(!editable()||e.button!==0)return;
     const edge=e.target.closest('.widget-edge')?.dataset.edge;
     if(e.target===corner||edge){if(edge&&e.pointerType!=='mouse')return;begin(edge??'corner',e);panel.setPointerCapture(e.pointerId);e.preventDefault();e.stopImmediatePropagation();return;}
-    if(e.pointerType!=='touch'||e.target.closest('button,input,select,a'))return;
+    if(e.pointerType!=='touch'||e.target.closest('button,[role="button"],input,select,a'))return;
     points.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(points.size===2){
       begin('pinch',e);const [a,b]=[...points.values()];gesture.distance=Math.max(1,Math.hypot(a.x-b.x,a.y-b.y));gesture.lock=ratio()??{ratio:gesture.start.width/gesture.start.height,extra:0};

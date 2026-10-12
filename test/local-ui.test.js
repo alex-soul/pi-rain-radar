@@ -50,11 +50,12 @@ test('trend history reuses requests while scrubbing and discards cancelled mode/
   const base={map:'a',end:100000,hours:6,revision:1,mode:'live',fallback:{weather:[]}};
   for(let i=0;i<100;i++)assert.equal(client.read(base),base.fallback);
   await Promise.resolve();assert.equal(calls.length,1);
-  client.read({...base,mode:'archive',end:90000});await Promise.resolve();
+  assert.equal(client.read({...base,mode:'archive',end:90000}),base.fallback);await Promise.resolve();assert.equal(calls.length,1);assert.equal(calls[0].args.signal.aborted,true);
+  client.read({...base,end:90000});await Promise.resolve();
   assert.equal(calls[0].args.signal.aborted,true);assert.equal(calls[1].args.signal.aborted,false);
   calls[0].resolve({old:true});await new Promise(setImmediate);assert.equal(ready,0);
   calls[1].resolve({current:true});await new Promise(setImmediate);assert.equal(ready,1);
-  assert.deepEqual(client.read({...base,mode:'archive',end:90000}),{current:true});
+  assert.deepEqual(client.read({...base,end:90000}),{current:true});
   client.read({...base,hours:null});assert.equal(calls[1].args.signal.aborted,true);
   now=60000;client.read(base);await Promise.resolve();assert.equal(calls.length,3);
 });

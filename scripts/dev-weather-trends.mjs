@@ -1,5 +1,6 @@
 import {defaultUnits} from '../public/weather-policy.js';
 export function trendFixture(data){
+ if(!Number.isFinite(data.start)||!Number.isFinite(data.end)||data.end<=data.start)return data;
  const {start,end}=data,weather=[],presentations=[],policies=[];
  const steps=Math.round((end-start)/300);
  for(let i=0;i<=steps;i++){

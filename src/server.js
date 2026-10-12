@@ -9,6 +9,7 @@ import {disableRadarProviders,resolveRadarSources} from '../public/radar-policy.
 import {loadWeatherHistory} from './weather-history.js';
 import {createHomeAssistant} from './home-assistant.js';
 import {createWeatherSettings} from './weather-settings.js';
+import {createDisplaySettings} from './display-settings.js';
 import {createHaWeather} from './ha-weather.js';
 import {createHistoryStore} from './history-store.js';
 import {createStorageStatus} from './storage-status.js';
@@ -50,6 +51,7 @@ const existingKey=async name=>{try{return !!JSON.parse(await readFile(join(direc
 let guardRadarPolicy=async()=>{};
 const weatherSettings=await createWeatherSettings(history,{settingsFile:join(directory,'settings','weather.json'),owmEnabled:await existingKey('openweather'),rainbowEnabled:await existingKey('rainbow'),beforeChange:async next=>{await guardRadarPolicy(next);weather?.suspend();haWeather?.suspend();},onChange:async()=>{await weather?.collectionChanged();await haWeather?.changed();}});
 const savePolicy=async input=>{const result=await weatherSettings.configure(input);if(result.status!==200)throw Error('Could not update collection policy');};
+const displaySettings=await createDisplaySettings(directory,weatherSettings.current().units,{pendingUnits:!weatherSettings.current().initialized});
 const collectionEnabled=source=>weatherSettings.current()[source+'Collect'];
 const ha=await createHomeAssistant(directory,{autoStart:process.env.RADAR_MANUAL_REFRESH!=='1',beforeChange:async()=>{await savePolicy({haCollect:false});if(camera?.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});},onChange:async()=>{await haWeather?.changed();}});
 if(!ha.status().configured)await savePolicy({haCollect:false});
@@ -87,7 +89,7 @@ const releases=await createReleaseCheck(directory,packageInfo.version);
 camera=await createCamera(directory,{store:history,ha,onEvent:diagnostics.record,onPolicy:collectionRecorder(history,'camera-collection'),autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'});
 if(!ha.status().configured&&camera.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});
 clouds=await createClouds(directory,{onPolicy:collectionRecorder(history,'cloud-collection'),store:history,provider:rainbow,settings:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'||process.env.RADAR_DEV_CLOUDS==='1',rainBusy:()=>maps.status().busy||maps.current().radar.status().fetching,onEvent:diagnostics.record});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, clouds, aviation });
+const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, displaySettings, clouds, aviation });
 const observeHealth=createHealthEvents(diagnostics.record);
 const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());
 let maintaining=false,nextMaintenance=0;
@@ -107,6 +109,10 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
+  ['/display-options.js',['display-options.js','text/javascript']],
+  ['/screen-display.js',['screen-display.js','text/javascript']],
+  ['/reading-units.js',['reading-units.js','text/javascript']],
+  ['/chart-explanations.js',['chart-explanations.js','text/javascript']],
   ['/aviation-widget.js',['aviation-widget.js','text/javascript']],
   ['/aviation-model.js',['aviation-model.js','text/javascript']],
   ['/aviation.css',['aviation.css','text/css']],
@@ -259,7 +265,7 @@ const server = createServer(async (req, res) => {
       const hours = new URL(req.url, "http://localhost").searchParams.get('hours') ?? '2';
       if (!['2','4','6'].includes(hours)) { res.writeHead(400); return res.end(); }
       const liveWindow=path==='/healthz'?null:await clouds.augment(radar.status(Number(hours)),Number(hours));
-      if(liveWindow){liveWindow.aviation=aviation.status();liveWindow.aviationHistory=await loadAviationHistory(history,liveWindow.end??Math.floor(Date.now()/1000),Number(hours));}
+      if(liveWindow){liveWindow.displaySettings=displaySettings.current();liveWindow.aviation=aviation.status();liveWindow.aviationHistory=await loadAviationHistory(history,liveWindow.end??Math.floor(Date.now()/1000),Number(hours));}
       res.writeHead(200, {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",

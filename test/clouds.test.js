@@ -6,7 +6,8 @@ import {join} from 'node:path';
 import sharp from 'sharp';
 import {createClouds} from '../src/clouds.js';
 import {createHistoryStore} from '../src/history-store.js';
-import {defaultSettings,makeViews,radarTiles} from '../src/map.js';
+import {defaultSettings,makeViews,radarTiles,hash} from '../src/map.js';
+import {availabilityRows} from '../public/availability-model.js';
 const time=Math.floor(Date.now()/600000)*600000;
 const tile=await sharp({create:{width:256,height:256,channels:4,background:'#ffffff80'}}).png().toBuffer();
 async function fixture(t){
@@ -14,7 +15,7 @@ async function fixture(t){
  const provider={configured:()=>configured,status:()=>({usage:{total:calls}}),cloudSnapshot:async()=>{calls++;return time/1000;},cloudTile:async()=>{calls++;return tile;}};
  const options={store,provider,settings:()=>defaultSettings,now:()=>clock,autoStart:false};let clouds=await createClouds(dir,options);
  t.after(async()=>{await clouds.close();await store.close();await rm(dir,{recursive:true,force:true});});
- return {dir,store,provider,options,get clouds(){return clouds;},get calls(){return calls;},advance:()=>clock+=600000,key:value=>configured=value,async reopen(){await clouds.close();clouds=await createClouds(dir,options);}};
+ return {dir,store,provider,options,get clouds(){return clouds;},get calls(){return calls;},advance:()=>clock+=600000,setTime:value=>clock=value,key:value=>configured=value,async reopen(){await clouds.close();clouds=await createClouds(dir,options);}};
 }
 test('cloud defaults, independent map selection, caching and persistent key-off retain archive',async t=>{
  const f=await fixture(t);assert.equal((await f.clouds.status()).enabled,false);assert.equal((await f.clouds.status()).map,'main');await f.clouds.collect();assert.equal(f.calls,0);
@@ -35,9 +36,21 @@ test('cloud budget errors pause collection truthfully and late frames never borr
  const frame=at.frames.find(x=>x.time===time/1000-300);assert.equal(frame.cloudTime,time/1000-600);
  const archive=await f.clouds.augment({start:time/1000-7200,end:time/1000,frames:[{time:time/1000-300}]},2,{archive:true});assert.equal(archive.frames.find(x=>x.time===time/1000-300).cloudUrl,null);
  const late=await f.clouds.augment({start:time/1000,end:time/1000+2400,frames:[{time:time/1000+2400,url:null}]},2).catch(()=>null);
- // Expired cloud data is not carried beyond its thirty-minute bound.
+ // Expired cloud data is not carried to or beyond its forty-minute bound.
  assert.equal(late.frames.find(x=>x.time===time/1000+2400).cloudUrl,null);
  f.provider.cloudSnapshot=async()=>{throw Object.assign(Error('budget'),{code:'test-limit'});};f.advance();await f.clouds.collect();assert.equal((await f.clouds.status()).state,'budget');
+});
+
+test('cloud health uses the oldest enabled view at exact 40/60 minute boundaries; Live borrowing remains separate',async t=>{
+ const f=await fixture(t),context=hash(makeViews(defaultSettings));await f.clouds.configure({enabled:true,map:'both'});
+ for(const [role,stamp]of [['main',time],['overview',time-600000]])await f.store.publish({kind:'cloud',source:'rainbow',context,role,time:stamp,receivedAt:time,data:{}},tile);
+ f.setTime(time+1799999);assert.equal((await f.clouds.status()).state,'ready');f.setTime(time+1800000);assert.equal((await f.clouds.status()).state,'delayed');f.setTime(time+3000000);assert.equal((await f.clouds.status()).state,'stale');
+ await f.clouds.configure({map:'main'});f.setTime(time+2399999);assert.equal((await f.clouds.status()).state,'ready');f.setTime(time+2400000);assert.equal((await f.clouds.status()).state,'delayed');f.setTime(time+3600000);assert.equal((await f.clouds.status()).state,'stale');f.setTime(time+7200000);assert.equal((await f.clouds.status()).state,'stale');
+ const start=time/1000,end=start+3000,base={start,end,collectionPeriods:[{time:start-600,clouds:true,cloudMap:'main'}],frames:[{time:start-300},{time:start+1800},{time:start+2400},{time:end}]};
+ const live=await f.clouds.augment(base,2);assert.equal(live.frames.find(r=>r.time===start-300).cloudUrl,null);assert.equal(live.frames.find(r=>r.time===start+1800).cloudTime,start);assert.equal(live.frames.find(r=>r.time===end).cloudUrl,null);
+ const archive=await f.clouds.augment(base,2,{archive:true});assert.equal(archive.frames.find(r=>r.time===start+1800).cloudUrl,null);
+ const row=availabilityRows({frames:live.frames,data:live,status:{clouds:{enabled:true}},start,end,archive:false}).find(r=>r.label==='Clouds');assert.equal(row.segments.find(r=>r.time===start+1800).health,'warning');assert.equal(row.segments.find(r=>r.time===start+2400).health,'error');assert.equal(row.segments.at(-1).health,'pending');
+ f.provider.cloudSnapshot=async()=>{throw Error('offline');};await f.clouds.configure({map:'main'});await f.clouds.collect();assert.equal((await f.clouds.status()).state,'error');await f.clouds.configure({enabled:false});assert.equal((await f.clouds.status()).state,'disabled');
 });
 
 test('delayed provider snapshot finishes successfully without inventing newer cloud frames',async t=>{

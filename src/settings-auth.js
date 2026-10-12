@@ -102,7 +102,7 @@ export function createSettingsAuth(directory, now = Date.now) {
   };
 }
 
-export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, clouds, aviation } = {}) {
+export function settingsRoutes(auth, weather = null, maps = null, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, displaySettings, clouds, aviation } = {}) {
   return async (req, res, path) => {
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -138,7 +138,7 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
         let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024)return send(413,{});}
         let input;try{input=JSON.parse(body);}catch{return send(400,{});}
         if(!input?.units||typeof input.units!=='object')return send(400,{});
-        const result=await weatherSettings.initialize(input.units);return send(result.status,result);
+        const result=await weatherSettings.initialize(input.units);if(result.status===200)await displaySettings?.adoptUnits(result.units);return send(result.status,result);
       }
       if(['/api/settings/home-assistant','/api/settings/home-assistant/entities','/api/settings/weather'].includes(path)){
         if(!await auth.authorized(token))return send(401,{});
@@ -165,6 +165,14 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
           }
           return send(200,await ha.configure(input));
         }catch(e){return send(e.code==='HA_BUSY'?409:400,{error:haMessages[e.code]??'Settings could not be saved.'});}
+      }
+      if(path==='/api/settings/display'){
+        if(!await auth.authorized(token))return send(401,{});if(!displaySettings)return send(503,{});
+        if(req.method==='GET')return send(200,displaySettings.current());
+        if(req.method!=='POST')return send(405,{});
+        let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024)return send(413,{});}
+        let input;try{input=JSON.parse(body);}catch{return send(400,{});}
+        const result=await displaySettings.configure(input);return send(result.status,result);
       }
       if(path==='/api/settings/aviation'){
         if(!await auth.authorized(token))return send(401,{});if(!aviation)return send(503,{});

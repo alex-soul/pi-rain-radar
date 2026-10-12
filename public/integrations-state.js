@@ -9,7 +9,7 @@ export function bindIntegrationSettings(edit,transport){canEdit=edit;request=tra
 export function acceptIntegrationStatus(status){
   if(!status?.weatherPolicy)return;
   const before=JSON.stringify(shared);
-  Object.assign(shared,status.weatherPolicy,{ha:!!status.homeAssistant?.configured,haUrl:status.homeAssistant?.url??'',haHealth:status.homeAssistant,owm:!!status.weather?.configured,weather:status.weather,camera:status.camera?.configured?status.camera:null,cameraEnabled:!!status.camera?.enabled,presentation:status.weather?.presentation,radarHealth:status.sources});
+  Object.assign(shared,status.weatherPolicy,{displaySettings:status.displaySettings??shared.displaySettings,ha:!!status.homeAssistant?.configured,haUrl:status.homeAssistant?.url??'',haHealth:status.homeAssistant,owm:!!status.weather?.configured,weather:status.weather,camera:status.camera?.configured?status.camera:null,cameraEnabled:!!status.camera?.enabled,presentation:status.weather?.presentation,radarHealth:status.sources});
   if(before!==JSON.stringify(shared)){window.dispatchEvent(new Event('integration-change'));window.dispatchEvent(new Event('radar-weather-preferences'));}
   if(!shared.initialized&&!initializing){
     initializing=true;
@@ -26,7 +26,8 @@ export async function settingsRequest(path,data){
   const response=await request(path,data),value=await response.json();if(!response.ok)throw Error(value.error??'Could not save settings.');return value;
 }
 export async function change(input){
-  if(input.action==='ha')await settingsRequest('/home-assistant',{url:input.url,token:input.token});
+  if(input.action==='display')await settingsRequest('/display',{values:input.values});
+  else if(input.action==='ha')await settingsRequest('/home-assistant',{url:input.url,token:input.token});
   else if(input.action==='remove-ha')await settingsRequest('/home-assistant',{remove:true});
   else if(input.action==='delete-camera')await settingsRequest('/camera',{remove:true});
   else if(input.action==='settings'){

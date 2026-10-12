@@ -1,12 +1,13 @@
 import {windUnits} from './weather-format.js';
 import {createWeatherReplay} from './history-weather-model.js';
 import {weatherReadings} from './weather-readings.js';
+const haDependent=row=>row.source==='ha'||row.inputs?.some(input=>input.source==='ha');
 
 export function observationKey(row,state){
  const policy=state?.presentation?.policy??state?.policy;
  if(row.inputs)return row.inputs.map(r=>observationKey(r,state)).join('|');
- if(row.id==='rainAccumulation')return JSON.stringify([row.source,row.expected,row.unit,row.observedUnit,row.entity,row.resetAt??null]);
- return JSON.stringify([row.source,row.expected,row.unit,policy?.mappings?.[row.id]??'owm']);
+ if(row.id==='rainAccumulation')return JSON.stringify([row.source,row.expected,row.observedUnit,row.entity,row.resetAt??null]);
+ return JSON.stringify([row.source,row.expected,row.observedUnit??row.unit,policy?.mappings?.[row.id]??'owm']);
 }
 export function observationTime(row){return row.inputs?Math.max(...row.inputs.map(r=>r.time??0)):row.time;}
 export function readingTrend(previous,current){
@@ -29,22 +30,37 @@ export function weatherSeries(history={},preferences={},gustMinutes=60){
  }
  return series;
 }
-export function trendsAt(series,rows,state){
- return Object.fromEntries(Object.entries(rows).map(([id,row])=>{
-  const current={row,key:observationKey(row,state)},time=observationTime(row),list=(series[id]??[]).filter(p=>p.at*1000<=time);
-  // Keep a missing or source-switch event as the previous entry; never skip it.
-  while(list.length&&observationTime(list.at(-1).row)===time&&list.at(-1).key===current.key)list.pop();
-  return [id,readingTrend(list.at(-1),current)];
- }));
+export const trendNoise={temperature:.3,feels:.3,dew:.3,depression:.3,wind:1,gust:1,humidity:2,pressure:.5,uv:.2,visibility:200,rainAccumulation:.2};
+export function hourTrend(points,row,state,reference=observationTime(row)){
+ const value=r=>Object.hasOwn(r,'canonicalValue')?r.canonicalValue:r.value;
+ if(!Number.isFinite(reference)||!row.source||row.retained||!Number.isFinite(value(row))||row.id==='direction')return '';
+ const key=observationKey(row,state),samples=[],seen=new Set(),current={row,key,at:reference/1000};let newer=null,newerValue=null;
+ for(const point of [current,...(points??[]).filter(p=>p.at*1000<=reference).toReversed()]){
+  const r=point.row,t=observationTime(r);
+  if(point.key!==key||!r.source||r.retained||!Number.isFinite(value(r)))break;
+  if(!Number.isFinite(t))break;
+  if(t>reference)continue;
+  if(t<reference-3600000)break;
+  if(seen.has(t))continue;
+  if(newer!==null&&(newer-t>=1800000||haDependent(r)&&newer-t>600000))break;
+  if(row.id==='rainAccumulation'&&newerValue!==null&&value(r)>newerValue)break;
+  samples.push({x:(t-reference)/3600000,y:value(r)});seen.add(t);newer=t;newerValue=value(r);
+ }
+ if(samples.length<4||Math.abs(samples[0].x-samples.at(-1).x)<.5)return '';
+ const mx=samples.reduce((s,p)=>s+p.x,0)/samples.length,my=samples.reduce((s,p)=>s+p.y,0)/samples.length;
+ const denominator=samples.reduce((s,p)=>s+(p.x-mx)**2,0),slope=samples.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0)/denominator;
+ return Math.abs(slope)<(trendNoise[row.id]??Infinity)?'':slope>0?'↑':'↓';
 }
+export function trendsAt(series,rows,state,reference){return Object.fromEntries(Object.entries(rows).map(([id,row])=>[id,hourTrend(series[id],row,state,reference??observationTime(row))]));}
 export function chartSegments(points,start,end,unit){
  const segments=[];let line=[],previous=null;
  for(const p of points??[]){
   const r=p.row,t=observationTime(r)/1000;
   const valid=Number.isFinite(r.value)&&r.source&&!r.retained&&r.unit===unit&&t>=start&&t<=end;
-  if(!valid||previous&&(p.key!==previous.key||t-observationTime(previous.row)/1000>=1800||r.source==='ha'&&t-observationTime(previous.row)/1000>600||r.id==='rainAccumulation'&&r.value<previous.row.value)) {if(line.length)segments.push(line);line=[];}
+  if(!valid||previous&&(p.key!==previous.key||t-observationTime(previous.row)/1000>=1800||haDependent(r)&&t-observationTime(previous.row)/1000>600||r.id==='rainAccumulation'&&r.value<previous.row.value)) {if(line.length)segments.push(line);line=[];}
   if(valid){let value=['wind','gust'].includes(r.id)&&r.source==='openweather'?r.value*(windUnits[unit]??1):['temperature','dew'].includes(r.id)&&r.source==='openweather'&&unit==='°F'?r.value*1.8+32:r.value;if(r.source==='openweather'&&r.id==='visibility')value=Math.min(value,10000)/(unit==='mi'?1609.344:1000);
    if(r.source==='openweather'&&r.id==='pressure')value*=unit==='inHg'?0.0295299830714:unit==='mmHg'?0.750061683:1;
+   if(Object.hasOwn(r,'displayValue'))value=r.displayValue;
    line.push({time:t,value,source:r.sourceLabel});}
   previous=valid?p:null;
  }

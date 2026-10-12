@@ -518,7 +518,7 @@ footer .eyebrow {
 :is(#rain-forecast, #stats, #camera, #weather-trends) { display: flex; flex-direction: column; height: 138px; position: absolute; width: min(410px, calc(100vw - 16px)); top: 230px; left: 18px; border: 1px solid #a6bfb5; border-radius: 10px; overflow: hidden; background: #edf4ee; color: #284d47; box-shadow: 0 4px 18px #0003; }
 :is(#rain-forecast, #stats, #camera, #weather-trends)[hidden] { display: none; }
 :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle):focus-visible, :is(#rain-forecast, #stats, #camera, #weather-trends):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
-.minute-content { padding: 14px 20px 24px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.minute-content { padding: 14px 20px 8px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #minute-chart { display: block; width: 100%; flex: 1; min-height: 0; }
 .minute-grid { stroke: currentColor; stroke-opacity: .12; fill: none; }
 .minute-axis { margin-top: 8px; flex-shrink: 0; display: flex; justify-content: space-between; font-size: 9px; opacity: .75; font-variant-numeric: tabular-nums; }

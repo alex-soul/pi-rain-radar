@@ -4,12 +4,7 @@ import {weatherPreferences} from './display.js';
 import {setupFloatingWidget} from './floating-widget.js';
 const $=id=>document.getElementById(id),panel=$('astronomy'),zone=document.querySelector('meta[name="time-zone"]').content;
 const calculate=createAstronomy(Number(document.querySelector('meta[name="latitude"]').content),Number(document.querySelector('meta[name="longitude"]').content));
-const modes={sun:'event',moon:'event'};
-try{const saved=JSON.parse(localStorage.getItem('radar-astronomy-dock'));for(const id of ['sun','moon'])if(['position','event'].includes(saved?.[id]))modes[id]=saved[id];}catch{}
 let lastTime=Date.now(),lastKey='',data=null,moonKey='';
-for(const id of ['sun','moon']){
- const select=$('astro-'+id+'-mode');select.value=modes[id];select.addEventListener('change',()=>{if(document.body.classList.contains('screen-locked'))return;modes[id]=select.value;try{localStorage.setItem('radar-astronomy-dock',JSON.stringify(modes));}catch{}lastKey='';paintAstronomy(lastTime);window.dispatchEvent(new Event('radar-display-change'));});
-}
 const stamp=t=>t===null?'—':new Intl.DateTimeFormat('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit'}).format(new Date(t));
 const dateStamp=t=>t===null?'No event in the surrounding days':new Intl.DateTimeFormat('en-GB',{timeZone:zone,day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'short'}).format(new Date(t));
 function drawMoon(moon){
@@ -33,7 +28,7 @@ export function paintAstronomy(time){
   row.setAttribute('aria-label',`${label}: ${position}, ${state}. Rise ${dateStamp(value.rise)}. Highest ${dateStamp(value.transit)}. Set ${dateStamp(value.set)}.`);
   const events=row.querySelector('.astro-events');events.replaceChildren(...[['↑','rise'],['⌃','transit'],['↓','set']].map(([symbol,event])=>{const e=document.createElement('span');e.textContent=symbol+' '+stamp(value[event]);e.title=label+' '+(event==='transit'?'highest point':event)+' · '+dateStamp(value[event]);return e;}));
   const holder=$('astro-'+id+'-reading');holder.hidden=!weatherPreferences().readings.includes(id);const dockValue=$('weather-'+id),number=document.createElement('span'),unit=document.createElement('small');
-  if(modes[id]==='event'){number.textContent=value.next?stamp(value.next.time):'No event';unit.className='astro-event-unit';unit.textContent=value.next?{rise:'r',transit:'p',set:'s'}[value.next.type]:'';unit.title=value.next?{rise:'Rise',transit:'Peak',set:'Set'}[value.next.type]:'';}
+  if(weatherPreferences()[id+'Mode']==='event'){number.textContent=value.next?stamp(value.next.time):'No event';unit.className='astro-event-unit';unit.textContent=value.next?{rise:'r',transit:'p',set:'s'}[value.next.type]:'';unit.title=value.next?{rise:'Rise',transit:'Peak',set:'Set'}[value.next.type]:'';}
   else{number.textContent=Math.round(value.altitude)+'°';unit.textContent=bearing(value.azimuth);}
   dockValue.replaceChildren(number,unit);
   holder.setAttribute('aria-label',row.getAttribute('aria-label')+' · Calculated locally'+(id==='moon'?` · ${Math.round(value.illumination.fraction*100)}% illuminated`:''));

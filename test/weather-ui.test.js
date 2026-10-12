@@ -13,7 +13,7 @@ const state=()=>({configured:true,fetchedAt:now,forecastFetchedAt:now,failures:0
 function fixture(zone='Europe/London') {
   const nodes=new Map();let writes=0,minutes=60;
   const prefs={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa',directionFormat:'compass',directionConvention:'flow'};
-  function node(){return {attributes:{},children:[],style:{},setAttribute(k,v){writes++;this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},getAttribute(){return 'true';},closest(){return this;},append(n){this.children.push(n);},replaceChildren(...children){writes++;this.children=children;}};}
+  function node(){return {dataset:{},attributes:{},children:[],style:{},setAttribute(k,v){writes++;this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},getAttribute(){return 'true';},closest(){return this;},append(n){this.children.push(n);},replaceChildren(...children){writes++;this.children=children;}};}
   const document={querySelectorAll:()=>[],querySelector:()=>({content:zone}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
   const c=vm.createContext({dockText,...format,...readings,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
   return {nodes,prefs,paint:c.paintWeather,writes:()=>writes,setMinutes:v=>minutes=v};
@@ -42,7 +42,7 @@ test('Rain forecast uses baselines for zero and missing minutes, and replaces fa
 test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   assert.equal(f.nodes.get('weather-visibility').textContent,'0.0');assert.equal(f.nodes.get('weather-uv').textContent,'0.0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
-  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+name+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
+  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+(id==='depression'?'Dew point depression':name)+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
   assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
   const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);
   for(const convention of ['flow','meteorological'])for(const value of [0,0.1,45,179.9,180,245.25,359.9,360]) {

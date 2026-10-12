@@ -20,12 +20,13 @@ export function cloudHandleHealth(state, reachable = true, now = Date.now()) {
   if (!state?.enabled) return ['unconfigured', 'Disabled'];
   const roles = state.map === 'both' ? ['main', 'overview'] : [state.map ?? 'main'];
   const times = roles.map(role => state.latest?.[role]);
-  if (times.some(time => Number.isFinite(time) && time <= now - 1800000)) return ['error', 'Cloud data is stale'];
+  if (times.some(time => Number.isFinite(time) && time <= now - 3600000)) return ['error', 'Cloud data is stale'];
   if (state.state === 'budget') return ['warning', 'Cloud budget paused'];
   if (state.error || state.state === 'error') return ['error', state.error || 'Cloud acquisition unavailable'];
   if (times.some(time => !Number.isFinite(time))) {
     return state.lastSuccess ? ['error', 'No usable cloud data'] : ['warning', 'Waiting for first cloud acquisition'];
   }
+  if (times.some(time => time <= now - 2400000)) return ['warning', 'Cloud imagery is delayed'];
   return ['ready', 'Connected'];
 }
 

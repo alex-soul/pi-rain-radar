@@ -25,8 +25,11 @@ test('handle tolerates ordinary radar/cloud delays but preserves failures and ex
  const cloud={enabled:true,map:'both',state:'delayed',lastSuccess:now-60000,latest:{main:now-1440000,overview:now-1450000}};
  assert.equal(radarSourceHealth(radar,true,now)[0],'ready');
  assert.equal(cloudHandleHealth(cloud,true,now)[0],'ready');
- assert.equal(cloudHandleHealth({...cloud,latest:{...cloud.latest,overview:now-1800000}},true,now)[0],'error');
- assert.equal(cloudHandleHealth({...cloud,latest:{...cloud.latest,overview:now-1799999}},true,now)[0],'ready');
+ assert.equal(cloudHandleHealth({...cloud,latest:{...cloud.latest,overview:now-3600000}},true,now)[0],'error');
+ assert.equal(cloudHandleHealth({...cloud,latest:{...cloud.latest,overview:now-3599999}},true,now)[0],'warning');
+ assert.equal(cloudHandleHealth({...cloud,latest:{...cloud.latest,overview:now-2400000}},true,now)[0],'warning');
+ assert.equal(cloudHandleHealth({...cloud,latest:{...cloud.latest,overview:now-2399999}},true,now)[0],'ready');
+ assert.equal(cloudHandleHealth({...cloud,map:'main',latest:{main:now,overview:now-3600000}},true,now)[0],'ready');
  assert.equal(radarSourceHealth({...radar,time:now/1000-1800},true,now)[0],'error');
  assert.equal(cloudHandleHealth({...cloud,state:'error',error:'Failed'},true,now)[0],'error');
  assert.equal(cloudHandleHealth({...cloud,state:'budget'},true,now)[0],'warning');

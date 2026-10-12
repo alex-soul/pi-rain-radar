@@ -23,7 +23,7 @@ const fetchedStamp = time => {
   return `${part({day:'numeric'})} ${part({month:'short'}).slice(0,3)} ${part({year:'numeric'})} ${stamp(time/1000)}`;
 };
 export function paintWeather(state, now = Date.now(), {historical=false,operational=state}={}) {
-  const livePreferences=weatherPreferences(),prefs = {...livePreferences,...(historical?state?.units:{}),rainUnit:livePreferences.rainUnit};
+  const prefs = weatherPreferences();
   const nextSignature = JSON.stringify([state?.units,state?.presentation,historical,historical?Math.floor(Date.now()/60000):null,operational, state?.data?.current?.time,operational?.fetchedAt,operational?.error,operational?.failures,prefs,state?.fetchedAt,state?.forecastFetchedAt,state?.forecastError,Math.floor(now/60000),state?.configured,state?.error,state?.failures,state?.fetching,state?.gust,gustCacheMinutes()]);
   if (signature === nextSignature) return;
   signature = nextSignature;
@@ -34,7 +34,7 @@ export function paintWeather(state, now = Date.now(), {historical=false,operatio
     node.textContent=dockText(row);node.setAttribute('data-cached',String(row.text!=='—'&&row.retained));
     holder.setAttribute('data-source',row.source??'gap');holder.setAttribute('data-expected-source',row.expected);
     holder.setAttribute('data-attribution',row.attribution);
-    holder.title=readingExplanation(row,fetchedStamp);holder.setAttribute('aria-label',holder.title);
+    holder.title=readingExplanation(row,fetchedStamp);holder.dataset.readingExplanation=holder.title;holder.setAttribute('aria-label',holder.title);
   }
   const direction=rows.direction.value;
   const angle=windBearing(direction,prefs.directionConvention);

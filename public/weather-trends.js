@@ -2,7 +2,9 @@ import {editIcon,setupAffordances} from './local-ui.js';
 import {localPreferences,trendWindow,captureInWindow} from './local-preferences.js';
 import {setupFloatingWidget} from './floating-widget.js';
 import {weatherPreferences,gustCacheMinutes} from './display.js';
-import {weatherReadings} from './weather-readings.js';
+import {weatherReadings,readingExplanation} from './weather-readings.js';
+import {chartCodes,chartNames} from './weather-format.js';
+import {chartExplanation} from './chart-explanations.js';
 import {weatherSeries,trendsAt,chartSegments,chartExtrema,gridInterval,smoothPath,trendRange,chartCredits} from './weather-trends-model.js';
 import {createWeatherReplay} from './history-weather-model.js';
 import {formatTime} from './time.js';
@@ -10,24 +12,33 @@ const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 // Stacked charts may need the full screen height; the shared resizer keeps it within the viewport.
 const mainWidget=setupFloatingWidget({id:'weather-trends',storageKey:'radar-weather-trends',width:440,height:220,minWidth:180,minHeight:150,maxHeight:Infinity,startY:200});
 let valueHistoryRef=null,valueReplay=createWeatherReplay();
+let arrowHistoryRef=null,arrowPrefs='',arrowSeries={};
 let latestInput=null,replay=createWeatherReplay(),cache='',series={},chartKey='',historyRef=null,prefKey='',credits={openweather:false,other:''};
+for(const [id,code]of Object.entries(chartCodes)){
+ const legend=$('trend-value-'+id).parentElement,label=legend.querySelector('span:first-child'),plot=legend.parentElement;label.textContent=code;chartExplanation(label,id==='depression'?'Dew point depression (T−Td)':chartNames[id]);
+ new ResizeObserver(()=>{plot.style.minHeight=Math.max(44,Math.ceil(legend.getBoundingClientRect().height)+12)+'px';if(latestInput)paintWeatherTrends(latestInput);}).observe(legend);
+}
 export const weatherTrendCredits=()=>credits;
 export function paintWeatherTrends(input){
  latestInput=input;const {history,time,state,historical=false,zone}=input;
- const {start,end}=trendWindow(input.start,input.end,localPreferences.lookback);
+ const {start,end}=trendWindow(input.start,input.end,localPreferences.lookback,historical);
+ const lookback=document.getElementById('trends-lookback'),lookbackNote=document.getElementById('trends-lookback-note');if(lookback)lookback.disabled=historical;if(lookbackNote){lookbackNote.textContent=historical?'Archive follows the selected playback window.':'';lookbackNote.hidden=!historical;}
  const prefs=weatherPreferences(),gust=gustCacheMinutes(),nextPrefs=JSON.stringify([prefs,gust]);
  if(history!==historyRef||nextPrefs!==prefKey){historyRef=history;prefKey=nextPrefs;cache=JSON.stringify([history,nextPrefs]);series=weatherSeries(history,prefs,gust);replay=createWeatherReplay(history);}
  const now=historical?time*1000:Date.now(),rows=weatherReadings(state,now,{historical,preferences:prefs,gustMinutes:gust});
- const trends=trendsAt(series,rows,state);
+ const arrowHistory=input.valueHistory??history;
+ if(arrowHistory!==arrowHistoryRef||arrowPrefs!==nextPrefs){arrowHistoryRef=arrowHistory;arrowPrefs=nextPrefs;arrowSeries=arrowHistory===history?series:weatherSeries(arrowHistory,prefs,gust);}
+ const trends=trendsAt(arrowSeries,rows,state,historical?time*1000:undefined);
  for(const [id,arrow] of Object.entries(trends)){
   const holder=$('weather-'+id)?.closest('.weather-reading');if(!holder)continue;
   let marker=holder.querySelector('.reading-trend');if(!marker){marker=document.createElement('span');marker.className='reading-trend';marker.setAttribute('aria-hidden','true');holder.prepend(marker);}
-  marker.textContent=arrow;marker.title=arrow==='↑'?'Higher than the previous observation':arrow==='↓'?'Lower than the previous observation':'';
+  marker.textContent=arrow;marker.title=arrow==='↑'?'Rising over the preceding hour':arrow==='↓'?'Falling over the preceding hour':'';
+  const text=(holder.dataset.readingExplanation??holder.getAttribute('aria-label')??'')+(arrow?' · '+marker.title:'');if(holder.getAttribute('aria-label')!==text)holder.setAttribute('aria-label',text);holder.removeAttribute('title');
  }
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return;
- const fields=[["temperature", "Temperature", "temp"], ["humidity", "Humidity", "rh"], ["dew", "Dew point", "dew"], ["wind", "Wind", "wind"], ["depression", "T−Td", "depression"], ["visibility", "Visibility", "visibility"], ["pressure", "Pressure", "pressure"], ["uv", "UV index", "uv"], ["gust", "Wind gusts", "gust"], ["rainAccumulation", "Rain accumulation", "rain"]];
+ const fields=[["temperature", "Temperature", "temp"], ["humidity", "Humidity", "rh"], ["dew", "Dew point", "dew"], ["wind", "Wind", "wind"], ["depression", "Dew point depression", "depression"], ["visibility", "Visibility", "visibility"], ["pressure", "Pressure", "pressure"], ["uv", "UV index", "uv"], ["gust", "Wind gusts", "gust"], ["rainAccumulation", "Rain accumulation", "rain"]];
  const sizes=fields.map(([id])=>{const e=$('trend-'+id);return [e.clientWidth,e.clientHeight];});
- const renderKey=JSON.stringify([cache,start,end,fields.map(([id])=>rows[id].unit),zone,sizes]);
+ const renderKey=JSON.stringify([cache,start,end,historical,fields.map(([id])=>rows[id].unit),zone,sizes]);
  const stamp=t=>formatTime(t,{hour:'2-digit',minute:'2-digit'},zone);
  if(chartKey!==renderKey){chartKey=renderKey;
   credits=chartCredits(series,fields.filter(([id])=>!$('trend-'+id).closest('.trend-mini').hidden).map(([id])=>id),start,end);
@@ -36,6 +47,7 @@ export function paintWeatherTrends(input){
   for(const [i,[id,label,color]]of fields.entries()){
    const svg=$('trend-'+id),[width,height]=sizes[i];if(width<5||height<12)continue;
    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+   svg.dataset.windowStart=String(start);svg.dataset.windowEnd=String(end);
    const unit=rows[id].unit,top=6,bottom=height-4;
    const [min,max]=trendRange(segments[id].flat().map(p=>p.value),id,unit),x=t=>1+(t-start)/(end-start)*(width-2),y=v=>bottom-(v-min)/(max-min)*(bottom-top),nodes=[];
    const add=(tag,attrs,text)=>{const e=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;nodes.push(e);return e;};
@@ -54,16 +66,18 @@ export function paintWeatherTrends(input){
    }
    const currentValue=$('trend-value-'+id),legend=currentValue.parentElement;
    let range=legend.querySelector('.trend-range');if(!range){range=document.createElement('span');range.className='trend-range';legend.insertBefore(range,currentValue);}
-   range.textContent=`(${values.join(' · ')})`;range.title=captions.join('\n');range.setAttribute('aria-label',captions.join('. '));
+   range.textContent=`(${values.join(' · ')})`;chartExplanation(range,captions.join('\n'));
+   const labelNode=legend.querySelector('span:first-child');labelNode.textContent=chartCodes[id];chartExplanation(labelNode,id==='depression'?'Dew point depression (T−Td)':label);
    add('line',{id:'trend-cursor-'+id,class:'trend-cursor',y1:top,y2:bottom});svg.replaceChildren(...nodes);
-   svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)}. ${captions.join('. ')}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
+   svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)} (${(end-start)/3600} h). ${captions.join('. ')}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
   }
  }
  const valueHistory=input.valueHistory??history;if(valueHistory!==valueHistoryRef){valueHistoryRef=valueHistory;valueReplay=createWeatherReplay(valueHistory);}
- const selectedTime=time??end,selected=weatherReadings(valueReplay.weather(selectedTime),selectedTime*1000,{historical:true,preferences:prefs,gustMinutes:gust});
+ const selectedTime=time??end,selected=historical?weatherReadings(valueReplay.weather(selectedTime),selectedTime*1000,{historical:true,preferences:prefs,gustMinutes:gust}):rows;
  for(const [i,[id]]of fields.entries()){
   const cursor=$('trend-cursor-'+id),x=1+(selectedTime-start)/(end-start)*(sizes[i][0]-2);if(cursor){cursor.style.display=captureInWindow(selectedTime,start,end)?'':'none';cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);}
-  $('trend-value-'+id).textContent=selected[id].text+(['wind','gust','visibility','pressure','rainAccumulation'].includes(id)?' '+selected[id].unit:'');
+  const value=$('trend-value-'+id);value.textContent=selected[id].text+(['wind','gust','visibility','pressure','rainAccumulation'].includes(id)?' '+selected[id].unit:'');
+  chartExplanation(value,(historical?'At capture '+stamp(selectedTime):'Latest current reading')+' · '+readingExplanation(selected[id],t=>formatTime(t/1000,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'},zone)));
  }
 }
 new ResizeObserver(()=>{if(latestInput)paintWeatherTrends(latestInput);}).observe($('weather-trends'));
@@ -72,6 +86,7 @@ new ResizeObserver(()=>{if(latestInput)paintWeatherTrends(latestInput);}).observ
 
 const controls = [{"id": "temperature", "label": "Temperature", "visible": true}, {"id": "humidity", "label": "Humidity", "visible": true}, {"id": "dew", "label": "Dew point", "visible": true}, {"id": "wind", "label": "Wind", "visible": false}, {"id": "depression", "label": "T−Td", "visible": false}, {"id": "visibility", "label": "Visibility", "visible": false}, {"id": "pressure", "label": "Pressure", "visible": false}, {"id": "uv", "label": "UV index", "visible": false}, {"id": "gust", "label": "Wind gusts", "visible": false}, {"id": "rainAccumulation", "label": "Rain accumulation", "visible": false}];
 const key = 'radar-weather-charts';
+for(const control of controls)control.label=chartNames[control.id];
 let layout = controls.map(({ id, visible = true }) => ({ id, visible }));
 try {
   const saved = JSON.parse(localStorage.getItem(key));
@@ -128,7 +143,7 @@ export function setupTrendEditor(onChange) {
   let drag = null;
   function save() {
     apply();onChange();
-    try { localStorage.setItem(key, JSON.stringify(layout)); feedback.textContent = 'Saved on this screen'; }
+    try { localStorage.setItem(key, JSON.stringify(layout)); feedback.textContent = ''; }
     catch { feedback.textContent = 'Applied for now; browser storage is unavailable.'; }
   }
   window.addEventListener('radar-hide-chart',e=>{if(!canEdit())return;const row=layout.find(c=>c.id===e.detail);if(row){row.visible=false;save();render();}});
@@ -140,7 +155,7 @@ export function setupTrendEditor(onChange) {
       const handle = document.createElement('button');
       handle.type = 'button'; handle.className = 'control-handle'; handle.textContent = '⠿';
       handle.setAttribute('aria-label', `Move ${label}. Drag or use up and down arrow keys.`);
-      const name = document.createElement('span'); name.textContent = label;
+      const name = document.createElement('span');name.className='trend-label';const full=document.createElement('span');full.textContent=chartNames[id];const code=document.createElement('small');code.className='trend-code';code.textContent=chartCodes[id];name.append(full,code);
       const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = visible;
       toggle.setAttribute('role', 'switch'); toggle.setAttribute('aria-label', `Show ${label} chart`);
       toggle.className = 'control-switch';

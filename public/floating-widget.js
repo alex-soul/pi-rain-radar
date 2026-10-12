@@ -51,7 +51,7 @@ close.addEventListener('click',()=>{if(document.body.classList.contains('screen-
 let drag = null;
 handle.addEventListener("pointerdown", event => {
   if (event.button !== 0 || !event.isPrimary || document.body.classList.contains('screen-locked')) return;
-  if (event.target.closest("button")&&!event.target.closest('[data-widget-drag]')) return;
+  if (event.target.closest('button,[role="button"],input,select,a')&&!event.target.closest('[data-widget-drag]')) return;
   if(event.target.closest('[data-widget-scroll]'))return;
   const plots=event.target.closest("#trend-plots");if(plots&&plots.scrollHeight>plots.clientHeight)return;
   panel.focus({ preventScroll: true });

@@ -14,12 +14,12 @@ export async function createClouds(directory,{store,provider,settings,now=Date.n
  await onPolicy({clouds:config.enabled,cloudMap:config.map});
  let changing=false,busy=false,revision=0,nextAt=now(),lastSuccess=null,error=null,closed=false,operation=null;
  const context=()=>hash(makeViews(settings()));
- async function rows(end,hours){return historyRows(store,{kind:'cloud',source:'rainbow',context:context(),start:Math.max(0,(end-hours*3600-1800)*1000),end:end*1000});}
+ async function rows(end,hours){return historyRows(store,{kind:'cloud',source:'rainbow',context:context(),start:Math.max(0,(end-hours*3600-2400)*1000),end:end*1000});}
  async function status(){
-  const recent=await rows(Math.floor(now()/1000),1),roles=cloudRoles(config.map);
-  const latest=Object.fromEntries(roles.map(role=>[role,recent.findLast(r=>r.role===role)?.time??null]));
+  const roles=cloudRoles(config.map),recent=await Promise.all(roles.map(role=>store.latest({kind:'cloud',source:'rainbow',context:context(),role,start:Math.max(0,now()-86400000),end:now()})));
+  const latest=Object.fromEntries(roles.map((role,i)=>[role,recent[i]?.time??null]));
   const times=Object.values(latest),oldest=times.every(Number.isFinite)?Math.min(...times):null;
-  const state=!config.enabled?'disabled':!provider.configured()?'disabled':error?.code==='limit'||error?.code==='test-limit'?'budget':error?'error':oldest===null?'waiting':now()-oldest>1800000?'stale':now()-oldest>1200000?'delayed':'ready';
+  const state=!config.enabled?'disabled':!provider.configured()?'disabled':error?.code==='limit'||error?.code==='test-limit'?'budget':error?'error':oldest===null?'waiting':now()-oldest>=3600000?'stale':now()-oldest>=2400000?'delayed':'ready';
   return {...config,configured:provider.configured(),state,collecting:busy,nextAt:config.enabled?nextAt:null,lastSuccess,latest,error:error?.message??null,usage:provider.status().usage};
  }
  async function configure(input){
@@ -68,7 +68,7 @@ export async function createClouds(directory,{store,provider,settings,now=Date.n
    if(!frames.has(f.time))frames.set(f.time,{time:f.time,url:null,overviewUrl:null,expectedSources:{main:'disabled',overview:'disabled'}});
   }
   const all=[...frames.values()].sort((a,b)=>a.time-b.time).map(f=>{
-   for(const role of ['main','overview']){const key=role==='main'?'url':'overviewUrl',row=selected.includes(role)?clouds.frames.findLast(c=>c.time<=f.time&&(archive?c.time===f.time:c.time>f.time-1800)&&c[key]):null;f[role==='main'?'cloudUrl':'overviewCloudUrl']=row?.[key]??null;f[role==='main'?'cloudTime':'overviewCloudTime']=row?.time??null;}return f;});
+   for(const role of ['main','overview']){const key=role==='main'?'url':'overviewUrl',row=selected.includes(role)?clouds.frames.findLast(c=>c.time<=f.time&&(archive?c.time===f.time:c.time>f.time-2400)&&c[key]):null;f[role==='main'?'cloudUrl':'overviewCloudUrl']=row?.[key]??null;f[role==='main'?'cloudTime':'overviewCloudTime']=row?.time??null;}return f;});
   return {...result,frames:all,frame:all.at(-1)??null,playable:all.length,radarDisabled:result.radarDisabled&&!selected.length,cloudHistory:{...clouds,roles:selected},...(archive?{}:{clouds:await status()})};
  }
  const timer=autoStart?setInterval(()=>void collect(),1000):null;timer?.unref();

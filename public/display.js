@@ -1,4 +1,5 @@
 import {shared,change} from './integrations-state.js';
+import {screenDisplay,globalDisplay} from './screen-display.js';
 import {setupDirectReorder, moveRelative} from './direct-reorder.js';
 import { defaultReadings, readingNames, windUnits, playbackSpeeds, lastFrameMultipliers, weatherOptions } from './weather-format.js';
 const gustChoices = [0, 15, 30, 45, 60, 90, 120, 180];
@@ -8,7 +9,7 @@ function normalizeGust(value) {
   return gustChoices.slice(1).reduce((best, pick) => Math.abs(pick-value) < Math.abs(best-value) ? pick : best, 15);
 }
 const preferences = { showScale: true, autoHide: false, autoHideWeather: false, autoHideButtons: false, gustCacheMinutes: 60, temperatureUnit: 'C', windUnit: 'mph', visibilityUnit: 'km', pressureUnit: 'hPa', rainUnit: 'mm', directionFormat: 'compass', directionConvention: 'flow', readings: [...defaultReadings], playbackSpeed: 1, playbackHours: 2, lastFrameMultiplier: 2.4 };
-preferences.readingOrder = [...defaultReadings,...Object.keys(readingNames).filter(id=>!defaultReadings.includes(id))];
+preferences.readingOrder = ['temperature','feels','dew','wind','gust','humidity','visibility','pressure','uv','sun','moon','direction','depression','rainAccumulation'];
 try {
   const saved = JSON.parse(localStorage.getItem('radar-display'));
   for (const key of ['showScale', 'autoHide', 'autoHideWeather', 'autoHideButtons']) if (typeof saved?.[key] === 'boolean') preferences[key] = saved[key];
@@ -24,7 +25,7 @@ try {
 } catch { /* Defaults also work without browser storage. */ }
 
 export function gustCacheMinutes() { return preferences.gustCacheMinutes; }
-export function weatherPreferences() { return { temperatureUnit: preferences.temperatureUnit, windUnit: preferences.windUnit, readings: [...preferences.readings], ...Object.fromEntries(Object.keys(weatherOptions).map(key => [key, preferences[key]])), ...(shared.initialized?shared.units:{}) }; }
+export function weatherPreferences() { return {readings:[...preferences.readings],...screenDisplay()}; }
 export function lastFrameMultiplier(){return preferences.lastFrameMultiplier;}
 export function playbackSpeed() { return preferences.playbackSpeed; }
 export function playbackHours() { return preferences.playbackHours; }
@@ -139,10 +140,10 @@ export function setupDisplaySettings(canEdit,canEditLocal=canEdit) {
     hours.value = String(preferences.playbackHours);
   });
   function applyWeatherChoices() {
-    if(shared.initialized)Object.assign(preferences,shared.units);
-    tempUnit.value = preferences.temperatureUnit;
-    windUnit.value = preferences.windUnit;
-    for (const [input,key] of extraUnits) input.value = preferences[key];
+    const global=globalDisplay();
+    tempUnit.value = global.temperatureUnit;
+    windUnit.value = global.windUnit;
+    for (const [input,key] of extraUnits) input.value = global[key];
     for (const input of readings) input.checked = preferences.readings.includes(input.dataset.readingChoice);
     for (const key of preferences.readingOrder) {
       const row = document.getElementById(`weather-${key}`).closest('.weather-reading');
@@ -153,10 +154,6 @@ export function setupDisplaySettings(canEdit,canEditLocal=canEdit) {
     window.dispatchEvent(new Event('radar-weather-preferences'));
   }
   window.addEventListener('radar-reading-order', applyWeatherChoices);
-  for (const [input, key, valid] of [[tempUnit, 'temperatureUnit', ['C','F']], [windUnit, 'windUnit', Object.keys(windUnits)], ...extraUnits]) input.addEventListener('change', () => {
-    if (canEdit() && valid.includes(input.value)) { const previous=preferences[key];preferences[key] = input.value;persist();if(shared.initialized&&Object.hasOwn(shared.units,key)){input.disabled=true;void change({action:'settings',units:{[key]:input.value}}).catch(e=>{preferences[key]=previous;input.value=previous;document.getElementById('shared-unit-note').textContent=e.message;persist();}).finally(()=>{input.disabled=false;});} }
-    applyWeatherChoices();
-  });
   for (const input of readings) input.addEventListener('change', () => {
     if (canEditLocal()) { preferences.readings = readings.filter(item => item.checked).map(item => item.dataset.readingChoice); persist(); }
     applyWeatherChoices();

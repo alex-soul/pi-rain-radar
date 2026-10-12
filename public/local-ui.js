@@ -1,6 +1,7 @@
 import {setupMapDecoration} from './map-decoration.js';
 import {readingNames} from './weather-format.js';
 import {localPreferences,saveLocalPreferences,opacityNames,lookbacks} from './local-preferences.js';
+import {setupScreenDisplay,setupGlobalDisplay} from './screen-display.js';
 import {createLocalIdle,AFFORDANCE_IDLE_MS} from './local-idle.js';
 const $=id=>document.getElementById(id);
 export const canEditLocal=()=>!document.body.classList.contains('screen-locked');
@@ -116,7 +117,7 @@ export function setupLocalEditors(){
   const top=editor('top-editor','Top dock'),bottom=editor('bottom-editor','Playback dock'),side=editor('side-editor','Side buttons');
   top.append($('weather-choices'));
   for(const id of ['auto-hide-weather','gust-cache-minutes'])top.append($(id).closest('label'));
-  for(const id of ['astro-sun-mode','astro-moon-mode'])top.append($(id).parentElement);
+  setupGlobalDisplay();setupScreenDisplay(top,canEditLocal);
   side.append($('control-list'),$('control-feedback'),$('auto-hide-buttons').closest('label'));
   const speed=$('playback-speed');bottom.append(document.querySelector('label[for="playback-speed"]'),speed,document.querySelector('.speed-labels'));
   for(const id of ['playback-hours','last-frame-multiplier','auto-hide-footer'])bottom.append($(id).closest('label'));
@@ -132,9 +133,9 @@ export function setupLocalEditors(){
     const dialog=editor(id+'-editor',title);opacityControl(dialog,id);fontControl(dialog,id);attachCog($(id),dialog,id+'-edit','Edit '+title);
   }
   const select=document.createElement('select');select.id='trends-lookback';select.append(new Option('Follow main playback','follow'),...lookbacks.map(h=>new Option(h+' hours',String(h))));select.value=String(localPreferences.lookback??'follow');
-  const label=document.createElement('label');label.className='misc-option';label.textContent='Chart lookback';label.append(select);$('trend-editor').insertBefore(label,$('trend-editor').querySelector('.local-opacity'));
+  const label=document.createElement('label');label.className='misc-option';label.textContent='Live chart lookback';label.append(select);$('trend-editor').insertBefore(label,$('trend-editor').querySelector('.local-opacity'));
+  const lookbackNote=document.createElement('p');lookbackNote.id='trends-lookback-note';lookbackNote.hidden=true;label.after(lookbackNote);
   select.onchange=()=>{if(canEditLocal()){localPreferences.lookback=lookbacks.includes(Number(select.value))?Number(select.value):null;saveLocalPreferences();}};
-  for(const id of ['astro-sun-mode','astro-moon-mode'])$(id).parentElement.classList.add('local-option-row');
   for(const [dialog,key]of [[top,'top'],[side,'buttons'],[bottom.querySelector('.local-options'),'bottom'],[$('trend-editor'),'trends']])fontControl(dialog,key);
   tabbedEditor(top,'Readings',[$('weather-choices')]);
   const playback=bottom.querySelector('.local-options');bottom.append(...playback.querySelectorAll(':scope > .local-opacity'));
