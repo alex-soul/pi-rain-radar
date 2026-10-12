@@ -5,6 +5,13 @@ import {setupScreenDisplay,setupGlobalDisplay} from './screen-display.js';
 import {createLocalIdle,AFFORDANCE_IDLE_MS} from './local-idle.js';
 const $=id=>document.getElementById(id);
 export const canEditLocal=()=>!document.body.classList.contains('screen-locked');
+// Accept ordinary MouseEvents as well as PointerEvents.
+// Keep hover separate from click/tap and ignore compatibility events from touch.
+export function setupExplanationHover(node,show,leave){
+  const enter=event=>{if(event.pointerType==='touch'||event.sourceCapabilities?.firesTouchEvents)return;show();};
+  for(const name of ['pointerenter','pointermove','mouseenter','mousemove'])node.addEventListener(name,enter);
+  for(const name of ['pointerleave','mouseleave'])node.addEventListener(name,leave);
+}
 const cog='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 3-.5 2.4-2 .9-2.2-.8-2 3.4 1.7 1.6v3L2.3 15l2 3.5 2.2-.8 2 .9L9 21h4l.5-2.4 2-.9 2.2.8 2-3.5-1.7-1.5v-3l1.7-1.6-2-3.4-2.2.8-2-.9L13 3z"/><circle cx="11" cy="12" r="3.5"/></svg>';
 export function editIcon(button,label){if(!button)return;button.innerHTML=cog;button.classList.add('local-cog');button.setAttribute('aria-label',label);button.title=label;}
 export function setupAffordances(area,editor=null){

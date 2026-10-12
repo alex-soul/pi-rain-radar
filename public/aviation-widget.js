@@ -1,5 +1,5 @@
 import {setupFloatingWidget} from './floating-widget.js';
-import {editor,attachCog,opacityControl,fontControl,canEditLocal} from './local-ui.js';
+import {editor,attachCog,opacityControl,fontControl,canEditLocal,setupExplanationHover} from './local-ui.js';
 import {localPreferences} from './local-preferences.js';
 import {aviationAt,aviationProducts,aviationNames} from './aviation-model.js';
 const $=id=>document.getElementById(id);
@@ -37,9 +37,8 @@ function reportNode(p,state){
  const report=state.reports?.[p],section=document.createElement('section');section.setAttribute('aria-label',aviationNames[p]);
  const text=document.createElement('p');text.className='aviation-raw';
  if(report){let offset=0;for(const s of report.sections??[]){text.append(document.createTextNode(report.raw.slice(offset,s.start)));const button=document.createElement('button');button.type='button';button.className='aviation-code';button.textContent=report.raw.slice(s.start,s.end);button.setAttribute('aria-label',button.textContent+' · Explain');
- const hover=e=>{if(['mouse','pen'].includes(e.pointerType)&&(selected!==button||popup.hidden)){pinned=false;explain(button,s.meaning);}};
- button.addEventListener('pointerenter',hover);button.addEventListener('pointermove',hover);
- button.addEventListener('pointerleave',()=>{if(!pinned)closeExplanation();});button.onfocus=()=>explain(button,s.meaning);button.onblur=e=>{if(!popup.contains(e.relatedTarget)&&selected===button)closeExplanation();};button.onclick=()=>{if(selected===button&&pinned)closeExplanation();else{explain(button,s.meaning);pinned=true;}};text.append(button);offset=s.end;}text.append(document.createTextNode(report.raw.slice(offset)));}
+ setupExplanationHover(button,()=>{if(selected!==button||popup.hidden){pinned=false;explain(button,s.meaning);}},()=>{if(!pinned)closeExplanation();});
+ button.onfocus=()=>explain(button,s.meaning);button.onblur=e=>{if(!popup.contains(e.relatedTarget)&&selected===button)closeExplanation();};button.onclick=()=>{if(selected===button&&pinned)closeExplanation();else{explain(button,s.meaning);pinned=true;}};text.append(button);offset=s.end;}text.append(document.createTextNode(report.raw.slice(offset)));}
  section.append(text);return section;
 }
 function render(){if(!lastInput)return;const {status,history,historical,time}=lastInput,state=historical?aviationAt(history,time):status??{unknown:true},key=JSON.stringify([state.reports,split,visibleProducts]);
