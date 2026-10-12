@@ -1,0 +1,10 @@
+html,body{position:static!important;height:auto!important;overflow:auto!important;background:#142623;color:#e3eee7;font-family:Arial,sans-serif}
+html[data-theme=light],html[data-theme=light] body{background:#e8efeb;color:#213b30}
+main[hidden]{display:none!important}#chart-values-review{position:static;inset:auto;height:auto;max-width:940px;margin:auto;padding:20px;overflow:visible}
+h1{font-size:22px}p{font-size:13px;line-height:1.5}.review-controls{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin:16px 0}
+.review-controls label{display:flex;align-items:center;gap:8px;font-size:13px}.review-controls label:has(input[type=range]){flex-wrap:wrap;min-width:210px}.review-controls input[type=range]{width:100%;accent-color:#58b5a6;min-height:28px}
+.review-controls button,.review-controls select{font:inherit;min-height:36px;padding:6px 10px}.review-controls output{font-variant-numeric:tabular-nums}
+#review-chart-host{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px;overflow:auto;padding:10px 0}
+#review-chart-host :is(#weather-trends,.detached-trend){position:relative!important;inset:auto!important;transform:none!important;flex:none;max-width:none}
+.review-now{opacity:.65;font:inherit}.review-now::before{content:none!important}.trend-mini-legend [data-cached=true]{color:#c99c50}.trend-mini-legend [data-health=error]{opacity:.7}
+#review-status{min-height:20px}#review-error{color:#e9a49c}
