@@ -11,3 +11,8 @@
 .aviation-caption{font-size:calc(10px * var(--aviation-font-scale));opacity:.55;line-height:1.5;margin-top:8px}.aviation-caption[data-health=warning]{color:#bb902f;opacity:1}.aviation-caption[data-health=error]{color:#bb6969;opacity:1}
 .aviation-widget>[id$=-resize]{position:absolute;right:0;bottom:0;width:32px;height:32px;border:0;background:transparent;color:inherit;font-size:20px;cursor:nwse-resize}
 #aviation-explanation{max-width:min(380px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto}
+.aviation-widget>.widget-drag-handle{position:absolute;z-index:3;top:0;left:50%;transform:translateX(-50%);display:grid;place-items:center;width:76px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:inherit;cursor:grab;touch-action:none;user-select:none;opacity:.55}
+.aviation-widget>.widget-drag-handle span{width:32px;height:4px;border-radius:3px;background:currentColor;pointer-events:none}
+.aviation-widget>.widget-drag-handle:is(:hover,:focus-visible,:active){opacity:1}
+.aviation-widget>.widget-drag-handle:active{cursor:grabbing}
+.aviation-widget>.widget-drag-handle:focus-visible{outline:1px solid currentColor;outline-offset:-3px}

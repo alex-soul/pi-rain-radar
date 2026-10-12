@@ -12,7 +12,7 @@ export function setupAffordances(area,editor=null){
   area.dataset.localArea='';const pointers=new Set();let hovered=false;
   const idle=createLocalIdle({delayMs:AFFORDANCE_IDLE_MS,show:()=>{if(canEditLocal())area.classList.add('local-awake');},hide:()=>{
     const active=document.activeElement;
-    if(area.contains(active)&&active.matches('.local-cog,.widget-close,[id$="-resize"]')){area.tabIndex=0;area.focus({preventScroll:true});}
+    if(area.contains(active)&&active.matches('.local-cog,.widget-close,[id$="-resize"],.widget-drag-handle')){area.tabIndex=0;area.focus({preventScroll:true});}
     area.classList.remove('local-awake');
   },held:()=>hovered||pointers.size>0||area.dataset.resizing==='true'||!!editor?.open||(document.hasFocus()&&area.contains(document.activeElement)&&document.activeElement.matches(':focus-visible'))});
   area.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'||e.pointerType==='pen')hovered=true;idle.activity();});

@@ -1,8 +1,8 @@
 /* Browser-local controls sit outside layout flow; appearance cannot move data. */
 .local-cog{position:absolute!important;display:grid;place-items:center;width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;top:auto;right:auto;bottom:3px;left:3px;border:0!important;border-radius:50%;background:transparent!important;color:inherit;font:16px Arial!important;cursor:pointer;z-index:3;opacity:.55;touch-action:manipulation;}
-[data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
-[data-local-area].local-awake > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:visible;pointer-events:auto;}
-.screen-locked [data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge){visibility:hidden;pointer-events:none;}
+[data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge,.widget-drag-handle){visibility:hidden;pointer-events:none;}
+[data-local-area].local-awake > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge,.widget-drag-handle){visibility:visible;pointer-events:auto;}
+.screen-locked [data-local-area] > :is(.local-cog,.widget-close,[id$="-resize"],.widget-edge,.widget-drag-handle){visibility:hidden;pointer-events:none;}
 
 :root :is(#astronomy-resize,[id$="-resize"]){width:32px;height:32px;right:0;bottom:0;padding:5px;font-size:20px;color:inherit;opacity:.4;}
 :root :is(#astronomy-resize,[id$="-resize"]):is(:hover,:focus-visible,:active),:root :is(.local-cog,.widget-close):is(:hover,:focus-visible,:active){opacity:1;filter:brightness(1.25);}

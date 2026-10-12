@@ -50,11 +50,12 @@ close.addEventListener('click',()=>{if(document.body.classList.contains('screen-
 let drag = null;
 handle.addEventListener("pointerdown", event => {
   if (event.button !== 0 || !event.isPrimary || document.body.classList.contains('screen-locked')) return;
-  if (event.target.closest("button")) return;
+  if (event.target.closest("button")&&!event.target.closest('[data-widget-drag]')) return;
   if(event.target.closest('[data-widget-scroll]'))return;
   const plots=event.target.closest("#trend-plots");if(plots&&plots.scrollHeight>plots.clientHeight)return;
   panel.focus({ preventScroll: true });
   const rect = panel.getBoundingClientRect();
+  panel.dispatchEvent(new Event('radar-widget-gesture'));
   drag = { id: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top, x: event.clientX, y: event.clientY, moved: false };
   handle.setPointerCapture(event.pointerId);
 });
@@ -70,7 +71,7 @@ handle.addEventListener("pointercancel", finish);
 handle.addEventListener("lostpointercapture", finish);
 handle.addEventListener("dragstart", event => event.preventDefault());
 handle.addEventListener("keydown", event => {
-  if (event.target !== panel) return;
+  if ((event.target !== panel&&!event.target.matches('[data-widget-drag]'))||document.body.classList.contains('screen-locked')) return;
   const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
   if (!delta) return;
   event.preventDefault();
