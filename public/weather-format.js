@@ -34,8 +34,9 @@ export const weatherOptions = {
 export function windBearing(value, convention = 'flow') {
   return Number.isFinite(value) ? ((value + (convention === 'meteorological' ? 0 : 180)) % 360 + 360) % 360 : null;
 }
-export function windDirectionText(value, format = 'compass', convention = 'flow') {
-  const bearing = windBearing(value, convention);
+export function windDirectionText(value, format = 'compass') {
+  // Reported bearings always name the origin; only the arrow can show flow.
+  const bearing = windBearing(value, 'meteorological');
   return bearing === null ? '—' : format === 'degrees' ? `${Math.round(bearing) % 360}°` : directionText(bearing);
 }
 export function visibilityText(metres, unit = 'km') {

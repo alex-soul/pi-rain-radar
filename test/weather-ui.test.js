@@ -42,18 +42,28 @@ test('Rain forecast uses baselines for zero and missing minutes, and replaces fa
 test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   assert.equal(f.nodes.get('weather-visibility').textContent,'0.0');assert.equal(f.nodes.get('weather-uv').textContent,'0.0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
-  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+(id==='depression'?'Dew point depression':name)+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
+  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation','direction'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+(id==='depression'?'Dew point depression':name)+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
   assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
   const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);
   for(const convention of ['flow','meteorological'])for(const value of [0,0.1,45,179.9,180,245.25,359.9,360]) {
     f.prefs.directionConvention=convention;f.prefs.directionFormat='degrees';f.paint({...s,fetchedAt:now+value+1,data:{...s.data,current:{...s.data.current,windDirection:value}}},now);
     assert.equal(f.nodes.get('weather-direction-arrow').attributes.transform,`rotate(${format.windBearing(value,convention)} 14 14)`);
-    assert.equal(f.nodes.get('weather-direction').textContent,format.windDirectionText(value,'degrees',convention));
+    assert.equal(f.nodes.get('weather-direction').textContent,format.windDirectionText(value,'degrees'));
   }
   f.prefs.visibilityUnit='mi';f.prefs.pressureUnit='inHg';f.paint({...s,fetchedAt:now+4,data:{...s.data,current:{...s.data.current,visibility:10000,windDirection:null}}},now);
   assert.equal(f.nodes.get('weather-visibility').textContent,'6.2+');assert.equal(f.nodes.get('weather-pressure').textContent,'29.91');assert.equal(f.nodes.get('weather-direction-arrow').attributes.visibility,'hidden');
   const ny=fixture('America/New_York');ny.paint(s,now);assert.equal(ny.nodes.get('weather-wind').title,'Wind: 9 mph · OpenWeather · Observed 14 Sep 2026 07:00 · Acquired 14 Sep 2026 07:00');
 });
+test('wind arrow choice never reverses the reported bearing or compass label',()=>{
+  const f=fixture(),s=state();s.data.current.windDirection=150;
+  for(const [convention,angle] of [['flow',330],['meteorological',150]])for(const [directionFormat,label] of [['degrees','150°'],['compass','SSE']]){
+    f.prefs.directionConvention=convention;f.prefs.directionFormat=directionFormat;f.paint(s,now);
+    assert.equal(f.nodes.get('weather-direction-arrow').attributes.transform,`rotate(${angle} 14 14)`);
+    assert.equal(f.nodes.get('weather-direction').textContent,label);
+    assert.equal(f.nodes.get('weather-direction').title,'Wind from 150° (SSE), blowing towards 330° (NNW). · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
+  }
+});
+
 test('current values tolerate one failed poll while gust age and acquisition remain independent',()=>{
   const f=fixture(),s=state();s.gust={mph:0,time:now/1000-1800,fetchedAt:now-1700000};s.data.current.gustMph=null;
   f.paint(s,now);assert.equal(f.nodes.get('weather-gust').textContent,'0');assert.equal(f.nodes.get('weather-gust').attributes['data-cached'],'true');assert.match(f.nodes.get('weather-gust').title,/Acquired 14 Sep 2026 11:31 · Retained gust$/);

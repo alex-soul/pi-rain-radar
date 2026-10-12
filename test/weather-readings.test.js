@@ -39,7 +39,7 @@ test('HA stale/unit mismatch and fallback carry accurate source, times and consi
   s.presentation.observations['sensor.f'].unit='F';const rows=weatherReadings(s,now);
   assert.equal(rows.temperature.fallback,true);assert.equal(rows.feels.fallback,true);assert.equal(rows.temperature.health,'warning');
   assert.equal(rows.temperature.sourceLabel,'OpenWeather fallback');assert.match(rows.feels.reason,/Unit mismatch/);
-  for(const row of Object.values(rows)){const text=readingExplanation(row,()=> 'test time');assert.ok(text.startsWith(row.name+':'));assert.ok(text.includes(' · '));assert.ok(!text.includes('|'));}
+  for(const row of Object.values(rows)){const text=readingExplanation(row,()=> 'test time');assert.ok(text.startsWith(row.id==='direction'&&Number.isFinite(row.value)?'Wind from ':row.name+':'));assert.ok(text.includes(' · '));assert.ok(!text.includes('|'));}
   assert.match(readingExplanation(rows.temperature,()=> 'test time'),/Observed test time · Acquired test time/);
 });
 test('disabled historical intervals filter preceding raw and presentation samples without altering earlier history',()=>{

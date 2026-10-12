@@ -1,5 +1,5 @@
 import {weatherFields,weatherKeys,selectHaReadings,selectObservedRain,defaultUnits} from './weather-policy.js';
-import {readingNames,temperatureText,windText,windDirectionText,visibilityText,pressureText} from './weather-format.js';
+import {readingNames,temperatureText,windText,windBearing,windDirectionText,visibilityText,pressureText} from './weather-format.js';
 import {readingValues} from './reading-units.js';
 
 // One source/freshness model for visible readings, hidden-reading health and
@@ -45,7 +45,7 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
     if(['temperature','feels','dew'].includes(id)){unit='°'+units.temperatureUnit;if(Number.isFinite(displayValue))text=(Math.abs(displayValue)<.05?0:displayValue).toFixed(1)+'°';}
     else if(['wind','gust'].includes(id)){unit=units.windUnit;if(Number.isFinite(displayValue))text=String(Math.round(displayValue));}
     else if(id==='humidity'){unit='%';if(Number.isFinite(value))text=Math.round(value)+'%';}
-    else if(id==='direction'){if(Number.isFinite(value))text=windDirectionText(value,units.directionFormat,units.directionConvention);}
+    else if(id==='direction'){if(Number.isFinite(value))text=windDirectionText(value,units.directionFormat);}
     else if(id==='visibility'){unit=units.visibilityUnit;text=Number.isFinite(displayValue)?String(Number(displayValue.toFixed(1)))+(source==='openweather'&&value>=10000?'+':''):'—';}
     else if(id==='pressure'){unit=units.pressureUnit;text=Number.isFinite(displayValue)?(unit==='hPa'?String(Math.round(displayValue)):unit==='inHg'?displayValue.toFixed(2):displayValue.toFixed(1)):'—';}
     else if(Number.isFinite(value))text=String(Number(value.toFixed(1)));
@@ -77,7 +77,8 @@ export function weatherHealth(rows){
 export function readingExplanation(row,stamp){
   if(row.inputs)return row.name+': '+row.text+' · Dew point depression (T−Td, temperature minus dew point). '+row.inputs.map(input=>readingExplanation(input,stamp)).join(' · ');
   const value=row.text==='—'?'—':row.text.replace(/[°%]$/,'')+(row.unit?' '+row.unit:'');
-  return [row.name+': '+value,row.sourceLabel,
+  const label=row.id==='direction'&&Number.isFinite(row.value)?`Wind from ${windDirectionText(row.value,'degrees')} (${windDirectionText(row.value)}), blowing towards ${windDirectionText(windBearing(row.value),'degrees')} (${windDirectionText(windBearing(row.value))}).`:row.name+': '+value;
+  return [label,row.sourceLabel,
     row.time?(row.source==='ha'?'Reported to HA ':'Observed ')+stamp(row.time):null,
     row.receivedAt?'Acquired '+stamp(row.receivedAt):null,row.reason||null].filter(Boolean).join(' · ');
 }

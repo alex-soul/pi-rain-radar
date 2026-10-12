@@ -41,5 +41,5 @@ test('optional visibility pressure and UV validate independently including zero 
   assert.equal(visibilityText(1609.344,'mi'),'1');
   assert.equal(pressureText(1013),'1013');assert.equal(pressureText(1013,'inHg'),'29.91');assert.equal(pressureText(1013,'mmHg'),'759.8');assert.equal(pressureText(null),'—');
   assert.equal(windBearing(359.9),179.89999999999998);assert.equal(windBearing(null),null);
-  assert.equal(windDirectionText(179.9,'degrees'),'0°');assert.equal(windDirectionText(359.9,'degrees','meteorological'),'0°');
+  assert.equal(windDirectionText(179.9,'degrees'),'180°');assert.equal(windDirectionText(359.9,'degrees'),'0°');
 });
