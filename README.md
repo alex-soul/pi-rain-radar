@@ -1,6 +1,6 @@
 # Pi Rain Radar
 
-A dedicated rain-radar screen for your home. Animate recent rain, see where it has been moving, and glance at optional current temperature and wind readings.
+A dedicated weather screen for your home, with rain radar at its heart. Watch rain and clouds move, follow local weather trends, explore aviation reports and replay the weather your Pi has collected. Build a quiet, glanceable display with just the widgets you want.
 
 Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-built-pi-rain-radar.md).
 
@@ -10,11 +10,16 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.12.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.12.0) is the current pre-release.** It adds METAR/TAF Aviation widgets, per-screen unit overrides, one-hour trend arrows and clearer compact weather charts. Cloud freshness now allows for longer publication delays. I accepted RC2 on my Pi 4 / 2 GB. Release CI checks both image architectures before latest promotion. The portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.12.0.md) and [validation](docs/validation.md).
+**[v0.12.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.12.0) is the current pre-release.** I tested and accepted the published release on my Pi 4 / 2 GB. Release CI passed 422 tests and image startup/restart checks on ARM64 and AMD64. The [Ludicrously Quick Start](docs/ludicrous-quick-start.md) pins this release; the portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.12.0.md) and [validation](docs/validation.md).
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
-Pi Rain Radar focuses on rain: recent radar playback, a small overview map, optional next-hour precipitation forecasts and a few current readings. It is not a general-purpose weather dashboard.
+## New in 0.12.0
+
+- **A little aviation weather on your own screen.** Choose an airport and collect METAR observations and TAF forecasts from NOAA Aviation Weather Center every five minutes. Keep the original reports together or split them into separate widgets. Hover or tap a code to understand it, then scrub Archive to see the reports your Pi had acquired at that point. A handy way to get familiar with aviation weather terminology. [Explore Aviation](docs/aviation.md).
+- **Trends that look beyond the last reading.** Top-dock arrows consider the preceding hour, with no arrow for stable conditions or insufficient evidence. Compact three-letter chart labels save space, while hover/tap explanations keep them understandable. Live charts show the latest value throughout playback; Archive follows the selected historical position. [Weather and charts](docs/manual.md).
+- **Your screens, your preferences.** Set units and wind/Sun/Moon formats once globally, then let each screen inherit them or override individual choices. Consistent dock text, roomier Sun/Moon values and an independent wind-arrow choice make the display easier to read. Existing settings migrate when upgrading from 0.11.0. [Upgrade details](docs/upgrading.md#0120).
+- **Small details that make daily use calmer.** Cloud freshness allows for normal publication delays, the availability popup sits closer to the playback dock, and tighter chart spacing and themed controls reduce clutter.
 
 See [what’s next](docs/follow-ups.md) for planned improvements and ideas for future releases.
 

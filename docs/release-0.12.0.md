@@ -1,6 +1,6 @@
 # Pi Rain Radar 0.12.0
 
-This pre-release adds Aviation weather and refines the dock and charts. I accepted RC2 on my existing Pi 4 / 2 GB.
+This pre-release adds Aviation weather and refines the dock and charts. I accepted both RC2 and the final published release on my existing Pi 4 / 2 GB on 12 October 2026.
 
 - **Aviation:** collect METAR/TAF every five minutes from NOAA Aviation Weather Center. Show complete raw reports together or in separate movable/resizable widgets, with opacity/font controls and explanations for the highlighted code. Archive changes reports when this installation first acquired them, including TAFs received before their validity starts. [Setup and replay](aviation.md).
 - **Display defaults:** global units and wind/Sun/Moon formats, with independent **Inherit global** dropdowns under Screen settings → Top dock → Units. Existing 0.11.0 global units survive; the first existing screen seeds wind/Sun/Moon defaults once, then all migrated screens inherit. [Migration details](upgrading.md#0120).
