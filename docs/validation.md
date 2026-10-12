@@ -6,7 +6,7 @@
 
 The existing Pi was switched from accepted RC2 to that exact published image. Automated checks confirmed served 0.12.0, ready radar, unchanged current settings/PIN, mounts/environment and other Compose fields, unchanged archive generation and SQLite integrity. All installed Power/Screen/MQTT helpers remained active; zero app restarts. A short sample showed 799MB available RAM, 303MB swap, 69.6°C and no throttling. RC acceptance remains distinct from final-image visible acceptance.
 
-The installer pin uses this release/source/index and verified checksums for all four published Compose/Power files. Twenty-five installer and 25 display-control Linux tests, shell checks, and isolated Screen bridge install/reinstall/authenticated socket checks passed. Installer logic, saved snapshots and host contracts are unchanged; no new fresh-card/hardware claim is made.
+The installer pin uses this release/source/index and verified checksums for all four published Compose/Power files. Twenty-five installer and 25 display-control Linux tests, shell checks, and isolated Screen bridge install/reinstall/authenticated socket checks passed, both locally and in [installer CI 38284454835](https://github.com/alex-soul/pi-rain-radar/actions/runs/38284454835). Installer logic, saved snapshots and host contracts are unchanged; no new fresh-card/hardware claim is made.
 
 ## 0.12.0 accepted candidate — 12 October 2026
 

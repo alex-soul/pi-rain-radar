@@ -20,12 +20,17 @@ Bundled geography is derived from Natural Earth's public-domain datasets. See [N
 
 Optional current conditions and minute precipitation forecasts come from [OpenWeather](https://openweathermap.org/). Users supply their own One Call 4.0 key. Subscription, attribution, usage limits and data terms apply separately: see [OpenWeather terms](https://openweathermap.org/terms). The app displays linked credit when this integration is configured.
 
+## NOAA Aviation Weather Center
+
+Optional METAR and TAF reports are acquired from [NOAA Aviation Weather Center](https://aviationweather.gov/). The application preserves the original report text and distinguishes observation/issue/validity from local acquisition. See [Aviation setup and replay](docs/aviation.md).
+
 ## SunCalc
 
 Sun and Moon calculations use [SunCalc](https://github.com/mourner/suncalc), copyright 2026 Volodymyr Agafonkin, distributed under the BSD-2-Clause licence. The pinned browser source is bundled locally with its complete [licence notice](public/suncalc-license.txt). No external astronomy service is contacted.
 
 ## Runtime dependencies
 
+- [metar-taf-parser](https://github.com/aeharding/metar-taf-parser), pinned at 9.1.3: MIT; copyright 2022 Alexander Harding and 2021 Jean-Kevin KPADEY. The installed package includes its complete licence notice.
 - [Sharp](https://github.com/lovell/sharp): Apache-2.0. Its native distributions include libvips and other libraries under their respective licences. Preserve their included notices when redistributing dependencies.
 - [Node.js](https://github.com/nodejs/node/blob/main/LICENSE): MIT and bundled third-party notices.
 - The container includes Debian and additional packages under their respective licences; installed package notices are available under `/usr/share/doc`.
