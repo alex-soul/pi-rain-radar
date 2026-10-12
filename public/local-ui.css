@@ -15,7 +15,8 @@
 .local-editor button:not(.control-handle):not(.settings-info):not([role=tab]){min-height:40px;border:1px solid #78998a66;border-radius:8px;background:transparent;color:inherit;padding:6px 12px;cursor:pointer;}
 .local-editor label,.local-opacity{margin:10px 0;}
 .local-editor .misc-option{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;}
-.local-editor select{min-height:40px;max-width:100%;font:inherit;background:transparent;color:inherit;border:1px solid #78998a;border-radius:6px;padding:5px;}
+.local-editor select{min-height:40px;max-width:100%;font:inherit;background:#edf4ee;color:inherit;color-scheme:light;border:1px solid #78998a;border-radius:6px;padding:5px;}
+:root[data-theme=dark] .local-editor select{background:#142623;color-scheme:dark;}
 .local-editor input[type=range],.local-opacity input[type=range]{width:100%;min-height:32px;accent-color:#389488;}
 .local-opacity label{display:flex;justify-content:space-between;align-items:center;}
 .local-editor input.control-switch{appearance:none;width:44px;height:26px;flex:none;padding:3px;margin:0 0 0 auto;border:1px solid #a6bfb580;border-radius:16px;background:#82908840;cursor:pointer;}

@@ -819,7 +819,8 @@ a[aria-disabled="true"] { cursor: default; }
 .reading-choices > div { display: flex; align-items: center; }
 .reading-choices label { gap: 7px; justify-content: start; min-height: 36px; }
 .settings-content .reading-choices input { width: 18px; height: 18px; margin: 0; padding: 0; accent-color: #389488; }
-#playback-speed, #rain-opacity, #cloud-opacity { padding: 0; height: 28px; accent-color: #389488; }
+.settings-content input[type="range"] { accent-color: #389488; }
+#playback-speed, #rain-opacity, #cloud-opacity { padding: 0; height: 28px; }
 .speed-labels { display: flex; justify-content: space-between; font-size: 11px; opacity: .7; }
 .settings-info { position: relative; flex: 0 0 14px; width: 14px; height: 14px; padding: 0; border: 1px solid #8aa79a80; border-radius: 50%; color: inherit; background: transparent; opacity: .6; font: italic 10px Georgia, serif; cursor: pointer; vertical-align: middle; }
 .settings-info::before { content: ''; position: absolute; inset: -5px; }
@@ -845,8 +846,7 @@ a[aria-disabled="true"] { cursor: default; }
 #settings-dialog .settings-tabs { position: sticky; top: 52px; z-index: 2; background: #edf4ee; }
 :root[data-theme="dark"] #settings-dialog .settings-tabs { background: #142623; }
 #settings-dialog .settings-subtabs { top: 60px; padding-top: 3px; border-bottom-color: #a6bfb530; }
-#settings-dialog .settings-subtabs button { min-height: 44px; font-size: 13px; padding-top: 7px; padding-bottom: 7px; border-radius: 0; }
-#settings-dialog .settings-subtabs button[aria-selected="true"] { background: transparent; }
+#settings-dialog .settings-subtabs button { min-height: 44px; font-size: 13px; padding-top: 7px; padding-bottom: 7px; }
 .settings-parent { padding: 0; }
 .settings-parent > .settings-content { min-height: 300px; }
 /* Short landscape displays keep every button reachable after dock clearance. */
