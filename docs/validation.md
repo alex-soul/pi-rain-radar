@@ -1,5 +1,13 @@
 # Validation and remaining work
 
+## 0.12.0 published-image checks — 12 October 2026
+
+[Release CI 38283836931](https://github.com/alex-soul/pi-rain-radar/actions/runs/38283836931) passed all **422 application tests**, AMD64/ARM64 builds and fresh startup/restart on both architectures. Tag/source: `v0.12.0` / `ee3ac709feb40ebf3c879032de6d03787dfc621a`. Published index and verified `latest`: `sha256:60622ed7410051411b5268f6e9b6e6cec579cb0ad8ba1142933b4566a0fa306a`.
+
+The existing Pi was switched from accepted RC2 to that exact published image. Automated checks confirmed served 0.12.0, ready radar, unchanged current settings/PIN, mounts/environment and other Compose fields, unchanged archive generation and SQLite integrity. All installed Power/Screen/MQTT helpers remained active; zero app restarts. A short sample showed 799MB available RAM, 303MB swap, 69.6°C and no throttling. RC acceptance remains distinct from final-image visible acceptance.
+
+The installer pin uses this release/source/index and verified checksums for all four published Compose/Power files. Twenty-five installer and 25 display-control Linux tests, shell checks, and isolated Screen bridge install/reinstall/authenticated socket checks passed. Installer logic, saved snapshots and host contracts are unchanged; no new fresh-card/hardware claim is made.
+
 ## 0.12.0 accepted candidate — 12 October 2026
 
 I accepted RC2 on my existing Pi 4 / 2 GB. RC1 passed 421 native ARM64 tests, copied-data startup/restart checks preserving 42,410 records and 15,299 asset rows, and real NOAA EGBB METAR/TAF collection and restart persistence. The wind correction then passed 45 focused tests on Windows and native ARM64, plus fresh startup/restart. DEV review covered both themes, narrow settings, compact chart widths, hover/tap, inheritance and Live/Archive behavior.

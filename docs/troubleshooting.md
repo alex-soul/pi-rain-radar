@@ -21,7 +21,7 @@ sudo docker compose logs --tail 50 radar
 | OpenWeather reports HTTP 401/403 | Check the key, activation and separate One Call 4.0 subscription in your provider account. A 3.0 or standard Weather API subscription is insufficient. |
 | OpenWeather reports HTTP 429 | Check your account request limit and other apps using the account. The app retries automatically; repeated saves will not fix a provider limit. |
 | A toolbar button disappeared | Tap to reveal auto-hidden buttons. If it is still absent, enable it in the **side-button editor**. If every side button is hidden, use **Top-dock cog → Options → Side buttons…**. Use the **map-settings cog** for main-map layers; Overview has its own settings cog. |
-| Red bottom Dock but no red cloud gaps | Check the newest cloud image age in Status. At 30 minutes the freshness LED turns red even after successful collection; reused historical images can still be amber. See [cloud freshness](indicators.md#cloud-freshness-in-080). |
+| Red bottom Dock but no red cloud gaps | Check the newest cloud image age and collection errors in Status. Clouds turn amber at 40 minutes and red at 60 even after successful collection; reused historical images can still be amber. Radar retains its separate 30-minute limit. See [cloud freshness](indicators.md#cloud-freshness). |
 | Forgot the PIN | Follow [PIN recovery](#pin-recovery). There is no need to delete saved data. |
 
 For technical details, see [Run and develop](development.md). For project status, see the [README](../README.md).
