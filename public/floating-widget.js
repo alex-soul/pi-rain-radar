@@ -2,6 +2,7 @@ import {setupWidgetResize} from './widget-resize.js';
 import { widgetBottom, setupWidgetLayer } from "./display.js";
 export function setupFloatingWidget({id, storageKey, width = 410, height = 138, minWidth = 300, maxWidth = 640, minHeight = 108, maxHeight = 420, onVisibility = () => {}, rememberVisibility = true, startX = 18, startY = 230, onClose = null}) {
 const panel = document.getElementById(id);
+const minimumHeight=()=>typeof minHeight==='function'?minHeight():minHeight;
 const raise = setupWidgetLayer(panel);
 const toggle = document.getElementById(`${id}-toggle`);
 const handle = panel;
@@ -12,7 +13,7 @@ const resizeHandle = document.getElementById(`${id}-resize`);
 try {
   const saved = JSON.parse(localStorage.getItem(storageKey));
   if (Number.isFinite(saved?.width)) preferredWidth = Math.max(minWidth, Math.min(maxWidth, saved.width));
-  if (Number.isFinite(saved?.height)) preferredHeight = Math.max(minHeight, Math.min(maxHeight, saved.height));
+  if (Number.isFinite(saved?.height)) preferredHeight = Math.max(minimumHeight(), Math.min(maxHeight, saved.height));
   if (rememberVisibility && saved && typeof saved.visible === "boolean") visible = saved.visible;
   if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) position = saved;
 } catch { /* Defaults remain usable without storage. */ }
@@ -33,7 +34,7 @@ function layout() {
   if (!visible) return;
   const footerTop = widgetBottom();
   panel.style.width = `${Math.max(20, Math.min(preferredWidth, innerWidth - 16))}px`;
-  panel.style.height = `${Math.max(20, Math.min(preferredHeight, footerTop - 16))}px`;
+  panel.style.height = `${Math.max(20, Math.min(Math.max(preferredHeight,minimumHeight()), footerTop - 16))}px`;
   const ratio=aspect();if(ratio){const extra=panel.querySelector('.camera-caption').offsetHeight+2;const w=Math.min(preferredWidth,innerWidth-16,Math.max(20,footerTop-16-extra)*ratio+2,maxWidth,(maxHeight-extra)*ratio+2);panel.style.width=w+'px';panel.style.height=((w-2)/ratio+extra)+'px';}
   place(position?.x ?? startX, position?.y ?? startY);
 }
@@ -84,7 +85,7 @@ window.addEventListener("resize", layout);
 panel.addEventListener("snapshot-size",layout);
 window.addEventListener("radar-display-change", layout);
 
-setupWidgetResize(panel,{limits:{minWidth,maxWidth,minHeight,maxHeight},ratio:()=>{const r=aspect();return r?{ratio:r,extra:panel.querySelector('.camera-caption').offsetHeight+2-2/r}:null;},apply:r=>{preferredWidth=r.width;preferredHeight=r.height;position={x:r.x,y:r.y};layout();},save,cancelDrag:()=>{drag=null;}});
+setupWidgetResize(panel,{limits:{minWidth,maxWidth,get minHeight(){return minimumHeight();},maxHeight},ratio:()=>{const r=aspect();return r?{ratio:r,extra:panel.querySelector('.camera-caption').offsetHeight+2-2/r}:null;},apply:r=>{preferredWidth=r.width;preferredHeight=r.height;position={x:r.x,y:r.y};layout();},save,cancelDrag:()=>{drag=null;}});
 
 paint();
 

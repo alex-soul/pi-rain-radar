@@ -1,7 +1,7 @@
 .aviation-widget{position:absolute;display:flex;flex-direction:column;z-index:0;box-sizing:border-box;border:1px solid #a6bfb5;border-radius:10px;background:rgb(var(--local-widget-rgb)/var(--local-aviation-alpha,.7));color:var(--text,#284d47);overflow:hidden;box-shadow:0 4px 18px #0003;cursor:grab;touch-action:none;--aviation-font-scale:1}
 .aviation-widget[hidden]{display:none}.aviation-widget.widget-front{z-index:1}
 :root[data-theme=dark] .aviation-widget{color:#e1eee7;border-color:#455b51}
-.aviation-content{padding:12px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;flex:1;min-height:0;cursor:auto}
+.aviation-content{padding:12px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;flex:1;min-height:0;cursor:auto}
 .aviation-content section+section{margin-top:12px}
 .aviation-raw{font:calc(15px * var(--aviation-font-scale))/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
 .aviation-code{display:inline;border:0;border-radius:3px;padding:0;margin:0;font:inherit;line-height:inherit;color:inherit;background:transparent;text-align:inherit;white-space:inherit;overflow-wrap:inherit;cursor:help;box-decoration-break:clone;-webkit-box-decoration-break:clone}

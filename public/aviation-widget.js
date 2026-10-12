@@ -16,8 +16,10 @@ const visibility={};for(const p of aviationProducts){const label=document.create
 opacityControl(dialog,'aviation');fontControl(dialog,'aviation');
 for(const area of [combined,...Object.values(detached)])attachCog(area,dialog,area.id+'-edit','Edit Aviation weather');
 let master;const windows={};
-for(const p of aviationProducts)windows[p]=setupFloatingWidget({id:'aviation-'+p,storageKey:'radar-aviation-window-'+p,width:p==='taf'?500:420,height:p==='taf'?230:145,minWidth:180,minHeight:90,maxWidth:1000,maxHeight:Infinity,startX:p==='taf'?460:28,startY:200,rememberVisibility:false,onClose:()=>{visibleProducts[p]=false;visibility[p].checked=false;save();apply();}});
-master=setupFloatingWidget({id:'aviation',storageKey:'radar-aviation',width:520,height:290,minWidth:180,minHeight:100,maxWidth:1000,maxHeight:Infinity,startY:180,onVisibility:apply});
+// One scaled text line, 12px padding above/below, and the two panel borders.
+const minHeight=()=>Math.ceil(15*(localPreferences.fonts.aviation??100)/100*1.65+26);
+for(const p of aviationProducts)windows[p]=setupFloatingWidget({id:'aviation-'+p,storageKey:'radar-aviation-window-'+p,width:p==='taf'?500:420,height:p==='taf'?230:145,minWidth:180,minHeight,maxWidth:1000,maxHeight:Infinity,startX:p==='taf'?460:28,startY:200,rememberVisibility:false,onClose:()=>{visibleProducts[p]=false;visibility[p].checked=false;save();apply();}});
+master=setupFloatingWidget({id:'aviation',storageKey:'radar-aviation',width:520,height:290,minWidth:180,minHeight,maxWidth:1000,maxHeight:Infinity,startY:180,onVisibility:apply});
 function apply(){const visible=master?.isVisible()??false;combined.hidden=!visible||split;for(const p of aviationProducts)windows[p]?.setVisible(visible&&split&&visibleProducts[p]);const credit=$('aviation-credit');if(credit)credit.hidden=!visible||!aviationProducts.some(p=>visibleProducts[p]);}
 detach.onchange=()=>{if(!canEditLocal()){detach.checked=split;return;}split=detach.checked;save();apply();render();};apply();
 const popup=document.createElement('div');popup.id='aviation-explanation';popup.className='weather-explanation';popup.setAttribute('role','tooltip');popup.hidden=true;document.body.append(popup);

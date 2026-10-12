@@ -124,10 +124,10 @@ for (const widget of ['overview', 'rain-forecast']) {
   test(`${widget} surface drag ignores taps and resize controls`, async () => {
     const nodes = {};
     const node = id => nodes[id] ??= {dataset:{},style:{}, handlers:{}, offsetWidth:300, offsetHeight:170,
-      append(){},getAttribute(){return null;},setAttribute(){}, focus(){}, setPointerCapture(){}, getBoundingClientRect:()=>({left:20,top:100}),
+      append(){},getAttribute(){return null;},setAttribute(){},matches(){return false;},dispatchEvent(){}, focus(){}, setPointerCapture(){}, getBoundingClientRect:()=>({left:20,top:100}),
       addEventListener(k,fn){this.handlers[k]=fn;}};
     const context = vm.createContext({setupWidgetResize(){},document:{body:{classList:{contains:()=>false}},createElement:()=>({setAttribute(){},addEventListener(){}}),getElementById:node,querySelector:()=>({})},
-      widgetBottom:()=>720,setupWidgetLayer:()=>()=>{},innerWidth:1280,innerHeight:720,
+      widgetBottom:()=>720,setupWidgetLayer:()=>()=>{},Event,innerWidth:1280,innerHeight:720,
       window:{addEventListener(){}},ResizeObserver:class{observe(){}},
       localStorage:{getItem:()=>JSON.stringify({visible:true,x:20,y:100,width:300,height:170}),setItem(){}},
     });
@@ -142,7 +142,7 @@ for (const widget of ['overview', 'rain-forecast']) {
     panel.handlers.pointermove({...down,clientX:120,clientY:170});
     assert.equal(panel.style.left,'40px');assert.equal(panel.style.top,'120px');
     panel.handlers.pointerup();
-    panel.handlers.pointerdown({...down,target:{closest:()=>node(widget+'-resize')}});
+    panel.handlers.pointerdown({...down,target:{closest:selector=>selector==='button'?node(widget+'-resize'):null}});
     panel.handlers.pointermove({...down,clientX:200});
     assert.equal(panel.style.left,'40px');
     panel.handlers.keydown({key:'ArrowRight',target:node(widget+'-resize')});
