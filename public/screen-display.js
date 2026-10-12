@@ -7,6 +7,7 @@ export const globalDisplay=()=>({...displayDefaults,...shared.units,...shared.di
 function ensureMigration(){if(!migrated&&shared.initialized){overrides=migrateDisplayOverrides(legacy,astronomy,shared.units);migrated=true;try{localStorage.setItem(key,JSON.stringify({version:1,values:overrides}));}catch{}}}
 export function screenDisplay(){ensureMigration();return effectiveDisplay(globalDisplay(),overrides);}
 export function setupScreenDisplay(top,canEditLocal){
+ const section=document.createElement('div');section.className='screen-display-units';
  const grid=document.createElement('div');grid.className='units-grid';
  const inputs={};let signature='';
  for(const name of Object.keys(displayChoices)){
@@ -14,9 +15,9 @@ export function setupScreenDisplay(top,canEditLocal){
   select.id='screen-'+name;label.htmlFor=select.id;label.textContent=displayLabels[name];box.append(label,select);grid.append(box);inputs[name]=select;
   select.onchange=()=>{if(!canEditLocal()){paint(true);return;}ensureMigration();if(select.value==='inherit')delete overrides[name];else overrides[name]=select.value;try{localStorage.setItem(key,JSON.stringify({version:1,values:overrides}));}catch{feedback.textContent='Applied for now; browser storage is unavailable.';}window.dispatchEvent(new Event('radar-weather-preferences'));paint();};
  }
- const feedback=document.createElement('p');feedback.setAttribute('role','status');top.append(grid,feedback);
+ const feedback=document.createElement('p');feedback.setAttribute('role','status');section.append(grid,feedback);top.append(section);
  function paint(force=false){ensureMigration();const global=globalDisplay(),next=JSON.stringify([global,overrides]);if(!force&&signature===next)return;signature=next;for(const [name,input]of Object.entries(inputs)){input.replaceChildren(new Option('Inherit global ('+displayChoiceLabel(name,global[name])+')','inherit'),...displayChoices[name].map(v=>new Option(displayChoiceLabel(name,v),v)));input.value=overrides[name]??'inherit';}}
- window.addEventListener('integration-change',()=>paint());paint();
+ window.addEventListener('integration-change',()=>paint());paint();return section;
 }
 export function setupGlobalDisplay(){
  const grid=document.querySelector('#review-weather-units .additional-weather-units');

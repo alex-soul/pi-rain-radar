@@ -203,3 +203,9 @@
 .trend-mini-legend{flex-wrap:wrap;}
 .trend-mini-legend>span:first-child{flex:none;overflow:visible;text-overflow:clip;}
 #ui-editor .local-editor-tabs{margin-top:12px;}
+.screen-display-units .units-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
+.screen-display-units .units-grid>div{min-width:0;}
+.screen-display-units label{display:block;margin:0 0 8px;line-height:1.4;}
+.screen-display-units select{display:block;width:100%;min-height:42px;padding:8px;box-sizing:border-box;}
+.screen-display-units [role=status]:empty{display:none;}
+@media(max-width:560px){.screen-display-units .units-grid{grid-template-columns:minmax(0,1fr);}}

@@ -60,21 +60,23 @@ export function fontControl(dialog,key){
 const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle time,#history-toggle time'};
 function paintFont(key){if(key==='top'){document.documentElement.style.setProperty('--dock-font-scale',(localPreferences.fonts.top??100)/100);return;}for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
 function paintFonts(){for(const key of Object.keys(fontTargets))paintFont(key);window.dispatchEvent(new Event('radar-display-change'));document.getElementById('camera')?.dispatchEvent(new Event('snapshot-size'));}
-// Share the same two-tab structure across the browser-local list editors.
-function tabbedEditor(dialog,listTitle,listNodes){
+// Share the tab structure across the browser-local list editors.
+function tabbedEditor(dialog,listTitle,listNodes,extraTabs=[]){
   dialog.classList.add('local-editor');
   const heading=dialog.querySelector('.archive-heading');
-  const options=[...dialog.children].filter(node=>node!==heading&&!listNodes.includes(node));
+  const extraNodes=extraTabs.flatMap(tab=>tab.nodes);
+  const options=[...dialog.children].filter(node=>node!==heading&&!listNodes.includes(node)&&!extraNodes.includes(node));
+  const groups=[{title:listTitle,nodes:listNodes},...extraTabs,{title:'Options',nodes:options}];
   const tabs=document.createElement('div');tabs.className='settings-tabs local-editor-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label',dialog.getAttribute('aria-label')||'Weather trends');
   const panels=[],buttons=[];
-  for(const [index,title]of [listTitle,'Options'].entries()){
+  for(const [index,{title,nodes}]of groups.entries()){
     const button=document.createElement('button');button.type='button';button.textContent=title;button.id=dialog.id+'-tab-'+index;button.setAttribute('role','tab');
     const panel=document.createElement('section');panel.id=dialog.id+'-panel-'+index;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);panel.tabIndex=0;
-    button.setAttribute('aria-controls',panel.id);tabs.append(button);panels.push(panel);buttons.push(button);
+    button.setAttribute('aria-controls',panel.id);panel.append(...nodes);tabs.append(button);panels.push(panel);buttons.push(button);
   }
-  panels[0].append(...listNodes);panels[1].className='local-options';panels[1].append(...options);dialog.append(tabs,...panels);
+  panels.at(-1).className='local-options';dialog.append(tabs,...panels);
   const select=index=>{buttons.forEach((button,i)=>{button.setAttribute('aria-selected',String(i===index));button.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});dialog.scrollTop=0;dialog.dispatchEvent(new CustomEvent('settings-tab-change',{bubbles:true}));};
-  buttons.forEach((button,index)=>{button.onclick=()=>select(index);button.onkeydown=event=>{const next={ArrowLeft:1-index,ArrowRight:1-index,Home:0,End:1}[event.key];if(next!==undefined){event.preventDefault();select(next);buttons[next].focus();}};});
+  buttons.forEach((button,index)=>{button.onclick=()=>select(index);button.onkeydown=event=>{const next={ArrowLeft:(index+buttons.length-1)%buttons.length,ArrowRight:(index+1)%buttons.length,Home:0,End:buttons.length-1}[event.key];if(next!==undefined){event.preventDefault();select(next);buttons[next].focus();}};});
   new MutationObserver(()=>{if(dialog.open)select(0);}).observe(dialog,{attributes:true,attributeFilter:['open']});select(0);
 }
 function paintOpacity(){for(const key of opacityNames){const prop='--local-'+key+'-alpha';if(key in localPreferences.opacity)document.documentElement.style.setProperty(prop,localPreferences.opacity[key]/100);else document.documentElement.style.removeProperty(prop);}}
@@ -117,7 +119,7 @@ export function setupLocalEditors(){
   const top=editor('top-editor','Top dock'),bottom=editor('bottom-editor','Playback dock'),side=editor('side-editor','Side buttons');
   top.append($('weather-choices'));
   for(const id of ['auto-hide-weather','gust-cache-minutes'])top.append($(id).closest('label'));
-  setupGlobalDisplay();setupScreenDisplay(top,canEditLocal);
+  setupGlobalDisplay();const topUnits=setupScreenDisplay(top,canEditLocal);
   side.append($('control-list'),$('control-feedback'),$('auto-hide-buttons').closest('label'));
   const speed=$('playback-speed');bottom.append(document.querySelector('label[for="playback-speed"]'),speed,document.querySelector('.speed-labels'));
   for(const id of ['playback-hours','last-frame-multiplier','auto-hide-footer'])bottom.append($(id).closest('label'));
@@ -137,7 +139,7 @@ export function setupLocalEditors(){
   const lookbackNote=document.createElement('p');lookbackNote.id='trends-lookback-note';lookbackNote.hidden=true;label.after(lookbackNote);
   select.onchange=()=>{if(canEditLocal()){localPreferences.lookback=lookbacks.includes(Number(select.value))?Number(select.value):null;saveLocalPreferences();}};
   for(const [dialog,key]of [[top,'top'],[side,'buttons'],[bottom.querySelector('.local-options'),'bottom'],[$('trend-editor'),'trends']])fontControl(dialog,key);
-  tabbedEditor(top,'Readings',[$('weather-choices')]);
+  tabbedEditor(top,'Readings',[$('weather-choices')],[{title:'Units',nodes:[topUnits]}]);
   const playback=bottom.querySelector('.local-options');bottom.append(...playback.querySelectorAll(':scope > .local-opacity'));
   tabbedEditor(bottom,'Playback',[playback]);
   tabbedEditor(side,'Buttons',[$('control-list'),$('control-feedback')]);
