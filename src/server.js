@@ -1,3 +1,5 @@
+import {createAviation,loadAviationHistory} from './aviation.js';
+import {exists} from './history-files.js';
 import {createScreenControl} from './screen-control.js';
 import {collectionRecorder,collectionPeriods} from './collection-history.js';
 import {playbackHistory} from './playback-history.js';
@@ -34,6 +36,7 @@ import packageInfo from '../package.json' with {type:'json'};
 import { createSettingsAuth, settingsRoutes } from "./settings-auth.js";
 
 const directory = process.env.DATA_DIR || "/data";
+const freshInstallation=!await exists(join(directory,'archive','history.sqlite'))&&!await exists(join(directory,'current.json'))&&!await exists(join(directory,'weather.json'));
 let nextRefreshAt = process.env.RADAR_MANUAL_REFRESH === '1' ? null : Date.now() + 300000;
 let weather,haWeather,camera,clouds;
 let runtimeRainbowKey=null;
@@ -41,6 +44,7 @@ if(process.env.RADAR_DEV_CLOUDS==='1'){let input='';for await(const chunk of pro
 const diagnostics = createDiagnostics();
 diagnostics.record('startup');
 const history = await createHistoryStore(directory);
+const aviation=await createAviation(directory,{store:history,freshInstallation,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'});
 const storage = createStorageStatus(history,directory);
 const existingKey=async name=>{try{return !!JSON.parse(await readFile(join(directory,'settings',name+'.json'),'utf8')).apiKey;}catch{return false;}};
 let guardRadarPolicy=async()=>{};
@@ -83,7 +87,7 @@ const releases=await createReleaseCheck(directory,packageInfo.version);
 camera=await createCamera(directory,{store:history,ha,onEvent:diagnostics.record,onPolicy:collectionRecorder(history,'camera-collection'),autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'});
 if(!ha.status().configured&&camera.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});
 clouds=await createClouds(directory,{onPolicy:collectionRecorder(history,'cloud-collection'),store:history,provider:rainbow,settings:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'||process.env.RADAR_DEV_CLOUDS==='1',rainBusy:()=>maps.status().busy||maps.current().radar.status().fetching,onEvent:diagnostics.record});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, clouds });
+const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, clouds, aviation });
 const observeHealth=createHealthEvents(diagnostics.record);
 const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());
 let maintaining=false,nextMaintenance=0;
@@ -103,6 +107,9 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
+  ['/aviation-widget.js',['aviation-widget.js','text/javascript']],
+  ['/aviation-model.js',['aviation-model.js','text/javascript']],
+  ['/aviation.css',['aviation.css','text/css']],
   ...['celestial-motion','screen-controls','widget-resize','map-decoration','storage-meter','local-ui','local-idle','local-preferences','dock-format','trend-history-client'].map(name=>['/'+name+'.js',[name+'.js','text/javascript']]),
   ['/local-ui.css',['local-ui.css','text/css']],
   ['/suncalc.js',['suncalc.js','text/javascript']],
@@ -225,7 +232,7 @@ const server = createServer(async (req, res) => {
       const hours = params.get('hours') ?? '2';
       let result = !/^([1-9]|1[0-9]|2[0-4])$/.test(hours) || !validArchiveHours(Number(hours)) ? null : end === null ? await radar.archive.available(params.has('start')?Number(params.get('start')):undefined,params.has('until')?Number(params.get('until')):undefined) : /^\d+$/.test(end) ? await radar.archive.window(Number(end), Number(hours)) : null;
       if(end!==null&&/^\d+$/.test(end)&&Number(end)<=Date.now()/1000&&validArchiveHours(Number(hours)))result=await clouds.augment(result,Number(hours),{archive:true,end:Number(end)});
-      if(result&&end!==null){result.collectionPeriods=await collectionPeriods(history,Number(end),Number(hours));result.weatherHistory=await loadWeatherHistory(history,active.settings,Number(end),Number(hours));result.cameraHistory=await cameraHistory(history,Number(end)*1000,Number(hours));}
+      if(result&&end!==null){result.collectionPeriods=await collectionPeriods(history,Number(end),Number(hours));result.weatherHistory=await loadWeatherHistory(history,active.settings,Number(end),Number(hours));result.cameraHistory=await cameraHistory(history,Number(end)*1000,Number(hours));result.aviationHistory=await loadAviationHistory(history,Number(end),Number(hours));}
       res.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       return res.end(req.method === 'HEAD' ? undefined : JSON.stringify(result || { error: 'That history is unavailable' }));
     }
@@ -252,6 +259,7 @@ const server = createServer(async (req, res) => {
       const hours = new URL(req.url, "http://localhost").searchParams.get('hours') ?? '2';
       if (!['2','4','6'].includes(hours)) { res.writeHead(400); return res.end(); }
       const liveWindow=path==='/healthz'?null:await clouds.augment(radar.status(Number(hours)),Number(hours));
+      if(liveWindow){liveWindow.aviation=aviation.status();liveWindow.aviationHistory=await loadAviationHistory(history,liveWindow.end??Math.floor(Date.now()/1000),Number(hours));}
       res.writeHead(200, {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",
@@ -311,7 +319,7 @@ async function stop() {
   clearInterval(timer);
   clearInterval(releaseTimer);
   clearInterval(healthTimer);
-  server.close(async () => {await camera.close();await history.close();process.exit(0);});
+  server.close(async () => {await aviation.close();await camera.close();await history.close();process.exit(0);});
   setTimeout(() => process.exit(0), 3000).unref();
 }
 process.on("SIGTERM", stop);

@@ -1,0 +1,17 @@
+.aviation-widget{position:absolute;display:flex;flex-direction:column;z-index:0;box-sizing:border-box;border:1px solid #a6bfb5;border-radius:10px;background:rgb(var(--local-widget-rgb)/var(--local-aviation-alpha,.7));color:var(--text,#284d47);overflow:hidden;box-shadow:0 4px 18px #0003;cursor:grab;touch-action:none;--aviation-font-scale:1}
+.aviation-widget[hidden]{display:none}.aviation-widget.widget-front{z-index:1}
+:root[data-theme=dark] .aviation-widget{color:#e1eee7;border-color:#455b51}
+.aviation-content{padding:20px 24px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;flex:1;min-height:0;cursor:auto}
+.aviation-content section+section{margin-top:20px}
+.aviation-report-heading{font-size:calc(11px * var(--aviation-font-scale));opacity:.6;margin-bottom:8px}
+.aviation-raw{font:calc(15px * var(--aviation-font-scale))/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.aviation-code{display:inline;border:0;border-radius:3px;padding:0;margin:0;font:inherit;line-height:inherit;color:inherit;background:transparent;text-align:inherit;white-space:inherit;overflow-wrap:inherit;cursor:help;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.aviation-code.aviation-explained{background:#ffffff20}:root[data-theme=light] .aviation-code.aviation-explained{background:#ffffff75}
+.aviation-code:focus-visible{outline:1px solid #389488;outline-offset:2px}
+.aviation-caption{font-size:calc(10px * var(--aviation-font-scale));opacity:.55;line-height:1.5;margin-top:8px}.aviation-caption[data-health=warning]{color:#bb902f;opacity:1}.aviation-caption[data-health=error]{color:#bb6969;opacity:1}
+.aviation-widget>[id$=-resize]{position:absolute;right:0;bottom:0;width:32px;height:32px;border:0;background:transparent;color:inherit;font-size:20px;cursor:nwse-resize}
+#aviation-explanation{max-width:min(380px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto}
+#aviation-toggle{display:grid;place-items:center;width:46px;height:46px;border:1px solid #d2ddd4;border-radius:22px;background:#ffffffc9;color:#243c3c;cursor:pointer}
+#aviation-toggle[aria-pressed=true]{box-shadow:inset 0 0 0 1px #389488}
+:root[data-theme=dark] #aviation-toggle{background:#1d2b29e8;color:#e1eee7}
+#aviation-toggle[hidden]{display:none}

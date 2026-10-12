@@ -51,6 +51,7 @@ let drag = null;
 handle.addEventListener("pointerdown", event => {
   if (event.button !== 0 || !event.isPrimary || document.body.classList.contains('screen-locked')) return;
   if (event.target.closest("button")) return;
+  if(event.target.closest('[data-widget-scroll]'))return;
   const plots=event.target.closest("#trend-plots");if(plots&&plots.scrollHeight>plots.clientHeight)return;
   panel.focus({ preventScroll: true });
   const rect = panel.getBoundingClientRect();

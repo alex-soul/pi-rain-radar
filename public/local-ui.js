@@ -31,18 +31,18 @@ export function setupOrderedList(list){
   const arrange=()=>list.style.setProperty('--order-rows',String(Math.ceil(list.children.length/2)));
   new MutationObserver(arrange).observe(list,{childList:true});arrange();
 }
-function editor(id,title){
+export function editor(id,title){
   const dialog=document.createElement('dialog');dialog.id=id;dialog.className='local-editor';dialog.setAttribute('aria-label',title);
   const heading=document.createElement('div');heading.className='archive-heading';
   const name=document.createElement('h2');name.textContent=title;
   const close=document.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Close '+title);close.onclick=()=>dialog.close();
   heading.append(name,close);dialog.append(heading);document.body.append(dialog);return dialog;
 }
-function attachCog(area,dialog,id,label){
+export function attachCog(area,dialog,id,label){
   const button=document.createElement('button');button.id=id;button.type='button';editIcon(button,label);area.append(button);
   button.onclick=()=>{if(canEditLocal()){window.dispatchEvent(new Event('weather-explanation-close'));dialog.showModal();}};setupAffordances(area,dialog);return button;
 }
-function opacityControl(dialog,key){
+export function opacityControl(dialog,key){
   const box=document.createElement('div');box.className='local-opacity';
   box.innerHTML=`<label for="opacity-${key}">Background opacity <output></output></label><input id="opacity-${key}" type="range" min="0" max="100" step="5">`;
   const input=box.querySelector('input'),output=box.querySelector('output');
@@ -50,7 +50,7 @@ function opacityControl(dialog,key){
   input.oninput=()=>{if(canEditLocal()){localPreferences.opacity[key]=Number(input.value);saveLocalPreferences();paint();}};
   dialog.append(box);window.addEventListener('radar-local-preferences',paint);new MutationObserver(paint).observe(dialog,{attributes:true,attributeFilter:['open']});paint();
 }
-function fontControl(dialog,key){
+export function fontControl(dialog,key){
   const box=document.createElement('div');box.className='local-opacity';box.innerHTML=`<label for="font-${key}">Font size <output></output></label><input id="font-${key}" type="range" min="75" max="150" step="5">`;
   const input=box.querySelector('input'),output=box.querySelector('output');const paint=()=>{input.value=localPreferences.fonts[key]??100;output.textContent=input.value+'%'+(Number(input.value)===100?' (default)':'');};
   input.oninput=()=>{if(canEditLocal()){localPreferences.fonts[key]=Number(input.value);saveLocalPreferences();paint();}};

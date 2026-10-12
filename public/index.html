@@ -15,6 +15,7 @@
     <script type="module" src="/app.js"></script>
     <script type="module" src="/settings.js"></script>
     <script type="module" src="/overview.js"></script>
+    <link rel="stylesheet" href="/aviation.css" />
     <script type="module" src="/rain-forecast.js"></script>
   <link rel="stylesheet" href="/integrations.css">
 <link rel="stylesheet" href="/local-ui.css">
@@ -108,6 +109,7 @@
         </button>
         <button id="camera-toggle" type="button" data-widget-name="Camera" aria-label="Show Camera" aria-pressed="false" aria-controls="camera"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg></button>
         <button id="astronomy-toggle" type="button" data-widget-name="Sun and Moon" aria-label="Show Sun and Moon" aria-pressed="false" aria-controls="astronomy">☼☾</button><button id="weather-trends-toggle" type="button" aria-label="Show Weather trends" data-widget-name="Weather trends" aria-pressed="false" aria-controls="weather-trends"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3v20h20M5 17l5-7 5 4 7-9M5 20l6-4 5 3 6-7"/></svg></button>
+        <button id="aviation-toggle" type="button" data-widget-name="Aviation weather" aria-label="Show Aviation weather" aria-pressed="false" aria-controls="aviation"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 2 2 8 7 5v2l-7-2v5l2 2H8l2-2v-5l-7 2v-2l7-5z"/></svg></button>
         <button id="rain-forecast-toggle" type="button" aria-label="Show Rain forecast" aria-pressed="false" aria-controls="rain-forecast">
           <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true"><path d="M5 11a4 4 0 0 1 1-7 5 5 0 0 1 9 1 3 3 0 0 1 3 6H5M5 17v3m5-6v6m5-4v4m5-6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -177,10 +179,17 @@
           <section id="settings-panel-dashboard" class="settings-parent settings-tab-panel" role="region" aria-label="Interface" tabindex="0" hidden>
           <div class="settings-tabs settings-subtabs" role="tablist" aria-label="Interface categories" data-preference-key="radar-menu-Dashboard categories">
             <button id="settings-tab-display" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-display" tabindex="0">Display</button>
+            <button id="settings-tab-aviation" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-aviation" tabindex="-1">Aviation</button>
             <button id="settings-tab-buttons" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-buttons" tabindex="-1">Buttons</button>
             <button id="settings-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-weather" tabindex="-1">Weather</button>
             <button id="settings-tab-readings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-readings" tabindex="-1">Readings</button>
           </div>
+          <section id="settings-panel-aviation" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-aviation" tabindex="0" hidden>
+            <label class="misc-option" for="aviation-enabled">Enable METAR/TAF<input id="aviation-enabled" type="checkbox" class="control-switch" role="switch" /></label>
+            <label for="aviation-station">Airport ICAO code</label><input id="aviation-station" maxlength="4" value="EGBB" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <div class="weather-key-actions"><button id="aviation-save" type="button">Save and apply</button></div><p id="aviation-note" role="status"></p>
+            <p class="camera-summary">NOAA Aviation Weather Center · METAR and TAF checked every five minutes. The side button shows or hides the widget on this screen.</p>
+          </section>
           <section id="settings-panel-weather" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-weather" tabindex="0" hidden>
 
 <div class="settings-group weather-units">            <div class="units-grid">
@@ -465,7 +474,7 @@
         </div>
       </footer>
         <div class="source">
-          <p>Radar by <span id="radar-credit"><a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></span> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="town-credit" hidden> · Towns by <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>)</span><span id="cloud-credit" hidden> · Clouds by <a href="https://rainbow.ai/" target="_blank" rel="noopener noreferrer">Rainbow</a></span><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span><span id="ha-credit"></span></p>
+          <p>Radar by <span id="radar-credit"><a data-provider-credit href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></span> · Map by <a data-provider-credit href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a><span id="town-credit" hidden> · Towns by <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>)</span><span id="cloud-credit" hidden> · Clouds by <a href="https://rainbow.ai/" target="_blank" rel="noopener noreferrer">Rainbow</a></span><span id="weather-credit" hidden><span class="credit-separator"> · </span>Weather by <a data-provider-credit href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></span><span id="ha-credit"></span><span id="aviation-credit" hidden> · Aviation weather by <a data-provider-credit href="https://aviationweather.gov/" target="_blank" rel="noopener noreferrer">NOAA AWC</a></span></p>
         </div>
     </main>
   </body>

@@ -5,6 +5,7 @@ const controls = [
   { id: 'overview-toggle', label: 'Overview' },
   { id: 'rain-forecast-toggle', label: 'Rain forecast' },
   { id: 'camera-toggle', label: 'Camera', visible: false },
+  { id: 'aviation-toggle', label: 'Aviation' },
   { id: 'theme-toggle', label: 'Light / dark' },
   {id:'astronomy-toggle',label:'Sun and Moon'},
   {id:'weather-trends-toggle',label:'Weather trends'},
@@ -18,7 +19,7 @@ try {
     const ids = new Set();
     const valid = saved.filter(item => item && controls.some(c => c.id === item.id) &&
       typeof item.visible === 'boolean' && !ids.has(item.id) && ids.add(item.id));
-    layout = [...valid.map(({ id, visible }) => ({ id, visible })), ...layout.filter(item => !ids.has(item.id))];
+    layout = [...valid.map(({ id, visible }) => ({ id, visible })), ...layout.filter(item => !ids.has(item.id)).map(item=>item.id==='aviation-toggle'?{...item,visible:false}:item)];
   }
 } catch { /* Use defaults if storage is unavailable or invalid. */ }
 function apply() {

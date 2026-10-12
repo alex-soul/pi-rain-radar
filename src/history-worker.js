@@ -327,11 +327,11 @@ async function status(){
 }
 const methods={
   weatherState({source}){
-    if(!['openweather','tempest','ha','policy'].includes(source))throw archiveError('ARCHIVE_INPUT','Invalid weather source');
+    if(!['openweather','tempest','ha','policy','aviation-live'].includes(source))throw archiveError('ARCHIVE_INPUT','Invalid weather source');
     return meta(`weather:${source}`);
   },
   async saveWeatherState({source,value}){
-    if(!['openweather','tempest','ha','policy'].includes(source)||!value||Buffer.byteLength(JSON.stringify(value))>128*1024)throw archiveError('ARCHIVE_INPUT','Invalid weather state');
+    if(!['openweather','tempest','ha','policy','aviation-live'].includes(source)||!value||Buffer.byteLength(JSON.stringify(value))>128*1024)throw archiveError('ARCHIVE_INPUT','Invalid weather state');
     const key=`weather:${source}`;
     if(JSON.stringify(meta(key))===JSON.stringify(value))return;
     await writable(128*1024);meta(key,value);

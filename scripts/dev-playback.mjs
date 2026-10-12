@@ -1,3 +1,4 @@
+import {createDevAviation} from './dev-aviation.mjs';
 import {validScreenCommand} from '../src/screen-control.js';
 import {trendFixture} from './dev-weather-trends.mjs';
 import {syntheticAvailability,syntheticMedia} from './dev-availability.mjs';
@@ -91,6 +92,7 @@ const scenarioLog=createDiagnostics(),observeScenario=createHealthEvents(scenari
 scenarioLog.record('startup');
 let demoKey=!!trial,demoRadar={main:'rainviewer',overview:'same',monthlyLimit:null};
 const controls=()=>controlsPage(scenario);
+const devAviation=await createDevAviation(directory,{end,scenario:()=>scenario});
 function filterWindow(data) {
   if(scenario==='archive-rollover'&&data.weatherHistory)data={...data,weatherHistory:{...data.weatherHistory,weather:data.weatherHistory.weather.filter(r=>r.time>=end-21600),forecasts:data.weatherHistory.forecasts.filter(r=>r.time>=end-21600)}};
   if(scenario==='archive-rollover'&&Array.isArray(data.times))data={...data,times:data.times.filter(t=>t>=end-21600),oldest:Math.max(data.oldest??0,(end-21600)*1000)};
@@ -161,7 +163,7 @@ const server=http(async(req,res)=>{
       if(next==='radar-disabled')demoRadar={...demoRadar,main:'disabled',overview:'same'};
       else if(next==='radar-overview-only')demoRadar={...demoRadar,main:'disabled',overview:'rainviewer'};
       else if(next==='healthy')demoRadar={...demoRadar,main:'rainviewer',overview:'same'};
-      scenario=next;revision++;
+      scenario=next;await devAviation.refresh();revision++;
       if(req.headers.accept==='application/json'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify({scenario,revision}));}
       res.writeHead(303,{Location:'/__dev'});return res.end();
     }
@@ -191,6 +193,14 @@ const server=http(async(req,res)=>{
     }
     if(path.pathname==='/api/archive'&&scenario==='archive-delayed')await new Promise(resolve=>setTimeout(resolve,3000));
     if(path.pathname==='/api/archive'&&scenario==='archive-empty')return send({times:[],oldest:null,newest:null,frames:[]});
+    if(path.pathname==='/api/settings/aviation'){
+      const check=await fetch(origin+'/api/settings',{headers:req.headers.authorization?{Authorization:req.headers.authorization}:{}});if(!check.ok){res.writeHead(check.status);return res.end('{}');}
+      if(req.method==='GET')return send(devAviation.collector.status());
+      if(req.method!=='POST'||req.headers['content-type']!=='application/json'||req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host||req.headers['sec-fetch-site']==='cross-site'){res.writeHead(403);return res.end('{}');}
+      let body='';for await(const chunk of req){body+=chunk;if(body.length>1024){res.writeHead(413);return res.end('{}');}}
+      let input;try{input=JSON.parse(body);}catch{res.writeHead(400);return res.end('{}');}
+      const result=await devAviation.collector.configure(input);if(result.status===200)await devAviation.refresh();res.writeHead(result.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(result));
+    }
     if(path.pathname==='/api/settings/camera'||path.pathname.startsWith('/api/settings/camera/'))return await devCamera.handle(req,res,path.pathname);
     if(path.pathname==='/api/camera/image'){const bytes=devCamera.camera.image(path.searchParams.get('source'),path.searchParams.get('capture'));res.writeHead(bytes?200:404,{'Content-Type':'image/jpeg','Cache-Control':'no-store'});return res.end(bytes??'Not found');}
     if(path.pathname==='/api/camera')return send(await devCamera.camera.live(Number(path.searchParams.get('hours')??2),path.searchParams.has('end')?Number(path.searchParams.get('end'))*1000:undefined));
@@ -264,6 +274,9 @@ const server=http(async(req,res)=>{
     if(path.pathname==='/api/settings'&&response.ok){const data=await response.json();return send({...data,radar:demoRadar});}
     if(path.pathname==='/api/status'||path.pathname==='/api/archive'){
       let data=filterWindow(await response.json());
+      if(path.pathname==='/api/status')await devAviation.ensureLive();
+      if(path.pathname==='/api/status'||path.searchParams.has('end'))data.aviationHistory=await devAviation.collector.history(Number(path.searchParams.get('end')??data.end??end),Number(path.searchParams.get('hours')??2));
+      if(path.pathname==='/api/status')data.aviation=devAviation.collector.status();
       if(path.pathname==='/api/status'){
         data.camera=devCamera.camera.status();
         data.cameraHistory=await devCamera.camera.live(Number(path.searchParams.get('hours')??2),data.end*1000);
@@ -311,4 +324,4 @@ const server=http(async(req,res)=>{
 });
 server.listen(3091,previewBind,()=>console.log(JSON.stringify({preview:previewUrl,controls:previewUrl+'/__dev',directory,backendPid:child.pid,pid:process.pid})));
 server.on('error',error=>{console.error(error.message);child.kill();process.exitCode=1;});
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{child.kill();server.close(async()=>{await devCamera.close();await devWeather.close();process.exit(0);});});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{child.kill();server.close(async()=>{await devAviation.close();await devCamera.close();await devWeather.close();process.exit(0);});});

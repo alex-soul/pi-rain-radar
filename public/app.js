@@ -1,3 +1,4 @@
+import {updateAviation} from './aviation-widget.js';
 import {loadMapPlaces} from './map-decoration.js';
 import {paintStorageMeter} from './storage-meter.js';
 import {localPreferences} from './local-preferences.js';
@@ -258,6 +259,7 @@ function paintStatus() {
   const expected = sequenceHours * 6 + 1;
   $("frame-total").classList.remove("incomplete");
   updateAvailability({frames:sequence,data:historyWindow??status,status,archive:!!historyWindow,start:timelineModel.start,end:timelineModel.end,time:displayed?.time,zone:timeZone},time=>{playing=false;if(!sequence.length)return;index=nearestTimelineFrame(sequence,time,0);showFrame();});
+  updateAviation({status:status?.aviation,history:historyWindow?.aviationHistory,historical:!!historyWindow,time:historyWindow?(displayed?.time??historyWindow.end)*1000:Date.now()});
   $("frame-count").setAttribute("aria-label", `Frame ${displayed ? Math.max(0,sequence.indexOf(displayed))+1 : 0} of ${sequence.length}. Expected ${expected} frames in a complete ${sequenceHours}-hour window.`);
 }
 function paintProviderLabels(frame) {
@@ -653,7 +655,7 @@ async function loadHistory(end, preserve = false) {
     if (!next?.length) throw new Error('No readable history');
     attachWindow(next,window,hours);
     weatherReplay=createWeatherReplay(window.weatherHistory);
-    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, coverage:window.coverage, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}} };
+    historyWindow = { hours, start: window.start, end: window.end, complete: window.complete, counts: window.counts, coverage:window.coverage, collectionPeriods:window.collectionPeriods,weatherHistory:window.weatherHistory,cloudHistory:window.cloudHistory,cameraHistory:window.cameraHistory??{records:[],counts:{metadata:0,acquisition:0}},aviationHistory:window.aviationHistory??{states:[],reports:[]} };
     archiveHours=hours;archiveRevision=status?.archiveRevision;
     returningLive = false;
     if (!preserve) playing = true;

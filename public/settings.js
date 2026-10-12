@@ -1,3 +1,4 @@
+import {setupAviationSettings} from './aviation-widget.js';
 import {setupScreenControls} from './screen-controls.js';
 import './settings-layout.js';
 import {setupLocalEditors,canEditLocal} from './local-ui.js';
@@ -54,6 +55,7 @@ const radarUI=setupRadarSettings(canEdit,request);setupReviewRadar();setupSettin
 const embedUI=setupEmbedSettings(canEdit,request);
 const storageUI=setupStorageSettings(canEdit,request);
 const cameraUI=setupCameraSettings(canEdit,request);
+const aviationUI=setupAviationSettings(canEdit,request);
 const powerUI=setupDevicePower(canEdit,request);
 const screenUI=setupScreenControls(canEdit,request);
 const resetButtons = setupControlEditor(canEditLocal);
@@ -128,6 +130,7 @@ function discard(bearer) { if (bearer) void request('/lock', {}, bearer).catch((
 const syncDiagnostics = setupDiagnostics(dialog, request, canEdit);
 function lock() {
   cameraUI.reset();
+  aviationUI.reset();
   embedUI.clear();
   powerUI.clear();
   screenUI.clear();
@@ -199,7 +202,7 @@ async function showSettings(current) {
     void radarUI.load(keyState.radar);
     void embedUI.load();
     void storageUI.load();
-    void cameraUI.load();void refreshIntegrations().then(loadIntegrationChoices);
+    void cameraUI.load();void aviationUI.load();void refreshIntegrations().then(loadIntegrationChoices);
     if (keyState.map) for (const [key,value] of Object.entries(keyState.map)) {
       const field=$(`map-${key}`);
       field.value=key==='overviewZoom'?Number(value.toFixed(2)):value;
