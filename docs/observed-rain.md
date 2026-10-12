@@ -6,6 +6,6 @@ For Tempest, a correctly configured daily Utility Meter can turn the station's p
 
 Radar acquires the total on its existing five-minute HA cycle, including unchanged values, and retains it under **System → Storage**'s archive policy. It saves the raw unit, original report timestamp and available reset/previous-period metadata. Acquisition time identifies each snapshot; missing or invalid acquisitions remain gaps. No forecast replaces an observed value.
 
-Enable **Rain accumulation** under **Screen settings → Top dock → Readings**, or in Weather trends. Choose mm, cm or in under **Interface → Weather → Units**; this converts the display, not stored measurements. A trend is the running total, so daily resets break the line rather than appearing as negative rainfall. There is no data before collection is enabled.
+Enable **Rain accumulation** under **Screen settings → Top dock → Readings**, or in Weather trends. Choose the global mm, cm or in default under **Interface → Weather → Units**, or override it in **Screen settings → Top dock → Units**; this converts the display, not stored measurements. A trend is the running total, so daily resets break the line rather than appearing as negative rainfall. There is no data before collection is enabled.
 
 This is the collection foundation. Comparing actual rain with forecasts at different lead times remains future work.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0 — 12 October 2026
+
+- Aviation METAR/TAF collection, raw reports with section explanations, split widgets and acquisition-based Archive replay.
+- Global unit/format defaults with independent per-screen inheritance and a one-time 0.11.0 migration.
+- Consistent 20px dock values, wider Sun/Moon slots, one-hour trend arrows and independent wind-arrow direction.
+- Compact three-letter chart codes and explainers; latest values in Live, capture values and window precedence in Archive.
+- Cloud freshness at 40/60 minutes, cloud-only Live borrowing below 40 minutes, closer gaps popup, tighter forecast spacing and themed controls.
+
+I accepted RC2 on my Pi 4 / 2 GB. Native RC1 passed 421 tests; RC2 passed 45 affected tests locally and natively, plus startup/restart. See [release notes](docs/release-0.12.0.md) and [upgrade guidance](docs/upgrading.md).
+
 ## 0.11.0 — 9 October 2026
 
 - One Screen settings popup for Main map, Top dock, Bottom dock and Side buttons, with a bottom-left cog and consistent dropdown/tabs.

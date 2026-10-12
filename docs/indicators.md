@@ -1,8 +1,12 @@
 # Screen indicators
 
-## Cloud freshness in 0.8.0
+## Aviation availability
 
-The bottom Dock turns red when the newest enabled cloud imagery is at least **30 minutes old**, even if collection succeeds. This threshold may be too aggressive for normal provider publication delays. It remains unchanged while longer observations are collected; a red indicator alone does not prove a failed download.
+The Aviation row appears when collection is enabled, even with the widget hidden. Each cell explains METAR and TAF separately, including acquisition and issue/validity times. Successful unchanged reports remain available. Interrupted collection retains an otherwise usable report with amber status; missing, cancelled or unusable reports are red. Initial waiting, disabled and unknown periods remain distinct. Future TAF validity alone is not a warning. See [Aviation](aviation.md#availability).
+
+## Cloud freshness
+
+Enabled cloud imagery is green below **40 minutes**, amber from **40 to under 60 minutes**, and red at **60 minutes or older**. The oldest latest image across enabled maps determines age health. Backend status and the bottom dock use the same limits. Failed acquisition, pending first data, disabled collection, request budgets and an unreachable backend retain their own handling; image age alone does not prove a failed download.
 
 The gaps popup answers a different question: whether each historical position has its expected image. Reusing an earlier image is amber; unavailable expected imagery is red. Therefore a red freshness indicator with two amber cloud slots and no red gaps can be correct. Provider delay still affects the gaps popup and total colour. Check Status for image age and collection errors separately.
 
@@ -22,7 +26,7 @@ This page is the single reference for status colours and symbols. For setup and 
 
 ## 2. Bottom dock indicator
 
-**Greenish:** both selected radar sources and enabled cloud layers have recent usable data. **Amber:** a source reports a delay/problem while usable data remains, or initial acquisition is pending. **Red:** either source has no usable data after a failed acquisition, observations are at least 30 minutes old, or the browser cannot reach the backend. Already-loaded playback can continue while usable; animation does not prove connection health. Historical timeline gaps alone do not determine handle colour.
+**Greenish:** both selected radar sources and enabled cloud layers have recent usable data. **Amber:** a source reports a delay/problem while usable data remains, or initial acquisition is pending. **Red:** either source has no usable data after a failed acquisition, radar observations are at least 30 minutes old or cloud observations at least 60 minutes old, or the browser cannot reach the backend. Already-loaded playback can continue while usable; animation does not prove connection health. Historical timeline gaps alone do not determine handle colour.
 
 ## 3. Rain forecast indicator
 
@@ -32,11 +36,11 @@ A failed or expired minute forecast shows a **red baseline**, rather than an emp
 
 ## 4. Total frames indicator
 
-In **12 / 13**, 12 is the current playback position and 13 the number of playable positions. Tap the counter to toggle availability for the full window. Its whole outlined area stays highlighted while the popup is open. The total takes the worst applicable row state: red for missing expected data, amber for reused earlier observations, greenish for available data, or neutral when collection is disabled or historical policy is unknown. It includes enabled/history-applicable Rain, Clouds, Weather and Camera rows; optional gust is excluded. The newest pending Live slot does not worsen the total. A full count therefore does not guarantee complete data in every row.
+In **12 / 13**, 12 is the current playback position and 13 the number of playable positions. Tap the counter to toggle availability for the full window. Its whole outlined area stays highlighted while the popup is open. The total takes the worst applicable row state: red for missing expected data, amber for reused earlier observations, greenish for available data, or neutral when collection is disabled or historical policy is unknown. It includes enabled/history-applicable Rain, Clouds, Weather, Camera and Aviation rows; optional gust is excluded. The newest pending Live slot does not worsen the total. A full count therefore does not guarantee complete data in every row.
 
 ## 5. Frame gaps
 
-The current availability popup has Rain, Clouds, Weather and Camera rows where applicable. Each cell represents a ten-minute playback position. Rain and Clouds combine Main/Overview detail; tap a cell for the affected map or reading. Greenish means available, amber means an earlier observation was reused, red means expected data is missing, and grey means pending, disabled or unknown as shown in its detail. Missing imagery never means dry weather. Live may reuse compatible earlier radar/cloud imagery strictly less than 30 minutes old; Archive leaves a missing radar/cloud layer empty. Late arrivals fill their original slots. The two-track timeline in the screenshots above is historical.
+The current availability popup has Rain, Clouds, Weather, Camera and Aviation rows where applicable. Each cell represents a ten-minute playback position. Rain and Clouds combine Main/Overview detail; tap a cell for the affected map or reading. Greenish means available, amber means an earlier observation was reused, red means expected data is missing, and grey means pending, disabled or unknown as shown in its detail. Missing imagery never means dry weather. Live may reuse compatible earlier radar imagery strictly less than 30 minutes old and cloud imagery strictly less than 40 minutes old; Archive leaves a missing radar/cloud layer empty. Late arrivals fill their original slots. The two-track timeline in the screenshots above is historical.
 
 Live uses a clock-aligned ten-minute endpoint with a five-minute publication lag. Only the newest missing Live slot is pending; newer provider frames do not advance the clock endpoint. See [playback rules](playback-conventions.md).
 
@@ -58,7 +62,7 @@ In Status, green means connected/ready; warning states identify the affected sou
 
 ## Wind arrow
 
-**Flow** (default) points where wind is going. **Meteorological** points where it comes from. Both the arrow and compass/degrees reading follow this selection in Interface → Weather. The arrow rotates continuously rather than selecting one of eight icons.
+**Blowing towards** (default) points where wind is going. **Coming from** points towards its origin. The **Wind arrow** dropdown changes only the arrow; Compass/Degrees values always report where wind comes from. Global defaults are in Interface → Weather → Units, with overrides in Screen settings → Top dock → Units. Hover/tap gives both bearings. The arrow rotates continuously rather than selecting one of eight icons.
 
 ## Other colour cues
 
@@ -72,8 +76,8 @@ Toolbar outlines indicate an expanded control or open widget, not API health. Th
 
 ## 0.7.0 integrations and storage
 
-HA weather health is separate from HA connection health. A green HA connection does not prove each mapped sensor is reporting. An unusable HA-assigned reading shows a gap or, with optional fresh OpenWeather fallback enabled, an amber substituted value. Ordinary OpenWeather supplementation for other readings is not fallback. **Unit mismatch** means the HA sensor unit and shared app setting differ; correct either side. Values are not converted from HA.
+HA weather health is separate from HA connection health. A green HA connection does not prove each mapped sensor is reporting. An unusable HA-assigned reading shows a gap or, with optional fresh OpenWeather fallback enabled, an amber substituted value. Ordinary OpenWeather supplementation for other readings is not fallback. **Unit mismatch** means the HA sensor unit and configured source expectation differ. Valid values are converted to the effective display units; changing display units does not change the source expectation.
 
-Archive **As recorded** retains historical source, units and fallback presentation. Operational acquisition/connection indicators stay current. Camera may be unconfigured, disabled, waiting, fresh, stale or unavailable; hiding its button does not stop collection. Storage pressure warnings mean history may roll before the selected retention target. Refer to the [manual](manual.md#archive-storage) and [backup guide](archive-backup.md).
+Archive **As recorded** retains historical source and fallback presentation, converting stored source units to the effective display units. Operational acquisition/connection indicators stay current. Camera may be unconfigured, disabled, waiting, fresh, stale or unavailable; hiding its button does not stop collection. Storage pressure warnings mean history may roll before the selected retention target. Refer to the [manual](manual.md#archive-storage) and [backup guide](archive-backup.md).
 
 Attribution stays at its existing bottom position, follows visible weather/forecast content in Live and Archive, and remains applicable when expected data is missing.

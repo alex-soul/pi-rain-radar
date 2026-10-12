@@ -4,15 +4,15 @@
 
 **Main-map settings** and **Overview settings** control their respective rain/cloud visibility and opacity. Unavailable layers show their explanation; hiding a layer does not stop its collection. The shared Rainbow request limit is under **System → API → Rainbow** and applies to rain and clouds together.
 
-**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap or hover over the widget to reveal its **cog**, then use toggles and draggable rows to select and order readings: those three plus Wind, Gust, T−Td, Visibility, Pressure, UV and optional Rain accumulation. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
+**Weather charts** show trends across the displayed window. Temperature, Humidity and Dew point start enabled for new browsers. Tap or hover over the widget to reveal its **cog**, then use toggles and draggable rows to select and order readings: those three plus Wind, Gust, Dew point depression, Visibility, Pressure, UV and optional Rain accumulation. **Detach** gives each enabled chart its own movable/resizable window; the main chart button hides/shows them together and remembers their positions. Turn Detach off to return to a stack. Each chart fits its recorded range, with a calm span for nearly constant values; it has no numeric scale. Grid spacing adapts to longer windows. Values retain their source/units; no wind-direction chart is included.
 
-**Sun/Moon** uses bundled local calculations for the configured location/time zone, without provider downloads. Live uses current time; Archive uses its selected time. The compact widget shows the bodies rising/setting through its border and Moon phase; expand vertically to reveal event times. The **top-dock editor** has Sun/Moon visibility/order rows, off by default. Its **Options** tab selects Next event (default) or Altitude/direction for each. Compact Dock suffixes **r**, **s**, **p** mean rise, set and peak; the Dock retains its themed Moon icon. Widget information remains available through its help.
+**Sun/Moon** uses bundled local calculations for the configured location/time zone, without provider downloads. Live uses current time; Archive uses its selected time. The compact widget shows the bodies rising/setting through its border and Moon phase; expand vertically to reveal event times. The **top-dock editor** has Sun/Moon visibility/order rows, off by default. Its **Units** tab inherits the global Sun/Moon display or selects Next event (default) or Altitude and direction for each. Compact Dock suffixes **r**, **s**, **p** mean rise, set and peak; the Dock retains its themed Moon icon. Widget information remains available through its help.
 
 **Auto-hide buttons** in the side-button editor shares the 15-second inactivity/reveal timing of the two dock auto-hide switches in their own editors. Each switch stays independent. Tap to reveal hidden controls together. An open clock stays open. Local edit cogs and resize corners use a separate one-second timeout after you leave their area or finish touching it; hovering, keyboard focus, dragging or an open editor keeps them available.
 
 **Camera** offers a one-to-ten-minute collection interval. Live retains the latest image; new Archive history retains one representative per ten-minute playback slot. Existing captured history is preserved. Archive never chooses a future image; missing matches remain gaps.
 
-Cloud freshness may be stricter than normal publication delay warrants; see [cloud freshness](indicators.md#cloud-freshness-in-080). Thresholds remain unchanged in this release.
+Cloud imagery is green below 40 minutes old, amber from 40 to under 60, and red from 60 minutes. Collection failures remain separate; see [cloud freshness](indicators.md#cloud-freshness).
 
 Controls and settings for Pi Rain Radar. Status meanings live in the numbered [indicator guide](indicators.md). For installation, use [Quick Start](quick-start.md) or the [Raspberry Pi build guide](raspberry-pi.md).
 
@@ -21,7 +21,7 @@ Controls and settings for Pi Rain Radar. Status meanings live in the numbered [i
 | Shared by every screen | Remembered by each browser |
 | --- | --- |
 | Location, both map zooms, time zone | Widget positions/sizes and open/closed state |
-| API connections, weather units/source/collection and settings PIN | Button visibility/order, theme and dock preferences |
+| API connections, display defaults, source/collection and settings PIN | Unit/format overrides, button visibility/order, theme and dock preferences |
 | Radar acquisition and retained history | Map scale, readings, UI lock, playback speed/window and gust cache |
 
 Use the same browser profile and address each time. Hostname, IP address and localhost are different browser storage locations; switching between them starts a separate layout. Clearing site data also resets that layout. One Pi collects the data for all screens; more screens do not each make their own provider requests. Simultaneous-screen capacity has not been measured.
@@ -30,17 +30,17 @@ Use the same browser profile and address each time. Hostname, IP address and loc
 
 Tap the screen to reveal the large bottom-left **Screen settings** cog for 15 seconds. Its selector contains Main map, Top dock, Bottom dock and Side buttons; their options appear in tabs across the top. Widget cogs sit at the bottom left and resize corners at the bottom right. Widget controls retain their separate one-second edit-control timeout.
 
-Top dock, side buttons and Weather trends use a first tab for visibility/order and **Options** for other preferences. Order runs down the first column, then down the second; narrow screens use one column. Local editors work without the shared Settings PIN when this browser is unlocked. Locking this browser blocks editing here, without locking other browsers.
+Top dock has **Readings / Units / Options** tabs. Units offers nine independent Inherit global or explicit choices in two columns on wide screens and one on narrow screens. Side buttons and Weather trends use a first tab for visibility/order and **Options** for other preferences. Order runs down the first column, then down the second; narrow screens use one column. Local editors work without the shared Settings PIN when this browser is unlocked. Locking this browser blocks editing here, without locking other browsers.
 
-Background opacity is adjustable from 0–100% in 5% steps for both docks, side buttons, Rain forecast, Sun/Moon, Weather trends and Stats for nerds. Reset restores the original themed background. Weather trends uses one opacity across all charts. Overview and Camera have no background-opacity editor.
+Background opacity is adjustable from 0–100% in 5% steps for both docks, side buttons, Rain forecast, Sun/Moon, Weather trends, Aviation and Stats for nerds. Reset restores the original themed background. Weather trends uses one opacity across all charts. Overview and Camera have no background-opacity editor.
 
-Weather trends can follow the main playback window or use a separate 2, 4, 6, 12 or 24-hour lookback. This uses retained local data, without extra provider collection. The capture cursor disappears outside the chart window. **Detach** is in Options and gives enabled charts independent positions and sizes.
+In Live, Weather trends can follow the main playback window or use a separate 2, 4, 6, 12 or 24-hour lookback. Archive always uses its selected playback window; returning to Live restores the saved chart choice. This uses retained local data, without extra provider collection. The capture cursor disappears outside the chart window. **Detach** is in Options and gives enabled charts independent positions and sizes.
 
-Chart legends show the name and displayed-window min/max on the left, with the current scrubbed value on the right: `Temperature (11.0 · 16.8)       14.2°`. Min/max omit units and share the chart font setting. Optional [Rain accumulation](observed-rain.md) adds an observed running-total chart and dock reading. Side-button font scaling also controls the clock; Stats for nerds has a smaller 280px minimum width for phones.
+Chart legends show a three-letter code and displayed-window min/max on the left, with the value on the right: `TMP (11.0 · 16.8)       14.2°`. Live shows the latest current value while the cursor moves; Archive shows the value at the capture position. Hover or tap the code, min/max or value for its explanation and timestamps. Codes also appear below the full labels in the chart editor: TMP temperature, DPT dew point, DPD dew point depression, WND wind, GST gusts, HUM humidity, PRS pressure, UVI UV index, VIS visibility and RAC rain accumulation. Min/max omit units and share the chart font setting. Optional [Rain accumulation](observed-rain.md) adds an observed running-total chart and dock reading. Side-button font scaling also controls the clock; Stats for nerds has a smaller 280px minimum width for phones.
 
 ## Fresh-browser defaults
 
-Dark theme; clock expanded; other widgets closed. Button order is Clock, Archive, Overview, Rain forecast, Camera, Light/dark, Sun and Moon, Weather trends, then Stats for nerds. Camera and Stats buttons start hidden; feature availability still applies. Top-dock readings start with Temperature, Humidity, Dew point, Wind speed and Wind direction. Map scale is on, auto-hide is off, gust cache is 60 minutes, playback is two hours at 1× and UI lock is off. Existing saved preferences take priority; a new/incognito browser gets fresh local defaults. Shared units and provider settings still come from the installation.
+Dark theme; clock expanded; other widgets closed. Button order is Clock, Archive, Overview, Rain forecast, Camera, Light/dark, Sun and Moon, Weather trends, Aviation, then Stats for nerds. Camera and Stats buttons start hidden; feature availability still applies. Top-dock readings start with Temperature, Humidity, Dew point, Wind speed and Wind direction. Map scale is on, auto-hide is off, gust cache is 60 minutes, playback is two hours at 1× and UI lock is off. Existing saved preferences take priority; a new/incognito browser gets fresh local defaults. Shared units and provider settings still come from the installation.
 
 ## Settings
 
@@ -51,7 +51,7 @@ Tap the screen to reveal the **three-line menu at the bottom right**. It disappe
 Choose a section from the Settings selector:
 
 - **Map:** Location, Regional, Embed
-- **Interface:** Display, Radar, Weather, Clouds, Camera
+- **Interface:** Display, Radar, Weather, Clouds, Camera, Aviation
 - **System:** Status, API (OpenWeather / Rainbow / HA), Storage, PIN, Log
 - **Appliance** (Power and Screen)
 - **About**
@@ -68,9 +68,13 @@ History retains observations from whichever providers were selected at that time
 
 ### Weather readings and units
 
-Use **Interface → Weather → Readings / Units / Forecast**. Dock visibility and order are in the top-dock cog and belong to this browser. Units, source mappings, fallback and background collection belong to the appliance.
+Use **Interface → Weather → Readings / Units / Forecast**. Dock visibility/order and unit overrides belong to this browser under **Screen settings → Top dock**. Global Units supplies defaults for temperature, wind speed, visibility, pressure, accumulated rain, wind direction format, wind arrow, Sun and Moon. Source mappings, fallback and background collection belong to the appliance.
 
-On upgrade, explicitly confirm the initial shared units in **Units**. Existing archive observations are preserved and use that fixed baseline; former browser-specific unit changes cannot be reconstructed. Later shared changes take effect at their recorded time in Archive. Live always follows current shared units.
+Every screen initially inherits the global defaults. An explicit screen choice stays fixed until you select **Inherit global** again. Both Live and Archive use these effective display choices, converting from the stored source units without rewriting history. On upgrade from 0.11.0, existing global units are preserved and the first existing screen opened supplies global wind/Sun/Moon formats; all migrated screen dropdowns inherit. See [upgrade details](upgrading.md#0120).
+
+**Wind direction format** chooses Compass or Degrees. The value always names where wind comes from. **Wind arrow** chooses Blowing towards (default) or Coming from and changes only the arrow. For a 150° wind, the reading stays 150°/SSE while the towards arrow points 330°/NNW.
+
+Dock values share a 20px font at 100%, with 60px value slots except 100px for Sun/Moon. Rising/falling arrows use valid observations over the preceding hour, independently of the selected playback/chart window. Stable, noisy or insufficient data leaves the arrow blank. Hover/tap explains the direction.
 
 Save credentials under **System → API → OpenWeather / Rainbow / HA**. Saving a new key does not enable collection. Enable current readings under **Readings** and minute forecasts independently under **Forecast**. Existing enabled collectors remain enabled on upgrade. Switching either off preserves credentials/history and allows already-fresh values to expire normally.
 
@@ -78,10 +82,14 @@ Save credentials under **System → API → OpenWeather / Rainbow / HA**. Saving
 
 **T−Td**, or dew point depression, subtracts dew point from temperature using each reading's configured source, including fallback. Inputs can come from different providers; hiding Dew point in the Dock does not disable the calculation. The subtitle shows OpenWeather, HA or OpenWeather/HA. Missing inputs leave a gap. Wind gust is optional: its own indicator can be amber, but it does not make the weather handle or aggregate availability amber.
 
-HA values are not converted. Their reported units must match Settings, checked on every poll and immediately after changing app units. **Unit mismatch** means changing HA or this app's Settings to match. Recognised spelling aliases do not change the value. Readings use HA's `last_reported` as **Reported to HA**, not a promise of a new physical measurement. Reports older than ten minutes, missing timestamps and unavailable/invalid states are ineligible. Polling the same cached state does not renew its report time.
+HA readings are validated against the source units saved when the sensor is selected, then converted to the effective screen units. Changing display units does not change source expectations or collection. **Unit mismatch** means the sensor no longer matches its configured source unit; check the sensor and its mapping. Recognised spelling aliases are accepted. Readings use HA's `last_reported` as **Reported to HA**, not a promise of a new physical measurement. Reports older than ten minutes, missing timestamps and unavailable/invalid states are ineligible. Polling the same cached state does not renew its report time.
 
 The shared HA connection uses the address reachable from the appliance. The browser can access the appliance remotely while its HA connection stays on the LAN. Connection health is checked separately on startup/save and every five minutes. Mapped weather readings are collected every five minutes, without forcing HA device updates. Keep any applicable upstream attribution; generic HA access does not override the source's terms.
 
+
+### Aviation weather
+
+Use **Interface → Aviation** to enable METAR/TAF and enter a four-character ICAO airport code. Collection is shared and independent of widget visibility. Fresh installations collect EGBB every five minutes; existing installations leave Aviation off until enabled. Use the side button to show the widget, its top-centre handle to drag, and its cog for split panels, opacity and font size. Reports wrap to fit; METAR can shrink to one line. Hover or tap a highlighted code for just that section’s meaning. [Aviation setup, availability and Archive rules](aviation.md).
 
 ### Device Power
 
@@ -135,7 +143,7 @@ The key stays on the computer running the app and is not displayed again. **Remo
 
 ### Playback dock, map settings and UI lock
 
-Open the cog above the bottom-dock handle for playback and footer preferences. **Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
+Open **Screen settings → Bottom dock** for playback and footer preferences. **Playback speed** offers 0.5×, 0.75×, 1× (default), then half-steps through 10×. At 1× an ordinary frame lasts 650ms, subject to image loading/settling. **Last frame hold** offers 1×–5× in 0.2 steps, default 2.4× (1560ms at playback speed 1×); 1× adds no extra hold. Both durations scale with playback speed. Live changes preview immediately, persist in this browser and do not affect acquisition. Archive has temporary speed/hold sliders; returning to Live restores the saved settings.
 
 **Playback window** selects 2, 4 or 6 hours for Live on this browser and supplies the initial Archive duration. Archive has its own temporary 1–24-hour slider. Longer windows use retained history and more browser memory, without extra provider requests or retention.
 
@@ -211,7 +219,7 @@ When paused, **Previous** beside map settings and **Next** beside the main menu 
 
 Archive never substitutes an older frame for a missing one. Live may borrow earlier compatible radar for less than 30 minutes; its gaps remain visible. Both modes include late arrivals and skip positions missing both maps. See [playback rules](playback-conventions.md) for endpoint grace and automatic pause/recovery.
 
-Archive replays saved weather and camera snapshots alongside radar, preserving the recorded source, units and temporary-fallback colour. Returning to Live restores current weather and the latest camera snapshot. Manual Live scrubbing changes radar only.
+Archive replays saved weather and camera snapshots alongside radar, preserving the recorded source and temporary-fallback colour while converting values to the effective display units. Aviation follows each report’s first successful local acquisition time. Returning to Live restores current weather and the latest camera snapshot. Manual Live scrubbing changes radar only.
 
 Rain forecast comparison **None** shows the selected capture's next-hour forecast. Selecting **−10 through −50 min** shows a past two-hour analysis: bars are the first minute (OWM NOW estimate) of each saved capture, and the pink line is an earlier forecast for the same target time. Both axes run chronologically left to right; comparison changes the time window, not time direction. Saved captures are about ten minutes apart, so narrow bars mark actual sampling times, not continuous observed rain. Neutral unsampled intervals are distinct from missing expected data and genuine zero rain. The earlier capture can be up to ten minutes older than the requested lead; unavailable evidence stays a gap. This compares OWM against its own later estimates, not a rain gauge. −60 is excluded because the forecast horizon does not reliably cover it.
 

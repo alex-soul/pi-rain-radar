@@ -10,7 +10,7 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.11.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.11.0) is the current pre-release.** It combines Screen settings, makes dock spacing consistent, adds observed accumulated rain to collection/dock/trends, and improves mobile controls and trend legends. I accepted RC4 on my Pi 4 / 2 GB and phone. Release CI checks both image architectures before latest promotion. The portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.11.0.md) and [validation](docs/validation.md).
+**[v0.12.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.12.0) is the current pre-release.** It adds METAR/TAF Aviation widgets, per-screen unit overrides, one-hour trend arrows and clearer compact weather charts. Cloud freshness now allows for longer publication delays. I accepted RC2 on my Pi 4 / 2 GB. Release CI checks both image architectures before latest promotion. The portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.12.0.md) and [validation](docs/validation.md).
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
@@ -61,12 +61,13 @@ Settings stay in the existing data volume. The first upgrade to 0.7.0 resets old
 - **Optional Rainbow rain and cloud layers.** Usage depends on map geometry and enabled layers. Actual local counters and an optional request cap help track it; see [setup, costs and limits](docs/radar-providers.md).
 - **Explore up to 24 hours of radar history.** Scrub or replay a selected window from the local rolling archive (seven days by default, configurable), with optional provider labels. [Archive playback](docs/manual.md#look-back-with-archive) shows the observations actually available and builds as the app runs.
 - **Camera and historical weather.** Collect one direct or Home Assistant camera snapshots at a configurable one-to-ten-minute interval. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply all ten source readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
+- **[Aviation weather](docs/aviation.md).** Raw METAR and TAF reports with code explanations, combined or separate widgets, and replay of reports as this installation acquired them.
 - **One radar server, multiple displays.** Each browser remembers its own buttons, layout and theme while sharing the same configured location and acquisition. Use it on your [home network](docs/quick-start.md#3-open-it-from-your-laptop), optionally [install it on phones and laptops or connect privately through Tailscale](docs/pwa.md), and see the [Android and Windows examples](docs/pwa-gallery.md).
 - **Playback that handles delays.** Live can reuse earlier radar for less than 30 minutes and automatically pause while waiting for enough data to resume. Missing observations remain visible; [Live and Archive rules](docs/playback-conventions.md) explain the difference.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.
 - Optional six-digit settings PIN, managed in the UI, with [host recovery](docs/troubleshooting.md#pin-recovery).
 - Optional OpenWeather current temperature, feels-like, wind/gusts and minute precipitation forecast, using your own One Call 4.0 key.
-- Ten optional source readings plus derived T−Td (dew point depression): temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [configurable units and wind-arrow convention](docs/manual.md).
+- Ten optional source readings plus derived T−Td (dew point depression): temperature, feels-like temperature, wind speed, wind gusts, wind direction, humidity, dew point, visibility, pressure and UV index—with [global display defaults, per-screen overrides and wind-arrow choices](docs/manual.md).
 - **[Stats for nerds](docs/stats-for-nerds.md).** An optional widget shows provider freshness, acquisition timing, missing frames, weather updates and local Rainbow API counters.
 - Subtle colour indicators show API health and data gaps without cluttering the screen; details are available in Settings and the log. See the [illustrated indicator guide](docs/indicators.md).
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.

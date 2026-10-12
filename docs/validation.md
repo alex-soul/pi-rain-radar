@@ -1,5 +1,11 @@
 # Validation and remaining work
 
+## 0.12.0 accepted candidate — 12 October 2026
+
+I accepted RC2 on my existing Pi 4 / 2 GB. RC1 passed 421 native ARM64 tests, copied-data startup/restart checks preserving 42,410 records and 15,299 asset rows, and real NOAA EGBB METAR/TAF collection and restart persistence. The wind correction then passed 45 focused tests on Windows and native ARM64, plus fresh startup/restart. DEV review covered both themes, narrow settings, compact chart widths, hover/tap, inheritance and Live/Archive behavior.
+
+RC2 live checks verified the image/version, ready frames, configuration/PIN, archive generation and SQLite integrity. Weather had zero failures and both Aviation products were ready. A short sample showed 919MB available RAM, 301MB swap, 73°C and no throttling. These checks do not establish a longer soak, new hardware support or fresh-card installer/reboot acceptance. See [release notes](release-0.12.0.md).
+
 ## 0.9.0 published-image acceptance — 29 September 2026
 
 [Release CI 36612590391](https://github.com/alex-soul/pi-rain-radar/actions/runs/36612590391) passed release tests, AMD64/ARM64 builds and startup/restart checks on both architectures. Published index: `sha256:ed34506e33bccf6698a8cfe32fca963f741a97568bd16956de76041f245d6767`, source/tag `8c3d90d9fb1557688892f6009f87546bd2e99149` / `v0.9.0`. All 370 final-version tests passed locally. Native RC validation covered 369 passes in the full run plus a successful focused recheck after correcting one clock-dependent test fixture; runtime was unchanged.

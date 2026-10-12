@@ -1,6 +1,10 @@
 # Release follow-ups
 
-## After 0.11.0
+## After 0.12.0
+
+I accepted RC2 on my Pi. Aviation, per-screen unit inheritance, one-hour dock trends, compact chart legends, cloud 40/60-minute freshness and cloud-only borrowing below 40 minutes are delivered. See [release notes](release-0.12.0.md). Observed-rain/forecast comparison remains postponed until there is enough useful rainfall data. Retain the dock and chart-value playgrounds for later reuse.
+
+## After 0.11.0 (historical)
 
 I accepted the published 0.11.0 image on my Pi and phone. Consolidated screen settings, consistent dock spacing, optional rain readings/units, compact trend min/max legends and the transient connection-warning recovery fix are delivered. See [release notes](release-0.11.0.md).
 
@@ -34,10 +38,10 @@ See [release notes](release-0.9.0.md) and [validation](validation.md).
 
 I accepted RC3 after Pi skim tests: no obvious issues and all new features behaved as expected. Future UI refinements are non-blocking and will be recorded once supplied.
 
-- Observe cloud publication delays for several days or weeks before changing thresholds. The current 30-minute stale threshold may be too aggressive; retain honest gaps and total colour independently of any later health allowance.
+- Cloud publication-delay review informed the delivered 0.12.0 thresholds: amber at 40 minutes, red at 60, and cloud-only Live borrowing below 40. Continue ordinary observation; gaps and original image timestamps remain honest. Further threshold tuning needs new evidence.
 - Continue longer Pi soak, including memory/swap, recovery and retained history. Short successful checks are not prolonged soak.
 
-The RC2 camera-label alignment, 24-hour counter spacing and shared Rainbow API limit placement were addressed in 0.8.0. No threshold change is included.
+The RC2 camera-label alignment, 24-hour counter spacing and shared Rainbow API limit placement were addressed in 0.8.0. No threshold change was included in 0.8.0; the later adjustment is recorded above.
 
 ## After 0.7.0
 

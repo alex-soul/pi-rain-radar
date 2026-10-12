@@ -1,5 +1,17 @@
 # Upgrades and migration
 
+## 0.12.0
+
+Keep the same volume, browser origin/profile and installed Power/Screen overrides. Compatible archive, map, keys, PIN, collection settings and layouts are preserved.
+
+Global display defaults are now separate from source/collection policy. Existing global temperature, wind, visibility, pressure and rain units are retained. The **first existing screen opened after upgrade** supplies its saved wind and Sun/Moon formats once; every migrated screen then starts with **Inherit global** for all nine choices. If older screens disagreed, that first screen wins globally. Explicit overrides saved in 0.12.0 remain overrides. Open the preferred existing screen first if its astronomy/wind formats should become the defaults.
+
+Wind labels now always describe the FROM bearing. Existing arrow choices are preserved under the clearer **Blowing towards / Coming from** labels. Display units apply in both Live and Archive without rewriting measurements or source-unit validation.
+
+Aviation collection stays **disabled on existing installations** until enabled under Interface → Aviation. Fresh installations default to enabled at EGBB; the side button is visible but the widget starts hidden. History begins with local acquisition and follows existing retention. No credentials or host helper changes are required. See [release notes](release-0.12.0.md).
+
+Migration is a bounded, versioned conversion: shared defaults are seeded once, old browser formats are adopted once, and runtime uses the new model. The small importer remains for screens that return later from 0.11.0; it is not a second ongoing display implementation.
+
 ## 0.11.0
 
 Compatible history, keys, PIN, map and saved browser preferences are preserved. Keep the same volume, browser origin/profile and both Power/Screen overrides where installed. The bottom-left Screen settings cog now owns Main map, Top dock, Bottom dock and Side buttons; existing visibility/order choices remain.
