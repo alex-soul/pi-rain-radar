@@ -513,17 +513,17 @@ footer .eyebrow {
 :root[data-theme="dark"] #overview-markers circle { stroke: #111d26; }
 
 /* Rain forecast widget. */
-:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle) { pointer-events: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d2ddd4; border-radius: 22px; background: #ffffffc9; color: #243c3c; cursor: pointer; }
-:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle)[aria-pressed="true"] { border-color: #389488; box-shadow: inset 0 0 0 1px #389488; }
+:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle) { pointer-events: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #d2ddd4; border-radius: 22px; background: #ffffffc9; color: #243c3c; cursor: pointer; }
+:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle)[aria-pressed="true"] { border-color: #389488; box-shadow: inset 0 0 0 1px #389488; }
 :is(#rain-forecast, #stats, #camera, #weather-trends) { display: flex; flex-direction: column; height: 138px; position: absolute; width: min(410px, calc(100vw - 16px)); top: 230px; left: 18px; border: 1px solid #a6bfb5; border-radius: 10px; overflow: hidden; background: #edf4ee; color: #284d47; box-shadow: 0 4px 18px #0003; }
 :is(#rain-forecast, #stats, #camera, #weather-trends)[hidden] { display: none; }
-:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle):focus-visible, :is(#rain-forecast, #stats, #camera, #weather-trends):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
+:is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle):focus-visible, :is(#rain-forecast, #stats, #camera, #weather-trends):focus-visible { outline: 2px solid #389488; outline-offset: -3px; }
 .minute-content { padding: 14px 20px 24px; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #minute-chart { display: block; width: 100%; flex: 1; min-height: 0; }
 .minute-grid { stroke: currentColor; stroke-opacity: .12; fill: none; }
 .minute-axis { margin-top: 8px; flex-shrink: 0; display: flex; justify-content: space-between; font-size: 9px; opacity: .75; font-variant-numeric: tabular-nums; }
 :root[data-theme="dark"] :is(#rain-forecast, #stats, #camera, #weather-trends) { background: #142623; color: #e1eee7; border-color: #455b51; }
-:root[data-theme="dark"] :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle) { background: #1d2b29e8; color: #e1eee7; }
+:root[data-theme="dark"] :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle) { background: #1d2b29e8; color: #e1eee7; }
 
 :is(#rain-forecast-resize, #stats-resize, #camera-resize, #weather-trends-resize) { position: absolute; right: 0; bottom: 0; width: 32px; height: 32px; padding: 5px; border: 0; background: transparent; color: inherit; font-size: 20px; cursor: nwse-resize; touch-action: none; opacity: .4; }
 :is(#rain-forecast-resize, #stats-resize, #camera-resize, #weather-trends-resize):hover, :is(#rain-forecast-resize, #stats-resize, #camera-resize, #weather-trends-resize):focus-visible { opacity: .8; }
@@ -567,7 +567,7 @@ footer .eyebrow {
 #pin-keypad button:focus-visible { outline: 2px solid #389488; outline-offset: 2px; }
 :root[data-theme="dark"] #pin-keypad button { background: #1d2b29; }
 
-#clock-toggle[hidden], #theme-toggle[hidden], #overview-toggle[hidden], :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle)[hidden] { display: none; }
+#clock-toggle[hidden], #theme-toggle[hidden], #overview-toggle[hidden], :is(#rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle)[hidden] { display: none; }
 #control-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
 #control-list li { display: flex; align-items: center; gap: 12px; padding: 5px 12px 5px 4px; border: 1px solid #a6bfb560; border-radius: 9px; min-height: 54px; font-size: 14px; }
 #control-list li.dragging { background: #38948825; border-color: #389488; }
@@ -674,13 +674,13 @@ header { display: grid; grid-template-columns: minmax(0, 1fr); }
 #minute-message[hidden] { display: none; }
 
 /* One outline treatment for every dashboard control in either theme. */
-:root :is(#clock-toggle, #theme-toggle, #overview-toggle, #rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle, #history-toggle, #settings-toggle) {
+:root :is(#clock-toggle, #theme-toggle, #overview-toggle, #rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle, #history-toggle, #settings-toggle) {
   border-color: var(--control-outline);
   box-shadow: none;
 }
 :root :is(#clock-toggle)[aria-expanded="true"],
 :root #history-toggle[data-expanded="true"],
-:root :is(#overview-toggle, #rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #cloud-toggle)[aria-pressed="true"] {
+:root :is(#overview-toggle, #rain-forecast-toggle, #stats-toggle, #camera-toggle, #weather-trends-toggle, #aviation-toggle, #cloud-toggle)[aria-pressed="true"] {
   border-color: var(--control-active);
   box-shadow: inset 0 0 0 1px var(--control-active);
 }
