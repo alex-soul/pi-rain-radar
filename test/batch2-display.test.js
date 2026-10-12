@@ -7,7 +7,7 @@ import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {createDisplaySettings} from '../src/display-settings.js';
 import {createSettingsAuth,settingsRoutes,setPin} from '../src/settings-auth.js';
-import {effectiveDisplay,migrateDisplayOverrides,displayDefaults} from '../public/display-options.js';
+import {effectiveDisplay,legacyDisplayFormats,displayDefaults} from '../public/display-options.js';
 import {weatherReadings} from '../public/weather-readings.js';
 import {readingValues} from '../public/reading-units.js';
 import {trendFixture} from '../scripts/dev-weather-trends.mjs';
@@ -40,8 +40,18 @@ test('fresh screens inherit independently; explicit equal choices stay fixed unt
  assert.equal(effectiveDisplay(global,a).temperatureUnit,'C');global.temperatureUnit='F';global.moonMode='position';
  assert.equal(effectiveDisplay(global,a).temperatureUnit,'F');assert.equal(effectiveDisplay(global,b).temperatureUnit,'C');assert.equal(effectiveDisplay(global,b).moonMode,'event');
  delete b.temperatureUnit;assert.equal(effectiveDisplay(global,b).temperatureUnit,'F');
- const migrated=migrateDisplayOverrides({temperatureUnit:'C',directionFormat:'degrees'},{sun:'position'},{temperatureUnit:'F',windUnit:'kn'});
- assert.equal(migrated.temperatureUnit,'F');assert.equal(migrated.windUnit,'kn');assert.equal(migrated.directionFormat,'degrees');assert.equal(migrated.sunMode,'position');assert.equal(migrated.moonMode,'event');assert.deepEqual(migrateDisplayOverrides(null,null),{});
+ const migrated=legacyDisplayFormats({temperatureUnit:'C',directionFormat:'degrees'},{sun:'position'});
+ assert.equal(migrated.temperatureUnit,undefined);assert.equal(migrated.windUnit,undefined);assert.equal(migrated.directionFormat,'degrees');assert.equal(migrated.sunMode,'position');assert.equal(migrated.moonMode,'event');assert.equal(legacyDisplayFormats(null,null),null);
+});
+test('0.11 formats migrate from the first existing screen once, without changing shared units',async t=>{
+ const f=await settings(t),formats=legacyDisplayFormats({directionFormat:'degrees',directionConvention:'meteorological'},{sun:'position',moon:'position'});
+ const [first,other]=await Promise.all([f.settings.adoptFormats(formats),f.settings.adoptFormats(legacyDisplayFormats({},{}))]);
+ assert.equal(first.status,200);assert.equal(other.status,409);assert.equal(f.settings.current().pendingFormats,false);
+ assert.equal(f.settings.current().values.temperatureUnit,'F');assert.equal(f.settings.current().values.windUnit,'kn');
+ const reopened=await createDisplaySettings(f.directory);await reopened.adoptFormats(legacyDisplayFormats({},{}));
+ assert.equal(reopened.current().values.sunMode,'position');assert.equal(reopened.current().values.directionFormat,'degrees');
+ const explicit=await settings(t);await explicit.settings.configure({values:{sunMode:'event'}});await explicit.settings.adoptFormats(formats);assert.equal(explicit.settings.current().values.sunMode,'event');
+ const invalid=await settings(t);assert.equal((await invalid.settings.adoptFormats({...formats,temperatureUnit:'C'})).status,400);assert.equal(invalid.settings.current().pendingFormats,true);
 });
 function haState(){return {configured:true,fetchedAt:now,data:{current:{time:now/1000,temperature:14,dewPoint:8}},presentation:{policy:{source:'ha',haCollect:true,owmCollect:true,units:{...displayDefaults},mappings:{temperature:'sensor.t',dew:'owm'}},observations:{'sensor.t':{value:20,unit:'C',time:now,receivedAt:now}}}};}
 test('screen conversion preserves HA source validation and converts temperature differences without an offset',()=>{

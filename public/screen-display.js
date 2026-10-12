@@ -1,10 +1,10 @@
 import {shared,change} from './integrations-state.js';
-import {displayDefaults,displayChoices,displayLabels,displayChoiceLabel,validDisplay,migrateDisplayOverrides,effectiveDisplay} from './display-options.js';
+import {displayDefaults,displayChoices,displayLabels,displayChoiceLabel,validDisplay,effectiveDisplay} from './display-options.js';
 const key='radar-display-overrides',read=k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}};
-const saved=read(key),legacy=read('radar-display'),astronomy=read('radar-astronomy-dock');
+const saved=read(key);
 let overrides=validDisplay(saved?.values),migrated=saved?.version===1;
 export const globalDisplay=()=>({...displayDefaults,...shared.units,...shared.displaySettings?.values});
-function ensureMigration(){if(!migrated&&shared.initialized){overrides=migrateDisplayOverrides(legacy,astronomy,shared.units);migrated=true;try{localStorage.setItem(key,JSON.stringify({version:1,values:overrides}));}catch{}}}
+function ensureMigration(){if(!migrated&&shared.initialized){overrides={};migrated=true;try{localStorage.setItem(key,JSON.stringify({version:1,values:overrides}));}catch{}}}
 export function screenDisplay(){ensureMigration();return effectiveDisplay(globalDisplay(),overrides);}
 export function setupScreenDisplay(top,canEditLocal){
  const section=document.createElement('div');section.className='screen-display-units';

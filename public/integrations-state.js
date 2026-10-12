@@ -1,7 +1,10 @@
 import {defaultUnits,weatherFields,unitChoices} from './weather-policy.js';
+import {legacyDisplayFormats} from './display-options.js';
 // Capture once before any server hydration can replace this browser's defaults.
 export const initialBrowserUnits={...defaultUnits};
 try{const saved=JSON.parse(localStorage.getItem('radar-display'));for(const [key,choices] of Object.entries(unitChoices))if(choices.includes(saved?.[key]))initialBrowserUnits[key]=saved[key];}catch{}
+let initialBrowserFormats=null;
+try{initialBrowserFormats=legacyDisplayFormats(JSON.parse(localStorage.getItem('radar-display')),JSON.parse(localStorage.getItem('radar-astronomy-dock')));}catch{}
 export const shared={revision:0,initialized:false,ha:false,haUrl:'',haCollect:false,owm:false,owmCollect:false,forecastCollect:false,rainviewerCollect:true,rainbowCollect:false,source:'openweather',fallback:false,mappings:Object.fromEntries(weatherFields.map(f=>[f,'disabled'])),units:{...defaultUnits},camera:null,cameraEnabled:false};
 let initializing=false;
 let request=null,canEdit=()=>false;
@@ -11,9 +14,9 @@ export function acceptIntegrationStatus(status){
   const before=JSON.stringify(shared);
   Object.assign(shared,status.weatherPolicy,{displaySettings:status.displaySettings??shared.displaySettings,ha:!!status.homeAssistant?.configured,haUrl:status.homeAssistant?.url??'',haHealth:status.homeAssistant,owm:!!status.weather?.configured,weather:status.weather,camera:status.camera?.configured?status.camera:null,cameraEnabled:!!status.camera?.enabled,presentation:status.weather?.presentation,radarHealth:status.sources});
   if(before!==JSON.stringify(shared)){window.dispatchEvent(new Event('integration-change'));window.dispatchEvent(new Event('radar-weather-preferences'));}
-  if(!shared.initialized&&!initializing){
+  if((!shared.initialized||shared.displaySettings?.pendingFormats&&initialBrowserFormats)&&!initializing){
     initializing=true;
-    void fetch('/api/settings/weather/initialize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({units:initialBrowserUnits}),signal:AbortSignal.timeout(10000)})
+    void fetch('/api/settings/weather/initialize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({units:initialBrowserUnits,formats:initialBrowserFormats}),signal:AbortSignal.timeout(10000)})
       .then(async response=>{if(!response.ok)throw Error('Unit initialization pending');const {status,...policy}=await response.json();if(policy.revision>=shared.revision)Object.assign(shared,policy);window.dispatchEvent(new Event('integration-change'));window.dispatchEvent(new Event('radar-weather-preferences'));})
       .catch(()=>{}).finally(()=>{initializing=false;});
   }

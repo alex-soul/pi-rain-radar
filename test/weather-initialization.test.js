@@ -9,6 +9,8 @@ import {createWeatherSettings} from '../src/weather-settings.js';
 import {createHistoryStore} from '../src/history-store.js';
 import {settingsRoutes} from '../src/settings-auth.js';
 import {defaultUnits,unitChoices,weatherFields} from '../public/weather-policy.js';
+import {legacyDisplayFormats} from '../public/display-options.js';
+import {createDisplaySettings} from '../src/display-settings.js';
 async function fixture(t){const dir=await mkdtemp(join(tmpdir(),'radar-units-test-'));const store=await createHistoryStore(dir);t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});const settingsFile=join(dir,'policy.json');return {store,settingsFile,settings:await createWeatherSettings(store,{settingsFile})};}
 async function request(route,path,input,headers={}){
   const req=Readable.from(input===undefined?[]:[JSON.stringify(input)]);req.method=input===undefined?'GET':'POST';req.headers={'content-type':'application/json',host:'localhost',...headers};
@@ -43,7 +45,7 @@ test('weather discovery has no off-state calls and discards results after policy
 test('browser captures saved units before status hydration and sends them without opening Settings',async()=>{
   const saved={...defaultUnits,temperatureUnit:'F',windUnit:'kn'};let submitted;
   const code=(await readFile(new URL('../public/integrations-state.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'').replaceAll('export ','');
-  const context=vm.createContext({defaultUnits,unitChoices,weatherFields,localStorage:{getItem:()=>JSON.stringify(saved)},window:{dispatchEvent(){}},Event,AbortSignal,
+  const context=vm.createContext({defaultUnits,unitChoices,weatherFields,legacyDisplayFormats,localStorage:{getItem:()=>JSON.stringify(saved)},window:{dispatchEvent(){}},Event,AbortSignal,
     fetch:async(url,options)=>{submitted=JSON.parse(options.body);return {ok:true,json:async()=>({status:200,initialized:true,revision:1,units:submitted.units})};}});
   vm.runInContext(code,context);
   // A competing status hydrates default units, but cannot change the captured input.
@@ -51,6 +53,16 @@ test('browser captures saved units before status hydration and sends them withou
   await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(submitted.units,saved);
   context.acceptIntegrationStatus({weatherPolicy:{initialized:true,units:defaultUnits,revision:2}});
   assert.equal(vm.runInContext('shared.units.temperatureUnit',context),'C');
+});
+test('0.11 initialized installations bootstrap browser formats behind PIN without changing source policy',async t=>{
+ const f=await fixture(t);await f.settings.initialize({...defaultUnits,temperatureUnit:'F'});const before=f.settings.current();
+ const displaySettings=await createDisplaySettings(join(f.settingsFile,'..'),before.units);
+ const route=settingsRoutes({authorized:async()=>false},null,null,{weatherSettings:f.settings,displaySettings});
+ const input={units:defaultUnits,formats:legacyDisplayFormats({directionFormat:'degrees'},{sun:'position'})};
+ assert.equal((await request(route,'/api/settings/weather/initialize',input,{origin:'http://other.test'})).status,403);
+ const migrated=await request(route,'/api/settings/weather/initialize',input);assert.equal(migrated.status,200);
+ assert.equal(migrated.data.displaySettings.values.sunMode,'position');assert.equal(migrated.data.displaySettings.values.temperatureUnit,'F');
+ assert.deepEqual(f.settings.current(),before);
 });
 test('interrupted initialization can retry without replacing an established baseline',async t=>{
   const f=await fixture(t),save=f.store.saveWeatherPolicy;let fail=true;

@@ -138,7 +138,13 @@ export function settingsRoutes(auth, weather = null, maps = null, { diagnostics,
         let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024)return send(413,{});}
         let input;try{input=JSON.parse(body);}catch{return send(400,{});}
         if(!input?.units||typeof input.units!=='object')return send(400,{});
-        const result=await weatherSettings.initialize(input.units);if(result.status===200)await displaySettings?.adoptUnits(result.units);return send(result.status,result);
+        const result=await weatherSettings.initialize(input.units);
+        if(result.status===200&&displaySettings){
+          const units=await displaySettings.adoptUnits(result.units);if(units.status!==200)return send(units.status,units);
+          if(input.formats){const formats=await displaySettings.adoptFormats(input.formats);if(formats.status!==200)return send(formats.status,formats);}
+          result.displaySettings=displaySettings.current();
+        }
+        return send(result.status,result);
       }
       if(['/api/settings/home-assistant','/api/settings/home-assistant/entities','/api/settings/weather'].includes(path)){
         if(!await auth.authorized(token))return send(401,{});
