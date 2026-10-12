@@ -53,8 +53,7 @@ export function decodeAviation(raw,{product,issuedAt,observedAt,station}){
    const wx=code.replace(/^(RE|VC|\+|-)/,'');const parts=wx.match(/.{2}/g);
    if(parts&&parts.join('')===wx&&parts.every(p=>weatherNames[p]))meaning=`${code.startsWith('RE')?'Recent ':code.startsWith('VC')?'In the vicinity: ':code.startsWith('+')?'Heavy ':code.startsWith('-')?'Light ':''}${parts.map(p=>weatherNames[p]).join(' and ')}.`;
   }
-  const context=product==='taf'&&period?.start&&!/^Forecast validity|Issued|Terminal|ICAO/.test(meaning??'')?` Forecast section ${stamp(period.start)} to ${stamp(period.end)}.`:'';
-  sections.push({start,end,meaning:meaning?meaning+context:'This section is not decoded. The original code is preserved.',known:!!meaning});
+  sections.push({start,end,meaning:meaning??'This section is not decoded. The original code is preserved.',known:!!meaning});
  }
  return {sections,parseError};
 }

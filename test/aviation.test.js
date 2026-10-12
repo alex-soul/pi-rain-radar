@@ -51,12 +51,14 @@ test('unchanged reports are green, failed polling is retained amber, empty succe
 test('old/mismatched station reports cannot replace the latest report',async t=>{
  const f=await fixture(t);await f.aviation.collect();await f.aviation.configure({station:'EGLL'});await f.aviation.collect();assert.equal(f.aviation.status().reports.taf,undefined);assert.equal(aviationHealth(f.aviation.status(),'taf',f.now()),'error');
 });
-test('decoding preserves exact text spans, uncertainty and repeated section context',()=>{
+test('decoding preserves exact text spans and explains only the selected group',()=>{
  const result=decodeAviation(taf.rawTAF,{product:'taf',station:'EGBB',issuedAt:issued});
  assert.equal(result.parseError,false);let rebuilt='',offset=0;
  for(const section of result.sections){rebuilt+=taf.rawTAF.slice(offset,section.start)+taf.rawTAF.slice(section.start,section.end);offset=section.end;}rebuilt+=taf.rawTAF.slice(offset);assert.equal(rebuilt,taf.rawTAF);
  const probability=result.sections.find(s=>taf.rawTAF.slice(s.start,s.end).startsWith('PROB30'));assert.match(probability.meaning,/30% probability/);assert.equal(taf.rawTAF.slice(probability.start,probability.end),'PROB30 TEMPO 1300/1304');
- const clouds=result.sections.filter(s=>taf.rawTAF.slice(s.start,s.end).startsWith('BKN'));assert.notEqual(clouds[0].meaning,clouds[1].meaning);
+ assert.ok(result.sections.every(s=>!s.meaning.includes('Forecast section')));
+ assert.equal(result.sections.find(s=>taf.rawTAF.slice(s.start,s.end)==='17010KT').meaning,'Wind from 170° true, 10 knots.');
+ assert.match(result.sections.find(s=>taf.rawTAF.slice(s.start,s.end)==='TEMPO 1212/1219').meaning,/Period/);
  const unknown=decodeAviation(metar.rawOb+' XYZ',{product:'metar',station:'EGBB',observedAt:issued}).sections.at(-1);assert.equal(unknown.known,false);
 });
 test('disabling during a request cancels publication and creates a disabled boundary',async t=>{

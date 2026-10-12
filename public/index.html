@@ -179,16 +179,15 @@
           <section id="settings-panel-dashboard" class="settings-parent settings-tab-panel" role="region" aria-label="Interface" tabindex="0" hidden>
           <div class="settings-tabs settings-subtabs" role="tablist" aria-label="Interface categories" data-preference-key="radar-menu-Dashboard categories">
             <button id="settings-tab-display" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-display" tabindex="0">Display</button>
-            <button id="settings-tab-aviation" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-aviation" tabindex="-1">Aviation</button>
             <button id="settings-tab-buttons" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-buttons" tabindex="-1">Buttons</button>
             <button id="settings-tab-weather" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-weather" tabindex="-1">Weather</button>
             <button id="settings-tab-readings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-readings" tabindex="-1">Readings</button>
+            <button id="settings-tab-aviation" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-aviation" tabindex="-1">Aviation</button>
           </div>
           <section id="settings-panel-aviation" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-aviation" tabindex="0" hidden>
             <label class="misc-option" for="aviation-enabled">Enable METAR/TAF<input id="aviation-enabled" type="checkbox" class="control-switch" role="switch" /></label>
             <label for="aviation-station">Airport ICAO code</label><input id="aviation-station" maxlength="4" value="EGBB" autocomplete="off" autocapitalize="characters" spellcheck="false" />
             <div class="weather-key-actions"><button id="aviation-save" type="button">Save and apply</button></div><p id="aviation-note" role="status"></p>
-            <p class="camera-summary">NOAA Aviation Weather Center · METAR and TAF checked every five minutes. The side button shows or hides the widget on this screen.</p>
           </section>
           <section id="settings-panel-weather" class="settings-content settings-tab-panel" role="tabpanel" aria-labelledby="settings-tab-weather" tabindex="0" hidden>
 
