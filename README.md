@@ -77,7 +77,7 @@ Settings stay in the existing data volume. The first upgrade to 0.7.0 resets old
 - Optional host restart/shutdown from Settings, per-display UI lock and a small diagnostic log.
 - **Light/dark themes and touch controls.** Designed for 16:9 landscape displays and tested at 1280 × 720. Other screen shapes receive best-effort layout support.
 
-Radar works out of the box without an API key. Overview and Rain forecast start closed.
+Radar works out of the box without an API key. Overview and Rain forecast start closed. Fresh installations collect Aviation reports for EGBB; on a new screen, click Aviation to open the selected METAR, TAF and Cloud layers panels. Use the shared Panels tab to choose which ones open.
 
 ## Running costs
 
@@ -121,6 +121,7 @@ See the [Raspberry Pi setup guide](docs/raspberry-pi.md) for assembly and instal
 - [Upgrades — routine updates, migration and rollback](docs/upgrading.md)
 - [Troubleshooting and PIN recovery](docs/troubleshooting.md)
 - [Development — local workflow and tests](docs/development.md)
+- [Widget playground — reusable visual experiments and scenarios](docs/widget-playground.md)
 - [Design — architecture, behaviour and known limitations](docs/design.md)
 - [Validation — tested baseline and next checks](docs/validation.md)
 - [Contributing](CONTRIBUTING.md)

@@ -2,7 +2,7 @@
 
 Open **Interface → Aviation**, enable METAR/TAF and enter a four-character ICAO airport code, for example EGBB. The appliance collects METAR and TAF from NOAA Aviation Weather Center every five minutes, shared by all screens. No API key is required. Failures use bounded retry backoff; opening or hiding a widget makes no extra provider requests.
 
-Fresh installations enable collection at EGBB. Existing installations keep it off until enabled. New screens show the Aviation side button with the widget closed. Disabling collection hides the Aviation availability row and stops requests while preserving retained history.
+Fresh installations enable collection at EGBB. Existing installations preserve their collection setting. New screens show the Aviation side button with METAR, TAF and Cloud layers selected but hidden; the first click opens them. Disabling collection hides the Aviation availability row and stops requests while preserving retained history.
 
 ## Display and explanations
 

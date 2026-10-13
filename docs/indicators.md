@@ -64,6 +64,12 @@ In Status, green means connected/ready; warning states identify the affected sou
 
 **Blowing towards** (default) points where wind is going. **Coming from** points towards its origin. The **Wind arrow** dropdown changes only the arrow; Compass/Degrees values always report where wind comes from. Global defaults are in Interface → Weather → Units, with overrides in Screen settings → Top dock → Units. Hover/tap gives both bearings. The arrow rotates continuously rather than selecting one of eight icons.
 
+## Aviation Cloud layers LED
+
+The Cloud layers footer LED describes the selected METAR observation: green for current, amber for overdue collection or an expired observation, grey for unconfigured/missing data, and red for an explicit collection or processing error. During a delay or error, the last usable picture remains until the observation exceeds 90 minutes, then clears. Hover, tap or focus the footer cloud groups for timestamps and details.
+
+This is separate from the map's cloud imagery and the Aviation availability row, which covers both METAR and TAF. See [Aviation weather](aviation.md) for Live and Archive behaviour.
+
 ## Other colour cues
 
 In 0.8.0, optional gust can show amber on its own setting/reading but is excluded from aggregate weather-handle and gaps health. The availability popup distinguishes intentional off/unknown periods from missing expected observations. Its frame marker shares the playback slider's slot geometry. Using playback, including play/pause, keeps the popup open. Tap the same counter again to dismiss it; tapping elsewhere leaves it open. On a locked screen, 15 seconds of inactivity resumes playback and dismisses the popup. These indicators describe local availability, not proof of provider fault.
