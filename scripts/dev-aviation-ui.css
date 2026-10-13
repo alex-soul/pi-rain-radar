@@ -1,0 +1,8 @@
+:root{--review-panel:#1d2b29;--review-text:#e1eee7}:root[data-theme=light]{--review-panel:#edf4ee;--review-text:#284d47}
+/* Real application shell, with unrelated inactive controls hidden for this focused review. */
+main>header>:not(.map-controls),main>footer,main>aside:not(.aviation-widget):not(.cloud-layers-widget),.map-controls>:not(#aviation-toggle),#map-scale,#empty{display:none!important}
+#aviation-review{position:absolute;top:12px;left:80px;right:16px;z-index:3;padding:12px 16px;background:var(--review-panel);border:1px solid var(--border);border-radius:10px;color:var(--review-text);font:13px Arial,sans-serif}
+#aviation-review summary{cursor:pointer;font-weight:bold}#aviation-review p{font-size:11px;opacity:.7;margin:10px 0 0}
+.review-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px}.review-controls label{font-size:11px}.review-controls select{display:block;max-width:155px}.review-controls input{vertical-align:middle}
+.review-controls select,.review-controls button{font:12px Arial;background:var(--review-panel);color:var(--review-text);padding:6px;border:1px solid #78998a;border-radius:5px}.review-controls a{color:inherit;font-size:11px}
+.map-controls{top:16px;bottom:auto}#aviation-toggle{display:block!important}

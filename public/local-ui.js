@@ -68,7 +68,7 @@ const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) sm
 function paintFont(key){if(key==='top'){document.documentElement.style.setProperty('--dock-font-scale',(localPreferences.fonts.top??100)/100);return;}for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
 function paintFonts(){for(const key of Object.keys(fontTargets))paintFont(key);window.dispatchEvent(new Event('radar-display-change'));document.getElementById('camera')?.dispatchEvent(new Event('snapshot-size'));}
 // Share the tab structure across the browser-local list editors.
-function tabbedEditor(dialog,listTitle,listNodes,extraTabs=[]){
+export function tabbedEditor(dialog,listTitle,listNodes,extraTabs=[]){
   dialog.classList.add('local-editor');
   const heading=dialog.querySelector('.archive-heading');
   const extraNodes=extraTabs.flatMap(tab=>tab.nodes);

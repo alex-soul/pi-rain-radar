@@ -131,12 +131,20 @@ const server=http(async(req,res)=>{
     if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
     const controlAssets={'/__dock':['dev-dock.html','text/html'],'/__dock.js':['dev-dock.js','text/javascript'],'/__dock.css':['dev-dock.css','text/css'],'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
     Object.assign(controlAssets,{'/__dev/chart-values.js':['dev-chart-values.js','text/javascript'],'/__dev/chart-values.css':['dev-chart-values.css','text/css'],'/__cloud-layers.js':['dev-cloud-layers.js','text/javascript'],'/__cloud-layers-model.js':['dev-cloud-layers-model.js','text/javascript'],'/__cloud-layers.css':['dev-cloud-layers.css','text/css']});
+    if(path.pathname==='/__aviation-ui'){
+      const response=await fetch(origin+'/');let html=await response.text();
+      html=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace('</head>','<link rel="stylesheet" href="/cloud-layers.css"><link rel="stylesheet" href="/__aviation-ui.css"><script type="module" src="/__aviation-ui.js"></script></head>').replace(/<title>[^<]*<\/title>/,'<title>Aviation UI review · synthetic</title>');
+      const headers={'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'},csp=response.headers.get('content-security-policy');if(csp)headers['Content-Security-Policy']=csp;
+      res.writeHead(200,headers);return res.end(html);
+    }
     if(path.pathname==='/__cloud-layers'){
       const response=await fetch(origin+'/healthz');
       const headers={'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'};
       const csp=response.headers.get('content-security-policy');if(csp)headers['Content-Security-Policy']=csp;
       res.writeHead(200,headers);return res.end(await readFile(new URL('dev-cloud-layers.html',import.meta.url)));
     }
+    Object.assign(controlAssets,{'/__aviation-ui.js':['dev-aviation-ui.js','text/javascript'],'/__aviation-ui.css':['dev-aviation-ui.css','text/css'],'/public/cloud-layers-model.js':['../public/cloud-layers-model.js','text/javascript']});
+    for(const file of ['aviation-ui.js','aviation-group-model.js','cloud-widget.js','cloud-layers-model.js','cloud-layers-render.js','cloud-layers.css'])controlAssets['/'+file]=['../public/'+file,file.endsWith('.css')?'text/css':'text/javascript'];
     if(controlAssets[path.pathname]) {const [file,type]=controlAssets[path.pathname];res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});return res.end(await readFile(new URL(file,import.meta.url)));}
     if(path.pathname==='/__dev/chart-values-data'){
       const chartEnd=Math.floor(Date.now()/60000)*60,fixture=trendFixture({start:chartEnd-7200,end:chartEnd});
