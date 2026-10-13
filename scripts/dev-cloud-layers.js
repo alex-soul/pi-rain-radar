@@ -1,7 +1,7 @@
 import {setupWidgetResize} from '/widget-resize.js';
 import {cloudScenarios,parseCloudGroups,plotTop,cloudBanks,cloudOutline,cloudFooter,verticalVisibility} from '/__cloud-layers-model.js';
 const $=id=>document.getElementById(id),key='pi-rain-radar-dev-cloud-layers-v1';
-const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'marker'};
+const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'haze'};
 const sliders=[['opacity','Widget opacity',0,100,1,'%'],['font','Font size',75,150,5,'%'],['width','Widget width',200,680,10,'px'],['height','Plot height',50,400,1,'px'],['cloudOpacity','Cloud opacity',20,100,1,'%'],['cloudSize','Cloud size',50,200,5,'%'],['texture','Shape irregularity',0,100,5,'%'],['seed','Shape variation',1,50,1,'']];
 let state={...defaults};
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&typeof saved==='object'){
@@ -111,7 +111,7 @@ function paint(){
   else for(const [index,layer] of [...report.layers].sort((a,b)=>(b.baseFt??0)-(a.baseFt??0)).entries()){
     if(layer.baseFt===null)continue;if(layer.baseFt*factor>ceiling){clipped++;continue;}
     const y=toY(layer.baseFt),size=state.cloudSize/100;
-    if(layer.amount==='VV')layers+=`<line class="vv-marker" x1="${left}" x2="${right}" y1="${y}" y2="${y}" stroke="currentColor" stroke-opacity=".8" stroke-dasharray="4 4"/><text class="vv-value" x="${right-3}" y="${Math.max(top+12*font,y-5)}" text-anchor="end" fill="currentColor" font-size="${10*font}" paint-order="stroke" stroke="rgb(var(--card-rgb)/.8)" stroke-width="3" stroke-linejoin="round">${vv.label}</text>`;
+    if(layer.amount==='VV')layers+=`<line class="vv-marker" x1="${left}" x2="${right}" y1="${y}" y2="${y}" stroke="currentColor" stroke-opacity=".8" stroke-dasharray="4 4"/>`;
     else {
       cloudDefs+=`<linearGradient id="cloud-fill-${index}" gradientUnits="userSpaceOnUse" x1="0" y1="-32" x2="0" y2="2"><stop stop-color="var(--cloud-highlight)" stop-opacity=".3"/><stop offset=".35" stop-color="var(--cloud-highlight)" stop-opacity=".9"/><stop offset=".7" stop-color="var(--cloud)" stop-opacity=".82"/><stop offset="1" stop-color="var(--cloud)" stop-opacity=".25"/></linearGradient><filter id="cloud-halo-${index}" filterUnits="userSpaceOnUse" x="${left-5}" y="${y-40*size}" width="${right-left+10}" height="${46*size}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="1.6"/></filter><filter id="cloud-edge-${index}" filterUnits="userSpaceOnUse" x="${left-3}" y="${y-38*size}" width="${right-left+6}" height="${43*size}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".55"/></filter>`;
       layers+=cloudBand(layer,index,y,left,right);
@@ -127,7 +127,7 @@ function paint(){
     $('cloud-plot').title=detail;
     if(vv.value!==null){const badge=document.createElement('div');badge.className='vv-caption';badge.textContent=clipped?'VV above scale':'Sky obscured';badge.style.left=left+'px';$('cloud-plot').append(badge);}
   }else $('cloud-plot').removeAttribute('title');
-  $('vv-explanation').textContent=obscured?`${vv.value===null?'No height marker: the measurement is unknown.':vv.label+' is the upward visibility; the dashed line is not a cloud base.'} A fresh report can still have a green LED. Marker-only is the accepted style. The optional DEV haze follows Cloud opacity.`:'Choose a VV example to test haze and markers, or OVC002 to compare a real cloud base at the same numerical height.';
+  $('vv-explanation').textContent=obscured?`${vv.value===null?'No height marker: the measurement is unknown.':vv.label+' is the upward visibility; the dashed line is not a cloud base.'} A fresh report can still have a green LED. Haze follows Cloud opacity. The clean dashed marker has no value label; the footer keeps the VV code.`:'Choose a VV example to test haze and markers, or OVC002 to compare a real cloud base at the same numerical height.';
   $('vv-style').value=state.vvStyle;
   if(message){const element=document.createElement('div');element.className='plot-state'+(showVV?' vv-state':'');element.textContent=message;$('cloud-plot').append(element);}
   $('units').value=units;$('dialog-units').value=units;
