@@ -1,8 +1,8 @@
 import {setupWidgetResize} from '/widget-resize.js';
 import {cloudScenarios,parseCloudGroups,plotTop,cloudBanks,cloudOutline,cloudFooter,verticalVisibility} from '/__cloud-layers-model.js';
 const $=id=>document.getElementById(id),key='pi-rain-radar-dev-cloud-layers-v1';
-const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'haze',vvHaze:35};
-const sliders=[['opacity','Widget opacity',0,100,1,'%'],['font','Font size',75,150,5,'%'],['width','Widget width',200,680,10,'px'],['height','Plot height',50,400,1,'px'],['cloudOpacity','Cloud opacity',20,100,1,'%'],['cloudSize','Cloud size',50,200,5,'%'],['texture','Shape irregularity',0,100,5,'%'],['seed','Shape variation',1,50,1,''],['vvHaze','Haze strength',0,100,5,'%']];
+const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'marker'};
+const sliders=[['opacity','Widget opacity',0,100,1,'%'],['font','Font size',75,150,5,'%'],['width','Widget width',200,680,10,'px'],['height','Plot height',50,400,1,'px'],['cloudOpacity','Cloud opacity',20,100,1,'%'],['cloudSize','Cloud size',50,200,5,'%'],['texture','Shape irregularity',0,100,5,'%'],['seed','Shape variation',1,50,1,'']];
 let state={...defaults};
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&typeof saved==='object'){
   parseCloudGroups(saved.codes??defaults.codes);
@@ -20,7 +20,7 @@ function addSlider(host,[keyId,label,min,max,step=1,suffix=''],prefix=''){
   $(id).dataset.suffix=suffix;
 }
 const userSettings=['opacity','font','cloudOpacity','cloudSize','texture'];
-sliders.forEach(s=>{addSlider($(s[0]==='vvHaze'?'vv-controls':userSettings.includes(s[0])?'user-appearance':'appearance'),s);if(userSettings.includes(s[0]))addSlider($('dialog-appearance'),s,'dialog-');});
+sliders.forEach(s=>{addSlider($(userSettings.includes(s[0])?'user-appearance':'appearance'),s);if(userSettings.includes(s[0]))addSlider($('dialog-appearance'),s,'dialog-');});
 // Match Weather trends' tabbedEditor structure and keyboard behaviour.
 function setupCloudTabs(host,prefix=''){
   const slider=id=>$(prefix+id).closest('.range-control');
@@ -104,8 +104,8 @@ function paint(){
   const ticks=(bottom-top)/4<14*font?[0,.5,1]:[0,.25,.5,.75,1];
   const grid=ticks.map(ratio=>{const y=bottom-ratio*(bottom-top);return `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="currentColor" stroke-opacity="${ratio===0?.4:.12}"/><text x="${left-4}" y="${y+3}" text-anchor="end" fill="currentColor" opacity=".65" font-size="${10*font}">${num(ceiling*ratio)}</text>`;}).join('');
   const vv=verticalVisibility(report,units),showVV=vv&&!['not-configured','unavailable'].includes(state.dataState);
-  let layers='',cloudDefs='',message=report.message,clipped=0;
-  if(showVV&&state.vvStyle==='haze')layers+=`<rect class="vv-haze" x="${left}" y="${top}" width="${right-left}" height="${Math.max(1,bottom-top)}" fill="url(#obscuration)" opacity="${state.vvHaze/100*state.cloudOpacity/100}"/>`;
+  let layers='',cloudDefs='',message=['CAVOK','SKC'].includes(report.raw)?'':report.message,clipped=0;
+  if(showVV&&state.vvStyle==='haze')layers+=`<rect class="vv-haze" x="${left}" y="${top}" width="${right-left}" height="${Math.max(1,bottom-top)}" fill="url(#obscuration)" opacity="${state.cloudOpacity/100}"/>`;
   if(state.dataState==='not-configured')message='METAR not configured';
   else if(state.dataState==='unavailable')message='Cloud observation unavailable';
   else for(const [index,layer] of [...report.layers].sort((a,b)=>(b.baseFt??0)-(a.baseFt??0)).entries()){
@@ -127,8 +127,8 @@ function paint(){
     $('cloud-plot').title=detail;
     if(vv.value!==null){const badge=document.createElement('div');badge.className='vv-caption';badge.textContent=clipped?'VV above scale':'Sky obscured';badge.style.left=left+'px';$('cloud-plot').append(badge);}
   }else $('cloud-plot').removeAttribute('title');
-  $('vv-explanation').textContent=obscured?`${vv.value===null?'No height marker: the measurement is unknown.':vv.label+' is the upward visibility; the dashed line is not a cloud base.'} A fresh report can still have a green LED. Haze strength and style do not change the observation.`:'Choose a VV example to test haze and markers, or OVC002 to compare a real cloud base at the same numerical height.';
-  $('vv-style').value=state.vvStyle;$('vvHaze').disabled=!showVV||state.vvStyle!=='haze';
+  $('vv-explanation').textContent=obscured?`${vv.value===null?'No height marker: the measurement is unknown.':vv.label+' is the upward visibility; the dashed line is not a cloud base.'} A fresh report can still have a green LED. Marker-only is the accepted style. The optional DEV haze follows Cloud opacity.`:'Choose a VV example to test haze and markers, or OVC002 to compare a real cloud base at the same numerical height.';
+  $('vv-style').value=state.vvStyle;
   if(message){const element=document.createElement('div');element.className='plot-state'+(showVV?' vv-state':'');element.textContent=message;$('cloud-plot').append(element);}
   $('units').value=units;$('dialog-units').value=units;
   for(const id of ['scale','dialog-scale']){
