@@ -1,5 +1,13 @@
 # Validation and remaining work
 
+## 0.13.0 published-image acceptance — 13 October 2026
+
+[Release CI 38425742918](https://github.com/alex-soul/pi-rain-radar/actions/runs/38425742918) passed **450 tests**, AMD64/ARM64 builds and fresh startup/restart. Tag/source: `v0.13.0` / `8ba061171f191b4b476adf3d25a9c0002c82528a`. Published index and verified latest: `sha256:347afae88f73cfe7633fd2cd15ff1c39d88f84ea2ec6cd721b1e459a1dbb40b9`.
+
+The Pi uses that exact published image. Automated handover checks preserved settings/PIN, Compose mounts/environment/groups, Archive generation and SQLite integrity. I confirmed the final display stayed fullscreen and Aviation/Clouds worked as in RC2. No browser restart was needed for this final handover. Brief host sample: 724 MiB available RAM, about 157 MiB swap, 68.6°C, no throttling, zero app restarts/OOM or failed services.
+
+Installer pin `c24ad3e` selects the exact release source/index with verified hashes. Local 25 installer + 25 display-control Linux tests and shell checks passed; [installer CI 38427084925](https://github.com/alex-soul/pi-rain-radar/actions/runs/38427084925) also passed its Screen bridge and published-file checks. Installer/runtime contracts and saved snapshots are unchanged. No new fresh-card or extended-soak claim is made.
+
 ## 0.13.0 accepted candidate — 13 October 2026
 
 I accepted RC2 on my existing Pi 4 / 2 GB. RC1 passed 449 native ARM64 tests; RC2 passed 20 affected tests locally and natively, with fresh startup/restart. Review covered cloud appearance/settings, Live/Archive and the revised panel dismissal/recovery behaviour. Shared settings, Archive generation, SQLite integrity and Power/Screen Compose configuration were preserved.

@@ -10,7 +10,7 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.13.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.13.0) is the current pre-release.** I tested and accepted RC2 on my Pi 4 / 2 GB. See [release notes](docs/release-0.13.0.md) and [validation](docs/validation.md). The portable fresh-install/reboot route remains experimental; the installer uses its own verified release pin.
+**[v0.13.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.13.0) is the current pre-release.** I tested and accepted RC2 and the final published image on my Pi 4 / 2 GB. See [release notes](docs/release-0.13.0.md) and [validation](docs/validation.md). Release CI passed 450 tests and startup/restart checks on both architectures. The guided installer pins this verified release; its portable fresh-install/reboot route remains experimental.
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
