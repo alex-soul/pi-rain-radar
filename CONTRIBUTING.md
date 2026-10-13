@@ -40,3 +40,5 @@ Keep the browser image-based and lightweight. Before adding sustained rendering,
 Sustained Pi resource/recovery validation remains a follow-up. See [validation](docs/validation.md) for the tested baseline and [design](docs/design.md) for deferred ideas. Contributions are made under the project MIT licence. Preserve applicable third-party notices.
 
 See the [screen indicator guide](docs/indicators.md) for status meanings, [radar provider guide](docs/radar-providers.md) for setup and estimates, and [Device Power guide](docs/device-power.md) for the optional host helper.
+
+For widget presentation work, start with the retained [widget playground framework](docs/widget-playground.md) and scenario studio. Preserve its reusable layout, controls, scenarios and review workflow when the individual widget is released.

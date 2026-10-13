@@ -130,7 +130,13 @@ const server=http(async(req,res)=>{
     if((trial||path.pathname==='/api/settings/display')&&req.method==='POST'&&path.pathname.startsWith('/api/settings/')&&(req.headers['content-type']!=='application/json'||req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host||req.headers['sec-fetch-site']==='cross-site')){res.writeHead(403);return res.end('{}');}
     if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
     const controlAssets={'/__dock':['dev-dock.html','text/html'],'/__dock.js':['dev-dock.js','text/javascript'],'/__dock.css':['dev-dock.css','text/css'],'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
-    Object.assign(controlAssets,{'/__dev/chart-values.js':['dev-chart-values.js','text/javascript'],'/__dev/chart-values.css':['dev-chart-values.css','text/css']});
+    Object.assign(controlAssets,{'/__dev/chart-values.js':['dev-chart-values.js','text/javascript'],'/__dev/chart-values.css':['dev-chart-values.css','text/css'],'/__cloud-layers.js':['dev-cloud-layers.js','text/javascript'],'/__cloud-layers-model.js':['dev-cloud-layers-model.js','text/javascript'],'/__cloud-layers.css':['dev-cloud-layers.css','text/css']});
+    if(path.pathname==='/__cloud-layers'){
+      const response=await fetch(origin+'/healthz');
+      const headers={'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'};
+      const csp=response.headers.get('content-security-policy');if(csp)headers['Content-Security-Policy']=csp;
+      res.writeHead(200,headers);return res.end(await readFile(new URL('dev-cloud-layers.html',import.meta.url)));
+    }
     if(controlAssets[path.pathname]) {const [file,type]=controlAssets[path.pathname];res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});return res.end(await readFile(new URL(file,import.meta.url)));}
     if(path.pathname==='/__dev/chart-values-data'){
       const chartEnd=Math.floor(Date.now()/60000)*60,fixture=trendFixture({start:chartEnd-7200,end:chartEnd});
