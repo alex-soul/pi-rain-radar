@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "installer_version": "0.1.0-test.2",
-  "app_release": "v0.12.0",
-  "app_commit": "ee3ac709feb40ebf3c879032de6d03787dfc621a",
-  "app_digest": "sha256:60622ed7410051411b5268f6e9b6e6cec579cb0ad8ba1142933b4566a0fa306a",
+  "app_release": "v0.13.0",
+  "app_commit": "8ba061171f191b4b476adf3d25a9c0002c82528a",
+  "app_digest": "sha256:347afae88f73cfe7633fd2cd15ff1c39d88f84ea2ec6cd721b1e459a1dbb40b9",
   "files": {
     "compose.yaml": "98ee5a4d1ca70758cde72a84244fea2f211518e1381c89e9faaa4354f4b769d1",
     "host/device-power/manage.sh": "9467332766a1e4e929f39a9b7718207b67733bcedf2395f0ea5aeff7429f7043",
