@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseCloudGroups,plotTop,randomCloud,cloudScenarios,cloudFooter,cloudBanks,cloudOutline} from '../scripts/dev-cloud-layers-model.js';
+import {parseCloudGroups,plotTop,randomCloud,cloudScenarios,cloudFooter,cloudBanks,cloudOutline,verticalVisibility} from '../scripts/dev-cloud-layers-model.js';
 test('cloud preview scenarios parse and distinguish unavailable from clear',()=>{
   for(const scenario of cloudScenarios)assert.doesNotThrow(()=>parseCloudGroups(scenario.codes));
   assert.equal(parseCloudGroups('').state,'missing');
@@ -59,4 +59,14 @@ test('size changes bank widths while retaining category coverage; irregularity c
     const height=path=>Math.min(...[...path.matchAll(/[-\d.]+,([-\d.]+)/g)].map(m=>Number(m[1])));
     assert.ok(Math.abs(height(smooth)-height(uneven))<=.01);
   }
+});
+
+test('vertical visibility is distinct from cloud bases, unknown height and absent data',()=>{
+  assert.deepEqual(verticalVisibility(parseCloudGroups('VV002'),'ft'),{value:200,label:'VV 200 ft'});
+  const metres=verticalVisibility(parseCloudGroups('VV002'));
+  assert.equal(metres.value,60.96);assert.equal(metres.label,'VV 61 m');
+  assert.deepEqual(verticalVisibility(parseCloudGroups('VV///')),{value:null,label:'VV unknown'});
+  assert.equal(verticalVisibility(parseCloudGroups('VV000')).value,0);
+  for(const code of ['OVC002','SCT///','','SKC'])assert.equal(verticalVisibility(parseCloudGroups(code)),null);
+  assert.equal(cloudFooter(parseCloudGroups('VV///'),{station:'EGBB',timestamp:'131020Z',dataState:'fresh'}).health,'ready');
 });

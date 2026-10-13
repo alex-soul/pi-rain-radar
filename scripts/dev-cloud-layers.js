@@ -1,13 +1,13 @@
 import {setupWidgetResize} from '/widget-resize.js';
-import {cloudScenarios,parseCloudGroups,plotTop,cloudBanks,cloudOutline,cloudFooter} from '/__cloud-layers-model.js';
+import {cloudScenarios,parseCloudGroups,plotTop,cloudBanks,cloudOutline,cloudFooter,verticalVisibility} from '/__cloud-layers-model.js';
 const $=id=>document.getElementById(id),key='pi-rain-radar-dev-cloud-layers-v1';
-const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh'};
-const sliders=[['opacity','Widget opacity',0,100,1,'%'],['font','Font size',75,150,5,'%'],['width','Widget width',200,680,10,'px'],['height','Plot height',50,400,1,'px'],['cloudOpacity','Cloud opacity',20,100,1,'%'],['cloudSize','Cloud size',50,200,5,'%'],['texture','Shape irregularity',0,100,5,'%'],['seed','Shape variation',1,50,1,'']];
+const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'haze',vvHaze:35};
+const sliders=[['opacity','Widget opacity',0,100,1,'%'],['font','Font size',75,150,5,'%'],['width','Widget width',200,680,10,'px'],['height','Plot height',50,400,1,'px'],['cloudOpacity','Cloud opacity',20,100,1,'%'],['cloudSize','Cloud size',50,200,5,'%'],['texture','Shape irregularity',0,100,5,'%'],['seed','Shape variation',1,50,1,''],['vvHaze','Haze strength',0,100,5,'%']];
 let state={...defaults};
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&typeof saved==='object'){
   parseCloudGroups(saved.codes??defaults.codes);
   for(const [id,,min,max] of sliders)if(Number.isFinite(saved[id]))state[id]=Math.max(min,Math.min(max,saved[id]));
-  for(const [id,values] of Object.entries({units:['m','ft'],theme:['dark','light'],backdrop:['map','plain'],dataState:['fresh','stale','unavailable','not-configured','error'],scale:[0,1500,3000,6000]}))if(values.includes(saved[id]))state[id]=saved[id];
+  for(const [id,values] of Object.entries({vvStyle:['haze','marker'],units:['m','ft'],theme:['dark','light'],backdrop:['map','plain'],dataState:['fresh','stale','unavailable','not-configured','error'],scale:[0,1500,3000,6000]}))if(values.includes(saved[id]))state[id]=saved[id];
   if(typeof saved.codes==='string')state.codes=saved.codes;if(typeof saved.station==='string')state.station=saved.station.slice(0,4).toUpperCase();if(typeof saved.timestamp==='string')state.timestamp=saved.timestamp.slice(0,7).toUpperCase();
   if(cloudScenarios.some(s=>s.id===saved.scenario)||saved.scenario==='custom')state.scenario=saved.scenario;
 }}catch{/* Invalid/blocked storage uses the default preview. */}
@@ -20,7 +20,7 @@ function addSlider(host,[keyId,label,min,max,step=1,suffix=''],prefix=''){
   $(id).dataset.suffix=suffix;
 }
 const userSettings=['opacity','font','cloudOpacity','cloudSize','texture'];
-sliders.forEach(s=>{addSlider($(userSettings.includes(s[0])?'user-appearance':'appearance'),s);if(userSettings.includes(s[0]))addSlider($('dialog-appearance'),s,'dialog-');});
+sliders.forEach(s=>{addSlider($(s[0]==='vvHaze'?'vv-controls':userSettings.includes(s[0])?'user-appearance':'appearance'),s);if(userSettings.includes(s[0]))addSlider($('dialog-appearance'),s,'dialog-');});
 // Match Weather trends' tabbedEditor structure and keyboard behaviour.
 function setupCloudTabs(host,prefix=''){
   const slider=id=>$(prefix+id).closest('.range-control');
@@ -45,11 +45,11 @@ function setupCloudTabs(host,prefix=''){
 setupCloudTabs($('user-settings'));setupCloudTabs($('cloud-settings-dialog'),'dialog-');
 $('cloud-settings').onclick=()=>$('cloud-settings-dialog').showModal();
 $('cloud-settings-close').onclick=()=>$('cloud-settings-dialog').close();
-for(const scenario of cloudScenarios){const button=document.createElement('button');button.textContent=scenario.title;button.dataset.scenario=scenario.id;button.onclick=()=>{state.codes=scenario.codes;state.scenario=scenario.id;state.dataState='fresh';sync();};$('scenarios').append(button);}
+for(const scenario of cloudScenarios)for(const host of ['scenarios',...(['obscured','obscured-higher','obscured-zero','overcast-low','unknown-vv'].includes(scenario.id)?['vv-scenarios']:[])]){const button=document.createElement('button');button.textContent=scenario.title;button.dataset.scenario=scenario.id;button.onclick=()=>{state.codes=scenario.codes;state.scenario=scenario.id;state.dataState='fresh';sync();};$(host).append(button);}
 $('scenario-count').textContent=cloudScenarios.length+' SCENARIOS';
 function sync(){
   for(const id of ['codes','theme','backdrop','units','scale','station',...sliders.map(s=>s[0]),'timestamp'])$(id).value=state[id];
-  $('data-state').value=state.dataState;$('code-error').hidden=true;buildLayerControls();paint();
+  $('vv-style').value=state.vvStyle;$('data-state').value=state.dataState;$('code-error').hidden=true;buildLayerControls();paint();
 }
 function buildLayerControls(){
   const layers=parseCloudGroups(state.codes).layers;$('layers').replaceChildren();
@@ -75,7 +75,7 @@ function applyCodes(){try{state.codes=parseCloudGroups($('codes').value).raw;sta
 $('apply').onclick=applyCodes;$('codes').onkeydown=event=>{if(event.key==='Enter')applyCodes();};
 for(const id of ['theme','backdrop','station','timestamp'])$(id).addEventListener('input',()=>{state[id]=['station','timestamp'].includes(id)?$(id).value.toUpperCase():$(id).value;paint();});
 for(const id of ['units','dialog-units'])$(id).addEventListener('change',()=>{state.units=$(id).value;paint();});
-for(const id of ['scale','dialog-scale'])$(id).addEventListener('change',()=>{state.scale=Number($(id).value);paint();});$('data-state').onchange=()=>{state.dataState=$('data-state').value;paint();};
+for(const id of ['scale','dialog-scale'])$(id).addEventListener('change',()=>{state.scale=Number($(id).value);paint();});$('vv-style').onchange=()=>{state.vvStyle=$('vv-style').value;paint();};$('data-state').onchange=()=>{state.dataState=$('data-state').value;paint();};
 $('reset').onclick=()=>{state={...defaults};resizeOffset={x:0,y:0};$('cloud-widget').style.left='';$('cloud-widget').style.top='';sync();};
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('export').value);$('copy-status').textContent='Copied';}catch{$('export').focus();$('export').select();$('copy-status').textContent='Select and copy the text below';}};
 function cloudBand(layer,index,y,left,right){
@@ -103,24 +103,33 @@ function paint(){
   const left=Math.ceil(num(ceiling).length*6*font)+5;
   const ticks=(bottom-top)/4<14*font?[0,.5,1]:[0,.25,.5,.75,1];
   const grid=ticks.map(ratio=>{const y=bottom-ratio*(bottom-top);return `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="currentColor" stroke-opacity="${ratio===0?.4:.12}"/><text x="${left-4}" y="${y+3}" text-anchor="end" fill="currentColor" opacity=".65" font-size="${10*font}">${num(ceiling*ratio)}</text>`;}).join('');
+  const vv=verticalVisibility(report,units),showVV=vv&&!['not-configured','unavailable'].includes(state.dataState);
   let layers='',cloudDefs='',message=report.message,clipped=0;
+  if(showVV&&state.vvStyle==='haze')layers+=`<rect class="vv-haze" x="${left}" y="${top}" width="${right-left}" height="${Math.max(1,bottom-top)}" fill="url(#obscuration)" opacity="${state.vvHaze/100*state.cloudOpacity/100}"/>`;
   if(state.dataState==='not-configured')message='METAR not configured';
   else if(state.dataState==='unavailable')message='Cloud observation unavailable';
   else for(const [index,layer] of [...report.layers].sort((a,b)=>(b.baseFt??0)-(a.baseFt??0)).entries()){
     if(layer.baseFt===null)continue;if(layer.baseFt*factor>ceiling){clipped++;continue;}
     const y=toY(layer.baseFt),size=state.cloudSize/100;
-    if(layer.amount==='VV')layers+=`<rect x="${left}" y="${y}" width="${right-left}" height="${Math.max(1,bottom-y)}" fill="url(#obscuration)"/><line x1="${left}" x2="${right}" y1="${y}" y2="${y}" stroke="var(--cloud)" stroke-dasharray="4 4"/>`;
+    if(layer.amount==='VV')layers+=`<line class="vv-marker" x1="${left}" x2="${right}" y1="${y}" y2="${y}" stroke="currentColor" stroke-opacity=".8" stroke-dasharray="4 4"/><text class="vv-value" x="${right-3}" y="${Math.max(top+12*font,y-5)}" text-anchor="end" fill="currentColor" font-size="${10*font}" paint-order="stroke" stroke="rgb(var(--card-rgb)/.8)" stroke-width="3" stroke-linejoin="round">${vv.label}</text>`;
     else {
       cloudDefs+=`<linearGradient id="cloud-fill-${index}" gradientUnits="userSpaceOnUse" x1="0" y1="-32" x2="0" y2="2"><stop stop-color="var(--cloud-highlight)" stop-opacity=".3"/><stop offset=".35" stop-color="var(--cloud-highlight)" stop-opacity=".9"/><stop offset=".7" stop-color="var(--cloud)" stop-opacity=".82"/><stop offset="1" stop-color="var(--cloud)" stop-opacity=".25"/></linearGradient><filter id="cloud-halo-${index}" filterUnits="userSpaceOnUse" x="${left-5}" y="${y-40*size}" width="${right-left+10}" height="${46*size}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="1.6"/></filter><filter id="cloud-edge-${index}" filterUnits="userSpaceOnUse" x="${left-3}" y="${y-38*size}" width="${right-left+6}" height="${43*size}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".55"/></filter>`;
       layers+=cloudBand(layer,index,y,left,right);
     }
   }
-  if(!message&&report.layers.length&&report.layers.every(l=>l.baseFt===null))message=report.layers[0].amount==='VV'?'Sky obscured · vertical visibility unknown':'Cloud reported · base unavailable';
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Cloud bases in ${units==='m'?'metres':'feet'} above the aerodrome"><defs>${cloudDefs}<linearGradient id="obscuration" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--cloud)" stop-opacity=".1"/><stop offset="1" stop-color="var(--cloud)" stop-opacity=".6"/></linearGradient><clipPath id="sky-clip"><rect x="${left}" y="0" width="${Math.max(1,right-left)}" height="${bottom}"/></clipPath></defs>${grid}<g clip-path="url(#sky-clip)">${layers}</g></svg>`;
+  if(!message&&report.layers.length&&report.layers.every(l=>l.baseFt===null))message=report.layers[0].amount==='VV'?'Sky obscured\nVV unknown':'Cloud reported · base unavailable';
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Cloud bases in ${units==='m'?'metres':'feet'} above the aerodrome"><defs>${cloudDefs}<linearGradient id="obscuration" x1="0" y1="0" x2="0" y2="1"><stop stop-color="var(--cloud)" stop-opacity=".15"/><stop offset="1" stop-color="var(--cloud)" stop-opacity="1"/></linearGradient><clipPath id="sky-clip"><rect x="${left}" y="0" width="${Math.max(1,right-left)}" height="${bottom}"/></clipPath></defs>${grid}<g clip-path="url(#sky-clip)">${layers}</g></svg>`;
   $('cloud-plot').innerHTML=svg;
   const obscured=report.layers.some(layer=>layer.amount==='VV');
-  if(obscured)$('cloud-plot').querySelector('svg').setAttribute('aria-label',`Vertical visibility in ${units==='m'?'metres':'feet'} above the aerodrome`);
-  if(message){const element=document.createElement('div');element.className='plot-state';element.textContent=message;$('cloud-plot').append(element);}
+  if(showVV){
+    const detail=vv.value===null?'Sky obscured; vertical visibility unknown. No height is available.':`Sky obscured; vertical visibility ${vv.label.slice(3)} above the aerodrome. This is not a cloud base or the top of the obscuration.${clipped?' Measurement above the selected scale.':''}`;
+    $('cloud-plot').querySelector('svg').setAttribute('aria-label',detail);
+    $('cloud-plot').title=detail;
+    if(vv.value!==null){const badge=document.createElement('div');badge.className='vv-caption';badge.textContent=clipped?'VV above scale':'Sky obscured';badge.style.left=left+'px';$('cloud-plot').append(badge);}
+  }else $('cloud-plot').removeAttribute('title');
+  $('vv-explanation').textContent=obscured?`${vv.value===null?'No height marker: the measurement is unknown.':vv.label+' is the upward visibility; the dashed line is not a cloud base.'} A fresh report can still have a green LED. Haze strength and style do not change the observation.`:'Choose a VV example to test haze and markers, or OVC002 to compare a real cloud base at the same numerical height.';
+  $('vv-style').value=state.vvStyle;$('vvHaze').disabled=!showVV||state.vvStyle!=='haze';
+  if(message){const element=document.createElement('div');element.className='plot-state'+(showVV?' vv-state':'');element.textContent=message;$('cloud-plot').append(element);}
   $('units').value=units;$('dialog-units').value=units;
   for(const id of ['scale','dialog-scale']){
     $(id).value=state.scale;

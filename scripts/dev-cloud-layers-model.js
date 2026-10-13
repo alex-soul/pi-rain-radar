@@ -12,8 +12,11 @@ export const cloudScenarios = [
   {id:'convective', title:'CB / TCU', codes:'SCT018TCU BKN035CB', description:'Type stays in the footer cloud groups, without inventing the height of a cloud top.'},
   {id:'cavok', title:'CAVOK', codes:'CAVOK', description:'No operationally significant cloud reported. This does not establish a completely cloudless sky.'},
   {id:'clear', title:'Clear sky', codes:'SKC', description:'Explicit sky-clear report. Compare with CLR, NSC and NCD using the code field.'},
-  {id:'obscured', title:'Obscured sky', codes:'VV002', description:'Vertical visibility into an obscured sky. The dashed marker is not a cloud base.'},
-  {id:'unknown-vv', title:'Unknown visibility', codes:'VV///', description:'Sky obscured, but vertical visibility is unavailable. No height is invented.'},
+  {id:'obscured', title:'Obscured · VV002', codes:'VV002', description:'Sky obscured; vertical visibility 200 ft (about 61 m). Compare with OVC002: the dashed VV marker is a visibility measurement, not a cloud base or fog top.'},
+  {id:'obscured-higher', title:'Obscured · VV010', codes:'VV010', description:'Vertical visibility 1,000 ft (about 305 m). Move the height slider to compare different reported visibility values.'},
+  {id:'obscured-zero', title:'Obscured · VV000', codes:'VV000', description:'A numeric zero group stays at the ground line; it must not be treated as unknown. The code has limited reporting precision.'},
+  {id:'overcast-low', title:'Overcast · OVC002', codes:'OVC002', description:'A reported overcast cloud base at 200 ft (about 61 m). Compare with VV002 at the same numerical height; this one is a cloud layer.'},
+  {id:'unknown-vv', title:'Obscured · VV///', codes:'VV///', description:'Sky obscured, but vertical visibility is unavailable. No height is invented.'},
   {id:'missing-height', title:'Unknown base', codes:'SCT/// BKN020', description:'One layer has no reported base. Its /// group stays in the footer without being plotted at zero.'},
   {id:'missing', title:'No cloud data', codes:'', description:'Missing data must look different from a clear report. Select Three layers to recover.'}
 ];
@@ -93,4 +96,12 @@ export function cloudFooter(report,{station,timestamp,dataState}) {
   const health=dataState==='error'&&configured?'error':!available||stamp==='—'?'neutral':dataState==='stale'?'warning':'ready';
   const labels={ready:'METAR up to date',warning:'METAR stale',neutral:configured?'METAR missing':'METAR not configured',error:'METAR collection error'};
   return {health,label:labels[health],station:configured?station:'—',timestamp:available?stamp:'—',groups:available?report.raw:'—'};
+}
+
+// Keep an obscured sky distinct from absent data and a measured cloud base.
+export function verticalVisibility(report,units='m') {
+  const layer=report.layers.find(layer=>layer.amount==='VV');
+  if(!layer)return null;
+  const value=layer.baseFt===null?null:layer.baseFt*(units==='m'?.3048:1);
+  return {value,label:value===null?'VV unknown':`VV ${Math.round(value).toLocaleString('en-GB')} ${units}`};
 }
