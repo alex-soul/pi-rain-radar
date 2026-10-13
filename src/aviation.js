@@ -3,6 +3,7 @@ import {mkdir} from 'node:fs/promises';
 import {atomicJson,exists,readJson} from './history-files.js';
 import {historyRows} from './radar-history.js';
 import {decodeAviation} from './aviation-decoder.js';
+import {withObservedClouds} from './aviation-clouds.js';
 import {aviationProducts} from '../public/aviation-model.js';
 export const AVIATION_POLL_MS=300000;
 const source=product=>'aviation-'+product;
@@ -18,7 +19,7 @@ export function normalizeReport(value,product,station,acquiredAt,revision){
  if(!Number.isFinite(reportTime)||reportTime<=0||reportTime>acquiredAt)throw Error('Invalid report timestamp');
  const validFrom=product==='taf'?Number(value.validTimeFrom)*1000:null,validTo=product==='taf'?Number(value.validTimeTo)*1000:null;
  if(product==='taf'&&(!Number.isFinite(validFrom)||!Number.isFinite(validTo)||validTo<=validFrom)&&!/(?:^|\s)(?:CNL|NIL)(?:\s|$)/.test(raw))throw Error('Invalid TAF period');
- return {product,station,name:typeof value.name==='string'?value.name.slice(0,100):station,raw,issuedAt,observedAt,validFrom:Number.isFinite(validFrom)?validFrom:null,validTo:Number.isFinite(validTo)?validTo:null,acquiredAt,revision,cancelled:/(?:^|\s)(?:CNL|NIL)(?:\s|$)/.test(raw),...decodeAviation(raw,{product,issuedAt,observedAt,station})};
+ return withObservedClouds({product,station,name:typeof value.name==='string'?value.name.slice(0,100):station,raw,issuedAt,observedAt,validFrom:Number.isFinite(validFrom)?validFrom:null,validTo:Number.isFinite(validTo)?validTo:null,acquiredAt,revision,cancelled:/(?:^|\s)(?:CNL|NIL)(?:\s|$)/.test(raw),...decodeAviation(raw,{product,issuedAt,observedAt,station})});
 }
 export async function loadAviationHistory(store,end,hours){
  const start=Math.max(0,(end-hours*3600)*1000),stop=end*1000,cutoff=(await store.status()).cutoff??0;
@@ -31,7 +32,7 @@ export async function loadAviationHistory(store,end,hours){
   if(before&&before.time>=cutoff)reports.push(before.data);
   const rows=await historyRows(store,{kind:'transition',source:source(product),context:station,start,end:stop});reports.push(...rows.map(r=>r.data));
  }
- return {states,reports:reports.sort((a,b)=>a.acquiredAt-b.acquiredAt),cutoff};
+ return {states,reports:reports.map(withObservedClouds).sort((a,b)=>a.acquiredAt-b.acquiredAt),cutoff};
 }
 export async function createAviation(directory,{store,freshInstallation=false,autoStart=true,fetcher=fetch,now=Date.now}={}){
  const path=join(directory,'settings','aviation.json');await mkdir(join(directory,'settings'),{recursive:true});
@@ -41,6 +42,8 @@ export async function createAviation(directory,{store,freshInstallation=false,au
  let live=await store.weatherState('aviation-live'),timer,busy=false,closed=false,controller=null,writing=Promise.resolve(),configurationBusy=false;
  if(!live||live.revision!==config.revision||live.station!==config.station)live={...config,reports:{},products:Object.fromEntries(aviationProducts.map(p=>[p,{state:'pending'}]))};
  live.enabled=config.enabled;
+ // Upgrade cached observations without changing their acquisition time/identity.
+ live.reports=Object.fromEntries(Object.entries(live.reports??{}).map(([p,r])=>[p,withObservedClouds(r)]));
  const write=fn=>{const p=writing.then(fn);writing=p.catch(()=>{});return p;};
  async function publish(time=now()){const {reports,...state}=structuredClone(live);await write(async()=>{await store.put([{kind:'transition',source:'aviation-status',context:'appliance',time,receivedAt:time,data:state}]);await store.saveWeatherState('aviation-live',{...state,reports});});}
  async function collect(){
@@ -57,11 +60,12 @@ export async function createAviation(directory,{store,freshInstallation=false,au
     const acquiredAt=now();
     values=values.filter(v=>v?.icaoId===config.station).sort((a,b)=>(product==='taf'?Date.parse(b.issueTime)-Date.parse(a.issueTime):b.obsTime-a.obsTime));
     if(values.length)report=normalizeReport(values[0],product,config.station,acquiredAt,epoch);
+    if(report?.clouds?.state==='error')throw Error('Invalid observed cloud groups');
     const previous=live.reports[product];
     if(report&&previous&&report.raw!==previous.raw&&(report.issuedAt??report.observedAt)<(previous.issuedAt??previous.observedAt))throw Error('Older report returned');
     if(report&&previous&&report.raw===previous.raw&&(report.issuedAt??report.observedAt)===(previous.issuedAt??previous.observedAt)&&report.validFrom===previous.validFrom&&report.validTo===previous.validTo)report=previous;
     next={state:!report||report.cancelled?'missing':'ready',lastAttempt:attempt,lastSuccess:acquiredAt,reportAcquiredAt:report?.acquiredAt??live.reports[product]?.acquiredAt??null,failures:0};
-   }catch{next={...live.products[product],state:'error',lastAttempt:attempt,failures:(live.products[product]?.failures??0)+1};}
+   }catch{report=undefined;next={...live.products[product],state:'error',lastAttempt:attempt,failures:(live.products[product]?.failures??0)+1};}
    if(closed||epoch!==config.revision||!config.enabled)break;
    if(report&&report!==live.reports[product])await write(()=>store.put([{kind:'transition',source:source(product),context:report.station,time:report.acquiredAt,receivedAt:report.acquiredAt,data:report}]));
    if(closed||epoch!==config.revision||!config.enabled)break;

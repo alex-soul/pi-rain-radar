@@ -16,11 +16,13 @@ localStorage.setItem(prefix+'aviation-group',JSON.stringify({split:choice==='met
 $('review-screen').value=choice;sessionStorage.removeItem(prefix+'reset');
 }
 const ui=createAviationUI({storagePrefix:prefix});
+const decodedResponse=await fetch('/__aviation-ui-data');
+if(!decodedResponse.ok)throw Error('Synthetic Aviation explanations unavailable');
+const decodedReports=await decodedResponse.json();
 function update(){
   const report=parseCloudGroups(cases.find(s=>s.id===$('review-sky').value).codes),state=$('review-data').value;
   ui.updateClouds({report,station:'EGBB',timestamp:'131020Z',dataState:state,seed:7});
-  const raw='EGBB 131020Z 24008KT 9999 '+report.raw+' 14/10 Q1017',taf='TAF EGBB 131100Z 1312/1412 24008KT 9999 SCT025 BECMG 1318/1321 BKN014';
-  ui.update({status:{reports:{metar:{raw,sections:[{start:0,end:4,meaning:'Birmingham airport · synthetic report'},{start:5,end:12,meaning:'Observation on day 13 at 10:20 UTC'}]},taf:{raw:taf,sections:[]}}}});
+  ui.update({status:{reports:decodedReports[$('review-sky').value]}});
 }
 for(const id of ['review-sky','review-data'])$(id).onchange=update;
 $('review-theme').onchange=()=>document.documentElement.dataset.theme=$('review-theme').value;

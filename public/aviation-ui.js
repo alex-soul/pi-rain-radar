@@ -2,13 +2,15 @@ import {setupFloatingWidget} from './floating-widget.js';
 import {editor,attachCog,opacityControl,fontControl,canEditLocal,setupExplanationHover,tabbedEditor} from './local-ui.js';
 import {localPreferences} from './local-preferences.js';
 import {aviationAt,aviationProducts,aviationNames} from './aviation-model.js';
-import {aviationGroup,changeAviation,groupVisible,aviationPanels,panelNames} from './aviation-group-model.js';
+import {migrateAviationGroup,changeAviation,groupVisible,aviationPanels,panelNames} from './aviation-group-model.js';
 import {createCloudWidget} from './cloud-widget.js';
 
 // Shared widget UI, exercised by the synthetic review before the live adapter is connected.
 export function createAviationUI({storagePrefix='radar-'}={}){
 const $=id=>document.getElementById(id),parent=$('aviation-toggle').closest('main'),storageKey=storagePrefix+'aviation-group';
-let saved;try{saved=JSON.parse(localStorage.getItem(storageKey));}catch{}let group=aviationGroup(saved);
+const read=key=>{try{return JSON.parse(localStorage.getItem(key));}catch{return null;}};
+let group=migrateAviationGroup(read(storageKey),read(storagePrefix+'aviation-layout'),read(storagePrefix+'aviation'));
+try{localStorage.setItem(storageKey,JSON.stringify(group));}catch{}
 function panel(id,label){const area=document.createElement('aside');area.id=id;area.className='aviation-widget';area.tabIndex=0;area.setAttribute('aria-label',label);area.hidden=true;const body=document.createElement('div');body.className='aviation-content';body.dataset.widgetScroll='';const resize=document.createElement('button');resize.id=id+'-resize';resize.type='button';resize.textContent='◢';resize.setAttribute('aria-label','Resize '+label);area.append(body,resize);parent.append(area);return area;}
 const combined=panel('aviation','Aviation weather'),detached={metar:panel('aviation-metar','METAR'),taf:panel('aviation-taf','TAF')};
 for(const area of [combined,...Object.values(detached)]){const handle=document.createElement('button');handle.type='button';handle.className='widget-drag-handle';handle.dataset.widgetDrag='';handle.setAttribute('aria-label','Move '+area.getAttribute('aria-label'));handle.title='Drag to move · Arrow keys to move';const grip=document.createElement('span');grip.setAttribute('aria-hidden','true');handle.append(grip);area.append(handle);}

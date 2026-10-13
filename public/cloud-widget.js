@@ -29,7 +29,7 @@ export function createCloudWidget({parent,storagePrefix='radar-',onClose,selecti
   tabbedEditor(dialog,'Clouds',cloudControls,[{title:'Panels',nodes:[panelSelection]}]);attachCog(area,dialog,'cloud-layers-edit','Edit Cloud layers');
   const floating=setupFloatingWidget({id:area.id,storageKey:storagePrefix+'cloud-window',width:200,height:100,minWidth:200,minHeight:100,maxWidth:Infinity,maxHeight:Infinity,startX:28,startY:420,rememberVisibility:false,onClose});
   const detail=document.createElement('div');detail.className='weather-explanation';detail.id='cloud-report-detail';detail.setAttribute('role','tooltip');detail.hidden=true;document.body.append(detail);
-  let input={report:{raw:'',layers:[],state:'missing',message:''},station:'EGBB',dataState:'unavailable',seed:7},pinned=false,lastDetail='';
+  let input={report:{raw:'',layers:[],state:'missing',message:''},station:'EGBB',dataState:'unavailable',seed:7},pinned=false,lastDetail='',renderSignature='';
   const groups=area.querySelector('.cloud-groups');
   function hide(){pinned=false;detail.hidden=true;groups.removeAttribute('aria-describedby');}
   function show(){if(!canEditLocal())return;detail.hidden=false;groups.setAttribute('aria-describedby',detail.id);const r=groups.getBoundingClientRect();detail.style.left=Math.max(8,Math.min(innerWidth-detail.offsetWidth-8,r.left))+'px';detail.style.top=Math.max(8,Math.min(innerHeight-detail.offsetHeight-8,r.bottom+8))+'px';}
@@ -43,11 +43,14 @@ export function createCloudWidget({parent,storagePrefix='radar-',onClose,selecti
     for(const option of selects.scale.options)if(Number(option.value))option.textContent='Fixed · '+Math.round(Number(option.value)*(settings.units==='m'?1:1/.3048)).toLocaleString('en-GB')+' '+settings.units;
     if(area.hidden)return;
     const height=Math.max(24,area.clientHeight-area.querySelector('.cloud-footer').offsetHeight-6);
+    const signature=JSON.stringify([input,settings,area.offsetWidth,height]);
+    if(signature===renderSignature)return;renderSignature=signature;
     const view=cloudPresentation(input.report,{...settings,...input,width:area.offsetWidth,height,vvStyle:'haze',convectiveShading:true});
     const plot=area.querySelector('.cloud-plot');plot.innerHTML=view.svg;if(view.showVV)plot.querySelector('svg').setAttribute('aria-label',view.detail);
     if(view.message){const text=document.createElement('div');text.className='cloud-plot-state';text.textContent=view.message;plot.append(text);}
     // The footer is the compact target for mouse, keyboard and touch detail.
-    const text=[footer.label,input.station,input.timestamp,view.detail].filter(Boolean).join(' · ');
+    const utc=t=>Number.isFinite(t)?new Date(t).toISOString().replace('T',' ').replace('.000Z',' UTC'):null;
+    const text=[footer.label,input.station,input.timestamp,view.detail,input.observedAt?'Observed '+utc(input.observedAt):null,input.acquiredAt?'Received '+utc(input.acquiredAt):null,input.lastSuccess?'Last check '+utc(input.lastSuccess):null].filter(Boolean).join(' · ');
     if(text!==lastDetail){lastDetail=text;detail.textContent=text;hide();}groups.setAttribute('aria-label','Cloud report details: '+text);
   }
   new ResizeObserver(paint).observe(area);

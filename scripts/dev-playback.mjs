@@ -1,4 +1,5 @@
 import {createDevAviation} from './dev-aviation.mjs';
+import {aviationReviewReports} from './dev-aviation-ui-fixture.js';
 import {validScreenCommand} from '../src/screen-control.js';
 import {trendFixture} from './dev-weather-trends.mjs';
 import {syntheticAvailability,syntheticMedia} from './dev-availability.mjs';
@@ -131,6 +132,9 @@ const server=http(async(req,res)=>{
     if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
     const controlAssets={'/__dock':['dev-dock.html','text/html'],'/__dock.js':['dev-dock.js','text/javascript'],'/__dock.css':['dev-dock.css','text/css'],'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
     Object.assign(controlAssets,{'/__dev/chart-values.js':['dev-chart-values.js','text/javascript'],'/__dev/chart-values.css':['dev-chart-values.css','text/css'],'/__cloud-layers.js':['dev-cloud-layers.js','text/javascript'],'/__cloud-layers-model.js':['dev-cloud-layers-model.js','text/javascript'],'/__cloud-layers.css':['dev-cloud-layers.css','text/css']});
+    if(path.pathname==='/__aviation-ui-data'){
+      res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(aviationReviewReports()));
+    }
     if(path.pathname==='/__aviation-ui'){
       const response=await fetch(origin+'/');let html=await response.text();
       html=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace('</head>','<link rel="stylesheet" href="/cloud-layers.css"><link rel="stylesheet" href="/__aviation-ui.css"><script type="module" src="/__aviation-ui.js"></script></head>').replace(/<title>[^<]*<\/title>/,'<title>Aviation UI review · synthetic</title>');

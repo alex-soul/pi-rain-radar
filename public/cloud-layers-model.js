@@ -56,7 +56,7 @@ export function cloudFooter(report,{station,timestamp,dataState}) {
   const configured=dataState!=='not-configured'&&/^[A-Z0-9]{4}$/.test(station);
   const available=configured&&!['unavailable','expired'].includes(dataState)&&report.state!=='missing';
   const stamp=/^(0[1-9]|[12]\d|3[01])([01]\d|2[0-3])[0-5]\dZ$/.test(timestamp)?timestamp:'—';
-  const health=dataState==='error'&&configured?'error':['stale','expired'].includes(dataState)?'warning':!available||stamp==='—'?'neutral':'ready';
+  const health=!configured?'neutral':dataState==='error'?'error':['stale','expired'].includes(dataState)?'warning':!available||stamp==='—'?'neutral':'ready';
   const labels={ready:'METAR up to date',warning:'METAR stale',neutral:configured?'METAR missing':'METAR not configured',error:'METAR collection error'};
   return {health,label:dataState==='expired'&&configured?'METAR expired':labels[health],station:configured?station:'—',timestamp:available?stamp:'—',groups:available?report.raw:'—'};
 }

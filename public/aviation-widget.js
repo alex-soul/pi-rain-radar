@@ -1,52 +1,8 @@
-import {setupFloatingWidget} from './floating-widget.js';
-import {editor,attachCog,opacityControl,fontControl,canEditLocal,setupExplanationHover} from './local-ui.js';
-import {localPreferences} from './local-preferences.js';
-import {aviationAt,aviationProducts,aviationNames} from './aviation-model.js';
-const $=id=>document.getElementById(id);
-let split=false,visibleProducts={metar:true,taf:true};
-try{const saved=JSON.parse(localStorage.getItem('radar-aviation-layout'));split=saved?.split===true;for(const p of aviationProducts)if(typeof saved?.visible?.[p]==='boolean')visibleProducts[p]=saved.visible[p];}catch{}
-function save(){try{localStorage.setItem('radar-aviation-layout',JSON.stringify({split,visible:visibleProducts}));}catch{}}
-function panel(id,label){const area=document.createElement('aside');area.id=id;area.className='aviation-widget';area.tabIndex=0;area.setAttribute('aria-label',label);area.hidden=true;const body=document.createElement('div');body.className='aviation-content';body.dataset.widgetScroll='';const resize=document.createElement('button');resize.id=id+'-resize';resize.type='button';resize.textContent='◢';resize.setAttribute('aria-label','Resize '+label);area.append(body,resize);$('aviation-toggle').closest('main').append(area);return area;}
-const combined=panel('aviation','Aviation weather'),detached={metar:panel('aviation-metar','METAR'),taf:panel('aviation-taf','TAF')};
-for(const area of [combined,...Object.values(detached)]){const handle=document.createElement('button');handle.type='button';handle.className='widget-drag-handle';handle.dataset.widgetDrag='';handle.setAttribute('aria-label','Move '+area.getAttribute('aria-label'));handle.title='Drag to move · Arrow keys to move';const grip=document.createElement('span');grip.setAttribute('aria-hidden','true');handle.append(grip);area.append(handle);}
-const dialog=editor('aviation-editor','Aviation weather');
-const detachLabel=document.createElement('label');detachLabel.className='misc-option';detachLabel.textContent='Split METAR and TAF';
-const detach=document.createElement('input');detach.type='checkbox';detach.className='control-switch';detach.setAttribute('role','switch');detach.checked=split;detachLabel.append(detach);dialog.append(detachLabel);
-const visibility={};for(const p of aviationProducts){const label=document.createElement('label');label.className='misc-option';label.textContent='Show '+aviationNames[p];const input=document.createElement('input');input.type='checkbox';input.className='control-switch';input.setAttribute('role','switch');input.checked=visibleProducts[p];input.onchange=()=>{if(!canEditLocal()){input.checked=visibleProducts[p];return;}visibleProducts[p]=input.checked;save();apply();render();};visibility[p]=input;label.append(input);dialog.append(label);}
-opacityControl(dialog,'aviation');fontControl(dialog,'aviation');
-for(const area of [combined,...Object.values(detached)])attachCog(area,dialog,area.id+'-edit','Edit Aviation weather');
-let master;const windows={};
-// One scaled text line, 12px padding above/below, and the two panel borders.
-const minHeight=()=>Math.ceil(15*(localPreferences.fonts.aviation??100)/100*1.65+26);
-for(const p of aviationProducts)windows[p]=setupFloatingWidget({id:'aviation-'+p,storageKey:'radar-aviation-window-'+p,width:p==='taf'?500:420,height:p==='taf'?230:145,minWidth:180,minHeight,maxWidth:1000,maxHeight:Infinity,startX:p==='taf'?460:28,startY:200,rememberVisibility:false,onClose:()=>{visibleProducts[p]=false;visibility[p].checked=false;save();apply();}});
-master=setupFloatingWidget({id:'aviation',storageKey:'radar-aviation',width:520,height:290,minWidth:180,minHeight,maxWidth:1000,maxHeight:Infinity,startY:180,onVisibility:apply});
-function apply(){const visible=master?.isVisible()??false;combined.hidden=!visible||split;for(const p of aviationProducts)windows[p]?.setVisible(visible&&split&&visibleProducts[p]);const credit=$('aviation-credit');if(credit)credit.hidden=!visible||!aviationProducts.some(p=>visibleProducts[p]);}
-detach.onchange=()=>{if(!canEditLocal()){detach.checked=split;return;}split=detach.checked;save();apply();render();};apply();
-const popup=document.createElement('div');popup.id='aviation-explanation';popup.className='weather-explanation';popup.setAttribute('role','tooltip');popup.hidden=true;document.body.append(popup);
-let selected=null,pinned=false,lastInput=null,signature='';
-function closeExplanation(){selected?.classList.remove('aviation-explained');selected?.removeAttribute('aria-describedby');selected=null;pinned=false;popup.hidden=true;}
-function position(){if(!selected)return;const r=selected.getBoundingClientRect(),box=popup.getBoundingClientRect();popup.style.left=Math.max(8,Math.min(innerWidth-box.width-8,r.left))+'px';popup.style.top=Math.max(8,Math.min(innerHeight-box.height-8,r.bottom+10))+'px';}
-function explain(target,meaning){if(!canEditLocal())return;if(selected!==target){window.dispatchEvent(new Event('weather-explanation-close'));selected=target;target.classList.add('aviation-explained');target.setAttribute('aria-describedby',popup.id);}popup.replaceChildren();const title=document.createElement('strong');title.textContent=target.textContent;const text=document.createElement('div');text.textContent=meaning;popup.append(title,text);popup.hidden=false;position();}
-window.addEventListener('weather-explanation-close',closeExplanation);
-document.addEventListener('pointerdown',e=>{if(selected&&!selected.contains(e.target)&&!popup.contains(e.target))closeExplanation();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeExplanation();});
-window.addEventListener('resize',closeExplanation);window.addEventListener('radar-widget-gesture',closeExplanation);
-new MutationObserver(()=>{if(!canEditLocal())closeExplanation();}).observe(document.body,{attributes:true,attributeFilter:['class']});
-for(const area of [combined,...Object.values(detached)]){area.addEventListener('radar-widget-gesture',closeExplanation);area.querySelector('.aviation-content').addEventListener('scroll',closeExplanation);new ResizeObserver(closeExplanation).observe(area);}
-function reportNode(p,state){
- const report=state.reports?.[p],section=document.createElement('section');section.setAttribute('aria-label',aviationNames[p]);
- const text=document.createElement('p');text.className='aviation-raw';
- if(report){let offset=0;for(const s of report.sections??[]){text.append(document.createTextNode(report.raw.slice(offset,s.start)));const button=document.createElement('button');button.type='button';button.className='aviation-code';button.textContent=report.raw.slice(s.start,s.end);button.setAttribute('aria-label',button.textContent+' · Explain');
- setupExplanationHover(button,()=>{if(selected!==button||popup.hidden){pinned=false;explain(button,s.meaning);}},()=>{if(!pinned)closeExplanation();});
- button.onfocus=()=>explain(button,s.meaning);button.onblur=e=>{if(!popup.contains(e.relatedTarget)&&selected===button)closeExplanation();};button.onclick=()=>{if(selected===button&&pinned)closeExplanation();else{explain(button,s.meaning);pinned=true;}};text.append(button);offset=s.end;}text.append(document.createTextNode(report.raw.slice(offset)));}
- section.append(text);return section;
-}
-function render(){if(!lastInput)return;const {status,history,historical,time}=lastInput,state=historical?aviationAt(history,time):status??{unknown:true},key=JSON.stringify([state.reports,split,visibleProducts]);
- if(key!==signature){signature=key;closeExplanation();combined.querySelector('.aviation-content').replaceChildren(...aviationProducts.filter(p=>visibleProducts[p]).map(p=>reportNode(p,state)));for(const p of aviationProducts)detached[p].querySelector('.aviation-content').replaceChildren(reportNode(p,state));}
- for(const area of [combined,...Object.values(detached)])area.style.setProperty('--aviation-font-scale',(localPreferences.fonts.aviation??100)/100);
-}
-window.addEventListener('radar-local-preferences',render);
-export function updateAviation(input){lastInput=input;render();}
+import {createAviationUI} from './aviation-ui.js';
+import {aviationAt} from './aviation-model.js';
+import {cloudObservation} from './cloud-observation.js';
+const $=id=>document.getElementById(id),ui=createAviationUI();
+export function updateAviation(input){ui.update(input);ui.updateClouds(cloudObservation(input.historical?aviationAt(input.history,input.time):input.status,input.time));}
 export function setupAviationSettings(canEdit,request){
  let loaded=false,busy=false;
  const paint=data=>{$('aviation-enabled').checked=!!data.enabled;$('aviation-station').value=data.station??'EGBB';$('aviation-note').textContent=data.enabled?'Collecting METAR and TAF every five minutes from NOAA Aviation Weather Center.':'METAR and TAF collection disabled.';};

@@ -9,6 +9,11 @@ export function aviationGroup(saved){
   return state;
 }
 export const groupVisible=state=>aviationPanels.some(p=>state.open[p]);
+export function migrateAviationGroup(saved,layout,window){
+  if(saved&&typeof saved==='object')return aviationGroup(saved);
+  const selected={metar:layout?.visible?.metar!==false,taf:layout?.visible?.taf!==false,clouds:true};
+  return aviationGroup({split:layout?.split===true,selected,open:{metar:window?.visible===true&&selected.metar,taf:window?.visible===true&&selected.taf,clouds:false}});
+}
 // Selection and current visibility are intentionally independent. A cross is temporary.
 export function changeAviation(state,action){
   const next=aviationGroup(state);

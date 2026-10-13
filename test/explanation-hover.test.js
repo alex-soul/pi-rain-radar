@@ -30,7 +30,7 @@ async function fixture(kind){
   const source=(await readFile(new URL('../public/chart-explanations.js',import.meta.url),'utf8')).replace(/^import .*\r?\n/gm,'').replaceAll('export ','');vm.runInContext(source,context);
   const first=new Node(),second=new Node();context.chartExplanation(first,'Temperature');context.chartExplanation(second,'Humidity');return {first,second,popup:body.children[0]};
  }
- const source=await readFile(new URL('../public/aviation-widget.js',import.meta.url),'utf8');vm.runInContext(source.slice(source.indexOf('const popup='),source.indexOf('function render()')),context);
+ const source=await readFile(new URL('../public/aviation-ui.js',import.meta.url),'utf8');vm.runInContext(source.slice(source.indexOf('const popup='),source.indexOf('function render()')),context);
  const section=context.reportNode('metar',{reports:{metar:{raw:'17010KT 9999',sections:[{start:0,end:7,meaning:'Wind from 170 degrees, 10 knots.'},{start:8,end:12,meaning:'Visibility 10 km or more.'}]}}});
  const buttons=section.children[0].children.filter(n=>typeof n!=='string');return {first:buttons[0],second:buttons[1],popup:body.children[0]};
 }

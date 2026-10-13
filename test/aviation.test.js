@@ -101,3 +101,19 @@ test('runway range, wind shear and fractional visibility explanations preserve m
  assert.equal(raw.slice(decoded.sections.find(s=>s.meaning.includes('statute miles')).start,decoded.sections.find(s=>s.meaning.includes('statute miles')).end),'1 1/2SM');
  assert.match(decoded.sections.find(s=>raw.slice(s.start,s.end)==='R15/0800N').meaning,/800 metres/);assert.match(decoded.sections.at(-1).meaning,/2000 ft/);
 });
+
+
+test('malformed cloud data cannot replace the last usable observation or its history',async t=>{
+ let malformed=false;
+ const f=await fixture(t,{request:async url=>new Response(JSON.stringify([url.includes('/metar?')?{...metar,rawOb:malformed?metar.rawOb.replace('OVC006','OVCbad'):metar.rawOb}:taf]))});
+ await f.aviation.collect();const first=f.aviation.status().reports.metar;
+ malformed=true;f.advance(300000);await f.aviation.collect();
+ assert.equal(f.aviation.status().products.metar.state,'error');
+ assert.deepEqual(f.aviation.status().reports.metar,first);
+ const history=await f.aviation.history(Math.ceil(f.now()/1000),2);
+ assert.deepEqual(history.reports.filter(r=>r.product==='metar'),[first]);
+ malformed=false;f.advance(300000);await f.aviation.collect();
+ assert.equal(f.aviation.status().products.metar.state,'ready');
+ assert.equal(f.aviation.status().reports.metar.clouds.seed,first.clouds.seed);
+ assert.equal(f.aviation.status().reports.metar.acquiredAt,first.acquiredAt);
+});
