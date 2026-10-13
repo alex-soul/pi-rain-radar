@@ -1,5 +1,11 @@
 # Validation and remaining work
 
+## 0.13.0 accepted candidate — 13 October 2026
+
+I accepted RC2 on my existing Pi 4 / 2 GB. RC1 passed 449 native ARM64 tests; RC2 passed 20 affected tests locally and natively, with fresh startup/restart. Review covered cloud appearance/settings, Live/Archive and the revised panel dismissal/recovery behaviour. Shared settings, Archive generation, SQLite integrity and Power/Screen Compose configuration were preserved.
+
+The kiosk once returned as a normal window despite --kiosk; a controlled browser relaunch restored fullscreen and I confirmed it. Root cause is unconfirmed. A brief red Clouds LED later returned green without intervention; the cause was not investigated. Bounded RC2 checks showed no restarts/OOM, 855 MiB available host RAM, about 154 MiB swap, 65.7°C and no throttling. These do not establish extended soak or a fresh-card Pi 4 installer test.
+
 ## 0.12.0 published-image checks — 12 October 2026
 
 [Release CI 38283836931](https://github.com/alex-soul/pi-rain-radar/actions/runs/38283836931) passed all **422 application tests**, AMD64/ARM64 builds and fresh startup/restart on both architectures. Tag/source: `v0.12.0` / `ee3ac709feb40ebf3c879032de6d03787dfc621a`. Published index and verified `latest`: `sha256:60622ed7410051411b5268f6e9b6e6cec579cb0ad8ba1142933b4566a0fa306a`.

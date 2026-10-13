@@ -6,9 +6,21 @@ Fresh installations enable collection at EGBB. Existing installations keep it of
 
 ## Display and explanations
 
-The widget displays the complete raw METAR and TAF, left-aligned and wrapped to fit. Its cog controls opacity, font size and separate METAR/TAF panels. Drag using the small top-centre handle revealed by hover/tap; resize with the corner and close with the cross. The minimum width is 180px and maximum 1,000px, bounded by the viewport. Minimum height fits one scaled text line plus padding; scrolling appears only when content overflows.
+The raw widgets display the complete METAR and TAF, left-aligned and wrapped to fit. Their Options tab controls opacity, font size and combined/split layout. Both raw-report and Cloud layers cogs share a Panels tab with Open with Aviation switches for METAR, TAF and Cloud layers. Drag using the small top-centre handle revealed by hover/tap; resize with the corner and close with the cross. The minimum width is 180px and maximum 1,000px, bounded by the viewport. Minimum height fits one scaled text line plus padding; scrolling appears only when content overflows.
 
 Hover or tap a code or meaningful group to explain that section. A brighter background identifies it. Keyboard focus also reveals explanations; Escape or outside interaction dismisses them. Unknown groups stay visible and are labelled as not decoded. Raw text remains the reference; decoding is a learning aid and does not replace a flight briefing.
+
+The Aviation button hides or opens the selected panels. Closing a panel with × also turns its switch off; closing a combined METAR/TAF window turns both text switches off. If all switches are off, the next Aviation click opens Panels settings. Enable the panels you want, close settings and click Aviation to show them. Choices and placement are saved independently on each screen.
+
+## Cloud layers
+
+Cloud layers shows observed cloud bases above the aerodrome, using the same station and METAR collection. FEW, SCT, BKN and OVC have distinct coverage; shapes and thickness are illustrative, not measured cloud tops or horizontal positions. CB/TCU add subtle internal shading without implying extra height. Each observation keeps a stable appearance in Live and Archive.
+
+The compact footer shows a status LED, airport code and original cloud groups. Hover, tap or focus the groups for timestamps, full detail and warnings about layers above a fixed scale. Clear/no-significant-cloud codes leave the chart empty. Vertical visibility uses haze and a dashed marker; unknown heights are never plotted as zero. Known bases still appear when other groups have unknown bases.
+
+The Clouds tab controls cloud opacity, size and irregularity. Options controls metres/feet, automatic/fixed vertical scale, widget opacity and font size. Panels is shared with the raw widgets. Drag or resize from the edges/corner; minimum and initial size are 200×100px. Defaults are metres, automatic scale, 80% widget opacity, 85% cloud opacity and 100% font, size and irregularity.
+
+Clouds LED: green means current; amber means overdue collection or an expired observation; grey means unconfigured or missing; red means an explicit collection/processing error. A last usable picture is retained through delays/errors until the observation exceeds 90 minutes, then cleared. This LED describes the cloud observation; the availability row below describes the separate METAR/TAF products.
 
 ## Live and Archive
 
@@ -20,4 +32,4 @@ Repeated successful polls of an identical report keep its original acquisition t
 
 The gaps popup has one Aviation row with separate METAR/TAF details. Unchanged reports across successful polls are normal continuity. An interrupted or overdue collection is amber while an otherwise usable report is retained. Missing/cancelled reports are red; a METAR over 90 minutes old or a TAF at/past its validity end is also unusable. More than 15 minutes since the last successful check warns of interrupted collection. Future TAF validity alone is not a warning. Waiting, disabled and unknown history remain distinct.
 
-Archive applies these rules at the selected capture time. Collection continues independently of whether either widget is visible. See [playback conventions](playback-conventions.md) and [upgrade defaults](upgrading.md#0120).
+Archive applies these rules at the selected capture time. Collection continues independently of which panels are visible. See [playback conventions](playback-conventions.md) and [upgrade defaults](upgrading.md#0130).

@@ -10,16 +10,15 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.12.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.12.0) is the current pre-release.** I tested and accepted the published release on my Pi 4 / 2 GB. Release CI passed 422 tests and image startup/restart checks on ARM64 and AMD64. The [Ludicrously Quick Start](docs/ludicrous-quick-start.md) pins this release; the portable fresh-install/reboot route remains experimental. See [release notes](docs/release-0.12.0.md) and [validation](docs/validation.md).
+**[v0.13.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.13.0) is the current pre-release.** I tested and accepted RC2 on my Pi 4 / 2 GB. See [release notes](docs/release-0.13.0.md) and [validation](docs/validation.md). The portable fresh-install/reboot route remains experimental; the installer uses its own verified release pin.
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
-## New in 0.12.0
+## New in 0.13.0
 
-- **A little aviation weather on your own screen.** Choose an airport and collect METAR observations and TAF forecasts from NOAA Aviation Weather Center every five minutes. Keep the original reports together or split them into separate widgets. Hover or tap a code to understand it, then scrub Archive to see the reports your Pi had acquired at that point. A handy way to get familiar with aviation weather terminology. [Explore Aviation](docs/aviation.md).
-- **Trends that look beyond the last reading.** Top-dock arrows consider the preceding hour, with no arrow for stable conditions or insufficient evidence. Compact three-letter chart labels save space, while hover/tap explanations keep them understandable. Live charts show the latest value throughout playback; Archive follows the selected historical position. [Weather and charts](docs/manual.md).
-- **Your screens, your preferences.** Set units and wind/Sun/Moon formats once globally, then let each screen inherit them or override individual choices. Consistent dock text, roomier Sun/Moon values and an independent wind-arrow choice make the display easier to read. Existing settings migrate when upgrading from 0.11.0. [Upgrade details](docs/upgrading.md#0120).
-- **Small details that make daily use calmer.** Cloud freshness allows for normal publication delays, the availability popup sits closer to the playback dock, and tighter chart spacing and themed controls reduce clutter.
+- **A picture of the reported sky.** Cloud layers turns observed METAR cloud groups into a compact view of cloud bases and coverage, with vertical visibility and subtle CB/TCU cues. [Explore Aviation](docs/aviation.md).
+- **The panels you want.** One Aviation button controls METAR, TAF and Clouds. Shared Panels switches and predictable close/reopen behaviour make Clouds-only layouts straightforward.
+- **Fit your screen.** Resize down to 200×100px, choose metres or feet, and tune cloud size, texture and opacity. Archive reproduces each observation’s appearance.
 
 See [what’s next](docs/follow-ups.md) for planned improvements and ideas for future releases.
 
@@ -66,7 +65,7 @@ Settings stay in the existing data volume. The first upgrade to 0.7.0 resets old
 - **Optional Rainbow rain and cloud layers.** Usage depends on map geometry and enabled layers. Actual local counters and an optional request cap help track it; see [setup, costs and limits](docs/radar-providers.md).
 - **Explore up to 24 hours of radar history.** Scrub or replay a selected window from the local rolling archive (seven days by default, configurable), with optional provider labels. [Archive playback](docs/manual.md#look-back-with-archive) shows the observations actually available and builds as the app runs.
 - **Camera and historical weather.** Collect one direct or Home Assistant camera snapshots at a configurable one-to-ten-minute interval. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply all ten source readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
-- **[Aviation weather](docs/aviation.md).** Raw METAR and TAF reports with code explanations, combined or separate widgets, and replay of reports as this installation acquired them.
+- **[Aviation weather](docs/aviation.md).** Raw METAR/TAF with code explanations, observed Cloud layers, shared panel controls and acquisition-based Archive replay.
 - **One radar server, multiple displays.** Each browser remembers its own buttons, layout and theme while sharing the same configured location and acquisition. Use it on your [home network](docs/quick-start.md#3-open-it-from-your-laptop), optionally [install it on phones and laptops or connect privately through Tailscale](docs/pwa.md), and see the [Android and Windows examples](docs/pwa-gallery.md).
 - **Playback that handles delays.** Live can reuse earlier radar for less than 30 minutes and automatically pause while waiting for enough data to resume. Missing observations remain visible; [Live and Archive rules](docs/playback-conventions.md) explain the difference.
 - Coventry defaults, with location, map zoom and time zone configurable in Settings.

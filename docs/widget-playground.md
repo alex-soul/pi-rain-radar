@@ -12,7 +12,10 @@ Run `npm run dev:scenarios` from the product root with dependencies installed. W
 | Discovery links and established scenarios | `scripts/dev-scenarios.mjs` |
 | Preview stage, toolbar, scenario cards, settings and export layout | `scripts/dev-cloud-layers.html`, `scripts/dev-cloud-layers.css` |
 | Control binding, persistence, rendering updates, settings tabs, resize integration | `scripts/dev-cloud-layers.js` |
-| Example-specific report model, scenarios and cloud renderer | `scripts/dev-cloud-layers-model.js` |
+| Synthetic groups/scenarios and diagnostic editing | `scripts/dev-cloud-layers-model.js` |
+| Shared production presentation and renderer | `public/cloud-layers-model.js`, `public/cloud-layers-render.js` |
+| Integrated widget/settings/visibility review | `scripts/dev-aviation-ui.js`, `public/aviation-ui.js`, `public/cloud-widget.js` |
+| Complete synthetic raw-report explanations | `scripts/dev-aviation-ui-fixture.js` using `src/aviation-decoder.js` |
 | Example-specific semantic invariants | `test/dev-cloud-layers.test.js` |
 
 These files are the working reference implementation. Keep the reusable layout/interaction contract below when adding another widget. Extract shared helpers when a second widget needs them; the present reference does not require a new application framework, service or dependency.

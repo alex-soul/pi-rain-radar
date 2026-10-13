@@ -1,5 +1,11 @@
 # Upgrades and migration
 
+## 0.13.0
+
+Cloud layers shares your existing Aviation station, collection and retained METAR history. No new provider setup, history reset or host-helper change is required. Existing station, layout and visible raw panels are preserved; Clouds is selected for the next Aviation opening without appearing immediately. Fresh screens start with all three panels selected and hidden.
+
+The Aviation button hides/shows selected panels. Closing a panel with × now turns its inclusion switch off. Combined METAR/TAF closes both text panels; Clouds remains independent. If every panel is off, the next Aviation click opens Panels settings. Settings and placement remain local to each browser/screen. [Aviation guide](aviation.md).
+
 ## 0.12.0
 
 Keep the same volume, browser origin/profile and installed Power/Screen overrides. Compatible archive, map, keys, PIN, collection settings and layouts are preserved.

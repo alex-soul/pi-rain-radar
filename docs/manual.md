@@ -89,7 +89,7 @@ The shared HA connection uses the address reachable from the appliance. The brow
 
 ### Aviation weather
 
-Use **Interface → Aviation** to enable METAR/TAF and enter a four-character ICAO airport code. Collection is shared and independent of widget visibility. Fresh installations collect EGBB every five minutes; existing installations leave Aviation off until enabled. Use the side button to show the widget, its top-centre handle to drag, and its cog for split panels, opacity and font size. Reports wrap to fit; METAR can shrink to one line. Hover or tap a highlighted code for just that section’s meaning. [Aviation setup, availability and Archive rules](aviation.md).
+Use **Interface → Aviation** to enable METAR/TAF and enter a four-character ICAO airport code. Collection is shared and independent of widget visibility. Fresh installations collect EGBB every five minutes; existing installations leave Aviation off until enabled. Use the Aviation side button to hide/show the selected raw reports and Cloud layers. Each cog has synchronized Panels switches; × turns off the corresponding switch. If all are off, the side button opens Panels settings. Raw widgets have a top-centre drag handle and Options for split layout, opacity and font. Cloud layers adds its own cloud appearance, height units and scale controls. Reports wrap to fit; METAR can shrink to one line. Hover or tap a highlighted code for just that section’s meaning. [Aviation setup, availability and Archive rules](aviation.md).
 
 ### Device Power
 

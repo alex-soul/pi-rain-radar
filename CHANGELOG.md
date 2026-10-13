@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.0 — 13 October 2026
+
+- Observed METAR Cloud layers with distinct coverage, vertical visibility haze, subtle CB/TCU shading and stable Live/Archive appearance.
+- Compact LED/airport/cloud-code footer, configurable cloud presentation and scale, and resizing down to 200×100px.
+- Shared Aviation Panels settings; closing a panel deselects it, while all-off opens settings for recovery.
+- Preserved widget playground with shared production rendering and decoded METAR/TAF review fixtures.
+
 ## 0.12.0 — 12 October 2026
 
 - Aviation METAR/TAF collection, raw reports with section explanations, split widgets and acquisition-based Archive replay.
