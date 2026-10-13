@@ -1,5 +1,5 @@
 import {setupFloatingWidget} from './floating-widget.js';
-import {editor,attachCog,opacityControl,fontControl,canEditLocal,setupExplanationHover} from './local-ui.js';
+import {editor,attachCog,opacityControl,fontControl,canEditLocal,setupExplanationHover,tabbedEditor} from './local-ui.js';
 import {localPreferences} from './local-preferences.js';
 import {aviationAt,aviationProducts,aviationNames} from './aviation-model.js';
 import {aviationGroup,changeAviation,groupVisible,aviationPanels,panelNames} from './aviation-group-model.js';
@@ -18,12 +18,13 @@ function selection(host){
   const field=document.createElement('fieldset');field.className='aviation-selection';
   const legend=document.createElement('legend');legend.textContent='Open with Aviation';field.append(legend);
   for(const p of aviationPanels){const label=document.createElement('label');label.className='misc-option';label.textContent=panelNames[p];const input=document.createElement('input');input.type='checkbox';input.className='control-switch';input.setAttribute('role','switch');input.checked=group.selected[p];input.onchange=()=>dispatch({type:'select',panel:p,value:input.checked});label.append(input);field.append(label);selections.push([p,input]);}
-  host.append(field);
+  host.append(field);return field;
 }
-selection(dialog);
+const panelSelection=selection(dialog);
 const detachLabel=document.createElement('label');detachLabel.className='misc-option';detachLabel.textContent='Split METAR and TAF';
 const detach=document.createElement('input');detach.type='checkbox';detach.className='control-switch';detach.setAttribute('role','switch');detach.checked=group.split;detach.onchange=()=>dispatch({type:'split',value:detach.checked});detachLabel.append(detach);dialog.append(detachLabel);
 opacityControl(dialog,'aviation');fontControl(dialog,'aviation');
+tabbedEditor(dialog,'Panels',[panelSelection]);
 for(const area of [combined,...Object.values(detached)])attachCog(area,dialog,area.id+'-edit','Edit Aviation weather');
 // The group owns the button and visibility persistence; floating widgets own geometry only.
 const button=$('aviation-toggle');button.id='aviation-group-toggle';button.setAttribute('aria-controls','aviation aviation-metar aviation-taf cloud-layers');

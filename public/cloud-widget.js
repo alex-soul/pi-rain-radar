@@ -25,7 +25,8 @@ export function createCloudWidget({parent,storagePrefix='radar-',onClose,selecti
     for(const [value,text]of choices)select.add(new Option(text,value));select.value=settings[id];
     select.onchange=()=>{if(!canEditLocal())return;settings[id]=id==='scale'?Number(select.value):select.value;save();};selects[id]=select;label.append(select);dialog.append(label);
   }
-  selection(dialog);tabbedEditor(dialog,'Clouds',cloudControls);attachCog(area,dialog,'cloud-layers-edit','Edit Cloud layers');
+  const panelSelection=selection(dialog);
+  tabbedEditor(dialog,'Clouds',cloudControls,[{title:'Panels',nodes:[panelSelection]}]);attachCog(area,dialog,'cloud-layers-edit','Edit Cloud layers');
   const floating=setupFloatingWidget({id:area.id,storageKey:storagePrefix+'cloud-window',width:200,height:100,minWidth:200,minHeight:100,maxWidth:Infinity,maxHeight:Infinity,startX:28,startY:420,rememberVisibility:false,onClose});
   const detail=document.createElement('div');detail.className='weather-explanation';detail.id='cloud-report-detail';detail.setAttribute('role','tooltip');detail.hidden=true;document.body.append(detail);
   let input={report:{raw:'',layers:[],state:'missing',message:''},station:'EGBB',dataState:'unavailable',seed:7},pinned=false,lastDetail='';
