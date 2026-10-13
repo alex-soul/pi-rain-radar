@@ -1,13 +1,14 @@
 import {setupWidgetResize} from '/widget-resize.js';
 import {cloudScenarios,parseCloudGroups,plotTop,cloudBanks,cloudOutline,cloudFooter,verticalVisibility} from '/__cloud-layers-model.js';
 const $=id=>document.getElementById(id),key='pi-rain-radar-dev-cloud-layers-v1';
-const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'haze'};
+const defaults={codes:cloudScenarios[0].codes,scenario:'layered',opacity:78,font:100,width:420,height:240,cloudOpacity:85,cloudSize:100,texture:100,seed:7,units:'m',scale:0,theme:'dark',backdrop:'map',station:'EGBB',timestamp:'131020Z',dataState:'fresh',vvStyle:'haze',convectiveShading:true};
 const sliders=[['opacity','Widget opacity',0,100,1,'%'],['font','Font size',75,150,5,'%'],['width','Widget width',200,680,10,'px'],['height','Plot height',50,400,1,'px'],['cloudOpacity','Cloud opacity',20,100,1,'%'],['cloudSize','Cloud size',50,200,5,'%'],['texture','Shape irregularity',0,100,5,'%'],['seed','Shape variation',1,50,1,'']];
 let state={...defaults};
 try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&typeof saved==='object'){
   parseCloudGroups(saved.codes??defaults.codes);
   for(const [id,,min,max] of sliders)if(Number.isFinite(saved[id]))state[id]=Math.max(min,Math.min(max,saved[id]));
   for(const [id,values] of Object.entries({vvStyle:['haze','marker'],units:['m','ft'],theme:['dark','light'],backdrop:['map','plain'],dataState:['fresh','stale','unavailable','not-configured','error'],scale:[0,1500,3000,6000]}))if(values.includes(saved[id]))state[id]=saved[id];
+  if(typeof saved.convectiveShading==='boolean')state.convectiveShading=saved.convectiveShading;
   if(typeof saved.codes==='string')state.codes=saved.codes;if(typeof saved.station==='string')state.station=saved.station.slice(0,4).toUpperCase();if(typeof saved.timestamp==='string')state.timestamp=saved.timestamp.slice(0,7).toUpperCase();
   if(cloudScenarios.some(s=>s.id===saved.scenario)||saved.scenario==='custom')state.scenario=saved.scenario;
 }}catch{/* Invalid/blocked storage uses the default preview. */}
@@ -43,6 +44,7 @@ function setupCloudTabs(host,prefix=''){
   select(0);
 }
 setupCloudTabs($('user-settings'));setupCloudTabs($('cloud-settings-dialog'),'dialog-');
+$('convective-shading').onchange=()=>{state.convectiveShading=$('convective-shading').checked;paint();};
 $('cloud-settings').onclick=()=>$('cloud-settings-dialog').showModal();
 $('cloud-settings-close').onclick=()=>$('cloud-settings-dialog').close();
 for(const scenario of cloudScenarios)for(const host of ['scenarios',...(['obscured','obscured-higher','obscured-zero','overcast-low','unknown-vv'].includes(scenario.id)?['vv-scenarios']:[])]){const button=document.createElement('button');button.textContent=scenario.title;button.dataset.scenario=scenario.id;button.onclick=()=>{state.codes=scenario.codes;state.scenario=scenario.id;state.dataState='fresh';sync();};$(host).append(button);}
@@ -83,11 +85,16 @@ function cloudBand(layer,index,y,left,right){
   const banks=cloudBanks(layer.amount,seed,state.texture/100,state.cloudSize/100);
   const silhouettes=banks.map(bank=>`<path d="${cloudOutline(bank,span)}" transform="translate(${left+bank.start*span} ${y}) scale(1 ${state.cloudSize/100})"/>`).join('');
   // Both softening passes are clipped to a small layer strip, not the entire card.
-  return `<g opacity="${state.cloudOpacity/100}"><g fill="var(--cloud)" opacity=".22" filter="url(#cloud-halo-${index})">${silhouettes}</g><g fill="url(#cloud-fill-${index})" filter="url(#cloud-edge-${index})">${silhouettes}</g></g>`;
+  // Type cues only recolour the same paths: no change in base, outline or extent.
+  const typed=state.convectiveShading&&['CB','TCU'].includes(layer.type),cb=layer.type==='CB';
+  const typeDefs=typed?`<defs><radialGradient id="type-soft-${index}"><stop stop-color="var(${cb?'--cloud-cb':'--cloud-tcu'})" stop-opacity="${cb?.95:.85}"/><stop offset="1" stop-color="var(${cb?'--cloud-cb':'--cloud-tcu'})" stop-opacity="0"/></radialGradient><pattern id="type-pattern-${index}" patternUnits="userSpaceOnUse" width="${cb?43:27}" height="24"><ellipse cx="${cb?12:7}" cy="10" rx="${cb?18:10}" ry="13" fill="url(#type-soft-${index})"/><ellipse cx="${cb?38:24}" cy="25" rx="${cb?13:8}" ry="10" fill="url(#type-soft-${index})"/></pattern></defs>`:'';
+  const shading=typed?`<g class="cloud-type-shading" fill="url(#type-pattern-${index})" opacity="${cb?.7:.65}">${silhouettes}</g>`:'';
+  return `${typeDefs}<g data-cloud-type="${layer.type||'ordinary'}" opacity="${state.cloudOpacity/100}"><g fill="var(--cloud)" opacity=".22" filter="url(#cloud-halo-${index})">${silhouettes}</g><g filter="url(#cloud-edge-${index})"><g fill="url(#cloud-fill-${index})">${silhouettes}</g>${shading}</g></g>`;
 }
 // Keep the whole card at least 100px tall, including its caption and plot margin.
 function minimumPlotHeight(){return Math.ceil(100-document.querySelector('.cloud-footer').getBoundingClientRect().height-8);}
 function paint(){
+  $('convective-shading').checked=state.convectiveShading;
   const report=parseCloudGroups(state.codes),widget=$('cloud-widget'),font=state.font/100,units=state.units,factor=units==='m'?.3048:1;
   document.documentElement.dataset.theme=state.theme;$('stage').dataset.backdrop=state.backdrop;widget.dataset.state=state.dataState;
   const footer=cloudFooter(report,state);

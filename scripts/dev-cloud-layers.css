@@ -63,3 +63,7 @@ html[data-theme=dark] .cloud-widget{color-scheme:dark}html[data-theme=light] .cl
 .vv-experiment{margin-bottom:12px}.vv-experiment .scenarios{margin-top:12px}.vv-experiment label{font-size:11px}.vv-experiment select{display:block;width:100%;margin-top:6px;font-size:12px}.vv-experiment .range-control{margin:0}.vv-experiment .paired{align-items:start}.vv-experiment input:disabled{opacity:.4}
 .vv-caption{position:absolute;right:3px;top:0;text-align:center;font-size:calc(10px * var(--font,1));line-height:1.2;color:var(--muted);pointer-events:none}
 .plot-state.vv-state{white-space:pre-line;font-size:calc(11px * var(--font,1));line-height:1.3;top:18%;left:22%;right:3%}
+
+/* DEV type cues stay inside the existing cloud paths; these are not measured tops. */
+.cloud-widget{--cloud-cb:#667e91;--cloud-tcu:#fff3d9}
+html[data-theme=light] .cloud-widget{--cloud-cb:#425f70;--cloud-tcu:#f4f2db}
