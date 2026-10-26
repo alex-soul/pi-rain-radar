@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const source=(await readFile(new URL('../public/local-ui.js',import.meta.url),'utf8')).split('export function movablePanel')[1];
+test('Archive position survives reopen and reload, clamps viewport, and honours screen lock',()=>{
+ const stored=new Map(),events={},win={};let locked=false;
+ const panel={id:'archive-dialog',style:{},offsetWidth:400,offsetHeight:300,getBoundingClientRect(){return {left:parseFloat(this.style.left),top:parseFloat(this.style.top)};}};
+ const handle={setAttribute(){},addEventListener:(n,f)=>events[n]=f};
+ const context=vm.createContext({innerWidth:1280,innerHeight:720,canEditLocal:()=>!locked,localStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)},window:{addEventListener:(n,f)=>win[n]=f}});
+ vm.runInContext('function movablePanel'+source,context);
+ const anchor={getBoundingClientRect:()=>({right:50,top:80})};
+ let open=context.movablePanel(panel,handle);open(anchor);
+ events.keydown({target:handle,key:'ArrowRight',preventDefault(){}});assert.equal(panel.style.left,'70px');
+ open(anchor);assert.equal(panel.style.left,'70px');
+ open=context.movablePanel(panel,handle);open(anchor);assert.equal(panel.style.left,'70px');
+ locked=true;events.keydown({target:handle,key:'ArrowRight',preventDefault(){}});assert.equal(panel.style.left,'70px');
+ context.innerWidth=450;open(anchor);assert.equal(panel.style.left,'42px');
+ context.innerWidth=1280;open(anchor);assert.equal(panel.style.left,'70px');
+});

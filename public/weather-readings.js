@@ -52,7 +52,7 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
     else if(Number.isFinite(value))text=String(Number(value.toFixed(1)));
     const fallback=expected==='ha'&&source==='openweather';
     const sourceLabel=expected==='disabled'?'Disabled':fallback?'OpenWeather fallback':source==='ha'||expected==='ha'?'Home Assistant':'OpenWeather';
-    rows[id]={id,name:readingNames[id],expected,source,sourceLabel,value:Number.isFinite(value)?value:null,canonicalValue,displayValue,observedUnit,text,unit,time,receivedAt,retained:!!retained,fallback,reason,health,attribution};
+    rows[id]={id,name:readingNames[id],expected,source,sourceLabel,value:Number.isFinite(value)?value:null,canonicalValue,displayValue,observedUnit,text,unit,time,receivedAt,reportedAt:source==='ha'?mapped.reportedAt??time:null,retained:!!retained,fallback,reason,health,attribution};
   }
   const inputs=[rows.temperature,rows.dew];
   const inUnit=row=>row.displayValue;
@@ -93,7 +93,7 @@ export function readingExplanation(row,stamp){
   const value=row.text==='—'?'—':row.text.replace(/[°%]$/,'')+(row.unit?' '+row.unit:'');
   const label=row.id==='direction'&&Number.isFinite(row.value)?`Wind from ${windDirectionText(row.value,'degrees')} (${windDirectionText(row.value)}), blowing towards ${windDirectionText(windBearing(row.value),'degrees')} (${windDirectionText(windBearing(row.value))}).`:row.name+': '+value;
   return [label,row.sourceLabel,
-    row.time?(row.source==='ha'?'Reported to HA ':'Observed ')+stamp(row.time):null,
+    row.time?(row.source==='ha'?'Reported to HA ':'Observed ')+stamp(row.source==='ha'?row.reportedAt??row.time:row.time):null,
     row.receivedAt?'Acquired '+stamp(row.receivedAt):null,row.reason||null].filter(Boolean).join(' · ');
 }
 export function weatherProviderHealth(state,provider,now,{configured=true}={}){

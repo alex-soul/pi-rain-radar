@@ -1,4 +1,4 @@
-import {normalizeHaReading,normalizeObservedRain,selectObservedRain,selectHaReadings,haEntities,filterCurrent} from '../public/weather-policy.js';
+import {normalizeHaReading,normalizeIrradiance,normalizeObservedRain,selectObservedRain,selectHaReadings,haEntities,filterCurrent} from '../public/weather-policy.js';
 import {advanceGrassWetness} from './grass-wetness.js';
 import {weatherContext} from './weather-history.js';
 
@@ -48,7 +48,7 @@ export async function createHaWeather({ha,settings,weather,store,location,now=Da
         try{
           const row=await ha.json('/api/states/'+entity,{maxBytes:128*1024,signal:controller.signal});
           if(row?.entity_id!==entity)throw Error('Invalid entity');
-          return [entity,entity===policy.rainAccumulation?normalizeObservedRain(row,now()):normalizeHaReading(row,now())];
+          return [entity,entity===policy.rainAccumulation?normalizeObservedRain(row,now()):entity===policy.mappings.irradiance?normalizeIrradiance(row,now()):normalizeHaReading(row,now())];
         }catch{return [entity,{value:null,unit:null,time:null,receivedAt:now(),basis:'unknown',reason:'HA reading unavailable',attribution:observations[entity]?.attribution??''}];}
       }));
       // Disable/reconfigure while requests run must not publish the old mapping.

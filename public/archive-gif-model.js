@@ -1,5 +1,5 @@
 import {playbackFrameDelay} from './weather-format.js';
-export const GIF_LIMITS={pixels:8_000_000,assets:128*1024*1024,output:128*1024*1024};
+export const GIF_LIMITS={pixels:8_000_000,assets:128*1024*1024};
 export function gifPlan({count,width,height,scale=1,speed=1,hold=1}){
   if(!Number.isSafeInteger(count)||count<1)throw Error('Load an Archive window first.');
   const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));

@@ -176,12 +176,15 @@ export function setupLocalEditors(){
 }
 export function movablePanel(panel,handle){
   let drag=null;handle.tabIndex=0;handle.setAttribute('aria-label','Move Archive panel. Drag or use arrow keys.');
+  const key='radar-panel-position-'+panel.id;
+  let saved=null;try{const value=JSON.parse(localStorage.getItem(key));if(Number.isFinite(value?.x)&&Number.isFinite(value?.y))saved=value;}catch{}
+  const remember=()=>{const r=panel.getBoundingClientRect();saved={x:r.left,y:r.top};try{localStorage.setItem(key,JSON.stringify(saved));}catch{}};
   const place=(x,y)=>{panel.style.left=Math.max(8,Math.min(x,innerWidth-panel.offsetWidth-8))+'px';panel.style.top=Math.max(8,Math.min(y,innerHeight-panel.offsetHeight-8))+'px';};
   handle.addEventListener('pointerdown',e=>{if(e.target.closest('button')||e.button!==0||!canEditLocal())return;const r=panel.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};handle.setPointerCapture(e.pointerId);e.preventDefault();});
   handle.addEventListener('pointermove',e=>{if(drag?.id===e.pointerId)place(e.clientX-drag.x,e.clientY-drag.y);});
-  for(const name of ['pointerup','pointercancel','lostpointercapture'])handle.addEventListener(name,()=>{drag=null;});
-  handle.addEventListener('keydown',e=>{if(e.target!==handle)return;const d={ArrowLeft:[-10,0],ArrowRight:[10,0],ArrowUp:[0,-10],ArrowDown:[0,10]}[e.key];if(d){e.preventDefault();const r=panel.getBoundingClientRect();place(r.left+d[0],r.top+d[1]);}});
+  for(const name of ['pointerup','pointercancel','lostpointercapture'])handle.addEventListener(name,()=>{if(drag)remember();drag=null;});
+  handle.addEventListener('keydown',e=>{if(e.target!==handle||!canEditLocal())return;const d={ArrowLeft:[-10,0],ArrowRight:[10,0],ArrowUp:[0,-10],ArrowDown:[0,10]}[e.key];if(d){e.preventDefault();const r=panel.getBoundingClientRect();place(r.left+d[0],r.top+d[1]);remember();}});
   window.addEventListener('resize',()=>{if(panel.open){const r=panel.getBoundingClientRect();place(r.left,r.top);}});
   window.addEventListener('radar-screen-lock',()=>{drag=null;if(!canEditLocal())panel.close();});
-  return anchor=>{const r=anchor.getBoundingClientRect();place(r.right+10,r.top);};
+  return anchor=>{const r=anchor.getBoundingClientRect();place(saved?.x??r.right+10,saved?.y??r.top);};
 }

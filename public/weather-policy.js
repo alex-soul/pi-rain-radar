@@ -51,6 +51,13 @@ export function normalizeHaReading(state,receivedAt){
     attribution:typeof state?.attributes?.attribution==='string'?state.attributes.attribution.slice(0,500):'',
     reason:value===null?'HA reading unavailable':null};
 }
+export function normalizeIrradiance(state,receivedAt){
+  const sample=normalizeHaReading(state,receivedAt);
+  // Like accumulated rain, this is an acquired HA state, not proof of a new
+  // physical report. Constant sunlight and nighttime zero may be unchanged.
+  return {...sample,reportedAt:sample.time,time:sample.time===null?null:receivedAt,
+    basis:sample.time===null?'unknown':'ha-acquired-irradiance'};
+}
 export function selectHaReadings(policy,observations,owm,time,{historical=false,comparison=false}={}){
   const result={},current=owm?.data?.current;
   const owmFresh=!!owm?.configured&&current&&current.time*1000<=time+(historical?0:300000)&&current.time*1000>time-1800000&&(owm.failures??0)<2;
@@ -66,7 +73,7 @@ export function selectHaReadings(policy,observations,owm,time,{historical=false,
       if(!sample||sample.reason||!Number.isFinite(sample.value))reason=sample?.reason??'HA reading unavailable';
       else if(sample.unit!==unit)reason='Unit mismatch. Check the sensor unit in Home Assistant, then reselect the reading.';
       else if(!Number.isFinite(sample.time))reason='HA report timestamp unavailable';
-      else if(sample.time>time+(historical?0:300000)||sample.receivedAt>time)reason='HA report timestamp is in the future';
+      else if((sample.reportedAt??sample.time)>time+(historical?0:300000)||sample.time>time+(historical?0:300000)||sample.receivedAt>time)reason='HA report timestamp is in the future';
       else if(time-sample.time>600000)reason='HA report is older than ten minutes';
       else if((['wind','gust','visibility','uv','irradiance'].includes(field)&&sample.value<0)||(field==='humidity'&&(sample.value<0||sample.value>100))||(field==='direction'&&(sample.value<0||sample.value>360))||(field==='pressure'&&sample.value<=0))reason='HA reading invalid';
     }
@@ -76,6 +83,7 @@ export function selectHaReadings(policy,observations,owm,time,{historical=false,
       value:source==='ha'?sample.value:source==='openweather'?current[keys[field]]:null,
       time:source==='ha'?sample.time:source==='openweather'?current.time*1000:null,
       receivedAt:source==='ha'?sample.receivedAt:source==='openweather'?owm.fetchedAt:null,
+      reportedAt:source==='ha'?sample.reportedAt??sample.time:null,
       basis:source==='ha'?sample.basis:source==='openweather'?'observation':null,
       attribution:expected==='ha'?sample?.attribution??'':source==='openweather'?'OpenWeather':''};
   }

@@ -125,16 +125,22 @@ export function setupArchiveGif(playback){
     if(busy||previewing||!session)return;busy=true;releaseOutput();$('gif-fields').disabled=true;$('gif-generate').disabled=true;$('gif-cancel').hidden=false;$('gif-progress').hidden=false;
     const signal=controller.signal,options=settings(),started=performance.now();
     try{
-      await prepare(session.assets(options.mode),signal,(i,n)=>{note(`Preparing assets · ${i} / ${n}`);$('gif-progress').value=i/n*.2;});
+      const chunks=[];
       worker=new Worker('/archive-gif-worker.js',{type:'module'});
       for(let i=0;i<session.count;i++){
-        signal.throwIfAborted();await session.render(i,options.mode,assets);
+        signal.throwIfAborted();
+        // Keep only this frame's media and the currently visible static assets.
+        const needed=session.assets(options.mode,i);
+        assets.retain([...needed,...urls(root())]);
+        note(`Preparing frame · ${i+1} / ${session.count}`);
+        await prepare(needed,signal);await session.render(i,options.mode,assets);
         const canvas=await capture(options,signal),rgba=canvas.getContext('2d').getImageData(0,0,plan.width,plan.height);
         note(`Rendering GIF · ${i+1} / ${session.count}`);
-        await workerCall({type:'frame',pixels:rgba.data.buffer,...plan,colors:options.colors,delay:plan.delays[i],loop:options.loop},signal,[rgba.data.buffer]);
-        canvas.width=canvas.height=1;$('gif-progress').value=.2+.8*(i+1)/session.count;
+        const encoded=await workerCall({type:'frame',pixels:rgba.data.buffer,width:plan.width,height:plan.height,colors:options.colors,delay:plan.delays[i],loop:options.loop},signal,[rgba.data.buffer]);
+        chunks.push(new Blob([encoded.bytes]));
+        canvas.width=canvas.height=1;$('gif-progress').value=(i+1)/session.count;
       }
-      const result=await workerCall({type:'finish'},signal),blob=new Blob([result.bytes],{type:'image/gif'});
+      const result=await workerCall({type:'finish'},signal),blob=new Blob([...chunks,result.bytes],{type:'image/gif'});
       output=URL.createObjectURL(blob);releasePreview();$('gif-preview').src=output;
       $('gif-download').href=output;$('gif-download').download=`pi-weather-${options.mode}-${new Date(session.end*1000).toISOString().replaceAll(':','-')}.gif`;$('gif-download').hidden=false;
       note(`Ready · ${(blob.size/1048576).toFixed(2)} MB · generated in ${((performance.now()-started)/1000).toFixed(1)} s on this device.`);
