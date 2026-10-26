@@ -1,5 +1,9 @@
 # Run and develop
 
+For GIF review, load the Grass visual-history Archive and use **Archive → Export GIF**. Test all three modes, hide options, loop/play-once, cancel, then decode downloaded files to verify frame count and timing. Load a 24-hour window, pause, then switch the studio to **Archive rollover** without reloading that window to exercise eviction during export; return to Grass visual history and reload Archive to recover. **All layers available** supplies clouds and camera, while **Short gaps** preserves missing-data presentation. See [GIF export](archive-gif.md).
+
+For Grass playback review, choose **Grass · visual history** in the scenario studio. It supplies 24 hours of illustrative 0–5 scores changing every 20 minutes, independent of the other weather readings and estimator. Open a six-hour Archive window to compare the five-blade indicator, widget, dock and trend while playing or scrubbing.
+
 Requires Docker with Linux container support and Docker Compose: Docker Desktop on Windows/macOS, or Docker Engine with Compose on Linux. No host Node installation is needed to run the app. Commands below assume a terminal in the repository root. Pi/ARM64 installation and kiosk operation have been user-confirmed.
 
 Open [localhost:3080](http://localhost:3080). Current Compose source publishes port 3080 on all host IPv4 interfaces for home-LAN access. Set RADAR_BIND_ADDRESS=127.0.0.1 in .env for loopback-only development. The v0.1.0 tag remains loopback-only. Initial radar acquisition needs Internet access; a cold two-hour history takes roughly 2–3 minutes to acquire at the bounded request pace. The bundled map appears immediately; any previous complete paired cache stays visible during acquisition. The container runs as the unprivileged Node user.
@@ -56,13 +60,11 @@ payload. Keep personal recordings outside the product repository.
 The **Recorded OWM forecasts** scenario uses saved timestamps unchanged in
 Archive. Radar, camera and Live weather remain synthetic and are labelled as
 such; no provider acquisition is started. Select an Archive capture within the
-recording, pause playback, and compare None with the lead settings. NOW bars use
-each saved forecast's first point; earlier forecasts match those same timestamps
-with up to ten minutes of backward tolerance. Thin bars are point samples, and
-muted dotted gaps are unsampled intervals rather than zero rain. Amber ticks
-mean a matching forecast minute is missing. The comparison picker ends at -50
-minutes: a 60-point minute forecast covers NOW through +59, not +60. Captions
-distinguish the forward forecast from the retrospective two-hour comparison.
+recording and pause playback to inspect its original forward forecast. Missing
+minutes stay missing. Recorded forecast exports contain no rain-gauge evidence,
+so Show actual rainfall remains unavailable unless separately retained observed
+accumulation exists for that location. Use the synthetic Rainfall scenarios for
+the current interval-overlay review.
 
 Switch to Healthy display and reload Archive to restore synthetic forecasts;
 return to the recorded case and reload Archive to recover the recording. The
@@ -198,7 +200,7 @@ Development builds should use identifiable local tags (for example `dev-<commit>
 
 See the [screen indicator guide](indicators.md) for status meanings, [radar provider guide](radar-providers.md) for setup and estimates, and [Device Power guide](device-power.md) for the optional host helper.
 
-The historical Archive weather playground (not the shipped comparison contract) includes **Forecast vs now** in the existing chart: select 10, 20, 30, 40, 50 or 60 minutes earlier to overlay one prediction line on historical now-estimate bars (rolling two hours, ten-minute samples). None restores the saved next-hour forecast. All choices reuse the same synthetic snapshots and match valid timestamps exactly; missing samples remain amber without interpolating across gaps. These are provider-estimate comparisons, not measured rainfall accuracy. The POC loads four six-hour archive windows once, deduplicates boundaries, and then scrubs locally. The shipped 0.8.0 comparison uses −10 through −50 minutes and a bounded capture-time tolerance; see the [current manual](manual.md#look-back-with-archive).
+The historical Archive weather playground (not the shipped comparison contract) includes **Forecast vs now** in the existing chart: select 10, 20, 30, 40, 50 or 60 minutes earlier to overlay one prediction line on historical now-estimate bars (rolling two hours, ten-minute samples). None restores the saved next-hour forecast. All choices reuse the same synthetic snapshots and match valid timestamps exactly; missing samples remain amber without interpolating across gaps. These are provider-estimate comparisons, not measured rainfall accuracy. The POC loads four six-hour archive windows once, deduplicates boundaries, and then scrubs locally. That historical design is retired by the 0.14.0 DEV actual-rainfall overlay; see the [current manual](manual.md#look-back-with-archive).
 
 ## 0.7.0 integration testing and temporary data
 
@@ -224,3 +226,13 @@ Optional `RADAR_DEV_SETTINGS_FROM` points to a previous synthetic studio session
 The synthetic scenario studio includes `/__astronomy` and `/__screen`. Astronomy uses the production renderer, ten-minute slider/play increments and exact event buttons; include polar/missing-inner-event and resized-lane cases. Screen fixtures exercise applied settings and unavailable/error states without controlling a physical display.
 
 Keep normal development binding private/loopback. A deliberately configured private LAN preview can support physical phone tests; do not expose it publicly or use deployed credentials in fixtures. Review flexible corner versus proportional pinch resizing, all aspect-locked edge paths, touch hold/reorder/cancellation, stable dock readings, both themes and small screens. Synthetic acceptance does not replace live controller, MQTT, physical display or Pi resource checks.
+
+### Grass wetness scenarios
+
+The scenario studio includes **Grass wetness · wet**, **drying**, and **missing input**. These feed synthetic measurements through the production estimator. Enable its side button in Screen settings, open/close the widget, and check themes, local opacity/font size, resize, tuning, top-dock and chart selections. The missing-input case must show unknown, with recovery after choosing wet. History contains saved synthetic estimates; tuning does not regenerate earlier scores. All existing scenarios remain available.
+
+### Rainfall comparison review (0.14.0 DEV)
+
+Scenario studio includes **Rainfall · forecast and actual**, **Rainfall · gaps and resets**, and **Rainfall · no observations**. Reload Archive after switching scenarios; select a six-hour window and pause at least one hour before its end. Show Rain forecast, then toggle **Archive → Options → Show actual rainfall**. Check identical forecast bars/axes/scale, interval-midpoint dots joined by a smooth line, breaks at missing intervals, and labelled mm/h Y axes in both Live and Archive without a heading. Coverage and hindsight remain in the chart description and help. The fixture's final hour deliberately has decreasing observed coverage; at its newest capture the future is unknown. All data is synthetic, with no provider calls. Return to the first scenario and reload Archive to recover complete coverage.
+
+Check both themes, narrow/resized widgets, playback and scrubbing. Export Current view with comparison on and off: the accepted chart and gaps should reproduce in the GIF. Clean map modes exclude the chart. The older `/__archive-weather` standalone prototype demonstrates the retired forecast-versus-forecast design; use the real DEV app and these scenarios for current acceptance.

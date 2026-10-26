@@ -1,8 +1,10 @@
 import {normalizeHaReading,normalizeObservedRain,selectObservedRain,selectHaReadings,haEntities,filterCurrent} from '../public/weather-policy.js';
+import {advanceGrassWetness} from './grass-wetness.js';
 import {weatherContext} from './weather-history.js';
 
 // Mapped readings and accumulated rain share the five-minute HA collection cycle.
 export async function createHaWeather({ha,settings,weather,store,location,now=Date.now,autoStart=true,onEvent=()=>{}}){
+  let grass=(await store.weatherState('grass-wetness'))?.state,grassReading=null;
   let saved=await store.weatherState('ha')??{observations:{},nextAttemptAt:0};
   let observations=saved.observations??{},nextAttemptAt=saved.nextAttemptAt??0,busy=false,closed=false,error=null;
   let lastRecord=0,recording=false,dirty=false,suspended=false,generation=0,controller=null;
@@ -15,14 +17,16 @@ export async function createHaWeather({ha,settings,weather,store,location,now=Da
   policySignature=policyKey();
   const data=()=>{
     const policy=settings.current(),owm=weather.status();
-    return {policy,observations:structuredClone(retained()),observedRain:selectObservedRain(policy,observations,now()),owm:{configured:owm.configured,data:{current:filterCurrent(owm.data?.current,policy.mappings)},gust:policy.mappings.gust==='owm'?owm.gust:null,fetchedAt:owm.fetchedAt,failures:owm.failures,error:owm.error},rows:selectHaReadings(policy,observations,owm,now())};
+    return {policy,location:weatherContext(location()),grassWetness:grassReading,connectionRevision,observations:structuredClone(retained()),observedRain:selectObservedRain(policy,observations,now()),owm:{configured:owm.configured,data:{current:filterCurrent(owm.data?.current,policy.mappings)},gust:policy.mappings.gust==='owm'?owm.gust:null,fetchedAt:owm.fetchedAt,failures:owm.failures,error:owm.error},rows:selectHaReadings(policy,observations,owm,now())};
   };
   async function record(){
     dirty=true;if(recording||closed||suspended)return;recording=true;
     try{
       // Coalesce concurrent collector/settings completions; never overlap writes.
       while(dirty&&!closed&&!suspended){dirty=false;const time=Math.max(now(),lastRecord+1),snapshot=data();
-        await store.put([{kind:'weather',source:'presentation',context:weatherContext(location()),time,receivedAt:time,basis:'acquisition',data:snapshot}]);lastRecord=time;
+        const calculated=advanceGrassWetness(grass,snapshot,time);snapshot.grassWetness=calculated.reading;
+        await store.put([{kind:'weather',source:'presentation',context:weatherContext(location()),time,receivedAt:time,basis:'acquisition',data:snapshot}],{state:calculated.state});lastRecord=time;
+        grass=calculated.state;grassReading=calculated.reading;
       }
     }catch{dirty=true;onEvent('storage-error');}finally{recording=false;}
   }
@@ -54,6 +58,7 @@ export async function createHaWeather({ha,settings,weather,store,location,now=Da
     }catch{error='Could not save HA weather readings';onEvent('storage-error');}
     finally{busy=false;controller=null;}
   }
+  grassReading=advanceGrassWetness(grass,data(),now()).reading;
   const timer=autoStart?setInterval(()=>{void collect();if(dirty)void record();},1000):null;timer?.unref();
   if(autoStart)void collect();
   return {collect,record,

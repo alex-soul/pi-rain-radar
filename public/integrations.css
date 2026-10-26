@@ -139,3 +139,11 @@
  #review-weather-units .units-grid{grid-template-columns:minmax(0,1fr);}
  #api-radar .review-radar-providers{margin-top:20px;}
 }
+
+#review-rain-status:empty{display:none}#review-rain-status{font-size:12px;color:#c49343}
+
+@media(min-width:760px){
+ #settings-dialog #review-weather-readings{padding-top:8px}
+ #settings-dialog #review-weather-collection{padding:8px 16px;margin-bottom:8px}
+ #settings-dialog #review-reading-options{padding:8px 16px;margin-top:8px}
+}

@@ -35,8 +35,8 @@ test('local idle is independent per area and held gestures/editors defer the ful
 });
 
 test('local preferences preserve zero opacity, reject invalid input and anchor all trend windows at playback end',()=>{
-  assert.deepEqual(normalizeLocal(null),{opacity:{},fonts:{},lookback:null});
-  assert.deepEqual(normalizeLocal({opacity:{top:0,bottom:100,trends:101,buttons:'50',unknown:50},lookback:24}),{opacity:{top:0,bottom:100},fonts:{},lookback:24});
+  assert.deepEqual(normalizeLocal(null),{opacity:{},fonts:{},grassMinimal:false,lookback:null});
+  assert.deepEqual(normalizeLocal({opacity:{top:0,bottom:100,trends:101,buttons:'50',unknown:50},lookback:24}),{opacity:{top:0,bottom:100},fonts:{},grassMinimal:false,lookback:24});
   assert.deepEqual(trendWindow(100,100000,2),{start:92800,end:100000});
   assert.deepEqual(trendWindow(100,100000,null),{start:100,end:100000});
   assert.equal(captureInWindow(92799,92800,100000),false);
@@ -84,4 +84,10 @@ test('affordances use one second after hover/touch/focus/editor activity, indepe
  fire('pointerenter',{pointerType:'touch'});fire('pointerdown',{pointerId:1});tick(2000);assert.equal(awake,true);win.pointerup({pointerId:1});tick(1000);assert.equal(awake,false);
  focused=true;fire('focusin');tick(2000);assert.equal(awake,true);focused=false;fire('focusout');tick(1000);assert.equal(awake,false);
  editor.open=true;observer();tick(2000);assert.equal(awake,true);editor.open=false;observer();tick(1000);assert.equal(awake,false);
+});
+
+test('minimal Grass preference defaults off and preserves an explicit boolean choice',()=>{
+ assert.equal(normalizeLocal({grassMinimal:true}).grassMinimal,true);
+ for(const value of [undefined,null,false,'true',1])assert.equal(normalizeLocal({grassMinimal:value}).grassMinimal,false);
+ assert.equal(normalizeLocal(JSON.parse(JSON.stringify(normalizeLocal({grassMinimal:true})))).grassMinimal,true);
 });

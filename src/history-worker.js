@@ -327,11 +327,11 @@ async function status(){
 }
 const methods={
   weatherState({source}){
-    if(!['openweather','tempest','ha','policy','aviation-live'].includes(source))throw archiveError('ARCHIVE_INPUT','Invalid weather source');
+    if(!['openweather','tempest','ha','policy','aviation-live','grass-wetness'].includes(source))throw archiveError('ARCHIVE_INPUT','Invalid weather source');
     return meta(`weather:${source}`);
   },
   async saveWeatherState({source,value}){
-    if(!['openweather','tempest','ha','policy','aviation-live'].includes(source)||!value||Buffer.byteLength(JSON.stringify(value))>128*1024)throw archiveError('ARCHIVE_INPUT','Invalid weather state');
+    if(!['openweather','tempest','ha','policy','aviation-live','grass-wetness'].includes(source)||!value||Buffer.byteLength(JSON.stringify(value))>128*1024)throw archiveError('ARCHIVE_INPUT','Invalid weather state');
     const key=`weather:${source}`;
     if(JSON.stringify(meta(key))===JSON.stringify(value))return;
     await writable(128*1024);meta(key,value);
@@ -342,12 +342,13 @@ const methods={
     await writable(128*1024);
     return tx(()=>{insert(record);meta('weather:policy',value);meta('lastWrite',clock());});
   },
-  async put({records}){
+  async put({records,grassState}){
     if(!Array.isArray(records)||records.length>BATCH)throw archiveError('ARCHIVE_INPUT','History batch exceeds limit');
+    if(grassState!==undefined&&(!grassState||Buffer.byteLength(JSON.stringify(grassState))>128*1024||records.length!==1||records[0].kind!=='weather'||records[0].source!=='presentation'))throw archiveError('ARCHIVE_INPUT','Invalid grass estimate state');
     const checked=records.map(validate);if(checked.some(r=>['radar','cloud','camera'].includes(r.kind)))throw archiveError('ARCHIVE_INPUT','Images require atomic publication');
     if(checked.reduce((n,r)=>n+Buffer.byteLength(r.data),0)>512*1024)throw archiveError('ARCHIVE_INPUT','History batch too large');
     await writable(512*1024);
-    return tx(()=>{let inserted=0;for(const r of checked)if(r.time>=meta('cutoff'))inserted+=insert(r);meta('lastWrite',clock());return {inserted};});
+    return tx(()=>{let inserted=0;for(const r of checked)if(r.time>=meta('cutoff'))inserted+=insert(r);if(grassState!==undefined)meta('weather:grass-wetness',grassState);meta('lastWrite',clock());return {inserted};});
   },publish,range:q=>queryRange(q),latest:q=>queryRange(q,true),lastGood,
   calendar(q){
     const {clauses,params}=where(q,32*DAY);const times=db.prepare(`SELECT DISTINCT r.time FROM records r WHERE ${clauses.join(' AND ')} ORDER BY r.time LIMIT 513`).all(...params);

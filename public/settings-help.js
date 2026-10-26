@@ -1,4 +1,16 @@
+import {grassControls} from './grass-wetness-settings.js';
 export const helpText = {
+ grassReadiness:'Configure Solar irradiance (W/m²) and Observed rain (accumulated) from HA in Interface → Weather → Readings, plus temperature, dew point and wind. Enable HA collection and Calculate grass wetness in Weather → Grass. A score appears after 30 minutes of continuous valid readings. Zero irradiance at night is valid; missing readings never mean dry grass.',
+ actualRain:'Adds observed interval-average rainfall to the original saved forecast. The bars, time axis and scale stay fixed. Purple dots show interval averages at their midpoints, using compatible accumulated HA readings, normally five minutes apart, in mm/h. The smooth connecting line is a visual guide, not additional measurements. Later retained observations are hindsight; gaps and unobserved future periods are unknown, not dry. Counter resets need explicit valid metadata. Acquisition times can differ from when rain fell. This switch applies to the current Archive visit and resets on Live.',
+ gifView:'Current view includes the configured widgets and docks. Map-only exports isolate that map, preserve its layers and decorations, and retain provider credits. Live clock and operational statistics are frozen at export opening; historical widgets follow each Archive frame.',
+ gifSize:'Scales the configured view proportionally without changing geography. Original size uses this screen’s pixels, not extra map detail. Maximum 8 megapixels per frame. Compressed assets and the encoded GIF each have a 128 MB limit; choose a shorter window or smaller size if needed. Rendering runs on this device.',
+ gifColors:'64, 128 or 256 colours per frame. More colours usually preserve gradients better and increase the file size. GIF cannot retain full-colour photographs or every transparency detail. Speed is unchanged; GIF timing is rounded to 10 milliseconds.',
+ gifButtons:'Hides navigation buttons and widget corner buttons in this export. Readings and chart labels stay visible. Handles have their own switch. Saved screen settings are unchanged.',
+ gifHandles:'Hides top and bottom dock handles, including their outlines and LEDs, plus widget resize and drag handles in this export. Docks keep their current expanded or tucked-away state. Saved screen settings are unchanged.',
+ gifLoop:'Exports one complete selected Archive cycle, oldest to newest, including the configured last-frame hold. Repeat the cycle indefinitely, or play once. The paused cursor does not shorten the export.',
+
+ grassEstimate:'Uncalibrated 0–5 estimate using temperature, dew point, wind, accumulated rain and solar irradiance from Readings. In Interface → Weather → Readings, select HA sensors for Solar irradiance (W/m²) and Observed rain (accumulated), plus temperature, dew point and wind. Enable Home Assistant collection and Calculate grass wetness. Missing configuration shows Setup required; configured readings that fail or expire show Unavailable. Zero irradiance at night is valid. Allow 30 minutes of continuous valid readings to warm up. Start at 1× and tune against your observations. Apply changes future estimates only; recorded history stays unchanged. Reset to defaults selects starting tuning without clearing retained wetness or history; use Apply to save.',
+ ...Object.fromEntries(grassControls.map(([key,,hint])=>['grass-'+key,hint])),
  observedRain:'Shows the measured running total since the sensor’s last reset, stored every five minutes. Choose a total in mm, cm or in, not intensity (mm/h). Tempest example: a daily Utility Meter fed by sensor.tempest_station_precipitation (previous-minute rain), with Delta values enabled. Its total should rise with rain and reset at midnight. Enable Rain accumulation in the Top dock or Weather trends editor to see it.',
   embed: "Just the main radar, status light and credits in an iframe. Trust your dashboard’s origin (scheme, host and port), one per line, without paths. Settings save automatically; origins save when you leave the field. Reload the embed after changes. Tested in Home Assistant on LAN over HTTP and remotely through Nabu Casa with Tailscale Serve. HTTPS dashboards need an HTTPS radar address; this remote setup needs Tailscale connected on your device. For a full setup guide, follow the Embed setup guide below.",
  astronomy:'Calculated locally from the map location using SunCalc. Live follows now; Archive follows the selected frame. Choose the next rise (r), highest point/peak (p) or set (s), or altitude above the horizon and compass direction. A negative altitude is below the horizon. Set global formats under Interface > Weather > Units, or override them in this screen’s Top dock > Units. Visibility stays on this screen; hiding a dock reading does not hide the Sun/Moon widget.',
@@ -41,14 +53,19 @@ export const helpText = {
   "26": "Sets the same 2, 4 or 6-hour window for live playback and History on this display. Older history builds up as the appliance collects it. Longer windows use more browser memory, without extra provider requests. Missing ten-minute frames appear amber on the slider."
 };
 
-export function setupSettingsHelp(dialog) {
-  dialog.querySelector('#map-settings-intro').hidden = true;
+export function setupSettingsHelp(dialog,{text,viewport=false}={}) {
+  const intro=dialog.querySelector('#map-settings-intro');if(intro)intro.hidden=true;
   const bubble = document.createElement('div');
-  bubble.id = 'settings-help-bubble'; bubble.className = 'settings-help-bubble';
+  bubble.id = dialog.id==='settings-dialog'?'settings-help-bubble':dialog.id+'-help-bubble'; bubble.className = 'settings-help-bubble';
   bubble.setAttribute('role', 'note'); bubble.hidden = true; dialog.append(bubble);
   let active;
   function close() { active?.setAttribute('aria-expanded', 'false'); active?.removeAttribute('aria-describedby'); active = null; bubble.hidden = true; }
   const targets = [
+    ['label[for="archive-comparison"]','actualRain'],
+    ['label[for="gif-mode"]','gifView'],['label[for="gif-size"]','gifSize'],['label[for="gif-colors"]','gifColors'],['label[for="gif-loop"]','gifLoop'],['label[for="gif-buttons"]','gifButtons'],['label[for="gif-handles"]','gifHandles'],
+    ['label[for="grass-enabled"]','grassEstimate'],
+    ['.grass-status-title','grassReadiness','Grass wetness status'],
+    ...grassControls.map(([key,label])=>[`label[for="grass-${key}"]`,'grass-'+key,label]),
     ['label[for="embed-enabled"]','embed'],
  ['label[for="review-weather-source"]','reviewSource'],
  ['#review-map-warning','reviewMap'],['label[for="review-ha-url"]','reviewHA'],
@@ -87,9 +104,9 @@ export function setupSettingsHelp(dialog) {
       event.preventDefault(); event.stopPropagation();
       if (active === button) { close(); return; }
       close(); active = button; button.setAttribute('aria-expanded','true'); button.setAttribute('aria-describedby', bubble.id);
-      const owner=button.closest('dialog')||dialog;owner.append(bubble);
-      bubble.textContent = helpText[key]; if(key==='embed'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/embed.md';link.target='_blank';link.rel='noopener noreferrer';link.textContent='Embed setup guide';bubble.append(document.createElement('br'),link);} if(key==='astronomy'){for(const [title,url] of [['SunCalc source','https://github.com/mourner/suncalc'],['License','/suncalc-license.txt']]){const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent=title;bubble.append(document.createElement('br'),link);}} if(key==='dewPointDepression'){const link=document.createElement('a');link.href='/dew-point-depression.html';link.target='_blank';link.rel='noopener';link.textContent='Read about dew point depression';bubble.append(document.createElement('br'),link);} if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
-      const rect = button.getBoundingClientRect(), bounds = owner.getBoundingClientRect();
+      const owner=viewport?document.body:button.closest('dialog')||dialog;owner.append(bubble);
+      bubble.textContent = text?.(key)??helpText[key]; if(key==='embed'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/embed.md';link.target='_blank';link.rel='noopener noreferrer';link.textContent='Embed setup guide';bubble.append(document.createElement('br'),link);} if(key==='astronomy'){for(const [title,url] of [['SunCalc source','https://github.com/mourner/suncalc'],['License','/suncalc-license.txt']]){const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent=title;bubble.append(document.createElement('br'),link);}} if(key==='dewPointDepression'){const link=document.createElement('a');link.href='/dew-point-depression.html';link.target='_blank';link.rel='noopener';link.textContent='Read about dew point depression';bubble.append(document.createElement('br'),link);} if(key==='reviewMap'||key==='reviewSource'){const link=document.createElement('a');link.href='https://github.com/alex-soul/pi-rain-radar/blob/main/docs/manual.md#'+(key==='reviewMap'?'map-choose-your-area':'weather-readings-and-units');link.target='_blank';link.rel='noopener';link.textContent=key==='reviewMap'?'Read the map and archive guide':'Read the weather guide';bubble.append(document.createElement('br'),link);} bubble.hidden = false;
+      const rect = button.getBoundingClientRect(), bounds = viewport?{left:0,top:0,right:innerWidth,bottom:innerHeight,width:innerWidth}:owner.getBoundingClientRect();
       bubble.style.width = `${Math.min(320, bounds.width - 32)}px`;
       bubble.style.left = `${Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - bubble.offsetWidth - 8))}px`;
       bubble.style.top = `${Math.max(bounds.top + 8, Math.min(rect.bottom + 5, bounds.bottom - bubble.offsetHeight - 8))}px`;
@@ -103,5 +120,6 @@ export function setupSettingsHelp(dialog) {
   document.addEventListener('close',close,true);
   document.addEventListener('settings-tab-change',close);
   document.addEventListener('click',event=>{if(active&&!bubble.contains(event.target)&&!active.contains(event.target))close();});
+  dialog.addEventListener('radar-widget-gesture',close);
   window.addEventListener('resize', close);
 }

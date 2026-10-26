@@ -42,8 +42,9 @@ test('Rain forecast uses baselines for zero and missing minutes, and replaces fa
 test('all readings share tooltips, preserve zeros, rotate precisely and do not redraw on playback ticks',()=>{
   const f=fixture(),s=state();f.paint(s,now);
   assert.equal(f.nodes.get('weather-visibility').textContent,'0.0');assert.equal(f.nodes.get('weather-uv').textContent,'0.0');assert.equal(f.nodes.get('weather-humidity').textContent,'0%');
-  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation','direction'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+(id==='depression'?'Dew point depression':name)+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
+  for(const [id,name] of Object.entries(format.readingNames).filter(([id])=>!['sun','moon','rainAccumulation','direction','irradiance','grassWetness'].includes(id)))assert.match(f.nodes.get('weather-'+id).title,new RegExp('^'+(id==='depression'?'Dew point depression':name)+': .+ · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00$'));
   assert.equal(f.nodes.get('weather-temperature').title,'Temperature: 14.0 °C · OpenWeather · Observed 14 Sep 2026 12:00 · Acquired 14 Sep 2026 12:00');
+  assert.match(f.nodes.get('weather-irradiance').title,/Disabled/);assert.match(f.nodes.get('weather-grassWetness').title,/Calculation disabled/);
   const before=f.writes();f.paint(s,now+1000);assert.equal(f.writes(),before);
   for(const convention of ['flow','meteorological'])for(const value of [0,0.1,45,179.9,180,245.25,359.9,360]) {
     f.prefs.directionConvention=convention;f.prefs.directionFormat='degrees';f.paint({...s,fetchedAt:now+value+1,data:{...s.data,current:{...s.data.current,windDirection:value}}},now);
@@ -113,4 +114,12 @@ test('historical readings use selected-time freshness while health remains curre
   f.paint(old,now,{historical:true,operational:{...live,failures:2,error:'Current outage'}});
   assert.equal(f.nodes.get('weather-temperature').textContent,'14.0°');
   assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'error');
+});
+
+test('Live rainfall Y labels match the bar scale for dry, fractional and heavy forecasts',()=>{
+ for(const [rain,ceiling] of [[0,1],[.2,1],[3.7,4],[42.3,43]]){
+  const f=fixture(),s=state();s.data.minutely[0].precipitation=rain;f.paint(s,now);
+  assert.equal(f.nodes.get('minute-y-top').textContent,String(ceiling));assert.equal(f.nodes.get('minute-y-middle').textContent,String(ceiling/2));
+  assert.equal(f.nodes.get('minute-bars').children[0].attributes.height,rain?Math.max(2,rain/ceiling*85):1);
+ }
 });

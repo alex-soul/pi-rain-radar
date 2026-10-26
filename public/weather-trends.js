@@ -36,7 +36,7 @@ export function paintWeatherTrends(input){
   const text=(holder.dataset.readingExplanation??holder.getAttribute('aria-label')??'')+(arrow?' · '+marker.title:'');if(holder.getAttribute('aria-label')!==text)holder.setAttribute('aria-label',text);holder.removeAttribute('title');
  }
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return;
- const fields=[["temperature", "Temperature", "temp"], ["humidity", "Humidity", "rh"], ["dew", "Dew point", "dew"], ["wind", "Wind", "wind"], ["depression", "Dew point depression", "depression"], ["visibility", "Visibility", "visibility"], ["pressure", "Pressure", "pressure"], ["uv", "UV index", "uv"], ["gust", "Wind gusts", "gust"], ["rainAccumulation", "Rain accumulation", "rain"]];
+ const fields=[["temperature", "Temperature", "temp"], ["humidity", "Humidity", "rh"], ["dew", "Dew point", "dew"], ["wind", "Wind", "wind"], ["depression", "Dew point depression", "depression"], ["visibility", "Visibility", "visibility"], ["pressure", "Pressure", "pressure"], ["uv", "UV index", "uv"], ["gust", "Wind gusts", "gust"], ["rainAccumulation", "Rain accumulation", "rain"], ["irradiance", "Solar irradiance", "uv"], ["grassWetness", "Grass wetness", "wind"]];
  const sizes=fields.map(([id])=>{const e=$('trend-'+id);return [e.clientWidth,e.clientHeight];});
  const renderKey=JSON.stringify([cache,start,end,historical,fields.map(([id])=>rows[id].unit),zone,sizes]);
  const stamp=t=>formatTime(t,{hour:'2-digit',minute:'2-digit'},zone);
@@ -69,14 +69,14 @@ export function paintWeatherTrends(input){
    range.textContent=`(${values.join(' · ')})`;chartExplanation(range,captions.join('\n'));
    const labelNode=legend.querySelector('span:first-child');labelNode.textContent=chartCodes[id];chartExplanation(labelNode,id==='depression'?'Dew point depression (T−Td)':label);
    add('line',{id:'trend-cursor-'+id,class:'trend-cursor',y1:top,y2:bottom});svg.replaceChildren(...nodes);
-   svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)} (${(end-start)/3600} h). ${captions.join('. ')}. Automatically scaled to recorded values. Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
+   svg.setAttribute('aria-label',`${label}, ${stamp(start)} to ${stamp(end)} (${(end-start)/3600} h). ${captions.join('. ')}. ${id==='grassWetness'?'Fixed 0–5 intensity scale.':'Automatically scaled to recorded values.'} Grid every ${interval/60} minutes. ${segments[id].length?'Gaps and source or unit changes break the line.':'No stored readings.'}`);
   }
  }
  const valueHistory=input.valueHistory??history;if(valueHistory!==valueHistoryRef){valueHistoryRef=valueHistory;valueReplay=createWeatherReplay(valueHistory);}
  const selectedTime=time??end,selected=historical?weatherReadings(valueReplay.weather(selectedTime),selectedTime*1000,{historical:true,preferences:prefs,gustMinutes:gust}):rows;
  for(const [i,[id]]of fields.entries()){
   const cursor=$('trend-cursor-'+id),x=1+(selectedTime-start)/(end-start)*(sizes[i][0]-2);if(cursor){cursor.style.display=captureInWindow(selectedTime,start,end)?'':'none';cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);}
-  const value=$('trend-value-'+id);value.textContent=selected[id].text+(['wind','gust','visibility','pressure','rainAccumulation'].includes(id)?' '+selected[id].unit:'');
+  const value=$('trend-value-'+id);value.textContent=selected[id].text+(['wind','gust','visibility','pressure','rainAccumulation','irradiance'].includes(id)?' '+selected[id].unit:'');
   chartExplanation(value,(historical?'At capture '+stamp(selectedTime):'Latest current reading')+' · '+readingExplanation(selected[id],t=>formatTime(t/1000,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'},zone)));
  }
 }
@@ -84,7 +84,7 @@ new ResizeObserver(()=>{if(latestInput)paintWeatherTrends(latestInput);}).observ
 
 
 
-const controls = [{"id": "temperature", "label": "Temperature", "visible": true}, {"id": "humidity", "label": "Humidity", "visible": true}, {"id": "dew", "label": "Dew point", "visible": true}, {"id": "wind", "label": "Wind", "visible": false}, {"id": "depression", "label": "T−Td", "visible": false}, {"id": "visibility", "label": "Visibility", "visible": false}, {"id": "pressure", "label": "Pressure", "visible": false}, {"id": "uv", "label": "UV index", "visible": false}, {"id": "gust", "label": "Wind gusts", "visible": false}, {"id": "rainAccumulation", "label": "Rain accumulation", "visible": false}];
+const controls = [{"id": "temperature", "label": "Temperature", "visible": true}, {"id": "humidity", "label": "Humidity", "visible": true}, {"id": "dew", "label": "Dew point", "visible": true}, {"id": "wind", "label": "Wind", "visible": false}, {"id": "depression", "label": "T−Td", "visible": false}, {"id": "visibility", "label": "Visibility", "visible": false}, {"id": "pressure", "label": "Pressure", "visible": false}, {"id": "uv", "label": "UV index", "visible": false}, {"id": "gust", "label": "Wind gusts", "visible": false}, {"id": "rainAccumulation", "label": "Rain accumulation", "visible": false}, {"id": "irradiance", "label": "Solar irradiance", "visible": false}, {"id": "grassWetness", "label": "Grass wetness", "visible": false}];
 const key = 'radar-weather-charts';
 for(const control of controls)control.label=chartNames[control.id];
 let layout = controls.map(({ id, visible = true }) => ({ id, visible }));

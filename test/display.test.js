@@ -179,7 +179,7 @@ test('display choices restore independently and reject unsupported units and pla
 });
 
 test('reading editor saves reorder, preserves hidden readings, and cancels interrupted drags', () => {
-  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression','sun','moon','rainAccumulation'];
+  const ids=['temperature','feels','wind','gust','humidity','dew','direction','visibility','pressure','uv','depression','sun','moon','rainAccumulation','irradiance','grassWetness'];
   let children=[], saved, writes=0, editable=true;
   const list={get children(){return children;},append(row){children=children.filter(x=>x!==row);children.push(row);},insertBefore(row,before){children=children.filter(x=>x!==row);children.splice(children.indexOf(before),0,row);}};
   const rows=ids.map(id=>{
@@ -196,7 +196,7 @@ test('reading editor saves reorder, preserves hidden readings, and cancels inter
   handle.handlers.pointermove({pointerId:1,clientX:400,clientY:90});assert.equal(children[6],rows[0]);
   cancel();assert.equal(children[0],rows[0]);assert.equal(writes,0);assert.equal(directCancelled,1);
   handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});
-  assert.deepEqual(saved.readingOrder,['feels','temperature','dew','wind','gust','humidity','visibility','pressure','uv','sun','moon','direction','depression','rainAccumulation']);
+  assert.deepEqual(saved.readingOrder,['feels','temperature','dew','wind','gust','humidity','visibility','pressure','uv','sun','moon','direction','depression','rainAccumulation','irradiance','grassWetness']);
   assert.deepEqual(saved.readings,['temperature','humidity','dew','wind','direction']);
   editable=false;handle.handlers.keydown({key:'ArrowDown',preventDefault(){}});assert.equal(writes,1);
   editable=true;directCommit('temperature','wind',true);

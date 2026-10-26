@@ -221,7 +221,7 @@ Archive never substitutes an older frame for a missing one. Live may borrow earl
 
 Archive replays saved weather and camera snapshots alongside radar, preserving the recorded source and temporary-fallback colour while converting values to the effective display units. Aviation follows each report’s first successful local acquisition time. Returning to Live restores current weather and the latest camera snapshot. Manual Live scrubbing changes radar only.
 
-Rain forecast comparison **None** shows the selected capture's next-hour forecast. Selecting **−10 through −50 min** shows a past two-hour analysis: bars are the first minute (OWM NOW estimate) of each saved capture, and the pink line is an earlier forecast for the same target time. Both axes run chronologically left to right; comparison changes the time window, not time direction. Saved captures are about ten minutes apart, so narrow bars mark actual sampling times, not continuous observed rain. Neutral unsampled intervals are distinct from missing expected data and genuine zero rain. The earlier capture can be up to ten minutes older than the requested lead; unavailable evidence stays a gap. This compares OWM against its own later estimates, not a rain gauge. −60 is excluded because the forecast horizon does not reliably cover it.
+**Archive → Options → Show actual rainfall** overlays observed interval-average rainfall on the original saved forward forecast. Forecast bars, timestamps and the Y-scale remain identical when toggled. The scale accommodates both retained series even when actual rain is hidden. Purple dots show average mm/h between compatible HA acquisitions at each interval midpoint. A smooth line connects consecutive dots without bridging missing/reset/source-change intervals or inventing extra peaks. It is a visual guide, not reconstructed minute intensity. Live and Archive show a labelled mm/h Y axis at zero, midpoint and maximum, with matching gridlines. The Archive heading is removed; forecast reference, coverage and hindsight details remain in chart descriptions and help. Already-retained observations may extend beyond the selected radar endpoint to cover its forecast horizon. The switch defaults off, lasts for the Archive visit, and resets on return to Live. See [observed rain](observed-rain.md) for units, boundaries and reporting uncertainty.
 
 ### Stats for nerds
 
@@ -259,6 +259,8 @@ Widget settings are at the top left; the top-right cross hides the widget just l
 
 Drag readings directly within the top dock, or side buttons up/down, to reorder them. On touch, hold briefly before dragging, then release at the insertion marker. The settings editors remain available. Ordering, fonts, widget geometry and map decorations are saved separately for each browser. Numeric changes and scrubbing retain stable reading positions at a fixed dock configuration.
 
+When side buttons exceed the available height, they continue down the next column without a scrollbar. Expanded Clock and Archive labels reserve the neighbouring spaces, so overflow buttons skip occupied rows. The layout adjusts when docks, labels or the screen size change; saved button order stays the same.
+
 Main-map settings offer town density from **None**, through the original **Default**, to higher steps. This changes visible town labels without discarding history or changing the setup preview. Available settlements depend on the map geography. The configured location label and centre dot have independent switches. Overview's own settings hold its rain/cloud opacity and visibility, dashed viewport rectangle and centre dot.
 
 **Appliance → Power** contains Restart and Shutdown. **Appliance → Screen** contains Brightness and Sleep timer groups: brightness 10–100%, automatic sleep on/off and idle timeout 1–120 minutes. These target the screen attached to the appliance, even when using a phone remotely; they do not control your phone. Screen sleep leaves radar collection running. The host display helper must be installed; see [display controls](../host/display-controls/README.md).
@@ -266,3 +268,7 @@ Main-map settings offer town density from **None**, through the original **Defau
 Screen settings are shared by the app and optional MQTT integration, with applied values reflected in both directions. Local controls work without MQTT. Sleep/Wake buttons and screen-state reporting remain MQTT-only. New portable installations start automatic sleep off with a saved 15-minute timeout; existing settings are preserved. Local touch wakes the screen; remote browser activity does not reset the appliance idle timer.
 
 System Status shows filesystem Used/Total with a shaded capacity bar. It represents the filesystem containing the data, not just the app's files. Unavailable readings are shown as unavailable.
+
+## Grass wetness
+
+See [Grass wetness](grass-wetness.md) for the 0–5 estimate, required weather readings, droplet indicator, widget and sensitivity controls.

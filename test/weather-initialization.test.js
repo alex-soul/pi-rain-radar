@@ -91,6 +91,6 @@ test('fresh install disables every reading; persisted choices and pre-policy OWM
   assert.equal(reopened.current().owmCollect,false);
   const legacyStore={weatherState:async()=>null,saveWeatherState:async()=>{}};
   const legacy=await createWeatherSettings(legacyStore,{owmEnabled:true});
-  assert.ok(weatherFields.every(field=>legacy.current().mappings[field]==='owm'));
+  assert.ok(weatherFields.every(field=>legacy.current().mappings[field]===(field==='irradiance'?'disabled':'owm')));
   assert.equal(legacy.current().owmCollect,true);
 });

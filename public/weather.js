@@ -68,7 +68,9 @@ export function paintWeather(state, now = Date.now(), {historical=false,operatio
     : forecastStarting ? 'Waiting for first forecast.' : 'Forecast unavailable after failed refresh or expiry.';
   $('minute-chart').setAttribute('aria-label',forecastLabel);
   $('rain-forecast').title = state?.forecastError || forecastLabel;
-  const bars = [], scale = Math.max(1,...available.values());
+  const bars = [], scale = Math.max(1,Math.ceil(Math.max(0,...available.values())));
+  $('minute-y-top').textContent=String(scale);$('minute-y-middle').textContent=String(scale/2);
+  $('minute-chart').setAttribute('aria-label',`${forecastLabel} Y axis: 0, ${scale/2}, ${scale} mm/h.`);
   if (forecastUsable) for (let minute=0;minute<60;minute++) {
     const rain=available.get(minute), missing=rain===undefined, baseline=missing||rain===0;
     const height=baseline?1:Math.max(2,rain/scale*85);

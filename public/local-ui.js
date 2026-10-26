@@ -64,17 +64,17 @@ export function fontControl(dialog,key){
   input.oninput=()=>{if(canEditLocal()){localPreferences.fonts[key]=Number(input.value);saveLocalPreferences();paint();}};
   dialog.append(box);paint();
 }
-const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,#minute-message,#forecast-caption',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle time,#history-toggle time'};
+const fontTargets={top:'.weather-reading,.weather-reading:not(.astro-reading) small,.astro-dock-icon',bottom:'#time,#date,#frame-count,#frame-total,#updated',camera:'#camera-source,#camera-time','rain-forecast':'.minute-axis,.minute-y-axis,.minute-unit,#minute-message',astronomy:'.astro-events',trends:'.trend-mini-legend',stats:'.stats-content,.stats-content h3,.stats-content h4',buttons:'#clock-toggle time,#history-toggle time'};
 function paintFont(key){if(key==='top'){document.documentElement.style.setProperty('--dock-font-scale',(localPreferences.fonts.top??100)/100);return;}for(const node of document.querySelectorAll(fontTargets[key])){node.style.removeProperty('font-size');if((localPreferences.fonts[key]??100)!==100)node.style.fontSize=(parseFloat(getComputedStyle(node).fontSize)*localPreferences.fonts[key]/100)+'px';}}
 function paintFonts(){for(const key of Object.keys(fontTargets))paintFont(key);window.dispatchEvent(new Event('radar-display-change'));document.getElementById('camera')?.dispatchEvent(new Event('snapshot-size'));}
 // Share the tab structure across the browser-local list editors.
-export function tabbedEditor(dialog,listTitle,listNodes,extraTabs=[]){
+export function tabbedEditor(dialog,listTitle,listNodes,extraTabs=[],optionsTitle='Options'){
   dialog.classList.add('local-editor');
   const heading=dialog.querySelector('.archive-heading');
   const extraNodes=extraTabs.flatMap(tab=>tab.nodes);
   const options=[...dialog.children].filter(node=>node!==heading&&!listNodes.includes(node)&&!extraNodes.includes(node));
-  const groups=[{title:listTitle,nodes:listNodes},...extraTabs,{title:'Options',nodes:options}];
-  const tabs=document.createElement('div');tabs.className='settings-tabs local-editor-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label',dialog.getAttribute('aria-label')||'Weather trends');
+  const groups=[{title:listTitle,nodes:listNodes},...extraTabs,{title:optionsTitle,nodes:options}];
+  const tabs=document.createElement('div');tabs.className='settings-tabs local-editor-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label',dialog.getAttribute('aria-label')||heading?.querySelector('h2')?.textContent||'Settings');
   const panels=[],buttons=[];
   for(const [index,{title,nodes}]of groups.entries()){
     const button=document.createElement('button');button.type='button';button.textContent=title;button.id=dialog.id+'-tab-'+index;button.setAttribute('role','tab');

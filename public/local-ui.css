@@ -6,8 +6,9 @@
 
 :root :is(#astronomy-resize,[id$="-resize"]){width:32px;height:32px;right:0;bottom:0;padding:5px;font-size:20px;color:inherit;opacity:.4;}
 :root :is(#astronomy-resize,[id$="-resize"]):is(:hover,:focus-visible,:active),:root :is(.local-cog,.widget-close):is(:hover,:focus-visible,:active){opacity:1;filter:brightness(1.25);}
-.map-controls{max-height:max(44px,calc(100dvh - var(--footer-height,76px) - var(--controls-offset,0px) - 70px));}
-.footer-hidden .map-controls{max-height:max(44px,calc(100dvh - var(--controls-offset,0px) - 54px));}
+/* Keep the floating Screen settings button clear when controls are awake. */
+.map-controls{max-height:max(46px,calc(100dvh - var(--footer-height,76px) - var(--controls-offset,0px) - 70px));}
+.footer-hidden .map-controls{max-height:max(46px,calc(100dvh - var(--controls-offset,0px) - 54px));}
 .local-editor{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:16px;border:1px solid #78998a;border-radius:12px;background:#edf4ee;color:#284d47;font:14px Arial;}
 :root[data-theme=dark] .local-editor{background:#1d2b29;color:#e1eee7;color-scheme:dark;}
 .local-editor::backdrop{background:#07141055;}

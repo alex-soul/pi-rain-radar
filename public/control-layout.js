@@ -5,6 +5,7 @@ const controls = [
   { id: 'overview-toggle', label: 'Overview' },
   { id: 'rain-forecast-toggle', label: 'Rain forecast' },
   { id: 'camera-toggle', label: 'Camera', visible: false },
+  { id: 'grass-wetness-toggle', label: 'Grass', visible: false },
   { id: 'aviation-toggle', label: 'Aviation' },
   { id: 'theme-toggle', label: 'Light / dark' },
   {id:'astronomy-toggle',label:'Sun and Moon'},
@@ -133,11 +134,29 @@ export function setupResponsiveControls() {
     });
     const offset = collide ? Math.max(0, weather.bottom + 12 - naturalTop) : 0;
     stack.style.setProperty('--controls-offset', `${offset}px`);
+    // Fill down, then across. Wide clock/Archive pills reserve adjacent cells,
+    // so dense column flow skips those rows instead of overlapping their text.
+    const buttons=[...stack.children].filter(button=>!button.hidden&&button.id!=='side-edit');
+    const style=getComputedStyle(stack),gap=parseFloat(style.rowGap)||8;
+    const cell=Math.max(46,...buttons.map(button=>button.getBoundingClientRect().height));
+    const available=parseFloat(style.maxHeight);
+    const rows=Math.max(1,Math.min(buttons.length,Math.floor((available+gap)/(cell+gap))));
+    stack.style.setProperty('--control-rows',String(rows));
+    stack.style.setProperty('--control-cell',`${cell}px`);
+    for(const button of buttons){
+      const span=Math.max(1,Math.ceil((button.getBoundingClientRect().width+gap)/(cell+gap)));
+      button.style.gridColumn=`span ${span}`;
+    }
   }
   function schedule() { if (!queued) queued = requestAnimationFrame(update); }
   const resize = new ResizeObserver(schedule); resize.observe(stack); resize.observe(dock);
+  for(const button of stack.children)resize.observe(button);
+  const footer=document.querySelector('footer');if(footer)resize.observe(footer);
+  new MutationObserver(schedule).observe(stack,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','aria-expanded','data-expanded']});
+  new MutationObserver(schedule).observe(document.body,{attributes:true,attributeFilter:['class']});
   new MutationObserver(schedule).observe(dock, {attributes:true, attributeFilter:['class','aria-expanded']});
   window.addEventListener('resize', schedule);
+  window.addEventListener('radar-display-change',schedule);
   document.addEventListener('pointerdown', event => { pointers.add(event.pointerId); }, true);
   for (const event of ['pointerup','pointercancel']) document.addEventListener(event, e => { pointers.delete(e.pointerId); schedule(); }, true);
   window.addEventListener('blur', () => { pointers.clear(); schedule(); });

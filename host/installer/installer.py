@@ -15,6 +15,7 @@ import tempfile
 import textwrap
 import time
 import urllib.request
+import xml.etree.ElementTree as ET
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent.parent
@@ -24,6 +25,30 @@ MARKER = '# Managed by Pi Rain Radar installer\n'
 
 class Stop(Exception):
     pass
+
+
+def native_touch_config(existing, device, output):
+    """Change one known touchscreen; preserve other labwc settings and comments."""
+    try:
+        root = ET.fromstring(existing or b'<labwc_config/>',
+                             parser=ET.XMLParser(target=ET.TreeBuilder(insert_comments=True)))
+    except ET.ParseError as error:
+        raise Stop('Invalid labwc rc.xml; preserved. Correct its XML before retrying.') from error
+    if root.tag != 'labwc_config':
+        raise Stop('Unsupported labwc configuration; preserved.')
+    matches = [node for node in root.findall('touch') if node.get('deviceName') == device]
+    if len(matches) > 1:
+        raise Stop('Duplicate touchscreen entries in labwc rc.xml; preserved.')
+    if matches:
+        touch = matches[0]
+        if touch.get('mapToOutput') not in (None, '', output):
+            raise Stop('Touchscreen is mapped to another output; preserved. Check its mapping first.')
+        if touch.get('mouseEmulation') == 'no':
+            return existing
+    else:
+        touch = ET.SubElement(root, 'touch', deviceName=device, mapToOutput=output)
+    touch.set('mouseEmulation', 'no')
+    return ET.tostring(root, encoding='utf-8', xml_declaration=True) + b'\n'
 
 
 def digest(data):
@@ -269,7 +294,7 @@ class Installer:
                  '-o', 'Dpkg::Use-Pty=0', '-o', 'DPkg::Lock::Timeout=120', '-o', 'Dpkg::Options::=--force-confdef',
                  '-o', 'Dpkg::Options::=--force-confold', *args)
 
-    def owned(self, path, data, root=False, mode=0o644, allow_empty=False):
+    def owned(self, path, data, root=False, mode=0o644, allow_empty=False, adopt=False):
         if isinstance(data, str):
             data = data.encode()
         if path.is_symlink():
@@ -277,7 +302,7 @@ class Installer:
         existing = path.read_bytes() if path.exists() else None
         records = self.state.setdefault('files', {})
         record = records.get(str(path))
-        if not can_replace(existing, data, record, allow_empty):
+        if not can_replace(existing, data, record, allow_empty) and not (adopt and not record):
             raise Stop('Existing file was not created here or has been edited; preserved: ' + str(path))
         if not record:
             if existing is not None:
@@ -344,14 +369,19 @@ class Installer:
         UI.say('\nOptional extras', '1')
         UI.say('Device Power adds safe shutdown and restart buttons to the app. You can set a PIN later.')
         power = ask('Enable Device Power?', True)
+        UI.say('\nNative touchscreen input allows the browser to receive touch gestures directly.')
+        UI.say('No keeps the current input mode. The original labwc configuration is backed up.')
+        native_touch = ask('Enable native touchscreen input?', True)
         UI.say('\nHome Assistant display controls use MQTT to connect to your existing broker.')
         UI.say('Shares local brightness and sleep settings with HA; also adds Wake, Sleep and screen state.')
         UI.say('Blanking starts OFF. Connection details are requested later; you can also add this later.')
         mqtt = ask('Enable MQTT display controls?')
         UI.say('\nYour choices: Device Power ' + ('ON' if power else 'OFF') +
+               ' | Native touch ' + ('ON' if native_touch else 'unchanged') +
                ' | MQTT ' + ('ON' if mqtt else 'OFF'), '1')
         self.state = {'schema': 1, 'uid': os.getuid(), 'installer_commit': self.args.source_commit,
-                      'release': self.release, 'power': power, 'mqtt': mqtt, 'files': {}}
+                      'release': self.release, 'power': power, 'mqtt': mqtt,
+                      'native_touch': native_touch, 'files': {}}
         self.save()
 
     def session(self):
@@ -363,6 +393,33 @@ class Installer:
         self.env.update(XDG_RUNTIME_DIR=str(runtime), WAYLAND_DISPLAY=sockets[0].name,
                         DBUS_SESSION_BUS_ADDRESS='unix:path=' + str(runtime / 'bus'))
 
+    def native_touch(self, output):
+        # Missing means an older saved installation: never silently opt it in.
+        if self.state.get('native_touch') is not True:
+            return
+        devices = []
+        for event in Path('/sys/class/input').glob('event*'):
+            properties = self.capture('udevadm', 'info', '--query=property', '--path=' + str(event), required=False)
+            if 'ID_INPUT_TOUCHSCREEN=1' in properties.splitlines():
+                name = (event / 'device/name').read_text().strip()
+                if name:
+                    devices.append(name)
+        if len(devices) != 1:
+            if ask('No single touchscreen was identified. Continue without native touch?', False):
+                self.state['native_touch'] = False
+                self.save()
+                return
+            raise Stop('Native touch requires one identifiable touchscreen. Check the connected display and retry; configuration was preserved.')
+        path = self.home / '.config/labwc/rc.xml'
+        if path.is_symlink():
+            raise Stop('Symlinked labwc configuration was preserved; configure native touch manually.')
+        existing = path.read_bytes() if path.exists() else None
+        system_config = Path('/etc/xdg/labwc/rc.xml')
+        seed = existing if existing is not None else system_config.read_bytes() if system_config.exists() else None
+        data = native_touch_config(seed, devices[0], output)
+        self.owned(path, data, mode=0o600, adopt=True)
+        self.run('Reload native touchscreen configuration', 'pkill', '-HUP', '-u', str(os.getuid()), '-x', 'labwc')
+
     def orientation(self):
         self.session()
         missing = [name for name in ('wlr-randr', 'kanshi') if not shutil.which(name)]
@@ -370,6 +427,7 @@ class Installer:
             self.apt('Refresh minimal display prerequisites', 'update')
             self.apt('Install minimal display prerequisites before orientation', 'install', '-y', *missing)
         display = select_display(outputs(self.capture('wlr-randr')), self.model)
+        self.native_touch(display['name'])
         if display['mode'] == '1200x1920':
             print('10-inch Touch Display 2: best-effort, not physically tested.')
         saved = self.state.get('display', {})

@@ -7,10 +7,17 @@ function harness(){
  const nodes=new Map();
  const $=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',dataset:{},querySelector:()=>({textContent:''})});return nodes.get(id);};
  let online=true,decodes=0;
- const c=vm.createContext({$,fetch:async()=>{if(!online)throw Error('temporary timeout');return {ok:true,json:async()=>({end:100,dueThrough:100,frames:[{time:100,url:'/frame'}]})};},AbortSignal,Date,performance,generation:0,status:null,statsReceivedAt:0,appVersion:'test',mapIdentity:'map',serverReachable:true,serverClock:null,historyWindow:null,historyLoading:false,returningLive:false,liveRequestKey:'',sequence:[],pending:null,sequenceHours:2,playing:false,mapUpdateVisible:false,displayed:{time:100},location:{reload(){}},timeZone:'Europe/London',acceptIntegrationStatus(){},updateCloudSettings(){},paintMapUpdate(){},cameraSummary(){},paintStorageMeter(){},storageSummary(){},recordConnection(){},playbackHours:()=>2,decodeFrames:async f=>{decodes++;return f.map(x=>({...x}));},attachWindow:f=>f,adopt:f=>{c.sequence=f;},paintHistory(){},ageLiveWindow(){},showFrame(){},paintStatus(){}});
+ const c=vm.createContext({gifSession:null,gifPainting:false,$,fetch:async()=>{if(!online)throw Error('temporary timeout');return {ok:true,json:async()=>({end:100,dueThrough:100,frames:[{time:100,url:'/frame'}]})};},AbortSignal,Date,performance,generation:0,status:null,statsReceivedAt:0,appVersion:'test',mapIdentity:'map',serverReachable:true,serverClock:null,historyWindow:null,historyLoading:false,returningLive:false,liveRequestKey:'',sequence:[],pending:null,sequenceHours:2,playing:false,mapUpdateVisible:false,displayed:{time:100},location:{reload(){}},timeZone:'Europe/London',acceptIntegrationStatus(){},updateCloudSettings(){},paintMapUpdate(){},cameraSummary(){},paintStorageMeter(){},storageSummary(){},recordConnection(){},playbackHours:()=>2,decodeFrames:async f=>{decodes++;return f.map(x=>({...x}));},attachWindow:f=>f,adopt:f=>{c.sequence=f;},paintHistory(){},ageLiveWindow(){},showFrame(){},paintStatus(){}});
  vm.runInContext(app.slice(app.indexOf('let pollRunning = false;'),app.indexOf('void loadMapPlaces(assetIdentity);')),c);
  return {c,$,online:value=>{online=value;},decodes:()=>decodes};
 }
+
+test('an export holds polling and resumes without replacing the selected window',async()=>{
+ const h=harness();await h.c.poll();const sequence=h.c.sequence,received=h.c.statsReceivedAt;
+ h.c.gifSession={};h.online(false);await h.c.poll();
+ assert.equal(h.c.serverReachable,true);assert.equal(h.c.statsReceivedAt,received);assert.equal(h.c.sequence,sequence);
+ h.c.gifSession=null;await h.c.poll();assert.equal(h.c.serverReachable,false);
+});
 test('same-window recovery clears the live warning without decoding or replacing cached radar',async()=>{
  const h=harness();await h.c.poll();const sequence=h.c.sequence;h.online(false);await h.c.poll();
  assert.match(h.$('playback-window-note').textContent,/Could not load/);assert.equal(h.c.serverReachable,false);

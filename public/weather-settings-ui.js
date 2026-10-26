@@ -1,3 +1,4 @@
+import {setupGrassSettings} from './grass-wetness-settings-ui.js';
 import {shared,change,settingsRequest} from './integrations-state.js';
 import {weatherFields,haFields,canonicalUnit,haUnitChoices,rainUnits} from './weather-policy.js';
 import {readingNames} from './weather-format.js';
@@ -16,8 +17,8 @@ function options(){
   }
   rain.value=selectedRain;rain.disabled=!shared.ha||!shared.haCollect||!shared.initialized;
   for(const field of weatherFields){
-    const node=$('review-map-'+field),selected=shared.mappings[field]??'owm';
-    node.replaceChildren(new Option('Disabled','disabled'),new Option('OpenWeather','owm'));
+    const node=$('review-map-'+field),selected=shared.mappings[field]??(field==='irradiance'?'disabled':'owm');
+    node.replaceChildren(new Option('Disabled','disabled'));if(field!=='irradiance')node.add(new Option('OpenWeather','owm'));
     if(shared.haCollect&&shared.ha&&haFields.includes(field)){
       const units=haUnitChoices[field];
       for(const entity of entities.filter(e=>units.includes(canonicalUnit(e.unit))))node.add(new Option(entity.name+' · '+entity.unit,entity.id));
@@ -35,11 +36,11 @@ function sync(){
     $(id).checked=!!configured&&!!shared[key];$(id).disabled=!configured||!shared.initialized;
   }
   $('review-fallback').checked=shared.fallback;$('review-fallback').disabled=!shared.owm||!shared.owmCollect;
-  $('review-fallback-row').hidden=!haFields.some(field=>shared.mappings[field]?.startsWith('sensor.'));
+  $('review-fallback-row').hidden=!haFields.some(field=>field!=='irradiance'&&shared.mappings[field]?.startsWith('sensor.'));
   const rain=shared.presentation?.observedRain;
-  $('review-rain-status').textContent=rain?.entity?(rain.eligible?`${rain.value} ${rain.unit}`:rain.reason):'';
+  $('review-rain-status').textContent=rain?.entity?(rain.eligible?'':rain.reason):'';
   const gust=shared.mappings.gust==='owm';$('review-gust-cache').hidden=!gust;$('gust-cache-minutes').disabled=!gust;
-  $('review-reading-options').hidden=true;
+  $('review-reading-options').hidden=$('review-fallback-row').hidden&&$('review-gust-cache').hidden;
   $('review-reading-options').classList.add('single-option');
   const rows=weatherReadings(shared.weather,Date.now(),{preferences:weatherPreferences(),gustMinutes:gustCacheMinutes()});
   for(const [id,row] of Object.entries(rows).filter(([id])=>weatherFields.includes(id))){
@@ -70,7 +71,8 @@ export function setupWeatherLayout(){
   units.append(...panel.children);panel.append(units);units.append(make('<p id="shared-unit-note" role="status"></p>'));
   const readings=make(`<section id="review-weather-readings" role="tabpanel" aria-labelledby="review-readings-tab" hidden><div class="weather-provider-switches settings-group" id="review-weather-collection"></div><div class="weather-source-grid">${weatherFields.map(field=>`<div><label for="review-map-${field}">${readingNames[field]}</label><select id="review-map-${field}"></select><small id="review-unit-${field}" role="status"></small></div>`).join('')}</div><div id="review-reading-options" class="weather-reading-options"><label id="review-fallback-row" class="misc-option" for="review-fallback">OWM fallback<input id="review-fallback" type="checkbox" class="control-switch" role="switch"></label><div id="review-gust-cache"></div></div><p id="review-weather-note" role="status"></p></section>`);
   readings.querySelector('.weather-source-grid').append(make('<div><label for="review-rain-accumulation">Observed rain (accumulated)</label><select id="review-rain-accumulation"></select><small id="review-rain-status" role="status"></small></div>'));
-  const fallback=make('<div></div>');fallback.append(readings.querySelector('#review-fallback-row'));readings.querySelector('.weather-source-grid').append(fallback);
+  readings.querySelector('.weather-source-grid').append(readings.querySelector('#review-map-irradiance').parentElement);
+  readings.querySelector('#review-reading-options').after(readings.querySelector('#review-rain-status'));
   readings.querySelector('#review-rain-accumulation').onchange=()=>save({rainAccumulation:$('review-rain-accumulation').value});
   for(const [id,label] of [['review-owm-collect','OpenWeather'],['review-ha-collect','Home Assistant']]){const row=$(id).closest('label');row.firstChild.textContent=label;readings.querySelector('#review-weather-collection').append(row);}
   $('openweather-config').querySelector('.review-collection')?.remove();
@@ -81,6 +83,7 @@ export function setupWeatherLayout(){
   for(const [id,label,target] of [['readings','Readings','readings'],['units','Units','units'],['forecast','Forecast','forecast']])tabs.append(make(`<button id="review-${id}-tab" type="button" role="tab" aria-controls="review-weather-${target}" aria-selected="false" tabindex="-1">${label}</button>`));
   dock.setAttribute('aria-selected','true');dock.tabIndex=0;$('settings-panel-readings').hidden=false;
   panel.append(tabs,$('settings-panel-readings'),readings,units,forecast);
+  setupGrassSettings(panel,tabs);
   for(const field of weatherFields){
     const label=$('reading-'+field).previousElementSibling;
     label.prepend(make(`<span id="reading-health-${field}" class="reading-health" role="img" aria-label="Not configured"></span>`));
@@ -92,6 +95,7 @@ export function setupWeatherLayout(){
   };
   const derivedLabel=$('reading-depression').previousElementSibling;derivedLabel.prepend(make('<span id="reading-health-depression" class="reading-health" role="img" aria-label="Calculated reading"></span>'));derivedLabel.append(make('<small id="reading-source-depression" class="reading-source">Temperature minus dew point</small>'));
   const rainLabel=$('reading-rainAccumulation').previousElementSibling;rainLabel.prepend(make('<span id="reading-health-rainAccumulation" class="reading-health" role="img" aria-label="Not configured"></span>'));rainLabel.append(make('<small id="reading-source-rainAccumulation" class="reading-source"></small>'));
+  const grassLabel=$('reading-grassWetness').previousElementSibling;grassLabel.prepend(make('<span id="reading-health-grassWetness" class="reading-health" role="img" aria-label="Calculated reading"></span>'));grassLabel.append(make('<small id="reading-source-grassWetness" class="reading-source"></small>'));
   built=true;window.addEventListener('integration-change',sync);sync();
   $('settings-dialog').addEventListener('settings-tab-change',()=>{if(readingOpen())void loadWeatherChoices();else generation++;});
   $('settings-dialog').addEventListener('close',()=>{generation++;entities=[];});

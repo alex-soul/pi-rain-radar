@@ -12,6 +12,65 @@ import installer as app
 
 
 class InstallerTests(unittest.TestCase):
+    def test_native_touch_preserves_mapping_and_unrelated_settings(self):
+        import xml.etree.ElementTree as ET
+        before = b'<labwc_config><!-- keep --><theme><name>Example</name></theme><touch deviceName="Example touchscreen" mapToOutput="DSI-1" mouseEmulation="yes"/><touch deviceName="Other" mouseEmulation="yes"/></labwc_config>'
+        after = app.native_touch_config(before, 'Example touchscreen', 'DSI-1')
+        root = ET.fromstring(after)
+        self.assertEqual(root.find('theme/name').text, 'Example')
+        self.assertEqual(root.findall('touch')[0].attrib, {'deviceName': 'Example touchscreen', 'mapToOutput': 'DSI-1', 'mouseEmulation': 'no'})
+        self.assertEqual(root.findall('touch')[1].get('mouseEmulation'), 'yes')
+        self.assertIn(b'<!-- keep -->', after)
+        self.assertEqual(app.native_touch_config(after, 'Example touchscreen', 'DSI-1'), after)
+        self.assertEqual(ET.fromstring(app.native_touch_config(None, 'Example touchscreen', 'DSI-1')).find('touch').get('mouseEmulation'), 'no')
+        with self.assertRaises(app.Stop):
+            app.native_touch_config(before, 'Example touchscreen', 'HDMI-A-1')
+        with self.assertRaises(app.Stop):
+            app.native_touch_config(b'<broken', 'Example touchscreen', 'DSI-1')
+
+    def test_native_touch_no_and_legacy_resume_do_not_touch_files_or_devices(self):
+        for state in ({}, {'native_touch': False}):
+            instance = object.__new__(app.Installer)
+            instance.state = state
+            instance.capture = Mock(side_effect=AssertionError('must not inspect devices'))
+            instance.owned = Mock(side_effect=AssertionError('must not change config'))
+            instance.native_touch('DSI-1')
+
+    def test_native_touch_yes_backs_up_and_resumes_without_rewriting(self):
+        for before in (None, b'<labwc_config><touch deviceName="Test touch" mapToOutput="DSI-1" mouseEmulation="yes"/></labwc_config>'):
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                device = root / 'input/event0/device'
+                device.mkdir(parents=True)
+                (device / 'name').write_text('Test touch')
+                system = root / 'system.xml'
+                system.write_text('<labwc_config><theme><name>Preserved default</name></theme></labwc_config>')
+                instance = object.__new__(app.Installer)
+                instance.home = root / 'home'
+                instance.directory = root / 'state'
+                instance.path = instance.directory / 'install.json'
+                instance.state = {'native_touch': True, 'files': {}}
+                instance.capture = Mock(return_value='ID_INPUT_TOUCHSCREEN=1')
+                instance.run = Mock()
+                target = instance.home / '.config/labwc/rc.xml'
+                target.parent.mkdir(parents=True)
+                if before is not None:
+                    target.write_bytes(before)
+                def mapped_path(value):
+                    return root / 'input' if value == '/sys/class/input' else system if value == '/etc/xdg/labwc/rc.xml' else Path(value)
+                with patch.object(app, 'Path', side_effect=mapped_path):
+                    instance.native_touch('DSI-1')
+                    after = target.read_bytes()
+                    self.assertIn(b'mouseEmulation="no"', after)
+                    if before is None:
+                        self.assertIn(b'Preserved default', after)
+                    else:
+                        backup = instance.directory / 'backups' / app.digest(str(target).encode())
+                        self.assertEqual(backup.read_bytes(), before)
+                    instance.state = json.loads(instance.path.read_text())
+                    instance.native_touch('DSI-1')
+                    self.assertEqual(target.read_bytes(), after)
+
     def test_bootstrap_bundle_can_install_screen_bridge_without_repo_checkout(self):
         import re
         import shlex

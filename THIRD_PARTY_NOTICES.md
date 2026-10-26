@@ -28,6 +28,10 @@ Optional METAR and TAF reports are acquired from [NOAA Aviation Weather Center](
 
 Sun and Moon calculations use [SunCalc](https://github.com/mourner/suncalc), copyright 2026 Volodymyr Agafonkin, distributed under the BSD-2-Clause licence. The pinned browser source is bundled locally with its complete [licence notice](public/suncalc-license.txt). No external astronomy service is contacted.
 
+## Browser GIF export
+
+GIF export bundles [html-to-image](https://github.com/bubkoo/html-to-image) 1.11.13 (copyright 2017–2025 W.Y.) and [gifenc](https://github.com/mattdesl/gifenc) 1.0.3 (copyright 2017 Matt DesLauriers), both under the MIT licence. Complete notices are included in [html-to-image.LICENSE](public/vendor/html-to-image.LICENSE) and [gifenc.LICENSE](public/vendor/gifenc.LICENSE). [Vendoring notes](public/vendor/README.md) record the local rendering changes. Export runs locally without a CDN.
+
 ## Runtime dependencies
 
 - [metar-taf-parser](https://github.com/aeharding/metar-taf-parser), pinned at 9.1.3: MIT; copyright 2022 Alexander Harding and 2021 Jean-Kevin KPADEY. The installed package includes its complete licence notice.

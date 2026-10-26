@@ -6,6 +6,7 @@ const haDependent=row=>row.source==='ha'||row.inputs?.some(input=>input.source==
 export function observationKey(row,state){
  const policy=state?.presentation?.policy??state?.policy;
  if(row.inputs)return row.inputs.map(r=>observationKey(r,state)).join('|');
+ if(row.id==='grassWetness')return JSON.stringify([row.source,state?.presentation?.grassWetness?.modelVersion,state?.presentation?.grassWetness?.parameters,state?.presentation?.grassWetness?.startedAt]);
  if(row.id==='rainAccumulation')return JSON.stringify([row.source,row.expected,row.observedUnit,row.entity,row.resetAt??null]);
  return JSON.stringify([row.source,row.expected,row.observedUnit??row.unit,policy?.mappings?.[row.id]??'owm']);
 }
@@ -30,7 +31,7 @@ export function weatherSeries(history={},preferences={},gustMinutes=60){
  }
  return series;
 }
-export const trendNoise={temperature:.3,feels:.3,dew:.3,depression:.3,wind:1,gust:1,humidity:2,pressure:.5,uv:.2,visibility:200,rainAccumulation:.2};
+export const trendNoise={temperature:.3,feels:.3,dew:.3,depression:.3,wind:1,gust:1,humidity:2,pressure:.5,uv:.2,visibility:200,rainAccumulation:.2,irradiance:20,grassWetness:.5};
 export function hourTrend(points,row,state,reference=observationTime(row)){
  const value=r=>Object.hasOwn(r,'canonicalValue')?r.canonicalValue:r.value;
  if(!Number.isFinite(reference)||!row.source||row.retained||!Number.isFinite(value(row))||row.id==='direction')return '';
@@ -93,6 +94,7 @@ export function smoothPath(points){
 
 // A minimum span keeps tiny changes from looking dramatic; padding keeps extrema clear.
 export function trendRange(values,id,unit){
+ if(id==='grassWetness')return [0,5];
  const valid=values.filter(Number.isFinite);if(!valid.length)return [0,1];
  const low=Math.min(...valid),high=Math.max(...valid),centre=(low+high)/2;
  const floor=id==='rainAccumulation'?(unit==='in'?1/25.4:unit==='cm'?.1:1):id==='humidity'?2:id==='pressure'?(unit==='inHg'?.06:unit==='mmHg'?1.5:2):id==='visibility'?.2:['wind','gust'].includes(id)?1:['temperature','dew','depression'].includes(id)?(unit==='°F'?1.8:1):1;

@@ -4,16 +4,16 @@ import {weatherReadings,weatherHealth,weatherProviderHealth,readingExplanation,r
 import {defaultUnits,weatherFields,selectHaReadings} from '../public/weather-policy.js';
 import {createWeatherReplay} from '../public/history-weather-model.js';
 const now=1789383600000;
-function fixture(){return {configured:true,fetchedAt:now,failures:0,data:{current:{time:now/1000,temperature:14,feelsLike:12,windMph:9,gustMph:null,humidity:72,dewPoint:8,visibility:10000,pressure:1012,uvi:2,windDirection:245}},presentation:{policy:{source:'ha',owmCollect:true,haCollect:true,fallback:false,units:{...defaultUnits},mappings:{...Object.fromEntries(weatherFields.map(f=>[f,'owm'])),temperature:'sensor.t',feels:'sensor.f'}},observations:Object.fromEntries(['sensor.t','sensor.f'].map(entity=>[entity,{value:20,unit:'C',time:now,receivedAt:now,basis:'ha-reported'}]))}};}
+function fixture(){return {configured:true,fetchedAt:now,failures:0,data:{current:{time:now/1000,temperature:14,feelsLike:12,windMph:9,gustMph:null,humidity:72,dewPoint:8,visibility:10000,pressure:1012,uvi:2,windDirection:245}},presentation:{policy:{source:'ha',owmCollect:true,haCollect:true,fallback:false,units:{...defaultUnits},mappings:{...Object.fromEntries(weatherFields.map(f=>[f,f==='irradiance'?'disabled':'owm'])),temperature:'sensor.t',feels:'sensor.f'}},observations:Object.fromEntries(['sensor.t','sensor.f'].map(entity=>[entity,{value:20,unit:'C',time:now,receivedAt:now,basis:'ha-reported'}]))}};}
 
 test('partial HA assignments with optional missing OWM gust remain healthy for all ten readings',()=>{
   const state=fixture(),rows=weatherReadings(state,now);
   // The previous renderer used this predicate and incorrectly turned red.
   assert.equal(Object.values(selectHaReadings(state.presentation.policy,state.presentation.observations,state,now)).some(row=>!row.source),true);
-  assert.equal(Object.keys(rows).length,12);assert.equal(rows.rainAccumulation.expected,'disabled');assert.equal(rows.temperature.source,'ha');assert.equal(rows.wind.source,'openweather');
+  assert.equal(Object.keys(rows).length,14);assert.equal(rows.rainAccumulation.expected,'disabled');assert.equal(rows.temperature.source,'ha');assert.equal(rows.wind.source,'openweather');
   assert.equal(rows.gust.text,'—');assert.equal(rows.gust.health,'ready');assert.equal(weatherHealth(rows).health,'ready');
   for(const field of ['temperature','feels','wind','gust']){
-    const s=fixture();s.presentation.policy.mappings=Object.fromEntries(weatherFields.map(f=>[f,'owm']));s.presentation.policy.mappings[field]='sensor.single';
+    const s=fixture();s.presentation.policy.mappings=Object.fromEntries(weatherFields.map(f=>[f,f==='irradiance'?'disabled':'owm']));s.presentation.policy.mappings[field]='sensor.single';
     s.presentation.observations={'sensor.single':{value:12,unit:['wind','gust'].includes(field)?'mph':'C',time:now,receivedAt:now}};
     assert.equal(weatherHealth(weatherReadings(s,now)).health,'ready');
   }

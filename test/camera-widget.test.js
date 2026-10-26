@@ -4,17 +4,17 @@ import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 import {cameraAt} from '../public/camera-model.js';
 import {formatTime} from '../public/time.js';
-const source=(await readFile(new URL('../public/camera-widget.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'').replace('export function updateCamera','function updateCamera');
+const source=(await readFile(new URL('../public/camera-widget.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'').replaceAll('export ','');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function fixture(response){
   const nodes=new Map(),requests=[];let visibility;
-  const element=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{},hidden:false,textContent:'',removeAttribute(name){delete this[name];}});return nodes.get(id);};
+  const element=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{},hidden:false,textContent:'',dispatchEvent(){},async decode(){},removeAttribute(name){delete this[name];}});return nodes.get(id);};
   const context=vm.createContext({document:{getElementById:element,querySelector:()=>({content:'UTC'})},window:{dispatchEvent(){}},Event,AbortSignal,Date,cameraAt,formatTime,
     fetch:async url=>({ok:true,json:async()=>{requests.push(url);return response;}}),
     setupFloatingWidget:options=>{visibility=options.onVisibility;visibility(true);},
     createFrameLoader:options=>{assert.equal(options.maxImages,2);return {cancel(){},prepare:asset=>new Promise(resolve=>requests.push({asset,resolve}))};},
   });vm.runInContext(source,context);
-  return {nodes,requests,update:value=>context.updateCamera(value),visible:value=>visibility(value)};
+  return {nodes,requests,update:value=>context.updateCamera(value),visible:value=>visibility(value),setExport:value=>context.setCameraExport(value),ready:()=>vm.runInContext('cameraReady()',context)};
 }
 test('camera widget ignores obsolete decoding, clears gaps, and does not decode while hidden',async()=>{
   const f=fixture({}),now=Date.now(),a={time:now-300000,asset:'/a',basis:'metadata',data:{name:'Earlier'}},b={time:now,asset:'/b',basis:'acquisition',data:{name:'Later'}};
@@ -25,6 +25,16 @@ test('camera widget ignores obsolete decoding, clears gaps, and does not decode 
   f.requests.filter(r=>r.asset==='/b').at(-1).resolve({});await tick();assert.equal(f.nodes.get('camera-image').src,'/b');assert.match(f.nodes.get('camera-time').textContent,/^\d{2}:\d{2}$/);
   f.update({selected,time:(now+600001)/1000,hours:2});assert.equal(f.nodes.get('camera-image').hidden,true);
   const count=f.requests.length;f.visible(false);f.update({selected,time:a.time/1000,hours:2});assert.equal(f.requests.length,count);
+});
+
+test('export waits for the exact retained camera asset without a Live request and clears readiness for gaps',async()=>{
+ const f=fixture({}),now=Date.now();let finish;
+ const selected={cameraHistory:{records:[{time:now,asset:'/retained',basis:'metadata',data:{name:'Archive camera'}}]}};
+ f.setExport({resolve:()=> 'data:image/png;base64,fixture',decode:()=>new Promise(resolve=>finish=resolve)});
+ f.update({selected,time:now/1000,hours:2});let ready=false;f.ready().then(()=>ready=true);await tick();assert.equal(ready,false);
+ finish({});await f.ready();assert.equal(f.nodes.get('camera-image').src,'data:image/png;base64,fixture');assert.equal(f.requests.length,0);
+ f.update({selected,time:(now+600001)/1000,hours:2});await f.ready();assert.equal(f.nodes.get('camera-image').hidden,true);
+ f.setExport(null);await f.ready();
 });
 test('Live camera stays current through manual radar scrubbing and clears on source change',async()=>{
   const now=Date.now(),status={end:Math.floor(now/1000),camera:{source:'a',lastSuccess:now}};

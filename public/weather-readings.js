@@ -12,7 +12,7 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
   const ha=policy?selectHaReadings(policy,state.presentation?.observations,state,now,{historical}):{};
   const rows={};
   for(const id of weatherFields){
-    const selected=policy?.mappings?.[id]??'owm',mapped=ha[id];
+    const selected=policy?.mappings?.[id]??(id==='irradiance'?'disabled':'owm'),mapped=ha[id];
     let value=usable?current?.[weatherKeys[id]]:null,source=Number.isFinite(value)?'openweather':null;
     let time=source?current.time*1000:null,receivedAt=source?state.fetchedAt:null,retained=cached,reason='',health='ready',attribution='';
     const expected=mapped?.expected??(selected==='disabled'?'disabled':'openweather');
@@ -48,6 +48,7 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
     else if(id==='direction'){if(Number.isFinite(value))text=windDirectionText(value,units.directionFormat);}
     else if(id==='visibility'){unit=units.visibilityUnit;text=Number.isFinite(displayValue)?String(Number(displayValue.toFixed(1)))+(source==='openweather'&&value>=10000?'+':''):'—';}
     else if(id==='pressure'){unit=units.pressureUnit;text=Number.isFinite(displayValue)?(unit==='hPa'?String(Math.round(displayValue)):unit==='inHg'?displayValue.toFixed(2):displayValue.toFixed(1)):'—';}
+    else if(id==='irradiance'){unit='W/m²';if(Number.isFinite(value))text=String(Math.round(value));}
     else if(Number.isFinite(value))text=String(Number(value.toFixed(1)));
     const fallback=expected==='ha'&&source==='openweather';
     const sourceLabel=expected==='disabled'?'Disabled':fallback?'OpenWeather fallback':source==='ha'||expected==='ha'?'Home Assistant':'OpenWeather';
@@ -66,10 +67,23 @@ export function weatherReadings(state,now,{historical=false,preferences={},gustM
     text:valueRain===null?'—':valueRain.toFixed(rainUnit==='mm'?1:2),unit:rainUnit,observedUnit:rain.unit,retained:false,fallback:false,
     health:!enabled||!rainPolicy.haCollect?'unconfigured':rain.eligible?'ready':'error',
     attribution:rain.attribution??'',reason:rain.reason??'Observed running total since the sensor’s last reset; not rain intensity or a forecast.'};
+  const estimate=state?.presentation?.grassWetness,grassEnabled=!!policy?.grassWetness?.enabled;
+  const missingGrassInput=['temperature','dew','wind','irradiance'].find(key=>!rows[key]?.source||!Number.isFinite(rows[key]?.value));
+  const grassSetup=[];
+  if(policy){
+    for(const key of ['temperature','dew','wind','irradiance'])if(rows[key].expected==='disabled'||rows[key].health==='unconfigured')grassSetup.push(`${readingNames[key]}: ${rows[key].reason||'not configured'}`);
+    if(!rain.entity)grassSetup.push('Observed rain (accumulated): not configured');
+    if(!policy.haCollect)grassSetup.push('Home Assistant collection is off');
+  }
+  const grassValid=!grassSetup.length&&!missingGrassInput&&rain.eligible&&grassEnabled&&estimate?.eligible&&Number.isInteger(estimate.intensity)&&estimate.intensity>=0&&estimate.intensity<=5&&Number.isFinite(estimate.calculatedAt)&&estimate.calculatedAt<=now&&now-estimate.calculatedAt<=600000;
+  const grassValue=grassValid?estimate.intensity:null;
+  rows.grassWetness={id:'grassWetness',name:'Grass wetness',expected:grassEnabled?'derived':'disabled',source:grassValid?'derived':null,sourceLabel:'Grass wetness estimate',value:grassValue,canonicalValue:grassValue,displayValue:grassValue,text:grassValue===null?'—':String(grassValue),unit:'',time:estimate?.calculatedAt??null,receivedAt:estimate?.calculatedAt??null,health:!grassEnabled||grassSetup.length?'unconfigured':grassValid?'ready':'error',retained:false,fallback:false,attribution:'',reason:!grassEnabled?'Calculation disabled':grassSetup.length?'Setup required: '+grassSetup.join('; '):missingGrassInput?readingNames[missingGrassInput]+': '+(rows[missingGrassInput].reason||'unavailable'):!rain.eligible?'Rain accumulation: '+rain.reason:!estimate?'Waiting for weather readings':now-estimate.calculatedAt>600000?'Weather data is out of date':estimate.reason??'Unavailable'};
+  rows.grassWetness.setupMissing=grassSetup;
+  rows.grassWetness.status=!grassEnabled?'disabled':grassSetup.length?'setup':grassValid?'ready':rows.grassWetness.reason.startsWith('Warming')?'warming':'unavailable';
   return rows;
 }
 export function weatherHealth(rows){
-  const enabled=Object.values(rows).filter(row=>row.expected!=='disabled'&&!['gust','depression'].includes(row.id));
+  const enabled=Object.values(rows).filter(row=>row.expected!=='disabled'&&!['gust','depression','grassWetness'].includes(row.id));
   const health=enabled.some(row=>row.health==='error')?'error':enabled.some(row=>row.health==='warning')?'warning':enabled.some(row=>row.health==='ready')?'ready':'unconfigured';
   const summary=health==='error'?'Some readings unavailable':health==='warning'?'Some readings retained or delayed':health==='ready'?'Weather readings available':enabled.length?'Collection disabled or not configured':'All readings disabled';
   return {health,summary};
@@ -87,7 +101,7 @@ export function weatherProviderHealth(state,provider,now,{configured=true}={}){
   if(!configured)return {health:'unconfigured',summary:'Not configured'};
   if(policy?.[provider==='ha'?'haCollect':'owmCollect']===false)return {health:'unconfigured',summary:'Configured · Collection disabled'};
   const raw=provider==='ha'?state:{...state,presentation:policy?{policy:{...policy,source:'openweather'},observations:{}}:undefined};
-  const rows=Object.values(weatherReadings(raw,now)).filter(row=>!['gust','depression'].includes(row.id)&&(provider==='ha'?row.expected==='ha':row.expected!=='disabled'&&row.id!=='rainAccumulation'));
+  const rows=Object.values(weatherReadings(raw,now)).filter(row=>!['gust','depression','grassWetness'].includes(row.id)&&(provider==='ha'?row.expected==='ha':row.expected!=='disabled'&&row.id!=='rainAccumulation'));
   if(!rows.length)return {health:'unconfigured',summary:'Configured · No assigned readings'};
   if(provider==='ha')return rows.some(row=>row.source!=='ha')?{health:'error',summary:'Some HA readings unavailable'}:{health:'ready',summary:'Collecting'};
   return weatherHealth(Object.fromEntries(rows.map(row=>[row.id,row])));

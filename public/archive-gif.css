@@ -1,0 +1,34 @@
+#gif-dialog{width:min(880px,calc(100vw - 32px));max-height:calc(100dvh - 24px);padding:20px;border:1px solid var(--control-outline);border-radius:14px;background:#edf4ee;color:#243c3c;overflow:auto;}
+#gif-dialog::backdrop{background:#08171499;}
+:root[data-theme="dark"] #gif-dialog{background:#142623;color:#e1eee7;}
+.gif-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.gif-heading h2{margin:0;font-size:21px;}
+.gif-heading button{font-size:24px;min-width:40px;}
+.gif-grid{display:grid;grid-template-columns:minmax(210px,1fr) minmax(0,1.5fr);gap:22px;margin-top:16px;}
+.gif-options{display:grid;gap:12px;align-content:start;}
+.gif-options label{display:grid;gap:5px;font-size:14px;}
+.gif-options select{width:100%;min-height:38px;}
+.gif-options .gif-switch{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.gif-preview{margin:0;display:flex;flex-direction:column;gap:10px;justify-content:center;min-width:0;}
+#gif-preview{width:100%;max-height:320px;object-fit:contain;background:#213e38;border-radius:6px;}
+#gif-summary{font-size:13px;line-height:1.5;}
+.gif-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:16px;}
+.gif-actions button,.gif-actions a{min-height:40px;padding:9px 16px;}
+#gif-progress{width:100%;height:6px;margin-top:14px;accent-color:#389488;}
+#gif-status{min-height:20px;font-size:13px;margin:8px 0 0;}
+.gif-options fieldset{border:0;padding:0;margin:0;display:grid;gap:12px;}
+#gif-dialog [hidden]{display:none;}
+#gif-download{background:#389488;color:white;border-radius:6px;text-decoration:none;}
+@media(max-width:650px){.gif-grid{grid-template-columns:1fr;}#gif-preview{max-height:180px;}}
+
+#gif-dialog button,#gif-dialog select{font:inherit;color:inherit;background:transparent;border:1px solid #91ada3;border-radius:8px;padding:8px 10px;min-height:38px;}
+#gif-dialog button{cursor:pointer;}#gif-dialog button:disabled{opacity:.5;cursor:default;}
+#gif-dialog select{background:#edf4ee;} :root[data-theme="dark"] #gif-dialog select{background:#1d2b29;}
+#gif-dialog button.settings-info{min-height:0;min-width:0;padding:0;border-radius:50%;font-size:10px;width:13px;height:13px;vertical-align:middle;}
+#gif-dialog .control-switch{appearance:none;-webkit-appearance:none;width:34px;height:20px;border:1px solid #91ada3;border-radius:20px;background:#91ada333;position:relative;flex:none;}
+#gif-dialog .control-switch:before{content:"";position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:#91ada3;}
+#gif-dialog .control-switch:checked{background:#389488;}
+#gif-dialog .control-switch:checked:before{left:16px;background:white;}
+#gif-view-options{display:grid;gap:10px;}
+
+#gif-status:empty{display:none;}

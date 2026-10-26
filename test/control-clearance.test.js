@@ -6,14 +6,17 @@ const source=await readFile(new URL('../public/control-layout.js',import.meta.ur
 test('controls clear expanded dock, return when collapsed, and stay still during a pointer gesture', () => {
   let offset=0, draw, observe, dockRect={left:8,right:382,top:0,bottom:84};
   const handlers={};
-  const stack={style:{getPropertyValue:()=>String(offset),setProperty:(_,value)=>{offset=parseFloat(value);}},getBoundingClientRect:()=>({left:8,right:172,top:8+offset})};
-  stack.children=[{hidden:false,getBoundingClientRect:()=>({...stack.getBoundingClientRect(),bottom:54+offset})}];
+  const properties={};
+  const stack={style:{getPropertyValue:()=>String(offset),setProperty:(key,value)=>{properties[key]=value;if(key==='--controls-offset')offset=parseFloat(value);}},getBoundingClientRect:()=>({left:8,right:172,top:8+offset})};
+  stack.children=[{hidden:false,style:{},getBoundingClientRect:()=>({...stack.getBoundingClientRect(),bottom:54+offset,width:164,height:46})}];
   const dock={getBoundingClientRect:()=>dockRect};
   const c=vm.createContext({document:{querySelector:()=>stack,getElementById:()=>dock,addEventListener:(name,fn)=>handlers[name]=fn},
-    window:{innerWidth:390,addEventListener:(name,fn)=>handlers[name]=fn},requestAnimationFrame:fn=>{draw=fn;return 1;},
+    window:{innerWidth:390,addEventListener:(name,fn)=>handlers[name]=fn},getComputedStyle:()=>({rowGap:'8px',maxHeight:'500px'}),requestAnimationFrame:fn=>{draw=fn;return 1;},
     ResizeObserver:class {constructor(fn){observe=fn;}observe(){}},MutationObserver:class {observe(){}}});
   vm.runInContext(source.slice(source.indexOf('export function setupResponsiveControls')).replace('export ',''),c);
   c.setupResponsiveControls();draw();assert.equal(offset,88);
+  assert.equal(stack.children[0].style.gridColumn,'span 4','expanded clock reserves neighbouring columns');
+  assert.equal(properties['--control-rows'],'1');
   handlers.pointerdown({pointerId:1});dockRect={left:157,right:233,top:0,bottom:18};observe();draw();assert.equal(offset,88);
   handlers.pointerup({pointerId:1});draw();assert.equal(offset,22);
   c.window.innerWidth=1280;handlers.resize();draw();assert.equal(offset,22,'wide docks clear controls on appliance screens too');

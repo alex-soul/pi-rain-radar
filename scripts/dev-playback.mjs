@@ -1,3 +1,4 @@
+import {rainComparisonFixture} from './dev-rain-comparison.mjs';
 import {createDevAviation} from './dev-aviation.mjs';
 import {aviationReviewReports} from './dev-aviation-ui-fixture.js';
 import {validScreenCommand} from '../src/screen-control.js';
@@ -88,7 +89,7 @@ await new Promise((resolve,reject)=>{child.stdout.on('data',data=>{if(String(dat
 const scenarios=scenarioCatalog.map(s=>s.id);
 let scenario=recording?'forecast-recorded':process.argv.includes('--availability')?'availability-healthy':'healthy',revision=1;
 const devCamera=await createDevCamera(directory,()=>scenario,origin,end*1000);
-const devWeather=await createDevWeather(directory);
+const devWeather=await createDevWeather(directory,end);
 const scenarioLog=createDiagnostics(),observeScenario=createHealthEvents(scenarioLog.record);
 scenarioLog.record('startup');
 let demoKey=!!trial,demoRadar={main:'rainviewer',overview:'same',monthlyLimit:null};
@@ -207,7 +208,7 @@ const server=http(async(req,res)=>{
       let input;if(req.method==='POST'){let body='';for await(const chunk of req){body+=chunk;if(body.length>8192){res.writeHead(413);return res.end('{}');}}input=JSON.parse(body);}
       const result=await devWeather.configure(path.pathname,input);
       if(input&&path.pathname==='/api/settings/weather/initialize'&&result.status===200){
-        const initialized=await fetch(origin+path.pathname,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({units:result.units})});
+        const initialized=await fetch(origin+path.pathname,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({units:result.units,formats:input.formats})});
         if(!initialized.ok)throw Error('DEV display initialization failed: '+initialized.status);
       }
       if(input&&path.pathname==='/api/settings/weather'&&result.status===200)demoRadar=disableRadarProviders(demoRadar,source=>result[source+'Collect']);
@@ -287,6 +288,8 @@ const server=http(async(req,res)=>{
     }
     if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(403);return res.end('Playback fixture is read-only');}
     const response=await fetch(origin+req.url,{method:req.method,headers:req.headers.authorization?{Authorization:req.headers.authorization}:{}});
+    if(path.pathname==='/api/weather-history'&&scenario.startsWith('rain-')&&response.ok)return send(rainComparisonFixture({weatherHistory:await response.json()},scenario,end).weatherHistory);
+    if(path.pathname==='/api/weather-history'&&scenario.startsWith('grass-')&&response.ok)return send({...await response.json(),...devWeather.history()});
     if(path.pathname==='/api/weather-history'&&scenario==='weather-trends'&&response.ok){
       const selectedEnd=Number(path.searchParams.get('end')),hours=Number(path.searchParams.get('hours'));
       const history=await response.json();
@@ -335,7 +338,9 @@ const server=http(async(req,res)=>{
         const {weatherPolicy,camera,cameraHistory}=data;
         data={...syntheticAvailability(data,{scenario:'availability-healthy',archive:path.pathname==='/api/archive'}),weatherPolicy,camera,cameraHistory};
       }
+      if(scenario.startsWith('grass-'))data.weatherHistory={...data.weatherHistory,...devWeather.history()};
       if(scenario==='weather-trends')data=trendFixture(data);
+      if(scenario.startsWith('rain-'))data=rainComparisonFixture(data,scenario,end);
       if(scenario==='forecast-recorded'&&recording)data=applyForecastRecording(data,recording);
       res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(data));
     }

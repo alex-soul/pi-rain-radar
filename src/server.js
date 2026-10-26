@@ -109,10 +109,14 @@ await maintainHistory();
 const storageTimer=setInterval(()=>void maintainHistory(),1000);
 const healthTimer=setInterval(()=>{checkHealth();void maps.current().radar.observe();},15000);
 const staticFiles = new Map([
+  ...['archive-gif.js','archive-gif-model.js','archive-gif-worker.js','archive-gif-assets.js','vendor/gifenc.js',...['index','apply-style','clone-node','clone-pseudos','dataurl','embed-images','embed-resources','embed-webfonts','mimes','types','util'].map(name=>'vendor/html-to-image/'+name+'.js')].map(file=>['/'+file,[file,'text/javascript']]),
+  ['/archive-gif.css',['archive-gif.css','text/css']],
   ['/display-options.js',['display-options.js','text/javascript']],
   ['/screen-display.js',['screen-display.js','text/javascript']],
   ['/reading-units.js',['reading-units.js','text/javascript']],
   ['/chart-explanations.js',['chart-explanations.js','text/javascript']],
+  ...['grass-wetness-ui.js','grass-wetness-settings.js','grass-wetness-settings-ui.js'].map(file=>['/'+file,[file,'text/javascript']]),
+  ['/grass-wetness.css',['grass-wetness.css','text/css']],
   ['/aviation-widget.js',['aviation-widget.js','text/javascript']],
   ['/aviation-model.js',['aviation-model.js','text/javascript']],
   ['/aviation.css',['aviation.css','text/css']],
@@ -217,7 +221,7 @@ const server = createServer(async (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'",
+      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; frame-ancestors 'none'",
     );
     if (path === '/embed') {
       const config=embed.current();

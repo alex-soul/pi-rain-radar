@@ -28,7 +28,7 @@ async function fixture(t){
   const settingsFile=join(dir,'settings','weather-policy.json');
   const settings=await createWeatherSettings(store,{settingsFile,now:()=>time,beforeChange:()=>{weather?.suspend();collector?.suspend();},onChange:async()=>{await weather?.collectionChanged();await collector?.changed();}});
   // These collection lifecycle cases start with explicitly selected OWM readings.
-  await settings.configure({mappings:Object.fromEntries(weatherFields.map(field=>[field,'owm']))});
+  await settings.configure({mappings:Object.fromEntries(weatherFields.map(field=>[field,field==='irradiance'?'disabled':'owm']))});
   const options={store,now:()=>time,enabled:()=>settings.current().owmCollect,forecastEnabled:()=>settings.current().forecastCollect,mappings:()=>settings.current().mappings,
     onNewKey:async()=>{assert.equal((await settings.configure({owmCollect:false,forecastCollect:false,fallback:false})).status,200);},
     request:async url=>{calls.push(url.pathname);return response(url,time);}};
@@ -138,7 +138,7 @@ test('legacy policy migration preserves units, source, off switches and history;
     const store=memoryStore();const legacy={version:1,revision:7,effectiveAt:start-1000,initialized:true,source:'ha',fallback:true,mappings:{temperature:'sensor.room',feels:'owm',wind:'owm',gust:'owm'},units:{...defaultUnits,temperatureUnit:'F'},baseline:{...defaultUnits},owmCollect:enabled,haCollect:true};
     await store.saveWeatherPolicy(legacy);const settings=await createWeatherSettings(store,{now:()=>start});
     assert.equal(settings.current().forecastCollect,enabled);assert.equal(settings.current().owmCollect,enabled);assert.equal(settings.current().mappings.temperature,'sensor.room');assert.equal(settings.current().units.temperatureUnit,'F');
-    assert.equal(Object.keys(settings.current().mappings).length,10);assert.deepEqual(store.records[0].data,legacy);
+    assert.equal(Object.keys(settings.current().mappings).length,11);assert.deepEqual(store.records[0].data,legacy);
     const count=store.records.length;await createWeatherSettings(store);assert.equal(store.records.length,count);
   }
   const fresh=await createWeatherSettings(memoryStore());assert.equal(fresh.current().owmCollect,false);assert.equal(fresh.current().forecastCollect,false);assert.equal(fresh.current().haCollect,false);

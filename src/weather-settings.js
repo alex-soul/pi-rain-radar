@@ -1,3 +1,4 @@
+import {grassDefaults,validateGrassSettings} from '../public/grass-wetness-settings.js';
 import {haFields,haUnitChoices,weatherFields,defaultUnits,unitChoices} from '../public/weather-policy.js';
 import {atomicJson,exists,readJson} from './history-files.js';
 import {mkdir} from 'node:fs/promises';
@@ -13,12 +14,12 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
   // Existing pre-policy installations with a saved OWM key retain their readings.
   // A new installation starts with every reading explicitly disabled.
   if(!state){
-    state={version:1,revision:0,perReadingSources:true,initialized:false,source:'openweather',fallback:false,mappings:Object.fromEntries(weatherFields.map(f=>[f,owmEnabled?'owm':'disabled'])),units:{...defaultUnits},baseline:null,owmCollect:owmEnabled,forecastCollect:owmEnabled,haCollect:false,rainviewerCollect:true,rainbowCollect:rainbowEnabled};
+    state={version:1,revision:0,perReadingSources:true,initialized:false,source:'openweather',fallback:false,mappings:Object.fromEntries(weatherFields.map(f=>[f,owmEnabled&&f!=='irradiance'?'owm':'disabled'])),units:{...defaultUnits},baseline:null,owmCollect:owmEnabled,forecastCollect:owmEnabled,haCollect:false,rainviewerCollect:true,rainbowCollect:rainbowEnabled};
     await store.saveWeatherState('policy',state);
   }
   // Extend the live policy at a new boundary; old records retain their policy.
   if(!state.perReadingSources||state.forecastCollect===undefined||weatherFields.some(field=>state.mappings[field]===undefined)){
-    state={...state,forecastCollect:state.forecastCollect??state.owmCollect,mappings:{...Object.fromEntries(weatherFields.map(f=>[f,'owm'])),...state.mappings},revision:state.revision+1,effectiveAt:Math.max(now(),(state.effectiveAt??0)+1)};
+    state={...state,forecastCollect:state.forecastCollect??state.owmCollect,mappings:{...Object.fromEntries(weatherFields.map(f=>[f,f==='irradiance'?'disabled':'owm'])),...state.mappings},revision:state.revision+1,effectiveAt:Math.max(now(),(state.effectiveAt??0)+1)};
     // Legacy HA mappings could be collected without supplying the display.
     // Translate its selected source, not those inactive alternatives.
     if(!state.perReadingSources&&state.source!=='ha')for(const field of haFields)if(state.mappings[field].startsWith('sensor.'))state.mappings[field]='owm';
@@ -28,7 +29,7 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
   }
   if(settingsFile){await mkdir(dirname(settingsFile),{recursive:true,mode:0o700});await atomicJson(settingsFile,state);}
   let busy=false,initializing=null;
-  const current=()=>structuredClone({rainAccumulation:'disabled',...state,units:{...defaultUnits,...state.units}});
+  const current=()=>structuredClone({grassWetness:{...grassDefaults},rainAccumulation:'disabled',...state,units:{...defaultUnits,...state.units}});
   return {current,
     async initialize(units){
       if(state.initialized)return {status:200,...current()};
@@ -40,6 +41,7 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
       if(busy)return {status:409,error:'Settings are being saved. Try again shortly.'};
       if(!input||typeof input!=='object')return {status:400,error:'Invalid weather settings.'};
       const next=current();
+      if(input.grassWetness!==undefined){const value=validateGrassSettings({...next.grassWetness,...input.grassWetness});if(!value||!input.grassWetness||typeof input.grassWetness!=='object'||Array.isArray(input.grassWetness))return {status:400,error:'Choose valid Grass wetness settings.'};next.grassWetness=value;}
       if(input.rainAccumulation!==undefined){
         if(typeof input.rainAccumulation!=='string'||input.rainAccumulation.length>256||input.rainAccumulation!=='disabled'&&!/^sensor\.[a-z0-9_]+$/.test(input.rainAccumulation))return {status:400,error:'Choose an accumulated-rain HA sensor or Disabled.'};
         if(input.rainAccumulation!=='disabled'&&!(input.haCollect??next.haCollect))return {status:400,error:'Enable Home Assistant collection first.'};
@@ -54,11 +56,12 @@ export async function createWeatherSettings(store,{settingsFile=null,now=Date.no
         if(!input.mappings||typeof input.mappings!=='object')return {status:400,error:'Invalid weather mappings.'};
         for(const [field,entity] of Object.entries(input.mappings)){
           if(!weatherFields.includes(field)||typeof entity!=='string'||entity.length>256||!['owm','disabled'].includes(entity)&&!(haFields.includes(field)&&/^sensor\.[a-z0-9_]+$/.test(entity)))return {status:400,error:'Choose a supported source for each reading.'};
+          if(field==='irradiance'&&entity==='owm')return {status:400,error:'Solar irradiance requires a Home Assistant sensor in W/m².'};
           next.mappings[field]=entity;
         }
         if(input.source===undefined)next.source=haFields.some(field=>next.mappings[field].startsWith('sensor.'))?'ha':'openweather';
       }
-      if(input.haCollect===false){for(const field of haFields)if(!['owm','disabled'].includes(next.mappings[field]))next.mappings[field]='owm';next.source='openweather';}
+      if(input.haCollect===false){for(const field of haFields)if(!['owm','disabled'].includes(next.mappings[field]))next.mappings[field]=field==='irradiance'?'disabled':'owm';next.source='openweather';}
       if(input.sourceUnits!==undefined){
         if(!input.sourceUnits||typeof input.sourceUnits!=='object'||Array.isArray(input.sourceUnits)||Object.entries(input.sourceUnits).some(([field,unit])=>!Object.hasOwn(haUnitChoices,field)||!haUnitChoices[field].includes(unit)))return {status:400,error:'Choose supported HA source units.'};
         next.sourceUnits={...next.sourceUnits,...input.sourceUnits};

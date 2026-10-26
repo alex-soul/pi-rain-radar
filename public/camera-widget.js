@@ -7,6 +7,9 @@ const panel=document.getElementById('camera'),picture=document.getElementById('c
 picture.hidden=true;
 const zone=document.querySelector('meta[name="time-zone"]').content;
 const loader=createFrameLoader({maxImages:2,timeoutMs:4000});
+let exportAssets=null,ready=Promise.resolve();
+export const cameraReady=()=>ready;
+export function setCameraExport(value){if(exportAssets!==value){exportAssets=value;paintKey='';revision++;ready=Promise.resolve();}}
 let visible=false,input=null,live=null,liveKey='',desiredKey='',attemptKey='',fetching=false,fetchedAt=0,lastTry=0,paintKey='',revision=0,failedAt=0;
 function paint(){
   if(!input)return;
@@ -15,22 +18,23 @@ function paint(){
   const row=archive?cameraAt(archive.records??[],input.time*1000):live?.latest&&live.latest.time<=now&&now-live.latest.time<=600000&&live.status?.source===input.status?.camera?.source?live.latest:null;
   name.textContent=row?.data?.name??health?.name??'Camera';
   const key=visible&&row?.asset?row.asset:'';
-  if(!key){if(paintKey){revision++;loader.cancel();}paintKey='';picture.hidden=true;picture.removeAttribute('src');stamp.textContent='';return;}
+  if(!key){if(paintKey){revision++;loader.cancel();}paintKey='';ready=Promise.resolve();picture.hidden=true;picture.removeAttribute('src');stamp.textContent='';return;}
   if(paintKey===key&&(!failedAt||now-failedAt<15000))return;
   paintKey=key;failedAt=0;const epoch=++revision;
   // Keep the displayed image and timestamp until the replacement is decoded.
-  void loader.prepare(key).then(image=>{
+  ready=(exportAssets?exportAssets.decode(key):loader.prepare(key)).then(async image=>{
     if(epoch!==revision||!visible)return;
     if(!image){failedAt=Date.now();picture.hidden=true;picture.removeAttribute('src');stamp.textContent='';return;}
-    picture.src=key;picture.hidden=false;
+    picture.src=exportAssets?exportAssets.resolve(key):key;picture.hidden=false;
     picture.onload=()=>panel.dispatchEvent(new Event('snapshot-size'));
 picture.alt=`Camera snapshot · ${row.data?.name??'Camera'}`;
     name.textContent=row.data?.name??'Camera';
     const label=row.basis==='metadata'?'Captured':'Retrieved';
     stamp.textContent=`${formatTime(row.time/1000,{hour:'2-digit',minute:'2-digit'},zone)}`;
+    if(exportAssets){await picture.decode?.();if(epoch===revision)panel.dispatchEvent(new Event('snapshot-size'));}
     stamp.dateTime=new Date(row.time).toISOString();stamp.title=`${formatTime(row.time/1000,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'},zone)}`;
   });
-  if(archive){const next=(archive.records??[]).find(r=>r.time>row.time);if(next?.asset)void loader.prepare(next.asset,false);}
+  if(archive&&!exportAssets){const next=(archive.records??[]).find(r=>r.time>row.time);if(next?.asset)void loader.prepare(next.asset,false);}
 }
 setupFloatingWidget({id:'camera',storageKey:'radar-camera',width:420,height:275,minWidth:200,minHeight:130,maxHeight:640,startX:80,startY:100,onVisibility(value){visible=value;paint();}});
 async function refresh(){
@@ -47,6 +51,6 @@ async function refresh(){
 }
 export function updateCamera(value){
   input=value;desiredKey=`${value.hours}:${value.status?.camera?.source}:${value.status?.camera?.lastSuccess}`;
-  void refresh();paint();
+  if(!value.selected)void refresh();paint();
   return value.selected?.cameraHistory?.counts??(liveKey===desiredKey&&Date.now()-fetchedAt<45000?live?.counts:null);
 }
