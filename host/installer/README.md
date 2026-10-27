@@ -153,3 +153,5 @@ The manifest pins `v0.14.0`, source `5a97ab441122a7c06f604edd98edd06a55e0f33d`, 
 The new native-touch choice defaults Yes; No preserves the existing mode. Automated checks cover targeted XML preservation, backups, repeat/resume and old saved state. Twenty-eight installer and 25 display-control tests passed in isolated Linux, along with shell syntax/help and Screen bridge install/reinstall, permissions and authenticated socket checks. Saved installer snapshots still retain their selected app/runner, and ordinary reruns do not become upgrades.
 
 The fresh-card native-touch walkthrough is explicitly deferred. This remains an experimental installer path: later physical checks must cover Yes/No, alignment, reboot/resume and preservation on the applicable hardware. Existing-appliance touch acceptance and automated tests do not replace that walkthrough. Other older fresh-install hardware/resilience gaps remain open.
+
+[Installer CI 40433129024](https://github.com/alex-soul/pi-rain-radar/actions/runs/40433129024) passed against the final 0.14.0 pin commit `350f927`.

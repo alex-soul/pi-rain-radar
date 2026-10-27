@@ -6,7 +6,7 @@
 
 The Pi runs this exact image. Automated handover preserved settings/PIN, Compose mounts/environment/groups, Archive generation, schema 1 and 200 sampled historical records, with SQLite integrity intact. I confirmed fullscreen, layout and normal playback remained good after the final handover. A short startup sample showed 1,025 MiB available RAM, 307 MiB swap, 62.3°C, no throttling, zero app restarts/OOM and no failed services. This is not an extended soak or an enforced Docker memory-cap claim.
 
-The final installer pin uses the exact tag/source/index and verified hashes. Local Linux checks passed 28 installer and 25 display-control tests, shell syntax/help and isolated Screen bridge installation/socket checks. The fresh-card native-touch walkthrough is explicitly deferred; the installer stays experimental and existing saved snapshots retain their original release. The final pin CI result is recorded below when published.
+The final installer pin uses the exact tag/source/index and verified hashes. Local Linux checks passed 28 installer and 25 display-control tests, shell syntax/help and isolated Screen bridge installation/socket checks. The fresh-card native-touch walkthrough is explicitly deferred; the installer stays experimental and existing saved snapshots retain their original release. [Installer CI 40433129024](https://github.com/alex-soul/pi-rain-radar/actions/runs/40433129024) passed against pin commit `350f927`. A settled Pi sample showed 1,006 MiB available RAM, 57.9°C, app CPU 0.12% and no throttling/restarts/OOM.
 
 ## 0.14.0 accepted candidate — 27 October 2026
 
