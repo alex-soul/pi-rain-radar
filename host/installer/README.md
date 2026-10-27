@@ -39,7 +39,7 @@ The bootstrap resolves one public `main` commit, downloads all runner/MQTT files
 from that exact snapshot, and caches the complete bundle. The selected commit and
 application manifest are saved in `~/.local/state/pi-rain-radar/install.json`.
 Reboots/retries reuse that snapshot. `release.json` explicitly pairs this runner
-with published v0.13.0, its immutable image digest, and checksummed Compose/Power
+with published v0.14.0, its immutable image digest, and checksummed Compose/Power
 files from the release source commit. No `latest` app image or unrelated main
 helper is used. This supports prereleases without relying on GitHub's stable-only
 latest-release endpoint.
@@ -132,7 +132,7 @@ Pin validation on 29 September 2026: 22 installer and 21 display-control tests p
 
 The current development runner provisions local Screen controls even when MQTT is declined: a local display controller plus authenticated bridge and Screen Compose override. Its snapshot bundle includes both `install_bridge.py` and `bridge.py`; retries retain the cached runner and selected application manifest. MQTT adds its adapter to the same settings/controller.
 
-The checked-in app manifest pins published v0.13.0 to its verified image index digest and release source checksums. Both architecture startup/restart checks passed; I accepted RC2 and the final published image on my existing Pi. New installations receive Appliance → Screen; older saved installer snapshots retain their selected app release. Installer logic, Compose, Power/Screen helpers and the snapshot/resume contract are unchanged. Do not use `latest` or change existing saved installation targets during resume.
+Current application selection is owned by `release.json`, not this historical section. New installations receive Appliance → Screen; older saved installer snapshots retain their selected release. Do not use `latest` as the manifest pin or change existing saved installation targets during resume.
 
 Targeted Linux installer/display tests and isolated bridge installation passed, including restrictive umask and runtime socket access. The accepted private-controller Pi upgrade is not a fresh portable installation. Validate local control with MQTT declined, optional MQTT consistency, startup/reboot, touch wake and saved settings on the affected hardware route before reporting it accepted. Existing fresh Pi 4 and longer resilience gaps remain open.
 
@@ -145,3 +145,11 @@ On 9 October 2026, 25 installer and 25 display-control tests passed in isolated 
 ## 0.12.0 pin validation
 
 The 0.12.0 manifest pinned `v0.12.0`, source `ee3ac709feb40ebf3c879032de6d03787dfc621a`, and index `sha256:60622ed7410051411b5268f6e9b6e6cec579cb0ad8ba1142933b4566a0fa306a`. All four published file checksums were verified. Twenty-five installer and 25 display-control tests passed in isolated Linux, with shell syntax/help and isolated Screen bridge install/reinstall/authenticated socket checks. Release CI passed 422 application tests and fresh startup/restart on AMD64 and ARM64. The exact published image passed automated handover on the existing Pi after RC2 acceptance. Installer version, runner logic, Compose/Power/Screen files and saved-snapshot/resume behavior are unchanged; no new fresh-card walkthrough is claimed.
+
+## 0.14.0 pin validation — 27 October 2026
+
+The manifest pins `v0.14.0`, source `5a97ab441122a7c06f604edd98edd06a55e0f33d`, and image index `sha256:0be8467710a4cd333ab4bbe0cca4ceb43383a9732f653040bf5c68dad1afaf7a`. All four published-source checksums match. [Release CI](https://github.com/alex-soul/pi-rain-radar/actions/runs/40432294004) passed 474 application tests, both architecture builds and fresh startup/restart. I accepted RC2 and the exact final published image on my existing Pi 4 / 2 GB.
+
+The new native-touch choice defaults Yes; No preserves the existing mode. Automated checks cover targeted XML preservation, backups, repeat/resume and old saved state. Twenty-eight installer and 25 display-control tests passed in isolated Linux, along with shell syntax/help and Screen bridge install/reinstall, permissions and authenticated socket checks. Saved installer snapshots still retain their selected app/runner, and ordinary reruns do not become upgrades.
+
+The fresh-card native-touch walkthrough is explicitly deferred. This remains an experimental installer path: later physical checks must cover Yes/No, alignment, reboot/resume and preservation on the applicable hardware. Existing-appliance touch acceptance and automated tests do not replace that walkthrough. Other older fresh-install hardware/resilience gaps remain open.

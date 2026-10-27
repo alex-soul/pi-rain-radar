@@ -1,5 +1,13 @@
 # Validation and remaining work
 
+## 0.14.0 published-image acceptance — 27 October 2026
+
+[Release CI 40432294004](https://github.com/alex-soul/pi-rain-radar/actions/runs/40432294004) passed **474 tests**, AMD64/ARM64 builds and fresh startup/restart on both architectures. Tag/source: `v0.14.0` / `5a97ab441122a7c06f604edd98edd06a55e0f33d`. Published index and verified latest: `sha256:0be8467710a4cd333ab4bbe0cca4ceb43383a9732f653040bf5c68dad1afaf7a`. The final commit differs from accepted RC2 only in version metadata, documentation and gallery stills.
+
+The Pi runs this exact image. Automated handover preserved settings/PIN, Compose mounts/environment/groups, Archive generation, schema 1 and 200 sampled historical records, with SQLite integrity intact. I confirmed fullscreen, layout and normal playback remained good after the final handover. A short startup sample showed 1,025 MiB available RAM, 307 MiB swap, 62.3°C, no throttling, zero app restarts/OOM and no failed services. This is not an extended soak or an enforced Docker memory-cap claim.
+
+The final installer pin uses the exact tag/source/index and verified hashes. Local Linux checks passed 28 installer and 25 display-control tests, shell syntax/help and isolated Screen bridge installation/socket checks. The fresh-card native-touch walkthrough is explicitly deferred; the installer stays experimental and existing saved snapshots retain their original release. The final pin CI result is recorded below when published.
+
 ## 0.14.0 accepted candidate — 27 October 2026
 
 I accepted all four DEV batches and RC2 on my existing Pi 4 / 2 GB, then authorized publication as 0.14.0. The only observed cosmetic issue carried forward is the missing playback slider track in GIF export; its thumb and playback work. Grass remains at 1× for observation against real conditions, without a calibrated-accuracy claim.
