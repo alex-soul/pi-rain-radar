@@ -14,9 +14,9 @@ Cloud layers and shared Aviation Panels are delivered and accepted in [0.13.0](r
 - **Provider status link:** add the official [Aviation Weather Center status page](https://aviationweather.gov/tools/status/) alongside the existing Rainbow/OpenWeather status links, following the same external-link and kiosk behaviour. The [AWC API documentation](https://aviationweather.gov/data/api/) directs users there for updates (verified 13 October 2026). This is a provider-wide information page, not proof of this installation's connectivity or the selected station's report freshness; no machine-readable health API or extra status polling is assumed.
 - **Possible Stats for nerds additions:** review a compact Aviation section using existing telemetry. Candidate fields are station, separate METAR/TAF report ages and last successful checks, acquisition duration, failures/retry state and request counts where available. Exact fields and layout remain to agree; avoid extra provider calls merely to populate diagnostics.
 
-Review the UI first, then implement through the normal RC/Pi acceptance flow. Keep the accepted 0.13.0 runtime unchanged while planning these additions. Existing longer-term follow-ups below remain separately scoped.
+Review the UI first, then implement through the normal RC/Pi acceptance flow. These additions remain outside the accepted 0.14.0 release. Existing longer-term follow-ups below remain separately scoped.
 
-## After 0.12.0
+## After 0.12.0 (historical)
 
 I accepted RC2 on my Pi. Aviation, per-screen unit inheritance, one-hour dock trends, compact chart legends, cloud 40/60-minute freshness and cloud-only borrowing below 40 minutes are delivered. See [release notes](release-0.12.0.md). Observed-rain/forecast comparison remains postponed until there is enough useful rainfall data. Retain the dock and chart-value playgrounds for later reuse.
 
