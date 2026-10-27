@@ -10,15 +10,24 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.13.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.13.0) is the current pre-release.** I tested and accepted RC2 and the final published image on my Pi 4 / 2 GB. See [release notes](docs/release-0.13.0.md) and [validation](docs/validation.md). Release CI passed 450 tests and startup/restart checks on both architectures. The guided installer pins this verified release; its portable fresh-install/reboot route remains experimental.
+**[v0.14.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.14.0) is the current pre-release.** I tested and accepted RC2 on my Pi 4 / 2 GB. See [release notes](docs/release-0.14.0.md) and [validation](docs/validation.md) for build and published-image handover evidence. The guided installer remains experimental; the new native-touch choice still needs a fresh-card hardware walkthrough.
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
-## New in 0.13.0
+## New in 0.14.0
 
-- **A picture of the reported sky.** Cloud layers turns observed METAR cloud groups into a compact view of cloud bases and coverage, with vertical visibility and subtle CB/TCU cues. [Explore Aviation](docs/aviation.md).
-- **The panels you want.** One Aviation button controls METAR, TAF and Clouds. Shared Panels switches and predictable close/reopen behaviour make Clouds-only layouts straightforward.
-- **Fit your screen.** Resize down to 200×100px, choose metres or feet, and tune cloud size, texture and opacity. Archive reproduces each observation’s appearance.
+- **Will I need wellies?** A tunable 0–5 [Grass wetness estimate](docs/grass-wetness.md), with a five-blade indicator, full or minimal widget, dock and trends. Start at 1× and tune against what you see outside.
+- **Keep a weather moment.** [Export Archive playback as a GIF](docs/archive-gif.md) from your laptop browser: the current layout, a clean main map or a clean overview. Full 24-hour windows at 1280 × 720 are supported without discarding frames.
+- **Compare rain in the same units.** Overlay observed rainfall as a smooth line on the original forecast bars, with a labelled mm/h axis in Live and Archive. [How the comparison works](docs/observed-rain.md).
+- **A tidier screen and setup.** HA solar irradiance, optional native touch in the guided installer, and side buttons that flow into an extra column when space is tight.
+
+### Two storms worth keeping
+
+The back-to-back storms Austen and Boelo inspired GIF export. I watched Austen moving across the radar and did not want to lose it when history rolled on. These are my own Archive exports, with my screen layout and weather widgets, at **8× playback on repeat**.
+
+[![Storm Austen, radar and cloud playback preview](docs/images/gallery/storm-austen-2026.jpg)](https://github.com/alex-soul/pi-rain-radar/releases/download/v0.14.0/pi-rain-radar-uk-coventry-2026-storm-austen.gif)
+
+[Watch Austen — 42.6 MB GIF](https://github.com/alex-soul/pi-rain-radar/releases/download/v0.14.0/pi-rain-radar-uk-coventry-2026-storm-austen.gif) · [Watch Boelo — 34.1 MB GIF](https://github.com/alex-soul/pi-rain-radar/releases/download/v0.14.0/pi-rain-radar-uk-coventry-2026-storm-boelo.gif) · [Both previews in the gallery](docs/gallery.md#storm-replays)
 
 See [what’s next](docs/follow-ups.md) for planned improvements and ideas for future releases.
 
@@ -64,7 +73,7 @@ Settings stay in the existing data volume. The first upgrade to 0.7.0 resets old
 - **RainViewer or Rainbow Weather — or both.** Choose either provider for Main and Overview independently, so you can compare them or manually switch when one has problems.
 - **Optional Rainbow rain and cloud layers.** Usage depends on map geometry and enabled layers. Actual local counters and an optional request cap help track it; see [setup, costs and limits](docs/radar-providers.md).
 - **Explore up to 24 hours of radar history.** Scrub or replay a selected window from the local rolling archive (seven days by default, configurable), with optional provider labels. [Archive playback](docs/manual.md#look-back-with-archive) shows the observations actually available and builds as the app runs.
-- **Camera and historical weather.** Collect one direct or Home Assistant camera snapshots at a configurable one-to-ten-minute interval. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply all ten source readings, with optional OpenWeather fallback. See [setup](docs/manual.md#camera-setup).
+- **Camera and historical weather.** Collect one direct or Home Assistant camera snapshots at a configurable one-to-ten-minute interval. Replay it alongside saved readings and Rain forecast. Generic HA sensors can supply the ten weather readings, with optional OpenWeather fallback, plus HA-only accumulated rain and solar irradiance. See [setup](docs/manual.md#camera-setup).
 - **[Aviation weather](docs/aviation.md).** Raw METAR/TAF with code explanations, observed Cloud layers, shared panel controls and acquisition-based Archive replay.
 - **One radar server, multiple displays.** Each browser remembers its own buttons, layout and theme while sharing the same configured location and acquisition. Use it on your [home network](docs/quick-start.md#3-open-it-from-your-laptop), optionally [install it on phones and laptops or connect privately through Tailscale](docs/pwa.md), and see the [Android and Windows examples](docs/pwa-gallery.md).
 - **Playback that handles delays.** Live can reuse earlier radar for less than 30 minutes and automatically pause while waiting for enough data to resume. Missing observations remain visible; [Live and Archive rules](docs/playback-conventions.md) explain the difference.

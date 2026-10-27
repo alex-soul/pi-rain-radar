@@ -1,5 +1,13 @@
 # Upgrades and migration
 
+## 0.14.0
+
+Keep the same data volume, browser origin/profile and Power/Screen Compose overrides. Compatible Archive, keys, PIN, mappings and layouts are preserved; there is no archive reset or host-helper update. Solar irradiance and Grass calculation start disabled. Follow the [Grass setup guide](grass-wetness.md) to map the required HA sensors before enabling it. Old history without these readings remains unavailable.
+
+Forecast comparison is now **Archive → Options → Show actual rainfall**. It overlays observed interval averages on unchanged forecast bars instead of shifting/aggregating the time axis. The old negative-lead control is retired. Archive settings now have Window, Options and Other tabs; Export GIF is under Other. Its moved position is remembered in each browser.
+
+The installer's default-Yes native-touch choice applies to new guided setups. An app upgrade or ordinary rerun of an existing saved installer snapshot does not change touch mode or upgrade that snapshot's app selection. The fresh-card touch walkthrough remains experimental and deferred. [Release notes](release-0.14.0.md).
+
 ## 0.13.0
 
 Cloud layers shares your existing Aviation station, collection and retained METAR history. No new provider setup, history reset or host-helper change is required. Existing station, layout and visible raw panels are preserved; Clouds is selected for the next Aviation opening without appearing immediately. Fresh screens start with all three panels selected and hidden.

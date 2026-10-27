@@ -1,8 +1,14 @@
 # Release follow-ups
 
-## Next release — Aviation status and diagnostics
+## After 0.14.0
 
-Cloud layers and shared Aviation Panels are delivered and accepted in [0.13.0](release-0.13.0.md). The following additions are planned for the next release; they are not implemented in 0.13.0.
+- **GIF playback slider track:** the exported thumb can appear without its background line. Accepted as cosmetic for 0.14.0; review for 0.15.0 rather than delaying this release.
+- **Grass observation and tuning:** start all factors at 1× and compare the 0–5 estimate with conditions outside. The model is uncalibrated; follow the [tuning guide](grass-wetness.md#how-to-tune-it). Spreadsheet fitting remains deferred.
+- **Native-touch fresh installation:** the default-Yes/No installer choice has automated coverage, but its fresh-card physical walkthrough is explicitly deferred. Verify both choices, touch alignment, reboot/resume and preservation on supported hardware before calling that path accepted. Existing-appliance native touch acceptance is separate evidence.
+
+## Future release — Aviation status and diagnostics
+
+Cloud layers and shared Aviation Panels are delivered and accepted in [0.13.0](release-0.13.0.md). The following additions remain deferred after 0.14.0; they were not selected for its four implementation batches.
 
 - **Aviation status in the main menu:** add a small status LED using the established provider-status presentation. Reuse the existing shared METAR/TAF collection state; settle the combined indicator's handling of disabled, waiting, partial, stale and failed products during UI review. Keep collection health separate from which widgets are open, and provide hover/tap detail.
 - **Provider status link:** add the official [Aviation Weather Center status page](https://aviationweather.gov/tools/status/) alongside the existing Rainbow/OpenWeather status links, following the same external-link and kiosk behaviour. The [AWC API documentation](https://aviationweather.gov/data/api/) directs users there for updates (verified 13 October 2026). This is a provider-wide information page, not proof of this installation's connectivity or the selected station's report freshness; no machine-readable health API or extra status polling is assumed.

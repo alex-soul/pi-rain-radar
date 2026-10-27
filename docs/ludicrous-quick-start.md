@@ -8,7 +8,7 @@ You will put the parts together, prepare a memory card on your computer, then pa
 
 ![Pi, touchscreen, cooler, power supply and memory card laid out before assembly](images/ludicrous-quick-start/hardware-01.jpg)
 
-**Tested walkthrough:** I completed this guided installation on a Raspberry Pi 5 with 2 GB RAM, the official 7-inch Touch Display 2 and a fresh 128 GB card, including the optional Home Assistant controls. That physical walkthrough used app v0.8.0. New installs now pin v0.12.0, with automated installer/image checks and final published-image acceptance on my existing Pi. The changed local-Screen fresh-install/reboot route remains experimental; its fresh-card walkthrough is explicitly deferred. The installer is still a public test version. The new native-touch Yes/No and resume paths have automated coverage; physical validation of this installer change is still pending. Pi 4B is supported by the script and is the app's existing reference platform, but its fresh-card installer walkthrough is pending. The official 10-inch Touch Display 2 is Pi 5 only and remains best-effort, physically untested here. These assembly photos show the **7-inch display and Pi 5**.
+**Tested walkthrough:** I completed this guided installation on a Raspberry Pi 5 with 2 GB RAM, the official 7-inch Touch Display 2 and a fresh 128 GB card, including the optional Home Assistant controls. That physical walkthrough used app v0.8.0. New installs use the exact app release in the [installer manifest](../host/installer/release.json); see [current validation](validation.md) for automated checks and existing-Pi acceptance. The changed local-Screen fresh-install/reboot route remains experimental; its fresh-card walkthrough is explicitly deferred. The installer is still a public test version. The new native-touch Yes/No and resume paths have automated coverage; its fresh-card physical walkthrough is explicitly deferred. Pi 4B is supported by the script and is the app's existing reference platform, but its fresh-card installer walkthrough is pending. The official 10-inch Touch Display 2 is Pi 5 only and remains best-effort, physically untested here. These assembly photos show the **7-inch display and Pi 5**.
 
 Already using your Pi for other things? Use the [manual installation guide](raspberry-pi.md) instead. This guided route is for a freshly flashed, dedicated radar Pi.
 
@@ -335,7 +335,7 @@ Still stuck? See [troubleshooting](troubleshooting.md) or [open an issue](https:
 
 ## Local Screen controls in 0.10.0
 
-New installer runs pin verified **v0.12.0** and prepare local display controls without requiring MQTT. Use **Appliance → Screen** for brightness and sleep settings. Do not rerun an existing installation expecting an app upgrade; saved installs retain their selected release.
+New installer runs use the [pinned app release](../host/installer/release.json) and prepare local display controls without requiring MQTT. Use **Appliance → Screen** for brightness and sleep settings. Do not rerun an existing installation expecting an app upgrade; saved installs retain their selected release.
 
 With 0.10.0 and the Screen helper installed, set brightness and automatic sleep/idle timeout in **Appliance → Screen**, including when you declined MQTT. Automatic sleep starts off on new installations, with a saved 15-minute timeout. Touch wakes the screen. If MQTT is enabled, the shared settings stay synchronized with HA; Wake/Sleep buttons and screen-state reporting remain in MQTT. Restart/Shutdown move under **Appliance → Power**.
 

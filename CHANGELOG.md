@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0 — 27 October 2026
+
+- Tunable 0–5 Grass wetness, five-blade status button, full/minimal widget, dock/trends, explicit setup/warm-up/unavailable states and a complete user guide.
+- HA solar irradiance in W/m², acquisition-based freshness with original report provenance, and a compact sun/waves dock icon.
+- Browser-local Archive GIF export: current layout or clean main/overview map, inherited playback, quality/size/loop controls and independent button/handle hiding. Full-day 1280 × 720 exports retain all frames using progressive assets and chunked encoding.
+- Observed rainfall line on unchanged forecast bars and chronological axis, with mm/h labels in Live and Archive; replaces the negative-lead comparison slider.
+- Archive Window/Options/Other tabs and saved panel position; side-button overflow into another column around expanded controls.
+- Default-Yes native-touch installer option with No opt-out and saved-snapshot preservation. Fresh-card hardware validation remains deferred.
+- Austen and Boelo looping GIF showcase. The cosmetic missing slider track in GIFs is accepted and deferred.
+
+See [release notes](docs/release-0.14.0.md), [Grass guide](docs/grass-wetness.md) and [GIF guide](docs/archive-gif.md).
+
 ## 0.13.0 — 13 October 2026
 
 - Observed METAR Cloud layers with distinct coverage, vertical visibility haze, subtle CB/TCU shading and stable Live/Archive appearance.

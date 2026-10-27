@@ -1,5 +1,13 @@
 # Validation and remaining work
 
+## 0.14.0 accepted candidate — 27 October 2026
+
+I accepted all four DEV batches and RC2 on my existing Pi 4 / 2 GB, then authorized publication as 0.14.0. The only observed cosmetic issue carried forward is the missing playback slider track in GIF export; its thumb and playback work. Grass remains at 1× for observation against real conditions, without a calibrated-accuracy claim.
+
+RC2 passed **474/474 tests** locally and natively on ARM64, plus fresh startup/restart. A retained full-day export produced 145 frames at 1280 × 720 / 256 colours, including overview/clouds/camera/trends; the generated file was 41.85 MiB. Chunked encoding separately passed a 183,866,993-byte synthetic output test. Panel position survived close/reopen; live HA zero irradiance became eligible using fresh acquisition provenance. Settings/PIN, compatible history, schema and host-helper configuration were preserved.
+
+The native-touch installer choice has automated Yes/No/resume coverage. Its fresh-card hardware walkthrough is explicitly deferred while the installer remains experimental. Existing-appliance touch acceptance is separate evidence. These checks do not establish extended soak, Grass accuracy or local Pi GIF performance.
+
 ## 0.13.0 published-image acceptance — 13 October 2026
 
 [Release CI 38425742918](https://github.com/alex-soul/pi-rain-radar/actions/runs/38425742918) passed **450 tests**, AMD64/ARM64 builds and fresh startup/restart. Tag/source: `v0.13.0` / `8ba061171f191b4b476adf3d25a9c0002c82528a`. Published index and verified latest: `sha256:347afae88f73cfe7633fd2cd15ff1c39d88f84ea2ec6cd721b1e459a1dbb40b9`.

@@ -99,6 +99,8 @@ interrupted file writes, ownership preservation, pinned source hashes and option
 setup failures, plus the display policy/MQTT contracts. CI repeats these checks and
 verifies published source checksums. They do not establish fresh-hardware success.
 
+The new native-touch choice defaults Yes, with No retaining the current mode. Its automated Yes/No/resume checks do not replace physical validation; the fresh-card walkthrough is explicitly deferred for 0.14.0. Existing saved installs are not silently opted in.
+
 The first physical walkthrough is user-run: verify orientation/touch, resume after
 OS upgrade, app/default map, prompt-free kiosk after reboot, selected Power actions,
 six MQTT controls, OFF/ON timing, touch/Wake, broker reconnect and persistence.
@@ -142,4 +144,4 @@ On 9 October 2026, 25 installer and 25 display-control tests passed in isolated 
 
 ## 0.12.0 pin validation
 
-The manifest pins `v0.13.0`, source `ee3ac709feb40ebf3c879032de6d03787dfc621a`, and index `sha256:60622ed7410051411b5268f6e9b6e6cec579cb0ad8ba1142933b4566a0fa306a`. All four published file checksums were verified. Twenty-five installer and 25 display-control tests passed in isolated Linux, with shell syntax/help and isolated Screen bridge install/reinstall/authenticated socket checks. Release CI passed 422 application tests and fresh startup/restart on AMD64 and ARM64. The exact published image passed automated handover on the existing Pi after RC2 acceptance. Installer version, runner logic, Compose/Power/Screen files and saved-snapshot/resume behavior are unchanged; no new fresh-card walkthrough is claimed.
+The 0.12.0 manifest pinned `v0.12.0`, source `ee3ac709feb40ebf3c879032de6d03787dfc621a`, and index `sha256:60622ed7410051411b5268f6e9b6e6cec579cb0ad8ba1142933b4566a0fa306a`. All four published file checksums were verified. Twenty-five installer and 25 display-control tests passed in isolated Linux, with shell syntax/help and isolated Screen bridge install/reinstall/authenticated socket checks. Release CI passed 422 application tests and fresh startup/restart on AMD64 and ARM64. The exact published image passed automated handover on the existing Pi after RC2 acceptance. Installer version, runner logic, Compose/Power/Screen files and saved-snapshot/resume behavior are unchanged; no new fresh-card walkthrough is claimed.

@@ -15,3 +15,9 @@ GIF uses a limited palette and delays rounded to 10 milliseconds. Photos, gradie
 The exporter processes one frame at a time and uses one encoding worker. The output limit is 8 megapixels per frame. Source assets are retained only for the current transition and static composition, with a 128 MB working-set limit rather than a whole-window limit. Encoded frames are transferred into browser-managed Blob chunks; the worker does not retain the full GIF, and there is no fixed 128 MB output cap. Full 24-hour windows at 1280 × 720 retain all frames and the selected quality. Available browser memory/storage and rendering time still depend on the device and content. It stops with an explanation rather than silently reducing a window or its quality. The asset store is released after generation; the worker is terminated on completion or cancellation. Actual browser memory also includes decoded layers, the DOM capture and temporary encoding buffers. A smaller output or shorter window reduces work. Laptop validation does not establish Pi performance; Pi acceptance belongs to the RC hardware check.
 
 Capture uses locally bundled [html-to-image](https://github.com/bubkoo/html-to-image) and encoding uses [gifenc](https://github.com/mattdesl/gifenc). Their MIT licences and the small capture adaptations are recorded in `public/vendor/`.
+
+## Storm showcase and known limitation
+
+The [Austen and Boelo gallery](gallery.md#storm-replays) contains two full-day, 1280 × 720 exports at 8× on repeat. Those storms inspired this feature.
+
+In 0.14.0, a Current view export can show the playback slider thumb without its background track. This is an accepted cosmetic limitation; frame selection and playback still work. A fix is deferred to a future release.

@@ -271,4 +271,4 @@ System Status shows filesystem Used/Total with a shaded capacity bar. It represe
 
 ## Grass wetness
 
-See [Grass wetness](grass-wetness.md) for the 0–5 estimate, required weather readings, droplet indicator, widget and sensitivity controls.
+See [Grass wetness](grass-wetness.md) for the 0–5 estimate, required readings, five-blade grass indicator, full/minimal widget and practical tuning guide with the exact formula.
