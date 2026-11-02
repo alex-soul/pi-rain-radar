@@ -15,7 +15,7 @@ This is an **uncalibrated weather-based estimate**, not a grass sensor or a soil
 | 4 | Very wet | Soggy conditions; wellies recommended. |
 | 5 | Soaked | Extreme wetness, potentially standing water. |
 
-There are six possible values, so the middle lies **between 2 and 3**. A score of 2 fills two of five grass blades; 3 fills three. Errors around that boundary are less consequential than calling very soggy ground dry. A 5 is the top of an estimate, not a measurement or prediction of puddle depth.
+The icon and compact widget use six integer grades. The top dock and Weather trends show the underlying sensitivity-adjusted score to one decimal place, clamped to 0–5; this improves visibility, not accuracy. Old archive records are not rewritten. The middle lies **between 2 and 3**. A score of 2 fills two of five grass blades; 3 fills three. Errors around that boundary are less consequential than calling very soggy ground dry. A 5 is the top of an estimate, not a measurement or prediction of puddle depth.
 
 ## Start here
 

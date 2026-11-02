@@ -26,6 +26,16 @@ The `pi-rain-radar_radar-data` named volume preserves cached state across restar
 
 ## Laptop preview and review
 
+### Grass Lab preview
+
+Start the scenario studio, then open [Grass Lab](http://127.0.0.1:3091/__grass-lab). This experimental laptop/phone layout uses three days of clearly labelled synthetic weather and illustrative observations. The production reservoir function is shared with the browser replay; no live settings or provider requests are involved.
+
+Move the seven sliders to compare an alternative with the fixed recorded curve. The visible 12-hour, 24-hour and three-day ranges all use the full three-day replay, starting with the documented 2.5 moisture and normal warm-up. Hover or scrub to inspect a moment. Observation dots and the table show the as-of estimate, with a maximum ten-minute pairing age. Difference figures describe this illustrative dataset; they do not validate a calibration.
+
+Test observation entry (0–5, optional note, now by default), a corrected timestamp, refresh persistence, both themes and narrow screens. Preview observations are saved in `grass-lab.json` inside the printed disposable fixture directory. Keep that directory or use **Export experiment** to retain inputs, observations and settings. Restarting the studio normally creates a new fixture; this is not yet the production Pi observation store, spreadsheet migration or Tailscale deployment.
+
+For the other 0.15.0 changes, use Grass visual history for decimal dock/trend values and GIF exports; Aviation interrupted/missing cases for Status; and Archive playback to confirm Stats remains current. Preserve existing scenario IDs and cases.
+
 ### Reusable scenario studio
 
 Use the retained [Widget playground framework](widget-playground.md) for new widgets and visual refinements: realistic stage, synthetic scenarios, separate user/DEV controls, standard interactions, immediate feedback, saved/exportable settings and an explicit design-to-spec handover. Preserve this tooling beyond any individual release; cleanup stops temporary runtimes, not the framework or its examples.

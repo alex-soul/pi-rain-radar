@@ -21,3 +21,5 @@ Capture uses locally bundled [html-to-image](https://github.com/bubkoo/html-to-i
 The [Austen and Boelo gallery](gallery.md#storm-replays) contains two full-day, 1280 × 720 exports at 8× on repeat. Those storms inspired this feature.
 
 In 0.14.0, a Current view export can show the playback slider thumb without its background track. This is an accepted cosmetic limitation; frame selection and playback still work. A fix is deferred to a future release.
+
+The playback track and thumb are drawn explicitly in the export clone, including missing-slot bands, because native range pseudo-elements are not reliably rasterized. The live slider is unchanged.

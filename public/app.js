@@ -1,3 +1,4 @@
+import {paintIntegrationHealth} from './integration-health.js';
 import {setupSettingsHelp} from './settings-help.js';
 import {setupArchiveGif} from './archive-gif.js';
 import {cameraAt} from './camera-model.js';
@@ -227,6 +228,7 @@ function paintStatus() {
   updateLayerAvailability(status,historyWindow);
   const cameraCounts=updateCamera({status,selected:historyWindow,time:displayed?.time,hours:playbackHours()});
   paintAttribution();
+  if(!gifSession)paintIntegrationHealth(status,Date.now(),!serverReachable||!statsReceivedAt||Date.now()-statsReceivedAt>45000);
   if(!gifSession)updateStats({status,cameraCounts, reachable:serverReachable, receivedAt:statsReceivedAt, selected:historyWindow, hours:playbackHours(), loading:historyLoading});
   if(historyWindow&&displayed&&weatherReplay){
     paintWeather(weatherReplay.weather(displayed.time),displayed.time*1000,{historical:true,operational:serverReachable?status?.weather:null});

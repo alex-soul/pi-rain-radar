@@ -1,3 +1,4 @@
+import {createGrassLab} from './dev-grass-lab.mjs';
 import {rainComparisonFixture} from './dev-rain-comparison.mjs';
 import {createDevAviation} from './dev-aviation.mjs';
 import {aviationReviewReports} from './dev-aviation-ui-fixture.js';
@@ -70,6 +71,7 @@ await seedStore.close();
 // Optional local fixture settings carry-over; never use a production data folder.
 if(process.env.RADAR_DEV_SETTINGS_FROM){
   const previous=process.env.RADAR_DEV_SETTINGS_FROM;
+  try{await cp(join(previous,'grass-lab.json'),join(directory,'grass-lab.json'));}catch(e){if(e.code!=='ENOENT')throw e;}
   for(const relative of ['settings','camera-fixture/settings','weather-fixture/policy.json','aviation-fixture/settings']){
     await mkdir(join(directory,relative,'..'),{recursive:true});
     await cp(join(previous,relative),join(directory,relative),{recursive:true});
@@ -126,12 +128,14 @@ function filterWindow(data) {
   };
   return {...data,frames,frame:frames.at(-1)??null,coverage,playable:frames.length,complete:coverage.every(c=>c.pending||(c.main&&c.overview)),counts:Object.fromEntries(['main','overview'].map(role=>[role,{...incidents(role),available:coverage.filter(c=>c[role]).length,missing:coverage.filter(c=>!c[role]&&!c.pending).length}]))};
 }
+const grassLab=await createGrassLab(directory);
 const server=http(async(req,res)=>{
   try {
     const path=new URL(req.url,'http://127.0.0.1:3091');
+    if(await grassLab(req,res,path))return;
     if((trial||path.pathname==='/api/settings/display')&&req.method==='POST'&&path.pathname.startsWith('/api/settings/')&&(req.headers['content-type']!=='application/json'||req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host||req.headers['sec-fetch-site']==='cross-site')){res.writeHead(403);return res.end('{}');}
     if(scenario==='archive-rollover'&&path.pathname.startsWith('/archive/media/')&&Number(path.pathname.split('/').at(-1).split('-')[0])<(end-21600)*1000){res.writeHead(404,{'Cache-Control':'no-store'});return res.end('Synthetic rolled image');}
-    const controlAssets={'/__dock':['dev-dock.html','text/html'],'/__dock.js':['dev-dock.js','text/javascript'],'/__dock.css':['dev-dock.css','text/css'],'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
+    const controlAssets={'/__grass-lab':['dev-grass-lab.html','text/html'],'/__grass-lab.js':['dev-grass-lab.js','text/javascript'],'/__grass-lab.css':['dev-grass-lab.css','text/css'],'/__dock':['dev-dock.html','text/html'],'/__dock.js':['dev-dock.js','text/javascript'],'/__dock.css':['dev-dock.css','text/css'],'/__screen':['dev-screen.html','text/html'],'/__dev/screen.js':['dev-screen.js','text/javascript'],'/__dev/astronomy.js':['dev-astronomy.js','text/javascript'],'/__dev/astronomy.css':['dev-astronomy.css','text/css'],'/__archive-weather':['dev-archive-weather.html','text/html'],'/__archive-weather.js':['dev-archive-weather.js','text/javascript'],'/__archive-weather.css':['dev-archive-weather.css','text/css'],'/__dev/style.css':['dev-controls.css','text/css'],'/__dev/controls.js':['dev-controls.js','text/javascript']};
     Object.assign(controlAssets,{'/__dev/chart-values.js':['dev-chart-values.js','text/javascript'],'/__dev/chart-values.css':['dev-chart-values.css','text/css'],'/__cloud-layers.js':['dev-cloud-layers.js','text/javascript'],'/__cloud-layers-model.js':['dev-cloud-layers-model.js','text/javascript'],'/__cloud-layers.css':['dev-cloud-layers.css','text/css']});
     if(path.pathname==='/__aviation-ui-data'){
       res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(aviationReviewReports()));
@@ -150,7 +154,7 @@ const server=http(async(req,res)=>{
     }
     Object.assign(controlAssets,{'/__aviation-ui.js':['dev-aviation-ui.js','text/javascript'],'/__aviation-ui.css':['dev-aviation-ui.css','text/css'],'/public/cloud-layers-model.js':['../public/cloud-layers-model.js','text/javascript']});
     for(const file of ['aviation-ui.js','aviation-group-model.js','cloud-widget.js','cloud-layers-model.js','cloud-layers-render.js','cloud-layers.css'])controlAssets['/'+file]=['../public/'+file,file.endsWith('.css')?'text/css':'text/javascript'];
-    if(controlAssets[path.pathname]) {const [file,type]=controlAssets[path.pathname];res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});return res.end(await readFile(new URL(file,import.meta.url)));}
+    if(controlAssets[path.pathname]) {res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'");const [file,type]=controlAssets[path.pathname];res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});return res.end(await readFile(new URL(file,import.meta.url)));}
     if(path.pathname==='/__dev/chart-values-data'){
       const chartEnd=Math.floor(Date.now()/60000)*60,fixture=trendFixture({start:chartEnd-7200,end:chartEnd});
       fixture.weather={...fixture.weather,...fixture.weatherHistory.presentations.at(-1).owm};
@@ -338,6 +342,7 @@ const server=http(async(req,res)=>{
         const {weatherPolicy,camera,cameraHistory}=data;
         data={...syntheticAvailability(data,{scenario:'availability-healthy',archive:path.pathname==='/api/archive'}),weatherPolicy,camera,cameraHistory};
       }
+      if(path.pathname==='/api/status')data.serverTime=Date.now();
       if(scenario.startsWith('grass-'))data.weatherHistory={...data.weatherHistory,...devWeather.history()};
       if(scenario==='weather-trends')data=trendFixture(data);
       if(scenario.startsWith('rain-'))data=rainComparisonFixture(data,scenario,end);

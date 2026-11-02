@@ -9,7 +9,7 @@ test('camera replay looks back inclusively across sources, never forward, and co
   assert.equal(cameraAt(records,999999),null);assert.equal(cameraAt(records,1299999).source,'old');assert.equal(cameraAt(records,1900000).source,'new');assert.equal(cameraAt(records,1900001),null);
   assert.deepEqual(cameraWindowCounts(records,1000001,1500000),{metadata:0,acquisition:1});
   const snapshot=statsSnapshot({status:{camera:{state:'fresh'}},selected:{hours:24,end:5000},hours:2,cameraCounts:{metadata:12,acquisition:3}});
-  assert.equal(snapshot.windowLabel,'Archive · 24 h');assert.equal(snapshot.camera.state,'fresh');assert.deepEqual(snapshot.cameraCounts,{metadata:12,acquisition:3});
+  assert.equal(snapshot.windowLabel,undefined);assert.equal(snapshot.camera.state,'fresh');assert.equal(snapshot.cameraCounts,undefined);
 });
 test('attribution follows visible actual or expected-gap sources, independent of background providers',()=>{
   const args={frame:{source:'rainviewer',expectedSources:{overview:'rainbow'}},currentSources:{main:{source:'rainbow'}},archive:true};

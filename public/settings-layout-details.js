@@ -52,6 +52,7 @@ export function setupReviewRadar(){
  providerHeading.before(providerGroup);
  providerGroup.append(providerHeading,document.querySelector('.provider-links'));
  providerGroup.querySelector('.provider-links').append(make('<a href="https://status.rainbow.ai/" target="_blank" rel="noopener noreferrer">Rainbow service status</a>'));
+ providerGroup.querySelector('.provider-links').append(make('<a href="https://aviationweather.gov/tools/status/" target="_blank" rel="noopener noreferrer">Aviation Weather Center status</a>'));
  const originalMapStatus=new Map();
  function paint(){
   for(const provider of ['rainviewer','rainbow']){

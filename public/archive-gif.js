@@ -1,3 +1,4 @@
+import {cloneExportTimeline} from './gif-timeline.js';
 import {setupSettingsHelp} from './settings-help.js';
 import {dockOutline} from './weather-format.js';
 import {gifPlan} from './archive-gif-model.js';
@@ -71,6 +72,7 @@ export function setupArchiveGif(playback){
       style:{position:'relative',left:'0',top:'0',margin:'0',transform:'none',width:dimensions.width+'px',height:dimensions.height+'px'},
       onCloneNode(original,clone){
         if(!(original instanceof Element))return;
+        cloneExportTimeline(original,clone);
         const saved=frozen.get(original);if(saved)for(const [key,value]of Object.entries(saved))clone.style.setProperty(key,value);
         clone.style?.setProperty('animation','none');clone.style?.setProperty('transition','none');
         if(options.mode==='current'){

@@ -59,7 +59,7 @@ export function paintWeatherTrends(input){
    const extrema=chartExtrema(segments[id]),captions=[],values=[];
    for(const kind of ['min','max']){
     const point=extrema[kind],name=(kind==='min'?'Min':'Max')+(id==='rainAccumulation'?' total':'');
-    const precision=['temperature','dew','depression','uv'].includes(id)?1:id==='rainAccumulation'?(unit==='mm'?1:2):id==='visibility'?1:id==='pressure'&&unit!=='hPa'?2:0;
+    const precision=['temperature','dew','depression','uv','grassWetness'].includes(id)?1:id==='rainAccumulation'?(unit==='mm'?1:2):id==='visibility'?1:id==='pressure'&&unit!=='hPa'?2:0;
     const value=point?point.value.toFixed(precision):'—';values.push(value);
     const caption=`${name} ${value}${point&&unit?' '+unit:''}`;
     captions.push(point?`${caption} · ${formatTime(point.time,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'},zone)} · ${point.source}`:'No stored readings in this chart window');

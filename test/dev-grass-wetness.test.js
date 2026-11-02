@@ -14,6 +14,11 @@ test('grass scenario initialization is idempotent and retains chart history and 
  await dev.scenario('grass-wet');await dev.configure('/initialize',{units:{}});
  const now=Date.now(),weather={configured:true,fetchedAt:now,data:{current:{time:Math.floor(now/1000)}}};
  const live=dev.status(weather,'grass-wet');assert.equal(live.weather.presentation.grassWetness.intensity,5);
+ const decimalState=structuredClone(live.weather);
+ Object.assign(decimalState.presentation.grassWetness,{moisture:1.234,intensity:2,parameters:{sensitivity:2}});
+ const decimal=weatherReadings(decimalState,Date.now()).grassWetness;
+ assert.equal(decimal.value,2,'integer icon grade stays unchanged');assert.equal(decimal.displayValue,2.468);assert.equal(decimal.text,'2.5');
+ assert.equal(weatherReadings(decimalState,Date.now()+610000).grassWetness.displayValue,null,'stale is not zero');
  const before=dev.history();assert.equal(before.presentations.length,13);
  await dev.configure('/weather',{grassWetness:{sensitivity:.25}});
  await dev.configure('/initialize',{units:{}});

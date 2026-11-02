@@ -115,7 +115,7 @@ const staticFiles = new Map([
   ['/screen-display.js',['screen-display.js','text/javascript']],
   ['/reading-units.js',['reading-units.js','text/javascript']],
   ['/chart-explanations.js',['chart-explanations.js','text/javascript']],
-  ...['grass-wetness-ui.js','grass-wetness-settings.js','grass-wetness-settings-ui.js'].map(file=>['/'+file,[file,'text/javascript']]),
+  ...['grass-replay.js','grass-wetness-model.js','integration-health.js','gif-timeline.js','grass-wetness-ui.js','grass-wetness-settings.js','grass-wetness-settings-ui.js'].map(file=>['/'+file,[file,'text/javascript']]),
   ['/grass-wetness.css',['grass-wetness.css','text/css']],
   ['/aviation-widget.js',['aviation-widget.js','text/javascript']],
   ['/aviation-model.js',['aviation-model.js','text/javascript']],

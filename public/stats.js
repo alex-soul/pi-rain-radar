@@ -1,3 +1,4 @@
+import {integrationHealth} from './integration-health.js';
 import { setupFloatingWidget } from './floating-widget.js';
 import { statsSnapshot } from './stats-format.js';
 import { formatTime } from './time.js';
@@ -25,15 +26,7 @@ function render() {
     row(list,'Latest observation',source?.time ? `${clock(source.time*1000)} · ${Math.max(0,Math.floor((s.now-source.time*1000)/60000))} min ago`:'Unavailable');
     row(list,'Last check',clock(source?.checkedAt));
     row(list,'Next check (estimate)',activity ?? clock(source?.nextCheckAt));
-    column.append(list,element('h4',s.windowLabel));
-    const c=s.counts?.[role],counts=element('dl','');
-    row(counts,'Window ending',clock(s.end == null ? null : s.end*1000));
-    row(counts,'Available / missing',c?`${c.available} / ${c.missing}`:'Unavailable');
-    const known=c?.tracked>0;
-    row(counts,'Gaps seen',known?String(c.gapsSeen):'Untracked');
-    row(counts,'Late arrivals',known?String(c.lateArrivals):'Untracked');
-    row(counts,'Incident tracking',known?`${c.tracked} of ${c.total} slots${c.tracked<c.total?' · partial':''}`:'No recorded history');
-    column.append(counts);
+    column.append(list);
     grid.append(column);
   }
   const clouds=input.status?.clouds,cloudColumn=element('div',''),cloudInfo=element('dl','');
@@ -62,14 +55,22 @@ function render() {
   cameraColumn.append(element('strong','Camera'));
   row(cameraInfo,'Acquisition',s.stale?'Last received':camera?.state??'Unavailable');
   row(cameraInfo,'Last collection',clock(camera?.lastSuccess));row(cameraInfo,'Next collection',clock(camera?.nextCollection));
-  cameraColumn.append(cameraInfo,element('h4',s.windowLabel));
-  const cameraWindow=element('dl','');row(cameraWindow,'Timestamps · Metadata / Acquisition',s.cameraCounts?`${s.cameraCounts.metadata} / ${s.cameraCounts.acquisition}`:'Unavailable');
-  cameraColumn.append(cameraWindow);grid.append(cameraColumn);
-  const provider=element('div',''),usageList=element('dl',''),usage=input.status?.clouds?.usage??s.rainbow;
-  provider.append(element('strong','Rainbow · measured usage'));
-  row(usageList,'Month',usage?.month??'Unavailable');row(usageList,'Requests this month',usage?.requests??'Unavailable');row(usageList,'Tiles this month',usage?.tiles??'Unavailable');
-  const limit=input.status?.stats?.rainbow?.monthlyLimit;row(usageList,'Monthly request limit',limit==null?'No cap':String(limit));if(limit!=null&&usage)row(usageList,'Requests remaining',String(Math.max(0,limit-usage.requests)));
-  provider.append(usageList);grid.append(provider);
+  cameraColumn.append(cameraInfo);grid.append(cameraColumn);
+  const health=integrationHealth(input.status,s.now);
+  for(const [key,title] of [['aviation','Aviation'],['grass','Grass wetness']]){
+    const column=element('div',''),list=element('dl',''),item=health[key];
+    column.append(element('strong',title));
+    row(list,'Status',s.stale?'Last received · '+item.label:item.label);
+    if(key==='aviation'){
+      row(list,'Station',input.status?.aviation?.station??'Unavailable');
+      for(const product of item.products){row(list,product.label,product.description);row(list,product.label+' last check',clock(product.lastSuccess));}
+    }else{
+      row(list,'Estimate',item.reading?.text??'—');
+      row(list,'Calculated',clock(item.reading?.time));
+      row(list,'Detail',item.detail);
+    }
+    column.append(list);grid.append(column);
+  }
   data.replaceChildren(grid);
 }
 setupFloatingWidget({id:'stats',storageKey:'radar-stats',width:1000,minWidth:280,maxWidth:1100,height:600,maxHeight:640,minHeight:220,startX:80,startY:160,onVisibility(value){visible=value;render();}});

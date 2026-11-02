@@ -14,7 +14,8 @@ export function grassPreviewHistory(template,end){
   const snapshot=structuredClone(template),ms=at*1000;
   for(const observation of Object.values(snapshot.observations)){observation.time=ms;observation.receivedAt=ms;if(observation.resetAt)observation.resetAt=ms-3600000;}
   snapshot.observedRain=selectObservedRain(snapshot.policy,snapshot.observations,ms);
-  snapshot.grassWetness={...snapshot.grassWetness,eligible:true,intensity:levels[Math.floor((at-start)/1200)%levels.length],calculatedAt:ms,startedAt:start*1000,modelVersion:'dev-visual-only',reason:'Synthetic visual preview · illustrative score, not calculated from weather.'};
+  const level=levels[Math.floor((at-start)/1200)%levels.length];
+  snapshot.grassWetness={...snapshot.grassWetness,moisture:level+(level===5?-.4:.4)*((at-start)%1200)/1200,parameters:{...snapshot.grassWetness?.parameters,sensitivity:1},eligible:true,intensity:level,calculatedAt:ms,startedAt:start*1000,modelVersion:'dev-visual-only',reason:'Synthetic visual preview · illustrative score, not calculated from weather.'};
   presentations.push({...snapshot,time:at});
  }
  return presentations;
