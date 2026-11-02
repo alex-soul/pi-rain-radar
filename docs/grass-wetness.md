@@ -15,7 +15,7 @@ This is an **uncalibrated weather-based estimate**, not a grass sensor or a soil
 | 4 | Very wet | Soggy conditions; wellies recommended. |
 | 5 | Soaked | Extreme wetness, potentially standing water. |
 
-The icon and compact widget use six integer grades. The top dock and Weather trends show the underlying sensitivity-adjusted score to one decimal place, clamped to 0–5; this improves visibility, not accuracy. Old archive records are not rewritten. The middle lies **between 2 and 3**. A score of 2 fills two of five grass blades; 3 fills three. Errors around that boundary are less consequential than calling very soggy ground dry. A 5 is the top of an estimate, not a measurement or prediction of puddle depth.
+The icon and five-bar indicators use six integer grades. The full widget, top dock and Weather trends show the underlying sensitivity-adjusted score to one decimal place, clamped to 0–5; this improves visibility, not accuracy. Old archive records are not rewritten. The middle lies **between 2 and 3**. A score of 2 fills two of five grass blades; 3 fills three. Errors around that boundary are less consequential than calling very soggy ground dry. A 5 is the top of an estimate, not a measurement or prediction of puddle depth.
 
 ## Start here
 
@@ -37,7 +37,7 @@ Both HA values are acquired on the existing collection cycle, normally every fiv
 
 ## Read the widget
 
-The five-blade icon fills from left to right, using the same colour for every active blade. The full widget shows the integer, a short interpretation and a labelled 0–5 rail. It follows the normal drag, resize, corner controls, theme, opacity and font-size settings.
+The five-blade icon fills from left to right, using the same colour for every active blade. The full widget shows one decimal number, the descriptive heading and five unlabelled bars. It has no denominator or secondary advice line. At 100% font size the number is 28 px, matching the current-time clock. Zero fills no bars; five fills all five. It follows the normal drag, resize, corner controls, theme, opacity and font-size settings.
 
 Open the widget's settings cog and enable **Minimalistic widget** for **five bars only**. Zero fills none; five fills all five. This mode can shrink to 40 px high. Returning to the full layout restores its larger minimum height. Corner controls still appear on interaction.
 

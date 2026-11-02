@@ -1,4 +1,5 @@
 import {createGrassLab} from './dev-grass-lab.mjs';
+import {gunzipSync} from 'node:zlib';
 import {rainComparisonFixture} from './dev-rain-comparison.mjs';
 import {createDevAviation} from './dev-aviation.mjs';
 import {aviationReviewReports} from './dev-aviation-ui-fixture.js';
@@ -76,6 +77,14 @@ if(process.env.RADAR_DEV_SETTINGS_FROM){
     await mkdir(join(directory,relative,'..'),{recursive:true});
     await cp(join(previous,relative),join(directory,relative),{recursive:true});
   }
+}
+// Explicit read-only local export, separate from production and normal demo data.
+if(process.env.RADAR_DEV_GRASS_DATA){
+  const source=process.env.RADAR_DEV_GRASS_DATA,bytes=await readFile(source);
+  const data=JSON.parse((source.endsWith('.gz')?gunzipSync(bytes):bytes).toString('utf8'));
+  if(!data.samples?.length||!data.observations||data.validation?.mismatches!==0)throw Error('Use a verified Grass Lab import');
+  try{await cp(join(directory,'grass-lab.json'),join(directory,'grass-lab-before-import.json'));}catch(e){if(e.code!=='ENOENT')throw e;}
+  await writeFile(join(directory,'grass-lab.json'),JSON.stringify(data));
 }
 const reservation=net();reservation.listen(0,'127.0.0.1');await once(reservation,'listening');
 const internalPort=reservation.address().port;await new Promise(r=>reservation.close(r));

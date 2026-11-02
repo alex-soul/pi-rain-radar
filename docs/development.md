@@ -34,6 +34,18 @@ Move the seven sliders to compare an alternative with the fixed recorded curve. 
 
 Use the separate [observation page](http://127.0.0.1:3091/__grass-observe) on a narrow screen: 0–5 intensity, optional note, now by default, with an optional corrected timestamp. It loads only the form assets and shared labels, fetches no history, and performs no replay. Save sends only intensity, observation time and note. Opening the lab later loads saved entries for comparison. Check save failure recovery, refresh persistence and both lab themes. Preview observations are saved in `grass-lab.json` inside the printed disposable fixture directory. Keep that directory or use **Export experiment** to retain inputs, observations and settings. When carrying an older three-day fixture forward with `RADAR_DEV_SETTINGS_FROM`, synthetic weather and example observations are regenerated over seven days while manually entered observations are retained unchanged. Restarting the studio normally creates a new fixture; this is not yet the production Pi observation store, spreadsheet migration or Tailscale deployment.
 
+For a real-data dev review, take a bounded read-only export of presentation snapshots through the existing weather-history API (use the active map ID, at most 24 hours per request, and deduplicate the overlapping lookback). Keep raw exports and personal observations outside this public repository. Read the tracker as values, preserving the source cells, explicit year and timezone. Run:
+
+```sh
+node scripts/grass-lab-import.mjs history.json tracker.json recorded.json.gz
+```
+
+The history envelope supplies `capturedAt`, `requestedStart`, `appVersion` and ordered `presentations`. The tracker envelope supplies `spreadsheetId`, `sheet`, `year`, `timeZone` and header-first `values`. The importer keeps only model inputs, pseudonymizes source/location identities, preserves minute-precision observations and separates settings-note markers. It verifies archived moisture, decimal score, eligibility, grade, model version and warm-up origin against the production formula; a mismatch aborts the import. If the export begins mid-run, it reconstructs the starting state from the first saved estimate and its provenance. Output creation refuses to overwrite an existing file.
+
+Start the studio with `RADAR_DEV_GRASS_DATA` pointing to that verified JSON or gzip file. This loads a local snapshot once; it never polls or changes the appliance. The previous carried-over lab file is preserved as `grass-lab-before-import.json`. Subsequent restarts should use only `RADAR_DEV_SETTINGS_FROM` to retain new preview entries, not reapply the original import. Normal startup without either option still provides the synthetic lab and all studio scenarios.
+
+The recorded-data lab opens with replay following historical settings changes. Sliders show the latest recorded profile; moving one applies a single alternative profile throughout the retained input series. **Reset** returns to the historical profile changes. Chart windows only crop the view, and irregular input timestamps drive inspection. Tracker settings notes appear as markers; they do not become wetness observations. This is a frozen dev snapshot, not production storage, a live subscription or ongoing spreadsheet synchronization.
+
 For the other 0.15.0 changes, use Grass visual history for decimal dock/trend values and GIF exports; Aviation interrupted/missing cases for Status; and Archive playback to confirm Stats remains current. Preserve existing scenario IDs and cases.
 
 ### Reusable scenario studio

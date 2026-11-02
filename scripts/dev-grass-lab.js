@@ -1,10 +1,11 @@
 import {grassControls} from '/grass-wetness-settings.js';
+import {readingValues} from '/reading-units.js';
 import {replayGrass,alignedGrass,observationComparison} from '/grass-replay.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
-let data,parameters,candidate=[],hours=72,selected=0,replayMs=0,frame=0;
+let data,parameters,candidate=[],hours=72,selected=0,replayMs=0,frame=0,recordedMode=false;
 const fmt=value=>Number.isFinite(value)?value.toFixed(1):'—';
-const stamp=time=>new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(time);
-const clock=time=>new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit'}).format(time);
+const stamp=time=>new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:data?.timeZone}).format(time);
+const clock=time=>new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit',timeZone:data?.timeZone}).format(time);
 const error=message=>{$('error').textContent=message;$('error').hidden=!message;};
 function element(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
 function svg(tag,attributes,parent=$('chart')){const node=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attributes))node.setAttribute(k,v);parent.append(node);return node;}
@@ -26,17 +27,19 @@ function chart(){
     const circle=svg('circle',{cx:x(observation.observedAt),cy:y(observation.intensity),r:5.5,class:'observation-dot'},plot);
     const title=svg('title',{},circle);title.textContent=`${stamp(observation.observedAt)} · observed ${observation.intensity} · ${observation.note}`;
   }
+  for(const marker of data.markers??[]){if(marker.time<start||marker.time>end)continue;const line=svg('line',{x1:x(marker.time),x2:x(marker.time),y1:top,y2:bottom,stroke:'var(--amber)','stroke-dasharray':'3 5',opacity:'.7'},plot);svg('title',{},line).textContent=stamp(marker.time)+' · '+marker.label;}
   const at=data.samples[selected]?.time;
   if(at>=start&&at<=end){svg('line',{x1:x(at),x2:x(at),y1:top,y2:bottom,class:'cursor-line'});for(const [points,color]of [[data.recorded,'var(--recorded)'],[candidate,'var(--green)']]){const point=points[selected];if(Number.isFinite(point?.value))svg('circle',{cx:x(at),cy:y(point.value),r:4,fill:color});}}
 }
 function inspect(){
   const sample=data.samples[selected],rows=sample.snapshot.rows;
+  const value=key=>{const row=rows[key];return row?.source&&Number.isFinite(row.value)?readingValues(row.value,key,row.source,row.unit,{}).canonicalValue:null;};
   $('cursor-time').textContent=stamp(sample.time);
   $('inspect-recorded').textContent=fmt(data.recorded[selected]?.value);
   $('inspect-candidate').textContent=fmt(candidate[selected]?.value);
-  $('inspect-dew').textContent=`${fmt(rows.temperature.value)}° / ${fmt(rows.dew.value)}°`;
-  $('inspect-wind').textContent=fmt(rows.wind.value)+' mph';
-  $('inspect-solar').textContent=Math.round(rows.irradiance.value)+' W/m²';
+  $('inspect-dew').textContent=`${fmt(value('temperature'))}° / ${fmt(value('dew'))}°`;
+  $('inspect-wind').textContent=fmt(value('wind'))+' mph';
+  $('inspect-solar').textContent=(Number.isFinite(value('irradiance'))?Math.round(value('irradiance')):'—')+' W/m²';
 }
 function table(){
   const body=$('observations');body.replaceChildren();
@@ -53,12 +56,14 @@ function metrics(){
   $('matched').textContent=alternative.count+' / '+data.observations.length;
   $('replay-duration').textContent=replayMs<1?'< 1 ms':Math.round(replayMs)+' ms';
   $('replay-count').textContent=data.samples.length+' inputs · browser calculation';
-  $('comparison-note').textContent='Mean absolute difference · illustrative observations, not validation';
+  $('comparison-note').textContent=data.synthetic?'Mean absolute difference · illustrative observations, not validation':'Mean absolute difference · a small observation sample';
 }
 function recalculate(){
-  const start=performance.now();candidate=replayGrass(data.samples,parameters);replayMs=performance.now()-start;
+  const start=performance.now();candidate=replayGrass(data.samples,recordedMode?null:parameters,data.initialState);replayMs=performance.now()-start;
   chart();inspect();table();metrics();
-  $('replay-note').textContent=`Replay starts ${stamp(data.start)} at moisture ${data.initialMoisture.toFixed(1)}. First 30 minutes warm up. Sliders apply to the entire replay; original values stay fixed.`;
+  $('candidate-label').textContent=recordedMode?'Replay · recorded settings':'Your alternative';
+  $('experiment-mode').textContent=recordedMode?'Following recorded settings changes. Sliders show the latest recorded values.':'One alternative profile across the full history.';
+  $('replay-note').textContent=data.synthetic?`Replay starts ${stamp(data.start)} at moisture ${data.initialMoisture.toFixed(1)}. First 30 minutes warm up. Sliders apply to the entire replay; original values stay fixed.`:`Verified baseline: ${data.validation.compared.toLocaleString()} recorded estimates match, maximum moisture difference ${data.validation.maxMoistureError}. ${data.initialState?'Starts from the saved reservoir at the export boundary.':'Starts before the recorded model initialization; warm-up and resets are preserved.'} Earlier settings changes remain in the original curve.`;
 }
 function controls(){
   const host=$('sliders');
@@ -67,17 +72,26 @@ function controls(){
     const field=element('div',undefined,'slider-field'),title=element('label',label),output=element('output',parameters[key].toFixed(2)+'×');title.htmlFor='tune-'+key;output.id='value-'+key;title.append(output);
     const input=element('input');Object.assign(input,{id:'tune-'+key,type:'range',min:String(min),max:String(max),step:'0.05',value:String(parameters[key])});input.setAttribute('aria-describedby','hint-'+key);
     const detail=element('small',hint);detail.id='hint-'+key;field.append(title,input,detail);host.append(field);
-    input.addEventListener('input',()=>{parameters[key]=Number(input.value);output.textContent=parameters[key].toFixed(2)+'×';cancelAnimationFrame(frame);frame=requestAnimationFrame(recalculate);});
+    input.addEventListener('input',()=>{recordedMode=false;parameters[key]=Number(input.value);output.textContent=parameters[key].toFixed(2)+'×';cancelAnimationFrame(frame);frame=requestAnimationFrame(recalculate);});
   }
 
-  $('reset').onclick=()=>{parameters={...data.parameters};for(const [key]of grassControls){$('tune-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}recalculate();};
+  $('reset').onclick=()=>{recordedMode=!data.synthetic;parameters={...data.parameters};for(const [key]of grassControls){$('tune-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}recalculate();};
   document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{hours=Number(button.dataset.hours);document.querySelectorAll('[data-hours]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));chart();});
   new ResizeObserver(()=>chart()).observe($('chart').parentElement);
   $('cursor').max=data.samples.length-1;$('cursor').value=selected;$('cursor').oninput=()=>{selected=Number($('cursor').value);inspect();chart();};
-  $('chart').addEventListener('pointermove',event=>{if(event.pointerType==='touch')return;const rect=$('chart').getBoundingClientRect(),ratio=Math.max(0,Math.min(1,((event.clientX-rect.left)/rect.width*Math.max(320,rect.width)-38)/(Math.max(320,rect.width)-54))),{start,end}=visibleWindow(),at=start+ratio*(end-start);selected=Math.max(0,Math.min(data.samples.length-1,Math.round((at-data.start)/300000)));$('cursor').value=selected;inspect();chart();});
+  $('chart').addEventListener('pointermove',event=>{if(event.pointerType==='touch')return;const rect=$('chart').getBoundingClientRect(),ratio=Math.max(0,Math.min(1,((event.clientX-rect.left)/rect.width*Math.max(320,rect.width)-38)/(Math.max(320,rect.width)-54))),{start,end}=visibleWindow(),at=start+ratio*(end-start);selected=Math.max(0,Math.min(data.samples.length-1,nearestSample(at)));$('cursor').value=selected;inspect();chart();});
+}
+function nearestSample(at){let low=0,high=data.samples.length-1;while(low<high){const mid=Math.floor((low+high)/2);if(data.samples[mid].time<at)low=mid+1;else high=mid;}return low>0&&at-data.samples[low-1].time<data.samples[low].time-at?low-1:low;}
+function datasetLabels(){
+  if(data.synthetic){$('dataset-notice').textContent='Illustrative weather and observations · isolated from your Pi · changes here never tune the live model.';return;}
+  hours=168;document.querySelectorAll('[data-hours]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.hours)===hours)));
+  $('dataset-notice').textContent=`Recorded Pi ${data.appVersion} history · read-only snapshot taken ${stamp(data.capturedAt)} · local experiment, no live changes.`;
+  $('observations-note').textContent=`${data.observations.filter(o=>o.source?.type==='spreadsheet').length} observations imported from your spreadsheet. Times are ${data.timeZone}, accurate to the minute. Comparison uses the last available estimate at or before that time, within 10 minutes. New form entries stay in this local preview.`;
+  $('tuning-note').textContent='Move a slider to apply one alternative profile across all retained inputs. Reset replays the original settings changes.';
+  $('dataset-markers').textContent=(data.markers??[]).map(m=>`${stamp(m.time)} · ${m.label} (tracker note)`).join(' · ');
 }
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light';};
 $('export').onclick=()=>{
   if(!data)return;const blob=new Blob([JSON.stringify({...data,candidateParameters:parameters,candidate},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=element('a');a.href=url;a.download='grass-lab-experiment.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
-try{const response=await fetch('/__grass-lab/data',{signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Lab data unavailable.');data=await response.json();parameters={...data.parameters};selected=data.samples.length-1;controls();recalculate();}catch(e){error(e.message+' Refresh to try again.');}
+try{const response=await fetch('/__grass-lab/data',{signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Lab data unavailable.');data=await response.json();parameters={...data.parameters};selected=data.samples.length-1;recordedMode=!data.synthetic;datasetLabels();controls();recalculate();}catch(e){error(e.message+' Refresh to try again.');}
