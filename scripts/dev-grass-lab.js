@@ -1,7 +1,7 @@
-import {grassControls,grassLabels} from '/grass-wetness-settings.js';
+import {grassControls} from '/grass-wetness-settings.js';
 import {replayGrass,alignedGrass,observationComparison} from '/grass-replay.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
-let data,parameters,candidate=[],hours=72,grade=null,selected=0,replayMs=0,frame=0;
+let data,parameters,candidate=[],hours=72,selected=0,replayMs=0,frame=0;
 const fmt=value=>Number.isFinite(value)?value.toFixed(1):'—';
 const stamp=time=>new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(time);
 const clock=time=>new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit'}).format(time);
@@ -69,7 +69,7 @@ function controls(){
     const detail=element('small',hint);detail.id='hint-'+key;field.append(title,input,detail);host.append(field);
     input.addEventListener('input',()=>{parameters[key]=Number(input.value);output.textContent=parameters[key].toFixed(2)+'×';cancelAnimationFrame(frame);frame=requestAnimationFrame(recalculate);});
   }
-  for(let i=0;i<=5;i++){const button=element('button',String(i));button.type='button';button.setAttribute('aria-label',`${i} · ${grassLabels[i]}`);button.setAttribute('aria-pressed','false');button.onclick=()=>{grade=i;for(const b of $('grades').children)b.setAttribute('aria-pressed',String(b===button));$('grade-label').textContent=grassLabels[i];};$('grades').append(button);}
+
   $('reset').onclick=()=>{parameters={...data.parameters};for(const [key]of grassControls){$('tune-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}recalculate();};
   document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{hours=Number(button.dataset.hours);document.querySelectorAll('[data-hours]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));chart();});
   new ResizeObserver(()=>chart()).observe($('chart').parentElement);
@@ -79,13 +79,5 @@ function controls(){
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light';};
 $('export').onclick=()=>{
   if(!data)return;const blob=new Blob([JSON.stringify({...data,candidateParameters:parameters,candidate},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=element('a');a.href=url;a.download='grass-lab-experiment.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-};
-$('observation-form').onsubmit=async event=>{
-  event.preventDefault();if(!data)return;
-  if(grade===null){$('save-message').textContent='Choose an intensity first.';return;}
-  const observedAt=$('observed-at').value?new Date($('observed-at').value).getTime():Date.now();
-  $('save-observation').disabled=true;$('save-message').textContent='Saving…';
-  try{const response=await fetch('/__grass-lab/observations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intensity:grade,observedAt,note:$('note').value}),signal:AbortSignal.timeout(10000)});const value=await response.json();if(!response.ok)throw Error(value.error||'Could not save.');data.observations.push(value);data.observations.sort((a,b)=>a.observedAt-b.observedAt);chart();table();metrics();$('save-message').textContent='Saved to this preview · comparison updated.';$('note').value='';}
-  catch(e){$('save-message').textContent=e.message+' Your entry is still here.';}finally{$('save-observation').disabled=false;}
 };
 try{const response=await fetch('/__grass-lab/data',{signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Lab data unavailable.');data=await response.json();parameters={...data.parameters};selected=data.samples.length-1;controls();recalculate();}catch(e){error(e.message+' Refresh to try again.');}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createServer} from 'node:http';
@@ -11,6 +11,8 @@ import {integrationHealth} from '../public/integration-health.js';
 
 test('replay reproduces baseline, responds across history and never mutates original inputs',()=>{
  const data=grassLabFixture(1793650000000),before=structuredClone(data);
+ assert.equal(data.end-data.start,7*86400000);
+ assert.equal(data.samples.length,2017);
  assert.deepEqual(replayGrass(data.samples),data.recorded);
  const alternative=replayGrass(data.samples,{...data.parameters,dew:3});
  assert.ok(alternative.some((p,i)=>p.value!==data.recorded[i].value));
@@ -46,4 +48,16 @@ test('aviation status distinguishes partial, disabled and expired reports',()=>{
  assert.equal(integrationHealth({aviation:state},now).aviation.label,'Partially usable');
  assert.equal(integrationHealth({aviation:{...state,enabled:false}},now).aviation.label,'Disabled');
  assert.equal(integrationHealth({aviation:state},now+91*60000).aviation.label,'Unavailable');
+});
+test('extending an old preview retains entered observations and upgrades only once',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'grass-lab-upgrade-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ const entry={id:'entered-record',observedAt:1793650000000,loggedAt:1793650000001,intensity:0,note:'Keep this exact record',synthetic:true};
+ await writeFile(join(dir,'grass-lab.json'),JSON.stringify({id:'synthetic-72h',end:1793650000000,observations:[{id:'example-0'},entry]}));
+ await createGrassLab(dir);
+ const upgraded=JSON.parse(await readFile(join(dir,'grass-lab.json'),'utf8'));
+ assert.equal(upgraded.samples.length,2017);assert.equal(upgraded.end,1793650000000);
+ assert.deepEqual(upgraded.observations.find(o=>o.id===entry.id),entry);
+ await createGrassLab(dir);
+ assert.deepEqual(JSON.parse(await readFile(join(dir,'grass-lab.json'),'utf8')),upgraded);
 });
