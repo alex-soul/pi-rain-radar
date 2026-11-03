@@ -1,4 +1,4 @@
-// Shared scale and interval aggregation for the experimental Lab heatmap.
+// Shared scale and interval aggregation for the Grass Lab heatmap.
 export const grassFactors=[
  {key:'rain',label:'Rain wetting',short:'Rain',color:'#69adf5',direction:1},
  {key:'dew',label:'Dew wetting',short:'Dew',color:'#65d7bd',direction:1},

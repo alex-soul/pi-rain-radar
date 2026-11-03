@@ -1,6 +1,6 @@
 # 0.15.0 release candidate
 
-`0.15.0-rc.2` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
+`0.15.0-rc.3` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
 
 - Grass scores show one decimal in the dock, trends and full widget. The full widget uses five bars, a smaller number and the descriptive heading, without the denominator or footwear helper text.
 - Archive GIF export preserves the playback slider track and thumb.
@@ -18,3 +18,9 @@ Candidate images are built and smoke-tested on AMD64 and ARM64 by the manually d
 
 - METAR accepts automatic cloud groups such as `SCT010///`: known coverage and height remain available, while cloud type is explicitly unavailable. The report text is preserved, and malformed groups still fail validation. Cached cloud descriptions are enriched without rewriting acquisition times or archive records. This handles the format specified in [CAA CAP 746 section 4.147](https://www.caa.co.uk/publication/download/12602).
 - Grass Lab loads sliders from current saved settings. Reset fetches them again without loading history, then recalculates the alternative. It no longer resets to the last historical profile. The baseline check remains independent, and experiments never modify live settings.
+
+## RC3 — Grass contribution heatmaps
+
+- Six time-aligned strips show wetting and drying contributions, with matching slider colours and a shared brightness scale. Select any combination to overlay those factors behind the chart; select again to remove one or clear all overlays.
+- Contribution tracing runs with the existing background replay, preserves the model arithmetic and recorded estimates, and distinguishes missing calculations from zero contribution. All chart windows, including 30 days, use the retained original inputs.
+- Reset continues to read current saved settings, independently of historical profiles. The upgrade does not alter live multipliers, observations or the wetness reservoir.

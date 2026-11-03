@@ -18,6 +18,14 @@ Replay uses the same formula as the live model in a background worker on the vie
 
 Each observation is compared with the last available eligible estimate at or before its timestamp, within ten minutes. The mean absolute difference is a descriptive comparison, not automatic fitting or evidence that a profile is calibrated. The latest 200 observations appear in the table; the export contains all retained observations. Times are shown in the installation timezone; corrected entry times use the phone's local timezone.
 
+## See what shaped the curve
+
+Six time-aligned heatmap strips show rain and dew wetting, and sun, wind, air and drainage drying. Each strip independently toggles its colour behind the chart: select several to combine overlays, select one again to remove it, or use **Clear overlays**. Matching colours identify the sliders. Hover or scrub to inspect contribution rates; selected factors stay selected through slider changes, Reset and time-window changes. Reloading clears the overlay selection.
+
+The strips follow the alternative profile, including changes made with the sliders. Their common brightness scale is fixed at 0–2 moisture units per hour, with square-root contrast to reveal small contributions. Values above 2 stay at maximum brightness; inspection retains their actual rates. Wide time windows average rates by duration within each small displayed interval. Hatching marks missing calculation coverage, while zero contribution has no colour. Warm-up can have contributions before the score becomes available.
+
+These are terms in the formula before its 0–5 reservoir limit, not independently attributable changes in the displayed score. Strong drying can coincide with a flat zero line when no moisture remains; an earlier effect can also leave the grass wetter or drier later. Overall sensitivity scales the displayed score and has no wetting/drying strip. Colour blending is a visual aid, not a combined numerical scale. Heatmap calculations use the existing laptop worker; neither opening the Lab nor changing its sliders changes live calibration.
+
 ## Retention and access
 
 The app keeps a compact rolling 30-day set of the temperature, dew point, wind, sunlight, observed-rain inputs, parameters, estimates and reservoir state needed for replay, plus one initialization boundary. This is separate from normal archive retention and contains no radar, cloud or camera media. On upgrade, any still-available presentation history seeds this collection. Recording continues on the Pi without leaving the Lab open.

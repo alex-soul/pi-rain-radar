@@ -1,7 +1,7 @@
 import {grassControls} from '/grass-wetness-settings.js';
 import {readingValues} from '/reading-units.js';
 import {replayGrass,alignedGrass,observationComparison} from '/grass-replay.js';
-import {grassFactors,effectBins,effectOpacity} from '/__grass-effects.js';
+import {grassFactors,effectBins,effectOpacity} from '/grass-effects.js';
 import {plotPoints} from '/grass-plot.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 let data,parameters,candidate=[],hours=72,selected=0,replayMs=0,frame=0,recordedMode=false;

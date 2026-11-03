@@ -4,7 +4,7 @@ self.onmessage=event=>{
  const {id,parameters,data}=event.data;
  try{
    if(data){samples=data.samples;initialState=data.initialState;recorded=data.recorded;}
-   const started=performance.now(),points=replayGrass(samples,parameters,initialState);
+   const started=performance.now(),points=replayGrass(samples,parameters,initialState,{trace:true});
    let validation=null;
    if(data||parameters===null){let compared=0,mismatches=0,maxMoistureError=0;
      const baseline=parameters===null?points:replayGrass(samples,null,initialState);
@@ -14,6 +14,6 @@ self.onmessage=event=>{
        if(error>1e-10||old.value!==next.value&&!(Number.isFinite(old.value)&&Number.isFinite(next.value)&&Math.abs(old.value-next.value)<1e-10))mismatches++;
      }validation={compared,mismatches,maxMoistureError};
    }
-   self.postMessage({id,validation,ms:performance.now()-started,points:points.map(({time,value,moisture,reason})=>({time,value,moisture,reason}))});
+   self.postMessage({id,validation,ms:performance.now()-started,points:points.map(({time,value,moisture,reason,effects})=>({time,value,moisture,reason,effects}))});
  }catch(error){self.postMessage({id,error:error.message});}
 };

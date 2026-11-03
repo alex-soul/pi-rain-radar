@@ -2,9 +2,33 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {grassLabFixture} from '../scripts/dev-grass-lab.mjs';
 import {replayGrass} from '../public/grass-replay.js';
-import {grassFactors,effectBins,effectOpacity} from '../scripts/dev-grass-effects.js';
+import {grassFactors,effectBins,effectOpacity} from '../public/grass-effects.js';
+import {Worker} from 'node:worker_threads';
+import {once} from 'node:events';
 
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-10,`${a} != ${b}`);
+test('production background worker returns month contributions and preserves independent baseline validation',async t=>{
+ const source=new URL('../public/grass-lab-worker.js',import.meta.url).href;
+ const worker=new Worker(new URL('data:text/javascript,'+encodeURIComponent(`
+  import {parentPort} from 'node:worker_threads';
+  globalThis.self={postMessage:value=>parentPort.postMessage(value)};
+  await import(${JSON.stringify(source)});
+  parentPort.on('message',data=>self.onmessage({data}));
+  parentPort.postMessage({ready:true});
+ `)));
+ t.after(()=>worker.terminate());await once(worker,'message');
+ const fixture=grassLabFixture(1793650000000,30);
+ const request=async message=>{const reply=once(worker,'message');worker.postMessage(message);return (await reply)[0];};
+ const first=await request({id:1,parameters:fixture.parameters,data:fixture});
+ assert.equal(first.id,1);assert.equal(first.validation.mismatches,0);assert.equal(first.points.length,8641);
+ assert.equal(first.points[0].effects,null);assert.ok(first.points.some(p=>p.effects?.rates.solar>0));
+ assert.deepEqual(first.points.map(p=>p.value),fixture.recorded.map(p=>p.value));
+ const next=await request({id:2,parameters:{...fixture.parameters,wind:0,dew:3}});
+ assert.equal(next.id,2);assert.equal(next.validation,null);
+ assert.ok(next.points.filter(p=>p.effects).every(p=>p.effects.rates.wind===0));
+ assert.ok(next.points.some((p,i)=>p.value!==first.points[i].value));
+ assert.equal(effectBins(next.points,fixture.start,fixture.end,400).length,400);
+});
 test('contribution tracing preserves exact replay values and accounts for each model step',()=>{
  const data=grassLabFixture(1793650000000),before=structuredClone(data);
  const traced=replayGrass(data.samples,null,null,{trace:true});
