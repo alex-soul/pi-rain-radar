@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {recordedSettingChanges,sampleAt,windowCursor} from '../scripts/dev-grass-lab-inspection.js';
+import {recordedSettingChanges,sampleAt,windowCursor} from '../public/grass-lab-inspection.js';
 
 test('settings markers follow recorded changes, including reversals, without inventing an initial event',()=>{
  const definitions=[{key:'dew',label:'Dew wetting',color:'green'},{key:'wind',label:'Wind drying',color:'purple'}];

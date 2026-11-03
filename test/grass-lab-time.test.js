@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {effectAt,calendarTicks} from '../scripts/dev-grass-lab-inspection.js';
+import {effectAt,calendarTicks} from '../public/grass-lab-inspection.js';
 
 test('contribution hover selects the containing acquisition interval without filling gaps',()=>{
  const steps=[{start:0,end:300},{start:300,end:600},{start:900,end:1200}];

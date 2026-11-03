@@ -26,7 +26,7 @@ assert(!html.includes("{{"));
 assert(html.includes(`name="app-version" content="${status.appVersion}"`));
 assert.equal(status.appVersion,JSON.parse(fs.readFileSync("/app/package.json")).version);
 assert.equal(status.weather.configured,false);
-for(const path of ["/grass-lab","/grass-obs","/grass-lab-worker.js","/grass-effects.js"]){assert.equal((await fetch("http://localhost:3000"+path)).status,200);}
+for(const path of ["/grass-lab","/grass-obs","/grass-lab-worker.js","/grass-effects.js","/grass-lab-inspection.js","/settings-help.js"]){assert.equal((await fetch("http://localhost:3000"+path)).status,200);}
 const observation={id:"smoke-observation-1",observedAt:Date.now(),intensity:0,note:"Image persistence check"};
 assert.equal((await fetch("http://localhost:3000/api/grass-lab/observations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(observation)})).status,201);
 fs.writeFileSync("/data/persistence-smoke","kept");

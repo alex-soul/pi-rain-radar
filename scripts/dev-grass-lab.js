@@ -4,7 +4,7 @@ import {readingValues} from '/reading-units.js';
 import {replayGrass,alignedGrass,observationComparison} from '/grass-replay.js';
 import {grassFactors,effectBins,effectOpacity} from '/grass-effects.js';
 import {plotPoints} from '/grass-plot.js';
-import {recordedSettingChanges,sampleAt,windowCursor,effectAt,calendarTicks} from '/__grass-lab-inspection.js';
+import {recordedSettingChanges,sampleAt,windowCursor,effectAt,calendarTicks} from '/grass-lab-inspection.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 let data,parameters,candidate=[],hours=72,selected=0,frame=0,recordedMode=false;
 const activeEffects=new Set();
