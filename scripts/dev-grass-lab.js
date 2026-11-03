@@ -4,11 +4,11 @@ import {readingValues} from '/reading-units.js';
 import {replayGrass,alignedGrass,observationComparison} from '/grass-replay.js';
 import {grassFactors,effectBins,effectOpacity} from '/grass-effects.js';
 import {plotPoints} from '/grass-plot.js';
-import {recordedSettingChanges,sampleAt,windowCursor} from '/__grass-lab-inspection.js';
+import {recordedSettingChanges,sampleAt,windowCursor,effectAt,calendarTicks} from '/__grass-lab-inspection.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 let data,parameters,candidate=[],hours=72,selected=0,frame=0,recordedMode=false;
 const activeEffects=new Set();
-let bins=[];
+let bins=[],steps=[],ticks=[];
 let cursorAt=0,settingsMarkers=[];
 const settingDefinitions=[...grassFactors,{key:'sensitivity',label:'Overall sensitivity',color:'#d596c9'},{key:'enabled',label:'Calculation',color:'#8d9fad'}];
 const plotLeft=88,plotRight=16;
@@ -40,8 +40,16 @@ function chart(){
     labelX+=width;
   }
   for(let value=0;value<=5;value++){svg('line',{x1:left,x2:right,y1:y(value),y2:y(value),class:'chart-grid'});const label=svg('text',{x:left-13,y:y(value)+4,'text-anchor':'end',class:'chart-label'});label.textContent=value;}
-  const ticks=right-left<300?1:right<500?2:6;
-  for(let i=0;i<=ticks;i++){const time=start+(end-start)*i/ticks;svg('line',{x1:x(time),x2:x(time),y1:top,y2:bottom,class:'chart-grid',opacity:'.35'});const label=svg('text',{x:x(time),y:322,'text-anchor':i===0?'start':i===ticks?'end':'middle',class:'chart-label'});label.textContent=hours>24?stamp(time):clock(time);}
+  let lastLabelRight=-Infinity;
+  for(const tick of ticks){
+    svg('line',{x1:x(tick.time),x2:x(tick.time),y1:top,y2:bottom,class:'chart-grid',opacity:tick.midnight?'1':'.4','stroke-width':tick.midnight?1.3:1,'data-grid-time':tick.time});
+    if(!tick.major)continue;
+    const text=hours>=48&&tick.midnight?new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',timeZone:data.timeZone}).format(tick.time):clock(tick.time);
+    const half=text.length*3.4,labelX=Math.max(left+half,Math.min(right-half,x(tick.time)));
+    if(labelX-half<lastLabelRight+12)continue;
+    svg('text',{x:labelX,y:322,'text-anchor':'middle',class:'chart-label','data-tick-time':tick.time}).textContent=text;
+    lastLabelRight=labelX+half;
+  }
   const plot=svg('g',{'clip-path':'url(#plot-clip)'});
   for(const [points,klass] of [[data.recorded,'recorded-path'],[candidate,'candidate-path']]){
     let d='',last=null;
@@ -71,6 +79,7 @@ function chart(){
 function effectStrips(){
   const {start,end}=visibleWindow(),width=Math.max(1,$('chart').clientWidth-plotLeft-plotRight);
   bins=effectBins(candidate,start,end,Math.ceil(width/3));
+  ticks=calendarTicks(start,end,width,data.timeZone);
   for(const factor of grassFactors){
     const canvas=$('effect-'+factor.key),ratio=window.devicePixelRatio||1;
     canvas.width=Math.ceil(width*ratio);canvas.height=22*ratio;
@@ -110,8 +119,8 @@ function inspect(){
   $('inspect-dew').textContent=`${fmt(value('temperature'))}° / ${fmt(value('dew'))}°`;
   $('inspect-wind').textContent=fmt(value('wind'))+' mph';
   $('inspect-solar').textContent=(Number.isFinite(value('irradiance'))?Math.round(value('irradiance')):'—')+' W/m²';
-  const effect=candidate[selected]?.effects,details=$('effect-inspection');details.replaceChildren();
-  if(!effect){details.textContent=selected<0?'No retained reading at this time.':'No calculation at this sample · '+(candidate[selected]?.moisture===undefined?candidate[selected]?.reason:'initialization, reset or repeated acquisition');return;}
+  const effect=effectAt(steps,cursorAt),details=$('effect-inspection');details.replaceChildren();
+  if(!effect){details.textContent='No calculated contribution for this interval.';return;}
   const factors=activeEffects.size?grassFactors.filter(f=>activeEffects.has(f.key)):grassFactors;
   for(const factor of factors){const rate=effect.rates[factor.key],item=element('span',`${factor.short} ${rate===0?'':factor.direction>0?'+':'−'}${rate.toFixed(2)}`);item.style.setProperty('--factor',factor.color);details.append(item);}
   details.append(element('small',`moisture / hour · ${clock(effect.start)}–${clock(effect.end)}${candidate[selected]?.value===null?' · model warming up':''}`));
@@ -132,6 +141,7 @@ function metrics(){
 }
 function recalculate(){
   candidate=replayGrass(data.samples,recordedMode?null:parameters,data.initialState,{trace:true});
+  steps=candidate.flatMap(point=>point.effects?[point.effects]:[]);
   effectStrips();chart();inspect();table();metrics();
   $('candidate-label').textContent=recordedMode?'Replay · recorded settings':'Your alternative';
   if(data.validation?.mismatches)error('Saved estimates could not be reproduced. Treat this experiment as unverified.');

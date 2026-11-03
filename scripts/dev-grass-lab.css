@@ -50,3 +50,5 @@
 .settings-info:hover,.settings-info:focus-visible,.settings-info[aria-expanded=true]{opacity:1}
 .settings-help-bubble{position:fixed;z-index:5;box-sizing:border-box;padding:14px 16px;border:1px solid var(--line);border-radius:10px;box-shadow:0 5px 20px #0003;background:var(--surface2);color:var(--text);font-size:13px;line-height:1.5}
 .settings-help-bubble[hidden]{display:none}
+
+.chart-card>.inspection{margin:6px 0 16px}.chart-card>.effects{border-top:0;padding-top:0}
