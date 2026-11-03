@@ -46,3 +46,16 @@ test('month chart reduction preserves extrema and true gaps',()=>{
  const reduced=plotPoints(points,0,30*86400000,300);
  assert.ok(reduced.length<1500);assert.ok(reduced.some(p=>p.time===5555*300000&&p.value===5));assert.ok(reduced.some(p=>p.time===6001*300000&&p.breakBefore));
 });
+
+test('Lab parameter reset reads current settings independently of cached historical data',async t=>{
+ let dew=1,reads=0;
+ const route=grassLabRoutes({store:{grassData:async()=>{reads++;return {presentations:[],observations:[],markers:[],capturedAt:Date.now()};}},context:()=> 'test',version:'test',parameters:()=>({dew})});
+ const server=createServer((req,res)=>route(req,res,new URL(req.url,'http://localhost').pathname));server.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(()=>new Promise(r=>server.close(r)));
+ const base=`http://127.0.0.1:${server.address().port}/api/grass-lab/`;
+ await fetch(base+'data');
+ const first=await fetch(base+'parameters');assert.equal(first.headers.get('cache-control'),'no-store');assert.equal((await first.json()).parameters.dew,1);
+ dew=2.25;
+ assert.equal((await(await fetch(base+'parameters')).json()).parameters.dew,2.25);
+ assert.equal(reads,1,'Reset must not load weather history or use its last profile');
+});

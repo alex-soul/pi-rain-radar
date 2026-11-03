@@ -43,7 +43,7 @@ export function decodeAviation(raw,{product,issuedAt,observedAt,station}){
   else if((m=code.match(/^WS(\d{3})\/(\d{3})(\d{2,3})KT$/)))meaning=`Low-level wind shear at ${Number(m[1])*100} ft above aerodrome level; wind from ${Number(m[2])}° true at ${Number(m[3])} knots.`;
   else if(code==='NOSIG')meaning='No significant change expected in the trend period.';
   else if(code==='SKC'||code==='CLR'||code==='NSC'||code==='NCD')meaning={SKC:'Sky clear.',CLR:'No cloud detected below the reporting limit.',NSC:'No significant cloud.',NCD:'No cloud detected.'}[code];
-  else if((m=code.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)(CB|TCU)?$/)))meaning=`${cloudNames[m[1]]}${m[2]==='///'?', height unavailable':` at ${Number(m[2])*100} ft above aerodrome level`}${m[3]==='CB'?', cumulonimbus':m[3]==='TCU'?', towering cumulus':''}.`;
+  else if((m=code.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)(CB|TCU|\/\/\/)?$/))&&!(m[1]==='VV'&&m[3]))meaning=`${cloudNames[m[1]]}${m[2]==='///'?', height unavailable':` at ${Number(m[2])*100} ft above aerodrome level`}${m[3]==='CB'?', cumulonimbus':m[3]==='TCU'?', towering cumulus':m[3]==='///'?', cloud type unavailable from the automatic observing system':''}.`;
   else if((m=code.match(/^(M?\d{2})\/(M?\d{2})?$/)))meaning=`Temperature ${Number(m[1].replace('M','-'))} °C; dew point ${m[2]?Number(m[2].replace('M','-'))+' °C':'unavailable'}.`;
   else if((m=code.match(/^([QA])(\d{4})$/)))meaning=`QNH pressure ${m[1]==='Q'?Number(m[2])+' hPa':(Number(m[2])/100).toFixed(2)+' inHg'}.`;
   else if(/^\d{4}$/.test(code))meaning=`Prevailing visibility ${code==='9999'?'10 km or more':Number(code)+' metres'}.`;

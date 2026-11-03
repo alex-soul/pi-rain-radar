@@ -7,6 +7,18 @@ import {migrateAviationGroup} from '../public/aviation-group-model.js';
 const observedAt=Date.parse('2026-10-13T10:20Z'),station='EGBB';
 const make=(clouds,tail='')=>withObservedClouds({product:'metar',station,observedAt,acquiredAt:observedAt+60000,raw:`METAR EGBB 131020Z 24008KT 9999 ${clouds} 14/10 Q1017 ${tail}`});
 const state=(r=make('FEW006 BKN014 OVC028'))=>({enabled:true,station,reports:{metar:r},products:{metar:{state:'ready',lastSuccess:observedAt+60000,reportAcquiredAt:r.acquiredAt}}});
+
+test('AUTO unknown cloud type preserves amount, height and raw groups, including cached enrichment',()=>{
+ const raw='METAR EGBB 030020Z AUTO 36006KT 9999 SCT010/// BKN015/// BKN027/// 07/06 Q1038';
+ const old={product:'metar',station,observedAt,acquiredAt:observedAt+60000,raw,clouds:{version:1,state:'error',layers:[]}};
+ const r=withObservedClouds(old);
+ assert.equal(r.clouds.state,'layers');assert.deepEqual(r.clouds.layers.map(l=>[l.amount,l.baseFt,l.type,l.typeUnavailable]),[['SCT',1000,'',true],['BKN',1500,'',true],['BKN',2700,'',true]]);
+ assert.equal(r.raw,raw);assert.equal(r.acquiredAt,old.acquiredAt);assert.equal(old.clouds.state,'error');
+ assert.equal(r.clouds.raw,'SCT010/// BKN015/// BKN027///');
+ assert.equal(make('SCT//////').clouds.layers[0].baseFt,null);
+ assert.equal(make('SCT010///','TEMPO BKN003///').clouds.layers.length,1);
+ for(const code of ['SCT010//','SCT010////','SCT010///CB','VV010///','VV///CB','CAVOK SCT010///'])assert.equal(make(code).clouds.state,'error',code);
+});
 test('observed extraction excludes forecasts/remarks and has no four-group cap',()=>{
  for(const boundary of ['TEMPO','BECMG','INTER','PROB30 TEMPO','FM1200','NOSIG','RMK'])assert.equal(make('BKN020',boundary+' SCT005').clouds.raw,'BKN020');
  const r=make('FEW001 SCT005 BKN010 BKN020 OVC080');assert.equal(r.clouds.layers.length,5);

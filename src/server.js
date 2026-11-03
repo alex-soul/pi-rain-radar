@@ -91,7 +91,7 @@ camera=await createCamera(directory,{store:history,ha,onEvent:diagnostics.record
 if(!ha.status().configured&&camera.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});
 clouds=await createClouds(directory,{onPolicy:collectionRecorder(history,'cloud-collection'),store:history,provider:rainbow,settings:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'||process.env.RADAR_DEV_CLOUDS==='1',rainBusy:()=>maps.status().busy||maps.current().radar.status().fetching,onEvent:diagnostics.record});
 const settingsAuth=createSettingsAuth(directory);
-const handleGrassLab=grassLabRoutes({store:history,auth:settingsAuth,context:()=>`${maps.current().settings.lat},${maps.current().settings.lon}`,version:packageInfo.version,timeZone:()=>maps.current().settings.timeZone||'Europe/London'});
+const handleGrassLab=grassLabRoutes({store:history,auth:settingsAuth,context:()=>`${maps.current().settings.lat},${maps.current().settings.lon}`,version:packageInfo.version,parameters:()=>weatherSettings.current().grassWetness,timeZone:()=>maps.current().settings.timeZone||'Europe/London'});
 const handleSettings = settingsRoutes(settingsAuth, weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, displaySettings, clouds, aviation });
 const observeHealth=createHealthEvents(diagnostics.record);
 const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());

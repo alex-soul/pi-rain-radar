@@ -2,7 +2,7 @@ import {gzip} from 'node:zlib';
 import {promisify} from 'node:util';
 import {buildRecordedLab} from './grass-lab-data.js';
 const compress=promisify(gzip);
-export function grassLabRoutes({store,auth,context,version,timeZone='Europe/London',now=Date.now}){
+export function grassLabRoutes({store,auth,context,version,parameters,timeZone='Europe/London',now=Date.now}){
  let cache=null,pending=null,revision=0;
  const dataset=async()=>{
    const location=context(),zone=typeof timeZone==='function'?timeZone():timeZone,key=JSON.stringify([location,zone,revision]);
@@ -18,6 +18,7 @@ export function grassLabRoutes({store,auth,context,version,timeZone='Europe/Lond
  return async(req,res,path)=>{
    const send=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value));};
    try{
+     if(path==='/api/grass-lab/parameters'&&req.method==='GET')return send(200,{parameters:parameters()});
      if(path==='/api/grass-lab/data'&&req.method==='GET'){
        const data=await dataset(),zip=/\bgzip\b/.test(req.headers['accept-encoding']??'');
        res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store','Vary':'Accept-Encoding',...(zip?{'Content-Encoding':'gzip'}:{})});res.end(zip?data.gzip:data.body);return;

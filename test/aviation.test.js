@@ -28,6 +28,16 @@ test('fresh defaults differ from upgrades; invalid configuration is rejected',as
  assert.equal((await aviation.configure({station:'https://example.com'})).status,400);
  assert.equal((await aviation.configure({enabled:true,station:' egbb '})).status,200);
 });
+
+test('AUTO cloud type suffix publishes METAR and explains the retained raw group',async t=>{
+ const raw='METAR EGBB 121055Z AUTO 36006KT 9999 SCT010/// BKN015/// BKN027/// 07/06 Q1038';
+ const f=await fixture(t,{request:async url=>new Response(JSON.stringify([url.includes('/metar?')?{...metar,rawOb:raw}:taf]))});
+ await f.aviation.collect();const live=f.aviation.status();
+ assert.equal(live.products.metar.state,'ready');assert.equal(live.products.metar.failures,0);assert.equal(live.reports.metar.raw,raw);
+ assert.equal(live.reports.metar.clouds.layers.length,3);
+ const part=live.reports.metar.sections.find(s=>raw.slice(s.start,s.end)==='SCT010///');
+ assert.equal(part.known,true);assert.match(part.meaning,/1000 ft/);assert.match(part.meaning,/cloud type unavailable/);
+});
 test('Archive switches exactly at acquisition, not issue or validity; unchanged polls preserve first receipt',async t=>{
  const f=await fixture(t);await f.aviation.collect();let first=f.aviation.status().reports.taf;assert.equal(f.aviation.status().enabled,true);
  assert.ok(first.acquiredAt>first.issuedAt);assert.ok(first.validFrom>first.acquiredAt);
