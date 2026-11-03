@@ -24,3 +24,12 @@ Candidate images are built and smoke-tested on AMD64 and ARM64 by the manually d
 - Six time-aligned strips show wetting and drying contributions, with matching slider colours and a shared brightness scale. Select any combination to overlay those factors behind the chart; select again to remove one or clear all overlays.
 - Contribution tracing runs with the existing background replay, preserves the model arithmetic and recorded estimates, and distinguishes missing calculations from zero contribution. All chart windows, including 30 days, use the retained original inputs.
 - Reset continues to read current saved settings, independently of historical profiles. The upgrade does not alter live multipliers, observations or the wetness reservoir.
+
+## RC4 — Grass Lab inspection and layout
+
+- Coloured markers follow actual retained settings changes, including reversals. They mark the first snapshot with a changed value, not the exact settings-save time. Imported tracker notes remain in exports without creating duplicate chart markers.
+- Cursor time appears above the chart; the time scrubber is removed. Grid lines align to local midnight and whole hours, with adaptive spacing and DST handling. Contribution inspection follows the calculated acquisition interval, preserving real gaps.
+- Current inspected readings sit above the heatmaps. The observations comparison is compact, slider explanations use the menu info bubbles, and redundant explanatory copy and replay timing cards are removed.
+- Replay remains in the viewing browser's worker. Reset still fetches current saved settings. Live multipliers, reservoir, observations and recorded estimates are unchanged.
+
+RC4 validation: 497 automated tests; AMD64/ARM64 image startup and observation persistence across restart; 24 focused native ARM64 tests. Live verification retained settings, seven observations and sampled history, with 3,294 baseline estimates reproduced exactly. These checks do not replace longer calibration observations.
