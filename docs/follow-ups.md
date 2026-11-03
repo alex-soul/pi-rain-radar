@@ -1,5 +1,9 @@
 # Release follow-ups
 
+## 0.15.0 RC1 — awaiting appliance acceptance
+
+The GIF playback track fix, Aviation/Grass integration status, official Aviation provider status link and concise current-only Stats are implemented in RC1. [Grass Lab](grass-lab.md) adds direct observations and 30-day experimental replay; calibration remains unvalidated. The earlier deferred descriptions below are historical context, superseded for these selected items. Other follow-ups remain separate. See [candidate notes](release-0.15.0.md).
+
 ## After 0.14.0
 
 - **GIF playback slider track:** the exported thumb can appear without its background line. Accepted as cosmetic for 0.14.0; review for 0.15.0 rather than delaying this release.
