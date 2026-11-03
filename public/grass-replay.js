@@ -3,14 +3,15 @@ import {validateGrassSettings} from './grass-wetness-settings.js';
 
 export const decimalGrass=reading=>reading?.eligible&&Number.isFinite(reading.moisture)?Math.max(0,Math.min(5,reading.moisture*(reading.parameters?.sensitivity??1))):null;
 // Replay ordered, complete input snapshots, never interpolated chart points.
-export function replayGrass(samples,parameters,initialState=null){
+export function replayGrass(samples,parameters,initialState=null,{trace=false}={}){
   if(parameters&&!validateGrassSettings(parameters))throw Error('Invalid replay settings');
   let state=initialState?structuredClone(initialState):null,last=-Infinity;
   return samples.map(sample=>{
     if(!Number.isFinite(sample.time)||sample.time<=last)throw Error('Replay times must increase');last=sample.time;
     const snapshot=parameters?{...sample.snapshot,policy:{...sample.snapshot.policy,grassWetness:parameters}}:sample.snapshot;
-    const result=advanceGrassWetness(state,snapshot,sample.time);state=result.state;
-    return {time:sample.time,value:decimalGrass(result.reading),moisture:result.reading.moisture,reason:result.reading.reason,reading:result.reading};
+    let effects=null;
+    const result=advanceGrassWetness(state,snapshot,sample.time,trace?step=>{effects=step;}:undefined);state=result.state;
+    return {time:sample.time,value:decimalGrass(result.reading),moisture:result.reading.moisture,reason:result.reading.reason,reading:result.reading,...(trace?{effects}:{})};
   });
 }
 export function alignedGrass(points,at){

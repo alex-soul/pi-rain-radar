@@ -6,7 +6,7 @@ const clamp=value=>Math.max(0,Math.min(5,value));
 const warmup=30*60000,maxGap=10*60000;
 // An intentionally uncalibrated water reservoir, advanced only on a new HA
 // cumulative-rain acquisition. Never interpret an unavailable input as zero.
-export function advanceGrassWetness(previous,snapshot,now){
+export function advanceGrassWetness(previous,snapshot,now,onStep){
  const parameters={...grassDefaults,...snapshot.policy?.grassWetness};
  const base={modelVersion:grassModelVersion,parameters,calculatedAt:now,eligible:false,intensity:null};
  const unavailable=(reason,state=previous)=>({state,reading:{...base,reason}});
@@ -42,6 +42,15 @@ export function advanceGrassWetness(previous,snapshot,now){
   const dryness=Math.min(1,depression/5),solar=Math.max(0,inputs.irradiance.canonicalValue),wind=Math.max(0,inputs.wind.canonicalValue);
   const wetting=Math.max(0,delta)*1.5*parameters.rain+hours*Math.max(0,1-depression/2)*0.4*parameters.dew;
   const drying=hours*(solar/400*parameters.solar+wind/10*dryness*parameters.wind+depression/10*parameters.air+state.moisture*0.12*parameters.drainage);
+  // Optional replay diagnostics. Rates describe the formula's contributions
+  // before reservoir clamping, not independently attributable score changes.
+  // Keep the arithmetic above unchanged so archived replays remain identical.
+  if(onStep)onStep({start:state.baseline.time,end:acquired,rates:{
+   rain:Math.max(0,delta)*1.5*parameters.rain/hours,
+   dew:Math.max(0,1-depression/2)*0.4*parameters.dew,
+   solar:solar/400*parameters.solar,wind:wind/10*dryness*parameters.wind,
+   air:depression/10*parameters.air,drainage:state.moisture*0.12*parameters.drainage
+  },wetting,drying,before:state.moisture,after:clamp(state.moisture+wetting-drying)});
   state.moisture=clamp(state.moisture+wetting-drying);
   state.baseline={time:acquired,total,resetAt:rain.resetAt};
  }
