@@ -5,7 +5,8 @@ import {grassFactors,effectBins,effectOpacity} from '/__grass-effects.js';
 import {plotPoints} from '/grass-plot.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 let data,parameters,candidate=[],hours=72,selected=0,replayMs=0,frame=0,recordedMode=false;
-let activeEffect=null,bins=[];
+const activeEffects=new Set();
+let bins=[];
 const plotLeft=88,plotRight=16;
 const fmt=value=>Number.isFinite(value)?value.toFixed(1):'—';
 const stamp=time=>new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:data?.timeZone}).format(time);
@@ -19,13 +20,20 @@ function chart(){
   const root=$('chart');root.setAttribute('viewBox',`0 0 ${right+16} 340`);root.replaceChildren();
   const defs=svg('defs',{}),clip=svg('clipPath',{id:'plot-clip'},defs);svg('rect',{x:left,y:top,width:right-left,height:bottom-top},clip);
   const pattern=svg('pattern',{id:'effect-missing',width:6,height:6,patternUnits:'userSpaceOnUse'},defs);svg('path',{d:'M0,6 L6,0',stroke:'var(--muted)','stroke-width':1,opacity:'.25'},pattern);
-  if(activeEffect){
-    const factor=grassFactors.find(f=>f.key===activeEffect),layer=svg('g',{'clip-path':'url(#plot-clip)','data-effect-overlay':activeEffect});
+  const selectedFactors=grassFactors.filter(f=>activeEffects.has(f.key));
+  for(const [index,factor]of selectedFactors.entries()){
+    const layer=svg('g',{'clip-path':'url(#plot-clip)','data-effect-overlay':factor.key});
     for(const bin of bins){const attrs={x:x(bin.start),y:top,width:x(bin.end)-x(bin.start)+.15,height:bottom-top};
-      if(bin.coverage<.99)svg('rect',{...attrs,fill:'url(#effect-missing)'},layer);
-      if(bin.coverage)svg('rect',{...attrs,fill:factor.color,opacity:effectOpacity(bin.rates[activeEffect])*.32*bin.coverage},layer);
+      if(index===0&&bin.coverage<.99)svg('rect',{...attrs,fill:'url(#effect-missing)'},layer);
+      if(bin.coverage)svg('rect',{...attrs,fill:factor.color,opacity:effectOpacity(bin.rates[factor.key])*.32*bin.coverage},layer);
     }
-    svg('text',{x:left+8,y:top+16,fill:'var(--text)',class:'overlay-label'},layer).textContent=factor.label+' · contribution';
+  }
+  let labelX=left+8,labelY=top+16;
+  for(const factor of selectedFactors){
+    const width=(factor.short.length+2)*7+16;
+    if(labelX+width>right){labelX=left+8;labelY+=17;}
+    svg('text',{x:labelX,y:labelY,fill:factor.color,class:'overlay-label'}).textContent=(factor.direction>0?'+ ':'− ')+factor.short;
+    labelX+=width;
   }
   for(let value=0;value<=5;value++){svg('line',{x1:left,x2:right,y1:y(value),y2:y(value),class:'chart-grid'});const label=svg('text',{x:left-13,y:y(value)+4,'text-anchor':'end',class:'chart-label'});label.textContent=value;}
   const ticks=right<500?2:6;
@@ -60,9 +68,11 @@ function effectStrips(){
   }
 }
 function effectSelection(key){
-  activeEffect=activeEffect===key?null:key;
-  for(const factor of grassFactors)$('select-'+factor.key).setAttribute('aria-pressed',String(factor.key===activeEffect));
-  $('clear-effect').disabled=!activeEffect;inspect();chart();
+  if(key===null)activeEffects.clear();
+  else if(activeEffects.has(key))activeEffects.delete(key);
+  else activeEffects.add(key);
+  for(const factor of grassFactors)$('select-'+factor.key).setAttribute('aria-pressed',String(activeEffects.has(factor.key)));
+  $('clear-effect').disabled=activeEffects.size===0;inspect();chart();
 }
 function effectControls(){
   const host=$('effect-strips');
@@ -72,7 +82,7 @@ function effectControls(){
     const label=element('span',(factor.direction>0?'+ ':'− ')+factor.short,'effect-name'),canvas=element('canvas');canvas.id='effect-'+factor.key;canvas.setAttribute('aria-hidden','true');
     button.append(label,canvas);button.onclick=()=>effectSelection(factor.key);host.append(button);
   }
-  $('clear-effect').onclick=()=>effectSelection(activeEffect);
+  $('clear-effect').onclick=()=>effectSelection(null);
 }
 function inspect(){
   const sample=data.samples[selected],rows=sample.snapshot.rows;
@@ -85,7 +95,7 @@ function inspect(){
   $('inspect-solar').textContent=(Number.isFinite(value('irradiance'))?Math.round(value('irradiance')):'—')+' W/m²';
   const effect=candidate[selected]?.effects,details=$('effect-inspection');details.replaceChildren();
   if(!effect){details.textContent='No calculation at this sample · '+(candidate[selected]?.moisture===undefined?candidate[selected]?.reason:'initialization, reset or repeated acquisition');return;}
-  const factors=activeEffect?grassFactors.filter(f=>f.key===activeEffect):grassFactors;
+  const factors=activeEffects.size?grassFactors.filter(f=>activeEffects.has(f.key)):grassFactors;
   for(const factor of factors){const rate=effect.rates[factor.key],item=element('span',`${factor.short} ${rate===0?'':factor.direction>0?'+':'−'}${rate.toFixed(2)}`);item.style.setProperty('--factor',factor.color);details.append(item);}
   details.append(element('small',`moisture / hour · ${clock(effect.start)}–${clock(effect.end)}${candidate[selected]?.value===null?' · model warming up':''}`));
 }
