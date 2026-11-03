@@ -33,3 +33,11 @@
 .factor-control input{accent-color:var(--factor)}
 .overlay-label{font:11px 'Segoe UI',sans-serif;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 @media(max-width:760px){.chart-wrap{margin-left:0;width:100%}.effect-scale{margin-left:88px}.effect-name{padding-left:4px}.effects-heading{align-items:start}}
+
+.chart-card>.section-heading{align-items:flex-start}
+.chart-window{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.chart-time{font-size:21px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;letter-spacing:-.4px;white-space:nowrap;line-height:1.2}
+#chart-legend{align-items:center;margin-top:12px}
+#chart-legend #clear-effect{margin-left:auto;font-size:11px;padding:3px 0}
+.effects{padding-top:10px}
+@media(max-width:760px){.chart-window{width:100%;gap:8px}.chart-time{font-size:19px}.periods button{padding:5px 8px}#chart-legend{gap:10px}#chart-legend #clear-effect{margin-left:0}}
