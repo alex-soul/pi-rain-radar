@@ -43,3 +43,10 @@
 @media(max-width:760px){.chart-window{width:100%;gap:8px}.chart-time{font-size:19px}.periods button{padding:5px 8px}#chart-legend{gap:10px}#chart-legend #clear-effect{margin-left:0}}
 
 .comparison-summary{display:flex;flex-wrap:wrap;gap:4px 20px;margin:14px 0 0;color:var(--muted);font-size:12px;line-height:1.6}.comparison-summary strong{font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}.comparison-summary strong.accent{color:var(--green)}.comparison-summary+.table-wrap{margin-top:12px}
+
+.settings-label-title{display:inline-flex;align-items:center;gap:7px}
+.settings-info{position:relative;flex:0 0 14px;width:14px;height:14px;padding:0;border:1px solid var(--muted);border-radius:50%;color:inherit;background:transparent;opacity:.6;font:italic 10px Georgia,serif;cursor:pointer;vertical-align:middle}
+.settings-info::before{content:'';position:absolute;inset:-5px}
+.settings-info:hover,.settings-info:focus-visible,.settings-info[aria-expanded=true]{opacity:1}
+.settings-help-bubble{position:fixed;z-index:5;box-sizing:border-box;padding:14px 16px;border:1px solid var(--line);border-radius:10px;box-shadow:0 5px 20px #0003;background:var(--surface2);color:var(--text);font-size:13px;line-height:1.5}
+.settings-help-bubble[hidden]{display:none}

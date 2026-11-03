@@ -1,3 +1,4 @@
+import {setupSettingsHelp} from '/settings-help.js';
 import {grassControls} from '/grass-wetness-settings.js';
 import {readingValues} from '/reading-units.js';
 import {replayGrass,alignedGrass,observationComparison} from '/grass-replay.js';
@@ -133,21 +134,22 @@ function recalculate(){
   candidate=replayGrass(data.samples,recordedMode?null:parameters,data.initialState,{trace:true});
   effectStrips();chart();inspect();table();metrics();
   $('candidate-label').textContent=recordedMode?'Replay · recorded settings':'Your alternative';
-  $('experiment-mode').textContent=recordedMode?'Following recorded settings changes. Sliders show the latest recorded values.':'One alternative profile across the full history.';
   if(data.validation?.mismatches)error('Saved estimates could not be reproduced. Treat this experiment as unverified.');
 }
 function controls(){
   const host=$('sliders');
   for(const [key,label,hint,min,max]of grassControls){
     if(['rain','solar','sensitivity'].includes(key))host.append(element('div',key==='rain'?'WETTING':key==='solar'?'DRYING':'DISPLAY','slider-group'));
-    const field=element('div',undefined,'slider-field'),title=element('label',label),output=element('output',parameters[key].toFixed(2)+'×');title.htmlFor='tune-'+key;output.id='value-'+key;title.append(output);
+    const field=element('div',undefined,'slider-field'),title=element('label',label),output=element('output',parameters[key].toFixed(2)+'×');title.htmlFor='grass-'+key;output.id='value-'+key;title.append(output);
     const factor=settingDefinitions.find(f=>f.key===key);if(factor){field.style.setProperty('--factor',factor.color);field.classList.add('factor-control');}
-    const input=element('input');Object.assign(input,{id:'tune-'+key,type:'range',min:String(min),max:String(max),step:'0.05',value:String(parameters[key])});input.setAttribute('aria-describedby','hint-'+key);
-    const detail=element('small',hint);detail.id='hint-'+key;field.append(title,input,detail);host.append(field);
+    const input=element('input');Object.assign(input,{id:'grass-'+key,type:'range',min:String(min),max:String(max),step:'0.05',value:String(parameters[key])});
+    field.append(title,input);host.append(field);
     input.addEventListener('input',()=>{recordedMode=false;parameters[key]=Number(input.value);output.textContent=parameters[key].toFixed(2)+'×';cancelAnimationFrame(frame);frame=requestAnimationFrame(recalculate);});
   }
 
-  $('reset').onclick=()=>{recordedMode=!data.synthetic;parameters={...data.parameters};for(const [key]of grassControls){$('tune-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}recalculate();};
+  setupSettingsHelp(host,{viewport:true});
+  document.addEventListener('scroll',()=>{const active=host.querySelector('.settings-info[aria-expanded="true"]');active?.click();},true);
+  $('reset').onclick=()=>{recordedMode=!data.synthetic;parameters={...data.parameters};for(const [key]of grassControls){$('grass-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}recalculate();};
   document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{hours=Number(button.dataset.hours);document.querySelectorAll('[data-hours]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));const {start,end}=visibleWindow();cursorAt=windowCursor(cursorAt,start,end);inspect();effectStrips();chart();});
   new ResizeObserver(()=>{effectStrips();chart();}).observe($('chart').parentElement);
   const pointAt=event=>{const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft)return;const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-plotLeft)/(rect.width-plotLeft-plotRight))),{start,end}=visibleWindow();cursorAt=start+ratio*(end-start);inspect();chart();};
@@ -158,7 +160,6 @@ function datasetLabels(){
   if(data.synthetic){$('dataset-notice').textContent='Illustrative weather and observations · isolated from your Pi · changes here never tune the live model.';return;}
   hours=168;document.querySelectorAll('[data-hours]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.hours)===hours)));
   $('dataset-notice').textContent=`Recorded Pi ${data.appVersion} history · read-only snapshot taken ${stamp(data.capturedAt)} · local experiment, no live changes.`;
-  $('tuning-note').textContent='Move a slider to apply one alternative profile across all retained inputs. Reset replays the original settings changes.';
 }
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light';if(data)effectStrips();};
 $('export').onclick=()=>{

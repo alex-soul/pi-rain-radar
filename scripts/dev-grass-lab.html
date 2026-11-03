@@ -3,7 +3,7 @@
 <body>
 <header class="topbar"><a class="brand" href="/__dev"><span class="brand-mark">≋</span> Pi Rain Radar <span class="brand-separator">/</span> <strong>Grass Lab</strong></a><nav><a href="/" target="_blank" rel="noopener">Radar preview ↗</a><button id="theme" aria-label="Switch colour theme">Light / dark</button><button id="export">Export experiment ↓</button></nav></header>
 <main>
-<div class="intro"><div><p class="eyebrow">OBSERVE · COMPARE · UNDERSTAND</p><h1>A little closer to the grass.</h1><p class="lede">The same weather. A different balance. Explore what your settings would have changed.</p></div><a href="/__grass-observe" class="primary add-link">＋ Log an observation</a></div>
+<div class="intro"><div><p class="eyebrow">OBSERVE · COMPARE · UNDERSTAND</p><h1>A little closer to the grass.</h1></div><a href="/__grass-observe" class="primary add-link">＋ Log an observation</a></div>
 <div class="notice"><span class="pill">DEV PREVIEW</span><span id="dataset-notice">Loading local Grass dataset…</span></div>
 <div class="lab-layout">
 <section class="analysis" aria-label="Grass analysis">
@@ -21,7 +21,7 @@
 <section class="card observations"><div class="section-heading"><div><p class="eyebrow">THE GROUND TRUTH</p><h2>Your observations</h2></div><span id="observation-count" class="count"></span></div><p class="comparison-summary" aria-label="Observation comparison"><span>Average difference: <strong id="baseline-error">—</strong> <span aria-label="to">→</span> <strong id="candidate-error" class="accent">—</strong></span><span><strong id="matched">—</strong> observations matched</span></p><div class="table-wrap"><table><thead><tr><th>Observed</th><th>You saw</th><th>Recorded</th><th>Alternative</th><th>Note</th></tr></thead><tbody id="observations"></tbody></table></div></section>
 </section>
 <aside class="controls">
-<section class="card tuning"><div class="section-heading"><div><p class="eyebrow">WHAT IF?</p><h2>Adjust the balance</h2></div><button id="reset" class="text-button">Reset</button></div><p id="tuning-note" class="fine">Move a slider. The alternative curve recalculates over all seven days.</p><p id="experiment-mode" class="fine accent"></p><div id="sliders"></div><div class="sandbox-note"><span class="small-dot"></span>Experiment only. Live settings stay unchanged.</div></section>
+<section class="card tuning"><div class="section-heading"><div><p class="eyebrow">WHAT IF?</p><h2>Adjust the balance</h2></div><button id="reset" class="text-button">Reset</button></div><div id="sliders"></div><div class="sandbox-note"><span class="small-dot"></span>Experiment only. Live settings stay unchanged.</div></section>
 <section class="card entry"><p class="eyebrow">OUTSIDE RIGHT NOW?</p><h2>Log it while you walk.</h2><p class="fine">The separate entry page keeps things light on your phone. Open the lab again at home to compare.</p><a class="primary add-link" href="/__grass-observe">＋ Log an observation</a></section>
 </aside></div>
 <footer><span>Grass Lab · first dev iteration</span><span>0–5 intensity · recorded weather, no future prediction</span></footer>
