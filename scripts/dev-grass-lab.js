@@ -5,7 +5,7 @@ import {grassFactors,effectBins,effectOpacity} from '/grass-effects.js';
 import {plotPoints} from '/grass-plot.js';
 import {recordedSettingChanges,sampleAt,windowCursor} from '/__grass-lab-inspection.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
-let data,parameters,candidate=[],hours=72,selected=0,replayMs=0,frame=0,recordedMode=false;
+let data,parameters,candidate=[],hours=72,selected=0,frame=0,recordedMode=false;
 const activeEffects=new Set();
 let bins=[];
 let cursorAt=0,settingsMarkers=[];
@@ -128,12 +128,9 @@ function metrics(){
   const original=observationComparison(data.recorded,data.observations),alternative=observationComparison(candidate,data.observations);
   $('baseline-error').textContent=fmt(original.meanAbsoluteDifference);$('candidate-error').textContent=fmt(alternative.meanAbsoluteDifference);
   $('matched').textContent=alternative.count+' / '+data.observations.length;
-  $('replay-duration').textContent=replayMs<1?'< 1 ms':Math.round(replayMs)+' ms';
-  $('replay-count').textContent=data.samples.length+' inputs · browser calculation';
-  $('comparison-note').textContent=data.synthetic?'Mean absolute difference · illustrative observations, not validation':'Mean absolute difference · a small observation sample';
 }
 function recalculate(){
-  const start=performance.now();candidate=replayGrass(data.samples,recordedMode?null:parameters,data.initialState,{trace:true});replayMs=performance.now()-start;
+  candidate=replayGrass(data.samples,recordedMode?null:parameters,data.initialState,{trace:true});
   effectStrips();chart();inspect();table();metrics();
   $('candidate-label').textContent=recordedMode?'Replay · recorded settings':'Your alternative';
   $('experiment-mode').textContent=recordedMode?'Following recorded settings changes. Sliders show the latest recorded values.':'One alternative profile across the full history.';
