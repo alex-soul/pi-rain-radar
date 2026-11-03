@@ -1,3 +1,4 @@
+import {grassLabRoutes} from './grass-lab.js';
 import {createAviation,loadAviationHistory} from './aviation.js';
 import {exists} from './history-files.js';
 import {createScreenControl} from './screen-control.js';
@@ -89,7 +90,9 @@ const releases=await createReleaseCheck(directory,packageInfo.version);
 camera=await createCamera(directory,{store:history,ha,onEvent:diagnostics.record,onPolicy:collectionRecorder(history,'camera-collection'),autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'});
 if(!ha.status().configured&&camera.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});
 clouds=await createClouds(directory,{onPolicy:collectionRecorder(history,'cloud-collection'),store:history,provider:rainbow,settings:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'||process.env.RADAR_DEV_CLOUDS==='1',rainBusy:()=>maps.status().busy||maps.current().radar.status().fetching,onEvent:diagnostics.record});
-const handleSettings = settingsRoutes(createSettingsAuth(directory), weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, displaySettings, clouds, aviation });
+const settingsAuth=createSettingsAuth(directory);
+const handleGrassLab=grassLabRoutes({store:history,auth:settingsAuth,context:()=>`${maps.current().settings.lat},${maps.current().settings.lon}`,version:packageInfo.version,timeZone:()=>maps.current().settings.timeZone||'Europe/London'});
+const handleSettings = settingsRoutes(settingsAuth, weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, displaySettings, clouds, aviation });
 const observeHealth=createHealthEvents(diagnostics.record);
 const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());
 let maintaining=false,nextMaintenance=0;
@@ -204,9 +207,12 @@ const staticFiles = new Map([
   ["/basemap-dark.svg", ["basemap-dark.svg", "image/svg+xml"]],
   ["/places.json", ["places.json", "application/json"]],
 ]);
+for(const name of ['grass-lab','grass-obs'])staticFiles.set('/'+name,[name+'.html','text/html']);
+for(const name of ['grass-lab.js','grass-lab.css','grass-obs.js','grass-obs.css','grass-lab-worker.js','grass-access.js','grass-plot.js'])staticFiles.set('/'+name,[name,name.endsWith('.css')?'text/css':'text/javascript']);
 const server = createServer(async (req, res) => {
   try {
     const settingsPath = new URL(req.url, "http://localhost").pathname;
+    if(settingsPath.startsWith('/api/grass-lab/'))return await handleGrassLab(req,res,settingsPath);
     if (settingsPath === "/api/settings" || settingsPath.startsWith("/api/settings/")) {
       checkHealth();
       return await handleSettings(req, res, settingsPath);

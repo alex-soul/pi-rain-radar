@@ -69,6 +69,9 @@ export async function createHistoryStore(directory, options = {}) {
   }
   try { await ready; } catch(error) {await worker.terminate();await release();throw error;}
   return {
+    grassData: context=>call('grassData',{context}),
+    grassObserve: (context,input)=>call('grassObserve',{context,input}),
+    grassImport: (context,observations,markers)=>call('grassImport',{context,observations,markers}),
     put: (records,grassState) => !Array.isArray(records)||records.length>128 ? Promise.reject(Object.assign(new Error('Invalid history batch'),{code:'ARCHIVE_INPUT'})) : call('put',{records,grassState}),
     publish(record, bytes) {
       if (!(bytes instanceof Uint8Array) || bytes.byteLength > MAX_IMAGE_BYTES)

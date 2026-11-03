@@ -1,5 +1,7 @@
 # Grass wetness: setup and tuning
 
+For direct observation entry and historical tuning experiments, see [Grass Lab](grass-lab.md), available from 0.15.0 at `/grass-lab` and `/grass-obs`.
+
 Grass wetness estimates how wet the grass might feel underfoot, from **0 (dry) to 5 (soaked)**. I built it to help with a familiar question before going outside: do I need wellies? Rain and dew add wetness; sunlight, wind, dry air and drainage gradually remove it. The estimate remembers recent conditions instead of treating a moment without rain as dry grass.
 
 This is an **uncalibrated weather-based estimate**, not a grass sensor or a soil-moisture measurement. The coefficients have not been fitted to my observation spreadsheet. I am leaving everything at **1×** initially and comparing it with what I see outside. That is the recommended starting point, not a claim that the defaults are optimal for every garden.

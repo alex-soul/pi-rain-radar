@@ -4,8 +4,8 @@ import {randomUUID} from 'node:crypto';
 import {grassDefaults} from '../public/grass-wetness-settings.js';
 import {replayGrass,alignedGrass} from '../public/grass-replay.js';
 
-export function grassLabFixture(end=Date.now()){
-  const start=end-168*3600000,samples=[];
+export function grassLabFixture(end=Date.now(),days=7){
+  const start=end-days*86400000,samples=[];
   let total=0;
   for(let time=start;time<=end;time+=300000){
     const hour=new Date(time).getUTCHours()+new Date(time).getUTCMinutes()/60;

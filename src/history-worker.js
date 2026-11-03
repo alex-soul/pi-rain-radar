@@ -1,3 +1,4 @@
+import {grassTables,seedGrass,trimGrass,saveGrassSample,readGrass,putGrassObservation,validateObservation} from './grass-lab-store.js';
 import {parentPort,workerData} from 'node:worker_threads';
 import {DatabaseSync} from 'node:sqlite';
 import {randomUUID} from 'node:crypto';
@@ -12,7 +13,7 @@ const root=join(directory,'archive'),file=join(root,'history.sqlite'),markerFile
 const clock=()=>options.now ?? Date.now(); // deterministic fixture clock; production omits it
 const BATCH=128,MiB=1024*1024,DAY=86400000,MAX_SPAN=28*3600000;
 let db,marker,legacyIterator,closed=false,storageError=null,protectedContexts=[];
-let cleanupBatch=BATCH,lastCheckpoint=-Infinity;
+let cleanupBatch=BATCH,lastCheckpoint=-Infinity,lastGrassTrim=0;
 const recoveryIterators=new Map();
 function meta(key,value) {
   const previous=db.prepare('SELECT value FROM meta WHERE key=?').get(key)?.value;
@@ -61,6 +62,7 @@ function openDatabase(){
   if(meta('generation')!==marker.generation)throw archiveError('ARCHIVE_STATE','Archive generation does not match state');
   meta('retentionDays',marker.retentionDays);
   db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA cache_size=-8192; PRAGMA wal_autocheckpoint=1000; PRAGMA journal_size_limit=16777216');
+  tx(()=>{grassTables(db);seedGrass(db,clock());trimGrass(db,clock());});
   const sqlite=db.prepare('SELECT sqlite_version() AS version').get().version.split('.').map(Number);
   if(sqlite[0]<3||(sqlite[0]===3&&(sqlite[1]<51||(sqlite[1]===51&&sqlite[2]<3))))throw archiveError('ARCHIVE_SCHEMA','SQLite 3.51.3 or newer required');
 }
@@ -342,13 +344,21 @@ const methods={
     await writable(128*1024);
     return tx(()=>{insert(record);meta('weather:policy',value);meta('lastWrite',clock());});
   },
+  grassData({context}){if(!text(context))throw Error('Invalid location');return readGrass(db,context,clock());},
+  async grassObserve({context,input}){if(!text(context))throw Error('Invalid location');const value=validateObservation(input,clock());await writable(16384);return tx(()=>putGrassObservation(db,context,value));},
+  async grassImport({context,observations,markers=[]}){
+    if(!text(context)||!Array.isArray(observations)||observations.length>128||!Array.isArray(markers)||markers.length>128)throw Error('Invalid Grass import');
+    const rows=observations.map(o=>({...validateObservation(o,clock()),source:o.source??{type:'import'},reportedPi:o.reportedPi??null}));
+    if(markers.some(m=>typeof m.id!=='string'||m.id.length>100||!Number.isSafeInteger(m.time)||typeof m.label!=='string'||m.label.length>500))throw Error('Invalid Grass marker');
+    await writable(128*1024);return tx(()=>{for(const o of rows)putGrassObservation(db,context,o);for(const m of markers)db.prepare('INSERT OR IGNORE INTO grass_markers VALUES(?,?,?,?)').run(m.id,context,m.time,JSON.stringify(m));return {observations:rows.length,markers:markers.length};});
+  },
   async put({records,grassState}){
     if(!Array.isArray(records)||records.length>BATCH)throw archiveError('ARCHIVE_INPUT','History batch exceeds limit');
     if(grassState!==undefined&&(!grassState||Buffer.byteLength(JSON.stringify(grassState))>128*1024||records.length!==1||records[0].kind!=='weather'||records[0].source!=='presentation'))throw archiveError('ARCHIVE_INPUT','Invalid grass estimate state');
     const checked=records.map(validate);if(checked.some(r=>['radar','cloud','camera'].includes(r.kind)))throw archiveError('ARCHIVE_INPUT','Images require atomic publication');
     if(checked.reduce((n,r)=>n+Buffer.byteLength(r.data),0)>512*1024)throw archiveError('ARCHIVE_INPUT','History batch too large');
     await writable(512*1024);
-    return tx(()=>{let inserted=0;for(const r of checked)if(r.time>=meta('cutoff'))inserted+=insert(r);if(grassState!==undefined)meta('weather:grass-wetness',grassState);meta('lastWrite',clock());return {inserted};});
+    return tx(()=>{let inserted=0;for(const r of checked){if(r.time>=meta('cutoff'))inserted+=insert(r);saveGrassSample(db,r,grassState?.state); }if(clock()-lastGrassTrim>3600000){trimGrass(db,clock());lastGrassTrim=clock();}if(grassState!==undefined)meta('weather:grass-wetness',grassState);meta('lastWrite',clock());return {inserted};});
   },publish,range:q=>queryRange(q),latest:q=>queryRange(q,true),lastGood,
   calendar(q){
     const {clauses,params}=where(q,32*DAY);const times=db.prepare(`SELECT DISTINCT r.time FROM records r WHERE ${clauses.join(' AND ')} ORDER BY r.time LIMIT 513`).all(...params);
