@@ -40,3 +40,5 @@ RC4 validation: 497 automated tests; AMD64/ARM64 image startup and observation p
 - Model versions are retained per sample, so old estimates replay under their original rules. Upgrading preserves valid existing state; new recovery rules affect future calculations.
 - Apply beside Reset saves the seven Lab sliders through the existing weather-settings persistence and PIN protection, preserving the enable switch and unrelated settings.
 - Observation entry is a clean standalone form. The duplicate Lab entry card is removed. Both save actions share a themed six-box PIN dialog with digit advance and paste support.
+
+RC5 validation: 502 automated tests; AMD64/ARM64 startup and persistence across restart; 34 focused native ARM64 tests. Production-page checks covered Apply/Reset and PIN entry in both themes, plus the compact phone form. Live verification preserved configuration and ten observations; 4,197 retained estimates reproduced exactly across both model versions. Natural-outage behaviour and lawn calibration still need observation.
