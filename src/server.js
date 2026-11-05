@@ -91,7 +91,7 @@ camera=await createCamera(directory,{store:history,ha,onEvent:diagnostics.record
 if(!ha.status().configured&&camera.status().mode==='ha'&&camera.status().enabled)await camera.configure({enabled:false});
 clouds=await createClouds(directory,{onPolicy:collectionRecorder(history,'cloud-collection'),store:history,provider:rainbow,settings:()=>maps.current().settings,autoStart:process.env.RADAR_MANUAL_REFRESH!=='1'||process.env.RADAR_DEV_CLOUDS==='1',rainBusy:()=>maps.status().busy||maps.current().radar.status().fetching,onEvent:diagnostics.record});
 const settingsAuth=createSettingsAuth(directory);
-const handleGrassLab=grassLabRoutes({store:history,auth:settingsAuth,context:()=>`${maps.current().settings.lat},${maps.current().settings.lon}`,version:packageInfo.version,parameters:()=>weatherSettings.current().grassWetness,timeZone:()=>maps.current().settings.timeZone||'Europe/London'});
+const handleGrassLab=grassLabRoutes({store:history,auth:settingsAuth,context:()=>`${maps.current().settings.lat},${maps.current().settings.lon}`,version:packageInfo.version,parameters:()=>weatherSettings.current().grassWetness,saveParameters:input=>weatherSettings.configure({grassWetness:input}),timeZone:()=>maps.current().settings.timeZone||'Europe/London'});
 const handleSettings = settingsRoutes(settingsAuth, weather, maps, { diagnostics, radarSettings, rainbow, power, screen, embed, storage, camera, ha, weatherSettings, displaySettings, clouds, aviation });
 const observeHealth=createHealthEvents(diagnostics.record);
 const checkHealth=()=>observeHealth(maps.current().radar.healthSources(),weather.status());
@@ -118,7 +118,7 @@ const staticFiles = new Map([
   ['/screen-display.js',['screen-display.js','text/javascript']],
   ['/reading-units.js',['reading-units.js','text/javascript']],
   ['/chart-explanations.js',['chart-explanations.js','text/javascript']],
-  ...['grass-replay.js','grass-wetness-model.js','integration-health.js','gif-timeline.js','grass-wetness-ui.js','grass-wetness-settings.js','grass-wetness-settings-ui.js'].map(file=>['/'+file,[file,'text/javascript']]),
+  ...['grass-replay.js','grass-wetness-model.js','grass-wetness-model-v1.js','integration-health.js','gif-timeline.js','grass-wetness-ui.js','grass-wetness-settings.js','grass-wetness-settings-ui.js'].map(file=>['/'+file,[file,'text/javascript']]),
   ['/grass-wetness.css',['grass-wetness.css','text/css']],
   ['/aviation-widget.js',['aviation-widget.js','text/javascript']],
   ['/aviation-model.js',['aviation-model.js','text/javascript']],
@@ -208,7 +208,7 @@ const staticFiles = new Map([
   ["/places.json", ["places.json", "application/json"]],
 ]);
 for(const name of ['grass-lab','grass-obs'])staticFiles.set('/'+name,[name+'.html','text/html']);
-for(const name of ['grass-lab-inspection.js','grass-effects.js','grass-lab.js','grass-lab.css','grass-obs.js','grass-obs.css','grass-lab-worker.js','grass-access.js','grass-plot.js'])staticFiles.set('/'+name,[name,name.endsWith('.css')?'text/css':'text/javascript']);
+for(const name of ['grass-lab-inspection.js','grass-effects.js','grass-lab.js','grass-lab.css','grass-obs.js','grass-obs.css','grass-lab-worker.js','grass-access.js','grass-access.css','grass-plot.js'])staticFiles.set('/'+name,[name,name.endsWith('.css')?'text/css':'text/javascript']);
 const server = createServer(async (req, res) => {
   try {
     const settingsPath = new URL(req.url, "http://localhost").pathname;

@@ -1,3 +1,4 @@
+import {saveGrassParameters} from './grass-access.js';
 import {setupSettingsHelp} from './settings-help.js';
 import {recordedSettingChanges,sampleAt,windowCursor,effectAt,calendarTicks} from './grass-lab-inspection.js';
 import {grassFactors,effectBins,effectOpacity} from './grass-effects.js';
@@ -173,12 +174,13 @@ function controls(){
     const factor=settingDefinitions.find(f=>f.key===key);if(factor){field.style.setProperty('--factor',factor.color);field.classList.add('factor-control');}
     const input=element('input');Object.assign(input,{id:'grass-'+key,type:'range',min:String(min),max:String(max),step:'0.05',value:String(parameters[key])});
     field.append(title,input);host.append(field);
-    input.addEventListener('input',()=>{parameters[key]=Number(input.value);output.textContent=parameters[key].toFixed(2)+'×';clearTimeout(frame);frame=setTimeout(recalculate,100);});
+    input.addEventListener('input',()=>{$('apply-message').textContent='';parameters[key]=Number(input.value);output.textContent=parameters[key].toFixed(2)+'×';clearTimeout(frame);frame=setTimeout(recalculate,100);});
   }
 
   setupSettingsHelp(host,{viewport:true});
   document.addEventListener('scroll',()=>{const active=host.querySelector('.settings-info[aria-expanded="true"]');active?.click();},true);
   $('reset').onclick=resetParameters;
+  $('apply').onclick=applyParameters;
   document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{hours=Number(button.dataset.hours);document.querySelectorAll('[data-hours]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));const {start,end}=visibleWindow();cursorAt=windowCursor(cursorAt,start,end);inspect();effectStrips();chart();});
   resizeObserver=new ResizeObserver(()=>{effectStrips();chart();});resizeObserver.observe($('chart').parentElement);
   const pointAt=event=>{const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft)return;const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-plotLeft)/(rect.width-plotLeft-plotRight))),{start,end}=visibleWindow();cursorAt=start+ratio*(end-start);inspect();chart();};
@@ -188,7 +190,7 @@ function controls(){
 function datasetLabels(){
   if(data.synthetic){$('dataset-notice').textContent='Illustrative weather and observations · isolated from your Pi · changes here never tune the live model.';return;}
   hours=168;document.querySelectorAll('[data-hours]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.hours)===hours)));
-  $('dataset-notice').textContent=`Recorded history through ${stamp(data.end)} · loaded ${stamp(data.capturedAt)} · up to 30 days retained. Experiments do not change live settings.`;
+  $('dataset-notice').textContent=`Recorded history through ${stamp(data.end)} · loaded ${stamp(data.capturedAt)} · up to 30 days retained. Apply saves your slider values to live settings.`;
 }
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light';if(data?.samples.length)effectStrips();};
 $('export').onclick=()=>{
@@ -202,17 +204,29 @@ async function currentParameters(){
   return value;
 }
 async function resetParameters(){
-  $('reset').disabled=true;$('refresh').disabled=true;
+  $('reset').disabled=true;$('refresh').disabled=true;$('apply').disabled=true;
   const inputs=[...$('sliders').querySelectorAll('input')];inputs.forEach(input=>input.disabled=true);
   try{
-    const current=await currentParameters();parameters=current;clearTimeout(frame);error('');
+    const current=await currentParameters();parameters=current;clearTimeout(frame);error('');$('apply-message').textContent='';
     for(const [key]of grassControls){$('grass-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}
     recalculate();
   }catch(e){error(e.message+' Your experiment has been kept. Try Reset again.');}
-  finally{$('reset').disabled=false;$('refresh').disabled=false;inputs.forEach(input=>input.disabled=false);}
+  finally{$('reset').disabled=false;$('refresh').disabled=false;$('apply').disabled=false;inputs.forEach(input=>input.disabled=false);}
+}
+async function applyParameters(){
+  const values=Object.fromEntries(grassControls.map(([key])=>[key,parameters[key]]));
+  const inputs=[...$('sliders').querySelectorAll('input')];
+  for(const id of ['apply','reset','refresh'])$(id).disabled=true;
+  inputs.forEach(input=>input.disabled=true);$('apply-message').textContent='';error('');
+  try{
+    const result=await saveGrassParameters(values);
+    parameters=validateGrassSettings(result.parameters);if(!parameters)throw Error('Saved settings could not be read. Use Reset to check them.');
+    $('apply-message').textContent='Applied to live settings.';recalculate();
+  }catch(e){$('apply-message').textContent=e.message;}
+  finally{for(const id of ['apply','reset','refresh'])$(id).disabled=false;inputs.forEach(input=>input.disabled=false);}
 }
 async function loadHistory(){
-  $('refresh').disabled=true;
+  $('refresh').disabled=true;$('apply').disabled=true;$('reset').disabled=true;
   try{
     const response=await fetch('/api/grass-lab/data',{signal:AbortSignal.timeout(30000)});if(!response.ok)throw Error('Lab history unavailable.');const history=await response.json(),current=await currentParameters();data=history;
     parameters=current;cursorAt=data.end;selected=data.samples.length-1;settingsMarkers=recordedSettingChanges(data.samples,settingDefinitions);loaded=false;candidate=[];steps=[];error('');
@@ -220,7 +234,7 @@ async function loadHistory(){
     datasetLabels();if(!$('sliders').children.length)controls();
     for(const [key]of grassControls){$('grass-'+key).value=parameters[key];$('value-'+key).textContent=parameters[key].toFixed(2)+'×';}
     recalculate();
-  }catch(e){error(e.message+' Refresh to try again.');}finally{$('refresh').disabled=false;}
+  }catch(e){error(e.message+' Refresh to try again.');}finally{$('refresh').disabled=false;$('apply').disabled=!parameters||!$('sliders').children.length;$('reset').disabled=false;}
 }
 $('refresh').onclick=()=>{if(!busy)void loadHistory();};
 effectControls();

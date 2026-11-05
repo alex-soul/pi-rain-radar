@@ -20,13 +20,13 @@ function snapshot(time,total=0,parameters={},values={}){
 }
 test('reservoir warms up, counts rain only once, distinguishes dry/unknown and responds to tuning',()=>{
  let state,reading;
- for(let i=0;i<=6;i++){({state,reading}=advanceGrassWetness(state,snapshot(start+i*300000,i*.5),start+i*300000));if(i<6)assert.equal(reading.intensity,null);}
+ for(let i=0;i<=6;i++){({state,reading}=advanceGrassWetness(state,snapshot(start+i*300000,i*.75),start+i*300000));if(i<6)assert.equal(reading.intensity,null);}
  assert.equal(reading.intensity,5);
- const repeated=advanceGrassWetness(state,snapshot(start+1800000,3),start+1800001);
+ const repeated=advanceGrassWetness(state,snapshot(start+1800000,4.5),start+1800001);
  assert.equal(repeated.state.moisture,state.moisture);
- const tuned=advanceGrassWetness(state,snapshot(start+1800000,3,{sensitivity:.25}),start+1800001);
+ const tuned=advanceGrassWetness(state,snapshot(start+1800000,4.5,{sensitivity:.25}),start+1800001);
  assert.equal(tuned.reading.intensity,1);assert.equal(tuned.state.moisture,state.moisture);
- for(let i=7;i<=60;i++)({state,reading}=advanceGrassWetness(state,snapshot(start+i*300000,3,{}, {temperature:25,dew:5,irradiance:900,wind:15}),start+i*300000));
+ for(let i=7;i<=60;i++)({state,reading}=advanceGrassWetness(state,snapshot(start+i*300000,4.5,{}, {temperature:25,dew:5,irradiance:900,wind:15}),start+i*300000));
  assert.equal(reading.intensity,0);
  const missing=snapshot(start+61*300000,3);missing.rows.irradiance.source=null;
  assert.equal(advanceGrassWetness(state,missing,start+61*300000).reading.intensity,null);
@@ -44,6 +44,7 @@ test('reset metadata bridges counters; gaps, unexplained resets and source chang
 test('every wetting and drying factor moves the reservoir in the documented direction',()=>{
  const values={temperature:10,dew:9,wind:10,irradiance:300};
  const initial=advanceGrassWetness(null,snapshot(start,0,{},values),start).state;
+ initial.moisture=2; // Drainage requires retained water.
  const next=parameters=>advanceGrassWetness(initial,snapshot(start+300000,.2,parameters,values),start+300000).state.moisture;
  const baseline=next({});
  for(const key of ['rain','dew'])assert.ok(next({[key]:2})>baseline,key);
@@ -55,7 +56,8 @@ test('every wetting and drying factor moves the reservoir in the documented dire
  const otherInitial=snapshot(start,0,{},values);
  for(const key of ['temperature','dew']){otherInitial.rows[key].value=otherInitial.rows[key].value*1.8+32;otherInitial.rows[key].unit='F';}
  otherInitial.rows.wind.value*=1.609344;otherInitial.rows.wind.unit='km/h';
- const equivalent=advanceGrassWetness(advanceGrassWetness(null,otherInitial,start).state,other,start+300000);
+ const equivalentState=advanceGrassWetness(null,otherInitial,start).state;equivalentState.moisture=2;
+ const equivalent=advanceGrassWetness(equivalentState,other,start+300000);
  assert.ok(Math.abs(equivalent.state.moisture-baseline)<1e-10);
 });
 test('irradiance has no OWM assignment/fallback and accepts zero with canonical W/m²',()=>{
@@ -77,7 +79,7 @@ test('collector persists model and immutable replay, resumes after restart, vali
  await settings.configure({confirmUnits:true,haCollect:true,mappings,rainAccumulation:'sensor.rain',grassWetness:{enabled:true}});
  const ha={status:()=>({configured:true,revision:1}),json:async path=>{const id=path.split('/').at(-1),key=id.split('.')[1];return {entity_id:id,state:String(key==='rain'?total:{temperature:10,dew:8,wind:4,irradiance:0}[key]),last_reported:new Date(time).toISOString(),attributes:{unit_of_measurement:key==='rain'?'mm':key==='wind'?'mph':key==='irradiance'?'W/m²':'C',state_class:key==='rain'?'total_increasing':undefined}};}};
  const weather={status:()=>({configured:false})},make=()=>createHaWeather({ha,settings,weather,store,location:()=>({lat:1,lon:2}),now:()=>time,autoStart:false});
- collector=await make();for(let i=0;i<=6;i++){await collector.collect();if(i<6){time+=300000;total+=.5;}}
+ collector=await make();for(let i=0;i<=6;i++){await collector.collect();if(i<6){time+=300000;total+=.75;}}
  const before=structuredClone(collector.status().grassWetness);assert.equal(before.intensity,5,JSON.stringify(before));
  collector.close();collector=await make();assert.equal(collector.status().grassWetness.intensity,5);
  const state={presentation:collector.status()};assert.equal(weatherReadings(state,time).grassWetness.value,5);assert.equal(weatherReadings(state,time+600001).grassWetness.value,null);

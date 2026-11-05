@@ -1,4 +1,5 @@
 import {advanceGrassWetness} from './grass-wetness-model.js';
+import {advanceGrassWetness as advanceV1} from './grass-wetness-model-v1.js';
 import {validateGrassSettings} from './grass-wetness-settings.js';
 
 export const decimalGrass=reading=>reading?.eligible&&Number.isFinite(reading.moisture)?Math.max(0,Math.min(5,reading.moisture*(reading.parameters?.sensitivity??1))):null;
@@ -10,7 +11,10 @@ export function replayGrass(samples,parameters,initialState=null,{trace=false}={
     if(!Number.isFinite(sample.time)||sample.time<=last)throw Error('Replay times must increase');last=sample.time;
     const snapshot=parameters?{...sample.snapshot,policy:{...sample.snapshot.policy,grassWetness:parameters}}:sample.snapshot;
     let effects=null;
-    const result=advanceGrassWetness(state,snapshot,sample.time,trace?step=>{effects=step;}:undefined);state=result.state;
+    const version=sample.modelVersion??1;
+    if(![1,2].includes(version))throw Error('Unsupported Grass model version: '+version);
+    const advance=version===1?advanceV1:advanceGrassWetness;
+    const result=advance(state,snapshot,sample.time,trace?step=>{effects=step;}:undefined);state=result.state;
     return {time:sample.time,value:decimalGrass(result.reading),moisture:result.reading.moisture,reason:result.reading.reason,reading:result.reading,...(trace?{effects}:{})};
   });
 }

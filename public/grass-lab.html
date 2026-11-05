@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grass Lab · Pi Rain Radar</title><link rel="stylesheet" href="/grass-lab.css"><script type="module" src="/grass-lab.js"></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grass Lab · Pi Rain Radar</title><link rel="stylesheet" href="/grass-lab.css"><link rel="stylesheet" href="/grass-access.css"><script type="module" src="/grass-lab.js"></script></head>
 <body>
 <header class="topbar"><a class="brand" href="/"><span class="brand-mark">≋</span> Pi Rain Radar <span class="brand-separator">/</span> <strong>Grass Lab</strong></a><nav><a href="/" target="_blank" rel="noopener">Radar ↗</a><button id="theme" aria-label="Switch colour theme">Light / dark</button><button id="refresh">Refresh history</button><button id="export">Export experiment ↓</button></nav></header>
 <main>
@@ -22,8 +22,7 @@
 <section class="card observations"><div class="section-heading"><div><p class="eyebrow">THE GROUND TRUTH</p><h2>Your observations</h2></div><span id="observation-count" class="count"></span></div><p class="comparison-summary" aria-label="Observation comparison"><span>Average difference: <strong id="baseline-error">—</strong> <span aria-label="to">→</span> <strong id="candidate-error" class="accent">—</strong></span><span><strong id="matched">—</strong> observations matched</span></p><div class="table-wrap"><table><thead><tr><th>Observed</th><th>You saw</th><th>Recorded</th><th>Alternative</th><th>Note</th></tr></thead><tbody id="observations"></tbody></table></div></section>
 </section>
 <aside class="controls">
-<section class="card tuning"><div class="section-heading"><div><p class="eyebrow">WHAT IF?</p><h2>Adjust the balance</h2></div><button id="reset" class="text-button">Reset</button></div><div id="sliders"></div><div class="sandbox-note"><span class="small-dot"></span>Experiment only. Live settings stay unchanged.</div></section>
-<section class="card entry"><p class="eyebrow">OUTSIDE RIGHT NOW?</p><h2>Log it while you walk.</h2><p class="fine">The separate entry page keeps things light on your phone. Open the lab again at home to compare.</p><a class="primary add-link" href="/grass-obs">＋ Log an observation</a></section>
+<section class="card tuning"><div class="section-heading"><div><p class="eyebrow">WHAT IF?</p><h2>Adjust the balance</h2></div><div class="tuning-actions"><button id="reset" class="text-button">Reset</button><button id="apply" class="text-button" disabled>Apply</button></div></div><div id="sliders"></div><div class="sandbox-note"><span class="small-dot"></span>Sliders preview changes. Apply saves to live settings.</div><p id="apply-message" role="status"></p></section>
 </aside></div>
 <footer><span>Grass Lab · 30-day replay history</span><span>0–5 intensity · observed conditions</span></footer>
 <p id="error" role="alert" hidden></p>

@@ -10,6 +10,8 @@ import {grassLabRoutes} from '../src/grass-lab.js';
 import {createSettingsAuth,setPin} from '../src/settings-auth.js';
 import {grassLabFixture} from '../scripts/dev-grass-lab.mjs';
 import {plotPoints} from '../public/grass-plot.js';
+import {createWeatherSettings} from '../src/weather-settings.js';
+import {grassDefaults} from '../public/grass-wetness-settings.js';
 
 test('Grass observations persist, retries are idempotent and calibration retention is independent',async t=>{
  const directory=await mkdtemp(join(tmpdir(),'grass-service-')),now=Date.now(),context='test-location';let store=await createHistoryStore(directory,{now});
@@ -58,4 +60,27 @@ test('Lab parameter reset reads current settings independently of cached histori
  dew=2.25;
  assert.equal((await(await fetch(base+'parameters')).json()).parameters.dew,2.25);
  assert.equal(reads,1,'Reset must not load weather history or use its last profile');
+});
+
+test('Apply authenticates, validates only sliders and persists through normal weather policy without enabling calculation',async t=>{
+ const directory=await mkdtemp(join(tmpdir(),'grass-apply-')),store=await createHistoryStore(directory),auth=createSettingsAuth(directory);
+ await setPin(directory,'123456');
+ const settings=await createWeatherSettings(store);
+ await settings.configure({confirmUnits:true,units:{windUnit:'km/h'},grassWetness:{enabled:false,dew:2}});
+ const before=settings.current();
+ const route=grassLabRoutes({store,auth,context:()=> 'test',version:'test',parameters:()=>settings.current().grassWetness,saveParameters:input=>settings.configure({grassWetness:input})});
+ const server=createServer((req,res)=>route(req,res,new URL(req.url,'http://localhost').pathname));server.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(async()=>{await new Promise(r=>server.close(r));await store.close();await rm(directory,{recursive:true,force:true});});
+ const url=`http://127.0.0.1:${server.address().port}/api/grass-lab/parameters`;
+ const {enabled,...values}=grassDefaults;values.dew=2.5;values.drainage=0;
+ const post=(data=values,headers={})=>fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(data)});
+ assert.equal((await post()).status,401);assert.deepEqual(settings.current(),before);
+ const headers={Authorization:'Bearer '+(await auth.unlock('123456')).token};
+ assert.equal((await post(values,{...headers,Origin:'https://example.com'})).status,403);
+ for(const data of [{...values,enabled:true},{...values,dew:9},{...values,dew:'2'},null,{},[]])assert.equal((await post(data,headers)).status,400);
+ const saved=await post(values,headers);assert.equal(saved.status,200);
+ assert.deepEqual((await saved.json()).parameters,{enabled:false,...values});
+ const after=settings.current();assert.deepEqual(after.units,before.units);assert.deepEqual(after.mappings,before.mappings);assert.equal(after.revision,before.revision+1);
+ assert.deepEqual((await createWeatherSettings(store)).current().grassWetness,{enabled:false,...values});
+ assert.equal((await(await fetch(url)).json()).parameters.dew,2.5);
 });

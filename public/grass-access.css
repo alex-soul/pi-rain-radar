@@ -1,0 +1,13 @@
+.grass-unlock{box-sizing:border-box;width:min(360px,calc(100% - 32px));max-width:none;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);padding:28px 24px 24px;box-shadow:0 16px 48px #0005}
+.grass-unlock::backdrop{background:#0009}
+.grass-unlock fieldset{border:0;padding:0;margin:0;min-width:0}
+.grass-unlock legend{padding:0;margin:0 0 20px;font-size:14px;font-weight:650;letter-spacing:.12em;color:var(--text)}
+.grass-unlock .pin-digits{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
+.grass-unlock .pin-digits input{display:block;box-sizing:border-box;width:100%;min-width:0;aspect-ratio:1;padding:0;margin:0;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:24px/1 system-ui}
+.grass-unlock input:focus-visible,.grass-unlock button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.grass-unlock [role=status]{font-size:13px;margin:14px 0 0;color:var(--text)}
+.grass-unlock [role=status]:empty{display:none}
+.grass-unlock .pin-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+.grass-unlock button{font:600 14px system-ui;min-height:44px;padding:10px 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);cursor:pointer}
+.grass-unlock button[type=submit]{background:var(--green);color:var(--bg);border-color:var(--green)}
+.grass-unlock button:disabled{opacity:.6;cursor:wait}

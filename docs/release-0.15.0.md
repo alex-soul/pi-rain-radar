@@ -1,11 +1,11 @@
 # 0.15.0 release candidate
 
-`0.15.0-rc.3` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
+`0.15.0-rc.5` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
 
 - Grass scores show one decimal in the dock, trends and full widget. The full widget uses five bars, a smaller number and the descriptive heading, without the denominator or footwear helper text.
 - Archive GIF export preserves the playback slider track and thumb.
 - Aviation and Grass have current integration status, with the official aviation provider status link and concise current-only Stats for nerds.
-- [Grass Lab](grass-lab.md) and the separate mobile observation page are maintained direct routes, with persistent observations, 30-day compact history and experimental replay. They do not appear in radar menus and do not change live calibration.
+- [Grass Lab](grass-lab.md) and the separate mobile observation page are maintained direct routes, with persistent observations, 30-day compact history and experimental replay. They do not appear in radar menus. Slider changes preview alternatives; Apply deliberately saves live calibration with the installation PIN.
 - The local `__dev` scenario playground remains available for development.
 
 The Grass model remains an uncalibrated estimate. This candidate improves observation and comparison; it does not claim to solve dew behaviour or introduce a new predictive model. See [Grass setup and tuning](grass-wetness.md).
@@ -33,3 +33,10 @@ Candidate images are built and smoke-tested on AMD64 and ARM64 by the manually d
 - Replay remains in the viewing browser's worker. Reset still fetches current saved settings. Live multipliers, reservoir, observations and recorded estimates are unchanged.
 
 RC4 validation: 497 automated tests; AMD64/ARM64 image startup and observation persistence across restart; 24 focused native ARM64 tests. Live verification retained settings, seven observations and sampled history, with 3,294 baseline estimates reproduced exactly. These checks do not replace longer calibration observations.
+
+## RC5 — Grass recovery and direct Apply
+
+- Established wetness survives compatible interruptions of up to 30 minutes and resumes when fresh readings return. Recovery carries proven cumulative rain once, without inventing dew or drying in the gap. New reservoirs and longer/incompatible interruptions start at 0 with a 30-minute warm-up.
+- Model versions are retained per sample, so old estimates replay under their original rules. Upgrading preserves valid existing state; new recovery rules affect future calculations.
+- Apply beside Reset saves the seven Lab sliders through the existing weather-settings persistence and PIN protection, preserving the enable switch and unrelated settings.
+- Observation entry is a clean standalone form. The duplicate Lab entry card is removed. Both save actions share a themed six-box PIN dialog with digit advance and paste support.

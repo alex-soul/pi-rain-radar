@@ -39,12 +39,16 @@ export function buildRecordedLab(history,tracker,{verify=true}={}){
  if(!history.presentations?.length)throw Error('No recorded weather snapshots');
  const identities=new Map(),alias=value=>{if(value==null)return value;if(!identities.has(value))identities.set(value,'source-'+(identities.size+1));return identities.get(value);};
  const cleanRow=row=>{const clean=pick(row,['source','value','unit','time','receivedAt','eligible','resetAt','previousPeriod']);if(row?.entity!==undefined)clean.entity=alias(row.entity);return clean;};
- const samples=history.presentations.map(p=>({time:Math.round(p.time*1000),snapshot:{location:alias(p.location),connectionRevision:p.connectionRevision??null,policy:{grassWetness:{...grassDefaults,...p.policy?.grassWetness}},rows:Object.fromEntries(fields.map(key=>[key,cleanRow(p.rows?.[key])])),observedRain:cleanRow(p.observedRain)}}));
+ const samples=history.presentations.map(p=>({time:Math.round(p.time*1000),modelVersion:p.grassWetness?.modelVersion??1,snapshot:{location:alias(p.location),connectionRevision:p.connectionRevision??null,policy:{grassWetness:{...grassDefaults,...p.policy?.grassWetness}},rows:Object.fromEntries(fields.map(key=>[key,cleanRow(p.rows?.[key])])),observedRain:cleanRow(p.observedRain)}}));
  // If the export begins mid-run, seed once from the saved reservoir and its
  // provenance. Never seed again at an arbitrary chart-window boundary.
- const first=history.presentations[0].grassWetness;
+ const first=history.presentations[0].grassWetness,saved=history.presentations[0].grassState;
  let initialState=null;
- if(Number.isFinite(first?.moisture)&&first.provenance){
+ if(saved?.sources&&Number.isFinite(saved.moisture)){
+   const [inputs,entity,unit,location,revision]=JSON.parse(saved.sources);
+   initialState={...pick(saved,['modelVersion','moisture','startedAt','baseline','interrupted']),
+     sources:JSON.stringify([inputs.map(([source,id,unit])=>[source,alias(id),unit]),alias(entity),unit,alias(location),revision??null])};
+ }else if(Number.isFinite(first?.moisture)&&first.provenance){
    const p=first.provenance,rain=cleanRow(p.rain),inputs=fields.map(key=>cleanRow(p.inputs[key]));
    initialState={modelVersion:first.modelVersion,moisture:first.moisture,startedAt:first.startedAt,
      sources:JSON.stringify([inputs.map(r=>[r.source,r.entity,r.unit]),rain.entity,rain.unit,alias(p.location),p.connectionRevision??null]),
@@ -69,7 +73,7 @@ export function buildRecordedLab(history,tracker,{verify=true}={}){
  const {observations,markers}=importTracker(tracker);
  const transitions=samples.filter((s,i)=>i&&JSON.stringify(s.snapshot.policy.grassWetness)!==JSON.stringify(samples[i-1].snapshot.policy.grassWetness)).map(s=>({time:s.time,parameters:s.snapshot.policy.grassWetness}));
  return {id:'recorded-'+history.capturedAt,label:'Recorded Pi weather',synthetic:false,timeZone:tracker.timeZone,capturedAt:history.capturedAt,appVersion:history.appVersion,
-   start:samples[0].time,end:samples.at(-1).time,initialState,initialMoisture:initialState?.moisture??2.5,modelVersion:1,
+   start:samples[0].time,end:samples.at(-1).time,initialState,initialMoisture:initialState?.moisture??0,modelVersion:samples.at(-1).modelVersion,
    parameters:{...samples.at(-1).snapshot.policy.grassWetness,enabled:true},samples,recorded,observations,markers,transitions,
    validation:{verified:verify,compared,mismatches,maxMoistureError,seededFromBoundary:!!initialState},source:{type:'pi-history-export',requestedStart:history.requestedStart,tracker:tracker.spreadsheetId}};
 }

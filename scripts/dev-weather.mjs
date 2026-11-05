@@ -55,7 +55,7 @@ export async function createDevWeather(directory,previewEnd=Math.floor(Date.now(
         const samples=grassState?[now]:Array.from({length:13},(_,i)=>now-(12-i)*300000);
         for(const at of samples){
           const obs=structuredClone(observations);for(const v of Object.values(obs)){v.time=at;v.receivedAt=at;}
-          if(obs['sensor.demo_rain_total'])obs['sensor.demo_rain_total'].value=id==='grass-wet'?2.75+(at-(now-3600000))/300000*.4:2.75;
+          if(obs['sensor.demo_rain_total'])obs['sensor.demo_rain_total'].value=id==='grass-wet'?2.75+(at-(now-3600000))/300000*.6:2.75;
           if(obs['sensor.demo_irradiance'])obs['sensor.demo_irradiance'].value=id==='grass-dry'?850:0;
           if(id==='grass-missing'&&obs['sensor.demo_irradiance'])obs['sensor.demo_irradiance'].reason='HA reading unavailable';
           const snapshot={policy,observations:obs,owm:{configured:value.configured,data:value.data,fetchedAt:value.fetchedAt,failures:value.failures},rows:selectHaReadings(policy,obs,value,at),observedRain:selectObservedRain(policy,obs,at)};
