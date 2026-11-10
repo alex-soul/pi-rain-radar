@@ -39,13 +39,12 @@ function timeline(){
     handle.setAttribute('aria-valuemax',edge==='end'?full.end:end-Math.min(minimumWindow,span));
     handle.setAttribute('aria-valuenow',value);handle.setAttribute('aria-valuetext',stamp(value));
   }
-  const day=time=>new Intl.DateTimeFormat(undefined,{day:'numeric',month:'short',timeZone:data.timeZone}).format(time);
   const duration=hours>=48?(hours/24).toFixed(1).replace(/\.0$/,'')+' days':hours.toFixed(1).replace(/\.0$/,'')+'h';
-  $('window-label').textContent=day(start)+' – '+day(end)+' · '+duration;
-  $('window-label').title=stamp(start)+' – '+stamp(end);
+  $('window-label').textContent=stamp(start)+' – '+stamp(end);
+  $('window-label').title=duration;
   $('timeline-selection').setAttribute('aria-label','Move visible time window: '+stamp(start)+' to '+stamp(end));
   $('latest').disabled=end>=full.end-1;
-  $('history-start').textContent=day(full.start);$('history-end').textContent=day(full.end);
+  document.querySelectorAll('[data-hours]').forEach(button=>button.setAttribute('aria-pressed',String(Math.abs(hours-Number(button.dataset.hours))<1/3600000)));
 }
 function previewTimeline(){
   const root=$('timeline-preview'),{start,end}=bounds();root.replaceChildren();root.setAttribute('viewBox','0 0 1000 32');
@@ -155,7 +154,8 @@ function inspect(){
   $('cursor-time').dateTime=new Date(cursorAt).toISOString();
   $('inspect-recorded').textContent=fmt(data.recorded[selected]?.value);
   $('inspect-candidate').textContent=fmt(candidate[selected]?.value);
-  $('inspect-dew').textContent=`${fmt(value('temperature'))}° / ${fmt(value('dew'))}°`;
+  $('inspect-temperature').textContent=fmt(value('temperature'))+'°';
+  $('inspect-dew').textContent=fmt(value('dew'))+'°';
   $('inspect-wind').textContent=fmt(value('wind'))+' mph';
   $('inspect-solar').textContent=(Number.isFinite(value('irradiance'))?Math.round(value('irradiance')):'—')+' W/m²';
   const effect=effectAt(steps,cursorAt),details=$('effect-inspection');details.replaceChildren();
@@ -218,6 +218,7 @@ function controls(){
     cursorAt=event.key==='Home'?start:event.key==='End'?end:windowCursor(cursorAt+(event.key==='ArrowLeft'?-1:1)*(end-start)/200,start,end);inspect();chart();
   };
   $('latest').onclick=()=>setWindow(panWindow(visibleWindow(),bounds().end-visibleWindow().end,bounds()));
+  document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{const {start,end}=bounds();setWindow({start:Math.max(start,end-Number(button.dataset.hours)*3600000),end});});
 
 }
 $('theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='light'?'dark':'light';if(data?.samples.length)effectStrips();};

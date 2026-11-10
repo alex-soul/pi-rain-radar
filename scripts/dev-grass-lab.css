@@ -94,3 +94,9 @@ main{max-width:1680px;padding:24px;margin:auto}.lab-layout{grid-template-columns
 #timeline-end{transform:none}#timeline-end::after{left:-3px}
 
 .table-wrap{position:relative}th{position:relative}td:last-child,th:last-child{position:sticky;right:0;background:var(--surface)}
+
+.chart-card>.chart-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:center}
+.chart-heading .window-heading{gap:8px}.chart-heading .periods{white-space:nowrap}.chart-heading .periods button{padding:5px 7px}
+.chart-heading #window-label{text-align:center;font-size:12px;white-space:nowrap}.chart-heading .chart-time{justify-self:end}
+@media(max-width:1100px){.chart-card>.chart-heading{grid-template-columns:1fr auto;gap:6px}.chart-heading #window-label{grid-column:1/-1;grid-row:2}.chart-heading .chart-time{grid-column:2;grid-row:1}}
+@media(max-width:760px){.chart-heading .window-heading{gap:5px}.chart-heading #window-label{font-size:11px}.chart-heading .periods button{padding:5px 7px}}

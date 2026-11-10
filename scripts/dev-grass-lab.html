@@ -6,15 +6,15 @@
 <div class="lab-layout">
 <section class="analysis" aria-label="Grass analysis">
 <section class="card chart-card">
-<div class="section-heading chart-heading"><div class="window-heading"><span id="window-label"></span><button id="latest" class="text-button">Latest</button></div><time id="cursor-time" class="chart-time" aria-label="Cursor time">—</time></div>
+<div class="section-heading chart-heading"><div class="window-heading"><div class="periods" role="group" aria-label="Window presets"><button data-hours="24" aria-pressed="false">24h</button><button data-hours="72" aria-pressed="false">3 days</button><button data-hours="168" aria-pressed="true">7 days</button></div><button id="latest" class="text-button">Latest</button></div><span id="window-label" aria-label="Visible date and time range"></span><time id="cursor-time" class="chart-time" aria-label="Cursor time">—</time></div>
 <div class="chart-wrap"><svg id="chart" tabindex="0" viewBox="0 0 960 340" role="img" aria-label="Grass wetness chart. Drag horizontally to pan, hover or tap to inspect. Arrow keys inspect; Shift and arrow keys pan."></svg></div>
 <div class="navigator"><div id="timeline" class="timeline" aria-label="Retained history">
 <svg id="timeline-preview" aria-hidden="true" preserveAspectRatio="none"></svg>
 <button id="timeline-selection" class="timeline-selection" aria-label="Move visible time window"></button>
 <button id="timeline-start" class="timeline-handle" data-edge="start" role="slider" aria-label="Visible window start"></button>
 <button id="timeline-end" class="timeline-handle" data-edge="end" role="slider" aria-label="Visible window end"></button>
-</div><div class="timeline-dates"><span id="history-start"></span><span id="history-end"></span></div></div>
-<div class="inspection"><div><span>Recorded</span><strong id="inspect-recorded">—</strong></div><div><span>Alternative</span><strong id="inspect-candidate" class="accent">—</strong></div><div><span>Temperature / dew</span><strong id="inspect-dew">—</strong></div><div><span>Wind</span><strong id="inspect-wind">—</strong></div><div><span>Sun</span><strong id="inspect-solar">—</strong></div></div>
+</div></div>
+<div class="inspection"><div><span>Recorded</span><strong id="inspect-recorded">—</strong></div><div><span>Alternative</span><strong id="inspect-candidate" class="accent">—</strong></div><div><span>Temperature</span><strong id="inspect-temperature">—</strong></div><div><span>Dew</span><strong id="inspect-dew">—</strong></div><div><span>Wind</span><strong id="inspect-wind">—</strong></div><div><span>Sun</span><strong id="inspect-solar">—</strong></div></div>
 <section class="effects" aria-label="Wetting and drying contributions">
 <div id="effect-strips" class="effect-strips"><div id="effect-cursor" aria-hidden="true"></div></div>
 <p id="effect-inspection" class="effect-inspection" aria-live="off">Select a factor to inspect its contribution.</p>
