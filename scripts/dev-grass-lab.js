@@ -204,6 +204,7 @@ function effectSelection(key){
 }
 function effectControls(){
   const host=$('effect-strips');
+  $('reset-overlays').onclick=()=>effectSelection(null);
   for(const factor of grassFactors){
     const button=element('button',undefined,'effect-row');button.id='select-'+factor.key;button.type='button';button.style.setProperty('--factor',factor.color);
     button.setAttribute('aria-label',factor.label+' chart overlay');button.setAttribute('aria-pressed','false');
