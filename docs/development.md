@@ -276,3 +276,5 @@ Use RADAR_DEV_GRASS_DATA with a verified local export to start from recorded wea
 Production /grass-lab, /grass-obs, APIs and the appliance remain unchanged until this prototype is accepted and integrated. No model arithmetic or historical estimates are changed.
 
 DEV observation dots show immediate, comment-first tooltips on hover, tap inspection or keyboard focus. Date/time and intensity are secondary. Cursor movement updates existing SVG cursor nodes instead of rebuilding the graph. Notes render as plain text; popup bounds follow the chart and it closes during navigation.
+
+Recorded settings-change dots share that immediate popup. Each event lists its changed sliders with colour swatches and previous → new values, followed by the first-recorded timestamp. The Grass Lab menu link sits beside Calculate grass wetness and retains the kiosk navigation advisory.
