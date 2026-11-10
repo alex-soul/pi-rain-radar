@@ -1,11 +1,11 @@
 # 0.15.0 release candidate
 
-`0.15.0-rc.5` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
+`0.15.0-rc.6` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
 
 - Grass scores show one decimal in the dock, trends and full widget. The full widget uses five bars, a smaller number and the descriptive heading, without the denominator or footwear helper text.
 - Archive GIF export preserves the playback slider track and thumb.
 - Aviation and Grass have current integration status, with the official aviation provider status link and concise current-only Stats for nerds.
-- [Grass Lab](grass-lab.md) and the separate mobile observation page are maintained direct routes, with persistent observations, 30-day compact history and experimental replay. They do not appear in radar menus. Slider changes preview alternatives; Apply deliberately saves live calibration with the installation PIN.
+- [Grass Lab](grass-lab.md) and the separate mobile observation page are maintained routes, with persistent observations, 30-day compact history and experimental replay. The Grass settings menu includes a Lab link with a kiosk advisory. Slider changes preview alternatives; Apply deliberately saves live calibration with the installation PIN.
 - The local `__dev` scenario playground remains available for development.
 
 The Grass model remains an uncalibrated estimate. This candidate improves observation and comparison; it does not claim to solve dew behaviour or introduce a new predictive model. See [Grass setup and tuning](grass-wetness.md).
@@ -42,3 +42,9 @@ RC4 validation: 497 automated tests; AMD64/ARM64 image startup and observation p
 - Observation entry is a clean standalone form. The duplicate Lab entry card is removed. Both save actions share a themed six-box PIN dialog with digit advance and paste support.
 
 RC5 validation: 502 automated tests; AMD64/ARM64 startup and persistence across restart; 34 focused native ARM64 tests. Production-page checks covered Apply/Reset and PIN entry in both themes, plus the compact phone form. Live verification preserved configuration and ten observations; 4,197 retained estimates reproduced exactly across both model versions. Natural-outage behaviour and lawn calibration still need observation.
+
+## RC6 — Grass Lab navigation and observation editing
+
+The reviewed compact layout, whole-chart panning, resizable history navigator, latest-seven-day default and 24h/3-day/7-day presets are integrated. Click-toggle marker popups stay open for text selection; observation popups and the table open the PIN-protected editor with confirmed deletion. Phone time entry, current-setting Reset, centred Reset/Apply buttons, heatmap actions and the guarded menu link are included. See [RC6 details](release-0.15.0-rc6.md).
+
+RC6 validation: 506 automated tests; AMD64/ARM64 startup and edit persistence across restart; 36 focused native ARM64 tests. Isolated production browser checks covered editing, PIN, both themes, phone entry and kiosk advice. Live verification preserved all 18 observations, settings and retained Grass snapshots; 6,271 retained estimates reproduced exactly. Physical touch and ordinary-use acceptance remain part of the RC trial.
