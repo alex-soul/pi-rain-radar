@@ -102,7 +102,7 @@ main{max-width:1680px;padding:24px;margin:auto}.lab-layout{grid-template-columns
 @media(max-width:760px){.chart-heading .window-heading{gap:5px}.chart-heading #window-label{font-size:11px}.chart-heading .periods button{padding:5px 7px}}
 
 .chart-wrap{position:relative}
-.effect-footer{display:flex;align-items:center;gap:12px;margin-top:10px}.effect-footer .effect-inspection{flex:1;min-width:0;margin:0}#reset-overlays{flex:none;padding:3px 0;font-size:11px;white-space:nowrap}#reset-overlays:hover{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+.effect-footer{display:flex;align-items:center;gap:12px;margin-top:10px}.effect-footer .effect-inspection{flex:1;min-width:0;margin:0}#reset-overlays{flex:none;padding:3px 7px;margin-right:-7px;font-size:11px;font-weight:500;white-space:nowrap;color:var(--green);border-radius:5px;transition:color .15s,background .15s,box-shadow .15s;filter:none;text-decoration:none}#reset-overlays:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--green) 8%,transparent)}#reset-overlays:disabled{color:var(--muted);opacity:.45;cursor:default;background:none;box-shadow:none}
 #chart{outline:none}#chart:focus-visible{outline:1px solid var(--muted);outline-offset:3px;border-radius:4px}
 .observation-hit{fill:transparent;stroke:none}
 .observation-target{cursor:help;outline:none}

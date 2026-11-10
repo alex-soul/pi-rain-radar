@@ -200,6 +200,7 @@ function effectSelection(key){
   else if(activeEffects.has(key))activeEffects.delete(key);
   else activeEffects.add(key);
   for(const factor of grassFactors)$('select-'+factor.key).setAttribute('aria-pressed',String(activeEffects.has(factor.key)));
+  $('reset-overlays').disabled=activeEffects.size===0;
   inspect();chart();
 }
 function effectControls(){
