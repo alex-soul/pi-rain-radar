@@ -53,7 +53,7 @@
 
 .chart-card>.inspection{margin:6px 0 16px}.chart-card>.effects{border-top:0;padding-top:0}
 
-.tuning-actions{display:flex;gap:4px;white-space:nowrap}#apply{color:var(--green)}#apply-message{font-size:12px;color:var(--green);margin-bottom:0}#apply-message:empty{display:none}
+.tuning-actions{display:flex;justify-content:center;gap:12px;white-space:nowrap;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}.tuning-actions button{min-width:104px;padding:10px 20px}#apply{color:var(--bg)}#apply-message{font-size:12px;color:var(--green);margin-bottom:0}#apply-message:empty{display:none}
 
 /* November prototype: compact analysis with a movable retained-history window. */
 .topbar{height:66px;padding:0 24px;gap:16px}.topbar nav{gap:8px}.topbar nav a{display:inline-flex}
@@ -70,7 +70,7 @@ main{max-width:1680px;padding:24px;margin:auto}.lab-layout{grid-template-columns
 .effects{margin:0}.effect-strips{gap:3px}.effect-row{position:relative;grid-template-columns:28px minmax(0,1fr);padding:4px 12px 4px 0;min-height:30px}
 .effect-row canvas{grid-column:2}.effect-name{position:absolute;left:34px;z-index:1;padding:0 5px;border-radius:3px;font-size:10px;background:var(--surface);opacity:.9}
 .effect-row[aria-pressed=true]{box-shadow:inset 2px 0 var(--factor)}.effect-inspection{min-height:17px;margin:10px 0 0;gap:5px 12px;font-size:10px}
-.tuning>.section-heading{justify-content:flex-end}.slider-group{margin-top:13px;padding-top:11px}.slider-field{padding-top:14px}.slider-field label{margin-bottom:6px}
+.slider-group{margin-top:13px;padding-top:11px}#sliders>.slider-group:first-child{border-top:0;margin-top:0;padding-top:0}.slider-field{padding-top:14px}.slider-field label{margin-bottom:6px}
 #apply-message{margin:0 10px}.controls{gap:8px}
 .table-wrap{margin-top:14px;max-height:360px}td:last-child{min-width:0;white-space:nowrap}td.observation-note{color:var(--muted);white-space:normal;min-width:80px;overflow-wrap:anywhere}td,th{padding:9px 8px}td .text-button{color:var(--green);padding:6px 9px}
 .navigator{margin:0 12px 0 28px}.timeline{height:36px;position:relative;touch-action:pan-y;user-select:none}
@@ -102,6 +102,7 @@ main{max-width:1680px;padding:24px;margin:auto}.lab-layout{grid-template-columns
 @media(max-width:760px){.chart-heading .window-heading{gap:5px}.chart-heading #window-label{font-size:11px}.chart-heading .periods button{padding:5px 7px}}
 
 .chart-wrap{position:relative}
+#chart{outline:none}#chart:focus-visible{outline:1px solid var(--muted);outline-offset:3px;border-radius:4px}
 .observation-hit{fill:transparent;stroke:none}
 .observation-target{cursor:help;outline:none}
 .observation-target.tip-open .observation-hit,.observation-target:focus-visible .observation-hit{fill:var(--amber);fill-opacity:.14;stroke:var(--amber);stroke-width:1;stroke-opacity:.6}
