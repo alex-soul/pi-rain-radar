@@ -106,7 +106,6 @@ function chart(){
     svg('rect',{x:point.x-10,y:top-6,width:20,height:halfHeight*2+20,rx:7,class:'settings-change-hit'},node);
     for(const [i,change]of marker.changes.entries())svg('circle',{cx:point.x,cy:top+4+i*8,r:3,fill:change.color},node);
     node.onfocus=()=>{cursorAt=marker.time;inspect();paintCursor();};
-    node.onblur=hideChartTip;
     node.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();showChartTip(point);}};
   }
   for(const observation of data.observations.filter(o=>o.observedAt>=start&&o.observedAt<=end)){
@@ -115,7 +114,6 @@ function chart(){
     svg('circle',{cx:point.x,cy:point.y,r:12,class:'observation-hit'},node);
     svg('circle',{cx:point.x,cy:point.y,r:5.5,class:'observation-dot'},node);
     node.onfocus=()=>{cursorAt=observation.observedAt;inspect();paintCursor();};
-    node.onblur=hideChartTip;
     node.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();showChartTip(point);}};
   }
   const cursorLayer=svg('g',{id:'chart-cursor','pointer-events':'none','aria-hidden':'true'});
@@ -177,11 +175,6 @@ function tooltipNear(event){
   let nearest=null,distance=event.pointerType==='touch'?22:12;
   for(const point of tooltipPoints){const dy=Math.max(0,Math.abs(y-point.y*scale)-(point.halfHeight??0)*scale),d=Math.hypot(x-point.x*scale,dy);if(d<=distance){nearest=point;distance=d;}}
   return nearest;
-}
-function insideTipBridge(event){
-  if(!tooltipPoint)return false;
-  const tip=$('chart-tooltip').getBoundingClientRect(),dot=tooltipPoint.node.getBoundingClientRect();
-  return event.clientX>=Math.min(tip.left,dot.left)&&event.clientX<=Math.max(tip.right,dot.right)&&event.clientY>=Math.min(tip.top,dot.top)&&event.clientY<=Math.max(tip.bottom,dot.bottom);
 }
 function effectStrips(){
   if(!data?.samples.length)return;
@@ -282,25 +275,22 @@ function controls(){
   $('apply').onclick=applyParameters;
   resizeObserver=new ResizeObserver(()=>{effectStrips();chart();timeline();});resizeObserver.observe($('chart').parentElement);
   const pointAt=event=>{
-    const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft){hideChartTip();highlightChartPoint(null);return;}
+    const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft){highlightChartPoint(null);return;}
     const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-plotLeft)/(rect.width-plotLeft-plotRight))),{start,end}=visibleWindow();
     cursorAt=start+ratio*(end-start);inspect();paintCursor();
     const point=tooltipNear(event);highlightChartPoint(point);
     if(event.type==='pointerup')showChartTip(point);
-    else if(tooltipPoint&&point!==tooltipPoint&&!insideTipBridge(event))hideChartTip();
   };
   setupNavigation({chart:$('chart'),timeline:$('timeline'),selection:$('timeline-selection'),leftHandle:$('timeline-start'),rightHandle:$('timeline-end'),getBounds:bounds,getWindow:visibleWindow,setWindow,inspect:pointAt,plotLeft,plotRight});
-  $('effect-strips').addEventListener('pointermove',event=>{if(event.pointerType!=='touch'){pointAt(event);hideChartTip();highlightChartPoint(null);}});
-  $('chart').addEventListener('pointerleave',event=>{highlightChartPoint(null);if(!$('chart-tooltip').contains(event.relatedTarget))hideChartTip();});
-  $('chart-tooltip').addEventListener('pointerleave',event=>{if(!$('chart').contains(event.relatedTarget))hideChartTip();});
-  document.addEventListener('pointerdown',event=>{if(!$('chart').parentElement.contains(event.target))hideChartTip();});
+  $('effect-strips').addEventListener('pointermove',event=>{if(event.pointerType!=='touch'){pointAt(event);highlightChartPoint(null);}});
+  $('chart').addEventListener('pointerleave',()=>highlightChartPoint(null));
+  document.addEventListener('pointerdown',event=>{if(!$('chart-tooltip').contains(event.target))hideChartTip();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape')hideChartTip();});
-  document.addEventListener('scroll',event=>{if(!$('chart-tooltip').contains(event.target))hideChartTip();},true);
   $('chart').onkeydown=event=>{
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();
     const {start,end}=visibleWindow();
     if(event.shiftKey){const delta=event.key==='Home'?bounds().start-start:event.key==='End'?bounds().end-end:(event.key==='ArrowLeft'?-1:1)*(end-start)/10;setWindow(panWindow(visibleWindow(),delta,bounds()));return;}
-    hideChartTip();cursorAt=event.key==='Home'?start:event.key==='End'?end:windowCursor(cursorAt+(event.key==='ArrowLeft'?-1:1)*(end-start)/200,start,end);inspect();paintCursor();
+    cursorAt=event.key==='Home'?start:event.key==='End'?end:windowCursor(cursorAt+(event.key==='ArrowLeft'?-1:1)*(end-start)/200,start,end);inspect();paintCursor();
   };
   $('latest').onclick=()=>setWindow(panWindow(visibleWindow(),bounds().end-visibleWindow().end,bounds()));
   document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{const {start,end}=bounds();setWindow({start:Math.max(start,end-Number(button.dataset.hours)*3600000),end});});
