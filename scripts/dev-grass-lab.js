@@ -14,7 +14,7 @@ let data,parameters,candidate=[],hours=72,selected=0,frame=0;
 const activeEffects=new Set();
 let bins=[],steps=[],ticks=[];
 let cursorAt=0,settingsMarkers=[],viewport=null,viewFrame=0;
-let tooltipPoints=[],tooltipPoint=null;
+let tooltipPoints=[],tooltipPoint=null,hoverPoint=null;
 const settingDefinitions=[...grassFactors,{key:'sensitivity',label:'Overall sensitivity',color:'#d596c9'},{key:'enabled',label:'Calculation',color:'#8d9fad'}];
 const plotLeft=28,plotRight=12;
 const fmt=value=>Number.isFinite(value)?value.toFixed(1):'—';
@@ -58,7 +58,7 @@ function previewTimeline(){
 }
 function chart(){
   if(!data?.samples.length)return;
-  hideChartTip();tooltipPoints=[];
+  hideChartTip();highlightChartPoint(null);tooltipPoints=[];
   const {start,end}=visibleWindow(),left=plotLeft,right=Math.max(240,$('chart').clientWidth)-plotRight,top=16,bottom=296,x=t=>left+(t-start)/(end-start)*(right-left),y=v=>bottom-v/5*(bottom-top);
   const root=$('chart');root.setAttribute('viewBox',`0 0 ${right+plotRight} 340`);root.replaceChildren();
   const defs=svg('defs',{}),clip=svg('clipPath',{id:'plot-clip'},defs);svg('rect',{x:left,y:top,width:right-left,height:bottom-top},clip);
@@ -105,7 +105,7 @@ function chart(){
     const halfHeight=(marker.changes.length-1)*4,point={marker,node,x:x(marker.time),y:top+4+halfHeight,halfHeight};tooltipPoints.push(point);
     svg('rect',{x:point.x-10,y:top-6,width:20,height:halfHeight*2+20,rx:7,class:'settings-change-hit'},node);
     for(const [i,change]of marker.changes.entries())svg('circle',{cx:point.x,cy:top+4+i*8,r:3,fill:change.color},node);
-    node.onfocus=()=>{cursorAt=marker.time;inspect();paintCursor();showChartTip(point);};
+    node.onfocus=()=>{cursorAt=marker.time;inspect();paintCursor();};
     node.onblur=hideChartTip;
     node.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();showChartTip(point);}};
   }
@@ -114,7 +114,7 @@ function chart(){
     const point={observation,node,x:x(observation.observedAt),y:y(observation.intensity)};tooltipPoints.push(point);
     svg('circle',{cx:point.x,cy:point.y,r:12,class:'observation-hit'},node);
     svg('circle',{cx:point.x,cy:point.y,r:5.5,class:'observation-dot'},node);
-    node.onfocus=()=>{cursorAt=observation.observedAt;inspect();paintCursor();showChartTip(point);};
+    node.onfocus=()=>{cursorAt=observation.observedAt;inspect();paintCursor();};
     node.onblur=hideChartTip;
     node.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();showChartTip(point);}};
   }
@@ -136,6 +136,11 @@ function paintCursor(){
     if(Number.isFinite(point?.value)){node.setAttribute('cx',x(at));node.setAttribute('cy',y(point.value));}
   }
   const cursor=$('effect-cursor');cursor.hidden=!(at>=start&&at<=end);cursor.style.left=x(at)+'px';
+}
+function highlightChartPoint(point){
+  if(hoverPoint===point)return;
+  hoverPoint?.node.classList.remove('tip-hover');hoverPoint=point;
+  hoverPoint?.node.classList.add('tip-hover');
 }
 function hideChartTip(){
   $('chart-tooltip').hidden=true;
@@ -237,7 +242,7 @@ function table(){
     const row=element('tr');row.append(element('td',stamp(o.observedAt)));
     const intensity=element('td');intensity.append(element('span',o.intensity,'intensity-chip'));row.append(intensity);
     row.append(element('td',fmt(alignedGrass(data.recorded,o.observedAt)?.value)),element('td',fmt(alignedGrass(candidate,o.observedAt)?.value),'accent'),element('td',o.note||'—','observation-note'));
-    const action=element('td'),edit=element('button','Edit','text-button');edit.setAttribute('aria-label','Edit observation '+stamp(o.observedAt));edit.onclick=()=>openObservation(o,edit);action.append(edit);row.append(action);body.append(row);
+    const action=element('td'),edit=element('button','Edit','text-button observation-edit');edit.setAttribute('aria-label','Edit observation '+stamp(o.observedAt));edit.onclick=()=>openObservation(o,edit);action.append(edit);row.append(action);body.append(row);
   }
   $('observation-count').textContent=data.observations.length+' entries'+(data.observations.length>200?' · latest 200 shown':'');
 }
@@ -277,14 +282,16 @@ function controls(){
   $('apply').onclick=applyParameters;
   resizeObserver=new ResizeObserver(()=>{effectStrips();chart();timeline();});resizeObserver.observe($('chart').parentElement);
   const pointAt=event=>{
-    const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft){hideChartTip();return;}
+    const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft){hideChartTip();highlightChartPoint(null);return;}
     const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-plotLeft)/(rect.width-plotLeft-plotRight))),{start,end}=visibleWindow();
     cursorAt=start+ratio*(end-start);inspect();paintCursor();
-    const point=tooltipNear(event);if(point)showChartTip(point);else if(!insideTipBridge(event))hideChartTip();
+    const point=tooltipNear(event);highlightChartPoint(point);
+    if(event.type==='pointerup')showChartTip(point);
+    else if(tooltipPoint&&point!==tooltipPoint&&!insideTipBridge(event))hideChartTip();
   };
   setupNavigation({chart:$('chart'),timeline:$('timeline'),selection:$('timeline-selection'),leftHandle:$('timeline-start'),rightHandle:$('timeline-end'),getBounds:bounds,getWindow:visibleWindow,setWindow,inspect:pointAt,plotLeft,plotRight});
-  $('effect-strips').addEventListener('pointermove',event=>{if(event.pointerType!=='touch'){pointAt(event);hideChartTip();}});
-  $('chart').addEventListener('pointerleave',event=>{if(!$('chart-tooltip').contains(event.relatedTarget))hideChartTip();});
+  $('effect-strips').addEventListener('pointermove',event=>{if(event.pointerType!=='touch'){pointAt(event);hideChartTip();highlightChartPoint(null);}});
+  $('chart').addEventListener('pointerleave',event=>{highlightChartPoint(null);if(!$('chart-tooltip').contains(event.relatedTarget))hideChartTip();});
   $('chart-tooltip').addEventListener('pointerleave',event=>{if(!$('chart').contains(event.relatedTarget))hideChartTip();});
   document.addEventListener('pointerdown',event=>{if(!$('chart').parentElement.contains(event.target))hideChartTip();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape')hideChartTip();});
