@@ -51,6 +51,19 @@ export function putGrassObservation(db,context,value){
  db.prepare('INSERT INTO grass_observations VALUES(?,?,?,?)').run(value.id,context,value.observedAt,JSON.stringify(value));return value;
 }
 export function validateObservation(input,now){
- if(!input||typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(input.id)||!Number.isSafeInteger(input.observedAt)||input.observedAt<0||input.observedAt>now+300000||!Number.isInteger(input.intensity)||input.intensity<0||input.intensity>5||typeof input.note!=='string'||input.note.length>500)throw Error('Choose an intensity from 0 to 5 and a valid observation time');
+ if(!input||typeof input.id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(input.id)||!Number.isSafeInteger(input.observedAt)||input.observedAt<0||input.observedAt>now||!Number.isInteger(input.intensity)||input.intensity<0||input.intensity>5||typeof input.note!=='string'||input.note.length>500)throw Object.assign(Error('Choose an intensity from 0 to 5 and a valid observation time in the past'),{code:'GRASS_INPUT'});
  return {id:input.id,observedAt:input.observedAt,intensity:input.intensity,note:input.note.trim(),loggedAt:now,synthetic:false};
+}
+
+export function editGrassObservation(db,context,value){
+ const existing=db.prepare('SELECT data FROM grass_observations WHERE id=? AND context=?').get(value.id,context);
+ if(!existing)throw Object.assign(Error('Observation not found'),{code:'GRASS_NOT_FOUND'});
+ const old=JSON.parse(existing.data),updated={...old,observedAt:value.observedAt,intensity:value.intensity,note:value.note};
+ db.prepare('UPDATE grass_observations SET observed_at=?,data=? WHERE id=? AND context=?').run(updated.observedAt,JSON.stringify(updated),value.id,context);
+ return updated;
+}
+export function deleteGrassObservation(db,context,id){
+ const result=db.prepare('DELETE FROM grass_observations WHERE id=? AND context=?').run(id,context);
+ if(!result.changes)throw Object.assign(Error('Observation not found'),{code:'GRASS_NOT_FOUND'});
+ return {deleted:id};
 }

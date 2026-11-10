@@ -37,8 +37,8 @@ async function unlock(){
    document.body.append(dialog);dialog.showModal();inputs[0].focus();
  });
 }
-async function save(path,value){
- const post=()=>fetch('/api/grass-lab/'+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(value),signal:AbortSignal.timeout(10000)});
+export async function save(path,value,method='POST'){
+ const post=()=>fetch('/api/grass-lab/'+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(value),signal:AbortSignal.timeout(10000)});
  let response=await post();if(response.status===401){await unlock();response=await post();}
  const result=await response.json();if(!response.ok)throw Error(result.error||'Could not save.');return result;
 }

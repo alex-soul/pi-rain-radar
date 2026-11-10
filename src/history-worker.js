@@ -1,4 +1,4 @@
-import {grassTables,seedGrass,trimGrass,saveGrassSample,readGrass,putGrassObservation,validateObservation} from './grass-lab-store.js';
+import {grassTables,seedGrass,trimGrass,saveGrassSample,readGrass,putGrassObservation,editGrassObservation,deleteGrassObservation,validateObservation} from './grass-lab-store.js';
 import {parentPort,workerData} from 'node:worker_threads';
 import {DatabaseSync} from 'node:sqlite';
 import {randomUUID} from 'node:crypto';
@@ -344,6 +344,8 @@ const methods={
     await writable(128*1024);
     return tx(()=>{insert(record);meta('weather:policy',value);meta('lastWrite',clock());});
   },
+  async grassEdit({context,id,input}){if(!text(context))throw Error('Invalid location');const value=validateObservation({...input,id},clock());await writable(16384);return tx(()=>editGrassObservation(db,context,value));},
+  async grassDelete({context,id}){if(!text(context))throw Error('Invalid location');await writable(16384);return tx(()=>deleteGrassObservation(db,context,id));},
   grassData({context}){if(!text(context))throw Error('Invalid location');return readGrass(db,context,clock());},
   async grassObserve({context,input}){if(!text(context))throw Error('Invalid location');const value=validateObservation(input,clock());await writable(16384);return tx(()=>putGrassObservation(db,context,value));},
   async grassImport({context,observations,markers=[]}){

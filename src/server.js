@@ -208,7 +208,7 @@ const staticFiles = new Map([
   ["/places.json", ["places.json", "application/json"]],
 ]);
 for(const name of ['grass-lab','grass-obs'])staticFiles.set('/'+name,[name+'.html','text/html']);
-for(const name of ['grass-lab-inspection.js','grass-effects.js','grass-lab.js','grass-lab.css','grass-obs.js','grass-obs.css','grass-lab-worker.js','grass-access.js','grass-access.css','grass-plot.js'])staticFiles.set('/'+name,[name,name.endsWith('.css')?'text/css':'text/javascript']);
+for(const name of ['grass-navigation.js','grass-lab-inspection.js','grass-effects.js','grass-lab.js','grass-lab.css','grass-obs.js','grass-obs.css','grass-lab-worker.js','grass-access.js','grass-access.css','grass-plot.js'])staticFiles.set('/'+name,[name,name.endsWith('.css')?'text/css':'text/javascript']);
 const server = createServer(async (req, res) => {
   try {
     const settingsPath = new URL(req.url, "http://localhost").pathname;

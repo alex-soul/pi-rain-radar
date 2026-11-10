@@ -8,7 +8,7 @@ test('mobile entry stays idle until save, submits only the observation and retai
  const node=()=>({children:[],value:'',textContent:'',attributes:{},setAttribute(key,value){this.attributes[key]=value;},append(child){this.children.push(child);}});
  const ids=Object.fromEntries(['grades','grade-label','observation-form','save-message','observed-at','save-observation','note','time-details','time-summary'].map(id=>[id,node()]));
  const requests=[];let fail=true;
- const source=await readFile(new URL('../scripts/dev-grass-observe.js',import.meta.url),'utf8');
+ const source=await readFile(new URL('../public/grass-obs.js',import.meta.url),'utf8');
  runInNewContext(source.replace(/^import .*;$/gm,''),{
    grassLabels,crypto,document:{getElementById:id=>ids[id],createElement:node},
    saveGrassObservation:async value=>{requests.push(structuredClone(value));if(fail)throw Error('Offline');return value;},

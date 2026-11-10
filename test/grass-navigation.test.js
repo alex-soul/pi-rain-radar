@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {panWindow,resizeWindow,setupNavigation,minimumWindow} from '../scripts/dev-grass-navigation.js';
+import {panWindow,resizeWindow,setupNavigation,minimumWindow} from '../public/grass-navigation.js';
 const day=86400000,bounds={start:0,end:30*day};
 test('history navigation clamps at retained edges, preserves duration and anchors the opposite zoom edge',()=>{
  const window={start:23*day,end:30*day};
