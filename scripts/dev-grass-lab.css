@@ -112,7 +112,6 @@ main{max-width:1680px;padding:24px;margin:auto}.lab-layout{grid-template-columns
 #tooltip-content{margin:0;font-size:15px;font-weight:500;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
 #tooltip-content.empty{color:var(--muted);font-weight:400;font-style:italic}
 .chart-tooltip-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;margin-top:13px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted)}
-#tooltip-intensity{color:var(--amber);font-weight:600;background:var(--surface);padding:3px 7px;border-radius:5px;white-space:nowrap}
 :root[data-theme=light] .chart-tooltip{box-shadow:0 8px 28px #20372c26}
 @media(max-width:760px){.chart-tooltip{padding:14px}#tooltip-content{font-size:14px}}
 

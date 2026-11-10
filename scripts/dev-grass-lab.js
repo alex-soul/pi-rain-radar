@@ -163,7 +163,8 @@ function showChartTip(point){
       }
     }else content.textContent=observation.note?.trim()||'No comment';
     $('tooltip-time').textContent=stamp(time);$('tooltip-time').dateTime=new Date(time).toISOString();
-    $('tooltip-intensity').textContent=marker?'First recorded':'Intensity '+observation.intensity;
+    const edit=$('tooltip-edit');edit.hidden=!!marker;
+    edit.onclick=observation?()=>{hideChartTip();openObservation(observation,node);}:null;
     node.setAttribute('aria-describedby','chart-tooltip');node.classList.add('tip-open');
   }
   const tip=$('chart-tooltip'),root=$('chart'),rect=root.getBoundingClientRect(),scale=rect.width/root.viewBox.baseVal.width;
