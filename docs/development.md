@@ -274,3 +274,5 @@ The compact Lab, /__grass-observe form and Grass settings-menu entry are DEV-onl
 Use RADAR_DEV_GRASS_DATA with a verified local export to start from recorded weather and observations. The import is copied into the printed fixture directory; all later Lab writes affect that copy only. Refresh reloads that local copy, not the appliance. Preserve it between launches with RADAR_DEV_SETTINGS_FROM as documented above. The phone entry page makes no history/replay request. Its expanded Time: past field starts at the current local minute; collapse clears the override and Save captures now. Explicit future times are rejected by both form and DEV API.
 
 Production /grass-lab, /grass-obs, APIs and the appliance remain unchanged until this prototype is accepted and integrated. No model arithmetic or historical estimates are changed.
+
+DEV observation dots show immediate, comment-first tooltips on hover, tap inspection or keyboard focus. Date/time and intensity are secondary. Cursor movement updates existing SVG cursor nodes instead of rebuilding the graph. Notes render as plain text; popup bounds follow the chart and it closes during navigation.

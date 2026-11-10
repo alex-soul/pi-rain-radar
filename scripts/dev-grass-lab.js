@@ -14,6 +14,7 @@ let data,parameters,candidate=[],hours=72,selected=0,frame=0;
 const activeEffects=new Set();
 let bins=[],steps=[],ticks=[];
 let cursorAt=0,settingsMarkers=[],viewport=null,viewFrame=0;
+let observationPoints=[],tooltipPoint=null;
 const settingDefinitions=[...grassFactors,{key:'sensitivity',label:'Overall sensitivity',color:'#d596c9'},{key:'enabled',label:'Calculation',color:'#8d9fad'}];
 const plotLeft=28,plotRight=12;
 const fmt=value=>Number.isFinite(value)?value.toFixed(1):'—';
@@ -25,6 +26,7 @@ function svg(tag,attributes,parent=$('chart')){const node=document.createElement
 function bounds(){return {start:Math.max(data.start,data.end-30*86400000,data.samples[0]?.time??data.start),end:data.end};}
 function visibleWindow(){return viewport??bounds();}
 function setWindow(next){
+  hideObservationTip();
   viewport=next;hours=(next.end-next.start)/3600000;
   cursorAt=windowCursor(cursorAt,next.start,next.end);
   cancelAnimationFrame(viewFrame);viewFrame=requestAnimationFrame(()=>{inspect();effectStrips();chart();timeline();});
@@ -56,6 +58,7 @@ function previewTimeline(){
 }
 function chart(){
   if(!data?.samples.length)return;
+  hideObservationTip();observationPoints=[];
   const {start,end}=visibleWindow(),left=plotLeft,right=Math.max(240,$('chart').clientWidth)-plotRight,top=16,bottom=296,x=t=>left+(t-start)/(end-start)*(right-left),y=v=>bottom-v/5*(bottom-top);
   const root=$('chart');root.setAttribute('viewBox',`0 0 ${right+plotRight} 340`);root.replaceChildren();
   const defs=svg('defs',{}),clip=svg('clipPath',{id:'plot-clip'},defs);svg('rect',{x:left,y:top,width:right-left,height:bottom-top},clip);
@@ -92,10 +95,6 @@ function chart(){
     for(const point of plotPoints(points,start,end,right-left)){const move=point.breakBefore||!last;d+=(move?'M':'L')+x(point.time).toFixed(2)+','+y(point.value).toFixed(2);last=point;}
     svg('path',{d,class:klass},plot);
   }
-  for(const observation of data.observations.filter(o=>o.observedAt>=start&&o.observedAt<=end)){
-    const circle=svg('circle',{cx:x(observation.observedAt),cy:y(observation.intensity),r:5.5,class:'observation-dot'},plot);
-    const title=svg('title',{},circle);title.textContent=`${stamp(observation.observedAt)} · observed ${observation.intensity} · ${observation.note}`;
-  }
   for(const marker of settingsMarkers){
     if(marker.time<start||marker.time>end)continue;
     const group=svg('g',{'data-settings-marker':marker.time},plot);
@@ -108,9 +107,65 @@ function chart(){
       svg('circle',{cx:x(marker.time),cy:top+4+i*8,r:3,fill:change.color},group);
     }
   }
-  const at=cursorAt;
-  if(at>=start&&at<=end){svg('line',{x1:x(at),x2:x(at),y1:top,y2:bottom,class:'cursor-line'});for(const [points,color]of [[data.recorded,'var(--recorded)'],[candidate,'var(--green)']]){const point=points[selected];if(Number.isFinite(point?.value))svg('circle',{cx:x(at),cy:y(point.value),r:4,fill:color});}}
+  for(const observation of data.observations.filter(o=>o.observedAt>=start&&o.observedAt<=end)){
+    const node=svg('g',{class:'observation-target',tabindex:0,role:'button','data-observation':observation.id,'aria-label':`Observation · ${stamp(observation.observedAt)}`},plot);
+    const point={observation,node,x:x(observation.observedAt),y:y(observation.intensity)};observationPoints.push(point);
+    svg('circle',{cx:point.x,cy:point.y,r:12,class:'observation-hit'},node);
+    svg('circle',{cx:point.x,cy:point.y,r:5.5,class:'observation-dot'},node);
+    node.onfocus=()=>{cursorAt=observation.observedAt;inspect();paintCursor();showObservationTip(point);};
+    node.onblur=hideObservationTip;
+    node.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();showObservationTip(point);}};
+  }
+  const cursorLayer=svg('g',{id:'chart-cursor','pointer-events':'none','aria-hidden':'true'});
+  svg('line',{id:'cursor-guide',y1:top,y2:bottom,class:'cursor-line'},cursorLayer);
+  svg('circle',{id:'cursor-recorded',r:4,fill:'var(--recorded)'},cursorLayer);
+  svg('circle',{id:'cursor-alternative',r:4,fill:'var(--green)'},cursorLayer);
+  paintCursor();
+}
+// Hover changes only these existing cursor nodes; curves and observation targets stay stable.
+function paintCursor(){
+  const layer=$('chart-cursor');if(!layer)return;
+  const {start,end}=visibleWindow(),right=Math.max(240,$('chart').clientWidth)-plotRight,at=cursorAt;
+  const x=time=>plotLeft+(time-start)/(end-start)*(right-plotLeft),y=value=>296-value/5*280;
+  layer.style.display=at>=start&&at<=end?'':'none';
+  $('cursor-guide').setAttribute('x1',x(at));$('cursor-guide').setAttribute('x2',x(at));
+  for(const [id,points]of [['cursor-recorded',data.recorded],['cursor-alternative',candidate]]){
+    const point=points[selected],node=$(id);node.style.display=Number.isFinite(point?.value)?'':'none';
+    if(Number.isFinite(point?.value)){node.setAttribute('cx',x(at));node.setAttribute('cy',y(point.value));}
+  }
   const cursor=$('effect-cursor');cursor.hidden=!(at>=start&&at<=end);cursor.style.left=x(at)+'px';
+}
+function hideObservationTip(){
+  $('observation-tooltip').hidden=true;
+  if(tooltipPoint){tooltipPoint.node.removeAttribute('aria-describedby');tooltipPoint.node.classList.remove('tip-open');tooltipPoint=null;}
+}
+function showObservationTip(point){
+  if(!point){hideObservationTip();return;}
+  if(tooltipPoint!==point){
+    hideObservationTip();tooltipPoint=point;
+    const {observation,node}=point,note=observation.note?.trim();
+    $('tooltip-comment').textContent=note||'No comment';$('tooltip-comment').classList.toggle('empty',!note);
+    $('tooltip-time').textContent=stamp(observation.observedAt);$('tooltip-time').dateTime=new Date(observation.observedAt).toISOString();
+    $('tooltip-intensity').textContent='Intensity '+observation.intensity;
+    node.setAttribute('aria-describedby','observation-tooltip');node.classList.add('tip-open');
+  }
+  const tip=$('observation-tooltip'),root=$('chart'),rect=root.getBoundingClientRect(),scale=rect.width/root.viewBox.baseVal.width;
+  tip.hidden=false;tip.style.maxHeight=Math.max(120,rect.height-16)+'px';
+  const x=point.x*scale,y=point.y*scale,width=tip.offsetWidth,height=tip.offsetHeight;
+  tip.style.left=Math.max(8,Math.min(rect.width-width-8,x-width/2))+'px';
+  tip.style.top=Math.max(8,Math.min(rect.height-height-8,y-height-16>=8?y-height-16:y+16))+'px';
+}
+function observationNear(event){
+  const root=$('chart'),rect=root.getBoundingClientRect(),scale=rect.width/root.viewBox.baseVal.width;
+  const x=event.clientX-rect.left,y=event.clientY-rect.top;
+  let nearest=null,distance=event.pointerType==='touch'?22:12;
+  for(const point of observationPoints){const d=Math.hypot(x-point.x*scale,y-point.y*scale);if(d<=distance){nearest=point;distance=d;}}
+  return nearest;
+}
+function insideTipBridge(event){
+  if(!tooltipPoint)return false;
+  const tip=$('observation-tooltip').getBoundingClientRect(),dot=tooltipPoint.node.getBoundingClientRect();
+  return event.clientX>=Math.min(tip.left,dot.left)&&event.clientX<=Math.max(tip.right,dot.right)&&event.clientY>=Math.min(tip.top,dot.top)&&event.clientY<=Math.max(tip.bottom,dot.bottom);
 }
 function effectStrips(){
   if(!data?.samples.length)return;
@@ -208,14 +263,24 @@ function controls(){
   $('reset').onclick=resetParameters;
   $('apply').onclick=applyParameters;
   resizeObserver=new ResizeObserver(()=>{effectStrips();chart();timeline();});resizeObserver.observe($('chart').parentElement);
-  const pointAt=event=>{const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft)return;const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-plotLeft)/(rect.width-plotLeft-plotRight))),{start,end}=visibleWindow();cursorAt=start+ratio*(end-start);inspect();chart();};
+  const pointAt=event=>{
+    const rect=$('chart').getBoundingClientRect();if(event.clientX<rect.left+plotLeft){hideObservationTip();return;}
+    const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left-plotLeft)/(rect.width-plotLeft-plotRight))),{start,end}=visibleWindow();
+    cursorAt=start+ratio*(end-start);inspect();paintCursor();
+    const point=observationNear(event);if(point)showObservationTip(point);else if(!insideTipBridge(event))hideObservationTip();
+  };
   setupNavigation({chart:$('chart'),timeline:$('timeline'),selection:$('timeline-selection'),leftHandle:$('timeline-start'),rightHandle:$('timeline-end'),getBounds:bounds,getWindow:visibleWindow,setWindow,inspect:pointAt,plotLeft,plotRight});
-  $('effect-strips').addEventListener('pointermove',event=>{if(event.pointerType!=='touch')pointAt(event);});
+  $('effect-strips').addEventListener('pointermove',event=>{if(event.pointerType!=='touch'){pointAt(event);hideObservationTip();}});
+  $('chart').addEventListener('pointerleave',event=>{if(!$('observation-tooltip').contains(event.relatedTarget))hideObservationTip();});
+  $('observation-tooltip').addEventListener('pointerleave',event=>{if(!$('chart').contains(event.relatedTarget))hideObservationTip();});
+  document.addEventListener('pointerdown',event=>{if(!$('chart').parentElement.contains(event.target))hideObservationTip();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')hideObservationTip();});
+  document.addEventListener('scroll',event=>{if(!$('observation-tooltip').contains(event.target))hideObservationTip();},true);
   $('chart').onkeydown=event=>{
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();
     const {start,end}=visibleWindow();
     if(event.shiftKey){const delta=event.key==='Home'?bounds().start-start:event.key==='End'?bounds().end-end:(event.key==='ArrowLeft'?-1:1)*(end-start)/10;setWindow(panWindow(visibleWindow(),delta,bounds()));return;}
-    cursorAt=event.key==='Home'?start:event.key==='End'?end:windowCursor(cursorAt+(event.key==='ArrowLeft'?-1:1)*(end-start)/200,start,end);inspect();chart();
+    hideObservationTip();cursorAt=event.key==='Home'?start:event.key==='End'?end:windowCursor(cursorAt+(event.key==='ArrowLeft'?-1:1)*(end-start)/200,start,end);inspect();paintCursor();
   };
   $('latest').onclick=()=>setWindow(panWindow(visibleWindow(),bounds().end-visibleWindow().end,bounds()));
   document.querySelectorAll('[data-hours]').forEach(button=>button.onclick=()=>{const {start,end}=bounds();setWindow({start:Math.max(start,end-Number(button.dataset.hours)*3600000),end});});

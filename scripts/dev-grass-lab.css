@@ -100,3 +100,16 @@ main{max-width:1680px;padding:24px;margin:auto}.lab-layout{grid-template-columns
 .chart-heading #window-label{text-align:center;font-size:12px;white-space:nowrap}.chart-heading .chart-time{justify-self:end}
 @media(max-width:1100px){.chart-card>.chart-heading{grid-template-columns:1fr auto;gap:6px}.chart-heading #window-label{grid-column:1/-1;grid-row:2}.chart-heading .chart-time{grid-column:2;grid-row:1}}
 @media(max-width:760px){.chart-heading .window-heading{gap:5px}.chart-heading #window-label{font-size:11px}.chart-heading .periods button{padding:5px 7px}}
+
+.chart-wrap{position:relative}
+.observation-hit{fill:transparent;stroke:none}
+.observation-target{cursor:help;outline:none}
+.observation-target.tip-open .observation-hit,.observation-target:focus-visible .observation-hit{fill:var(--amber);fill-opacity:.14;stroke:var(--amber);stroke-width:1;stroke-opacity:.6}
+.observation-target.tip-open .observation-dot{stroke:var(--amber);stroke-width:2}
+.observation-tooltip{position:absolute;z-index:4;width:310px;max-width:calc(100% - 16px);padding:17px 18px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--line);border-top:2px solid var(--amber);border-radius:12px;box-shadow:0 8px 28px #0005;overflow:auto;cursor:default}
+#tooltip-comment{margin:0;font-size:15px;font-weight:500;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+#tooltip-comment.empty{color:var(--muted);font-weight:400;font-style:italic}
+.observation-tooltip-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;margin-top:13px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted)}
+#tooltip-intensity{color:var(--amber);font-weight:600;background:var(--surface);padding:3px 7px;border-radius:5px;white-space:nowrap}
+:root[data-theme=light] .observation-tooltip{box-shadow:0 8px 28px #20372c26}
+@media(max-width:760px){.observation-tooltip{padding:14px}#tooltip-comment{font-size:14px}}
