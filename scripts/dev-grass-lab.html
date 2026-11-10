@@ -1,30 +1,40 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grass Lab · Pi Rain Radar</title><link rel="stylesheet" href="/__grass-lab.css"><script type="module" src="/__grass-lab.js"></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grass Lab · Pi Rain Radar</title><link rel="stylesheet" href="/__grass-lab.css"><link rel="stylesheet" href="/grass-access.css"><script type="module" src="/__grass-lab.js"></script></head>
 <body>
-<header class="topbar"><a class="brand" href="/__dev"><span class="brand-mark">≋</span> Pi Rain Radar <span class="brand-separator">/</span> <strong>Grass Lab</strong></a><nav><a href="/" target="_blank" rel="noopener">Radar preview ↗</a><button id="theme" aria-label="Switch colour theme">Light / dark</button><button id="export">Export experiment ↓</button></nav></header>
+<header class="topbar"><a href="/__grass-observe" class="primary add-link">Add Observation</a><nav aria-label="Lab actions"><a class="outline-button" href="/">Radar</a><button id="theme" aria-label="Switch colour theme">Light / dark</button><button id="refresh">Refresh</button><button id="export">Export</button></nav></header>
 <main>
-<div class="intro"><div><p class="eyebrow">OBSERVE · COMPARE · UNDERSTAND</p><h1>A little closer to the grass.</h1></div><a href="/__grass-observe" class="primary add-link">＋ Log an observation</a></div>
-<div class="notice"><span class="pill">DEV PREVIEW</span><span id="dataset-notice">Loading local Grass dataset…</span></div>
 <div class="lab-layout">
 <section class="analysis" aria-label="Grass analysis">
 <section class="card chart-card">
-<div class="section-heading"><div><p class="eyebrow">THE EXPERIMENT</p><h2>Wetness over time</h2></div><div class="chart-window"><div class="periods" role="group" aria-label="Visible history"><button data-hours="12">12h</button><button data-hours="24">24h</button><button data-hours="72" aria-pressed="true">3 days</button><button data-hours="168" aria-pressed="false">7 days</button><button data-hours="720" aria-pressed="false">30 days</button></div><time id="cursor-time" class="chart-time" aria-label="Cursor time">—</time></div></div>
-<div class="legend" id="chart-legend"><span><i class="line original"></i>Recorded model</span><span><i class="line candidate"></i><span id="candidate-label">Your alternative</span></span><span><i class="dot"></i>Observations</span><button id="clear-effect" class="text-button" disabled>Clear overlays</button></div>
-<div class="chart-wrap"><svg id="chart" tabindex="0" viewBox="0 0 960 340" role="img" aria-label="Grass wetness chart. Hover or tap to inspect; arrow keys move time, Home and End select window edges."></svg></div>
+<div class="section-heading chart-heading"><div class="window-heading"><span id="window-label"></span><button id="latest" class="text-button">Latest</button></div><time id="cursor-time" class="chart-time" aria-label="Cursor time">—</time></div>
+<div class="chart-wrap"><svg id="chart" tabindex="0" viewBox="0 0 960 340" role="img" aria-label="Grass wetness chart. Drag horizontally to pan, hover or tap to inspect. Arrow keys inspect; Shift and arrow keys pan."></svg></div>
+<div class="navigator"><div id="timeline" class="timeline" aria-label="Retained history">
+<svg id="timeline-preview" aria-hidden="true" preserveAspectRatio="none"></svg>
+<button id="timeline-selection" class="timeline-selection" aria-label="Move visible time window"></button>
+<button id="timeline-start" class="timeline-handle" data-edge="start" role="slider" aria-label="Visible window start"></button>
+<button id="timeline-end" class="timeline-handle" data-edge="end" role="slider" aria-label="Visible window end"></button>
+</div><div class="timeline-dates"><span id="history-start"></span><span id="history-end"></span></div></div>
 <div class="inspection"><div><span>Recorded</span><strong id="inspect-recorded">—</strong></div><div><span>Alternative</span><strong id="inspect-candidate" class="accent">—</strong></div><div><span>Temperature / dew</span><strong id="inspect-dew">—</strong></div><div><span>Wind</span><strong id="inspect-wind">—</strong></div><div><span>Sun</span><strong id="inspect-solar">—</strong></div></div>
 <section class="effects" aria-label="Wetting and drying contributions">
 <div id="effect-strips" class="effect-strips"><div id="effect-cursor" aria-hidden="true"></div></div>
-<div class="effect-scale"><span>Contribution / hour</span><i></i><span>0 → 2+</span><span class="missing-key"></span><span>No calculation</span></div>
 <p id="effect-inspection" class="effect-inspection" aria-live="off">Select a factor to inspect its contribution.</p>
 </section>
 
 </section>
-<section class="card observations"><div class="section-heading"><div><p class="eyebrow">THE GROUND TRUTH</p><h2>Your observations</h2></div><span id="observation-count" class="count"></span></div><p class="comparison-summary" aria-label="Observation comparison"><span>Average difference: <strong id="baseline-error">—</strong> <span aria-label="to">→</span> <strong id="candidate-error" class="accent">—</strong></span><span><strong id="matched">—</strong> observations matched</span></p><div class="table-wrap"><table><thead><tr><th>Observed</th><th>You saw</th><th>Recorded</th><th>Alternative</th><th>Note</th></tr></thead><tbody id="observations"></tbody></table></div></section>
+<section class="card observations"><div class="section-heading"><h2>Grass observations</h2><span id="observation-count" class="count"></span></div><div class="table-wrap"><table><thead><tr><th>Observed</th><th>Intensity</th><th>Recorded</th><th>Alternative</th><th>Note</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="observations"></tbody></table></div></section>
 </section>
 <aside class="controls">
-<section class="card tuning"><div class="section-heading"><div><p class="eyebrow">WHAT IF?</p><h2>Adjust the balance</h2></div><button id="reset" class="text-button">Reset</button></div><div id="sliders"></div><div class="sandbox-note"><span class="small-dot"></span>Experiment only. Live settings stay unchanged.</div></section>
-<section class="card entry"><p class="eyebrow">OUTSIDE RIGHT NOW?</p><h2>Log it while you walk.</h2><p class="fine">The separate entry page keeps things light on your phone. Open the lab again at home to compare.</p><a class="primary add-link" href="/__grass-observe">＋ Log an observation</a></section>
+<section class="card tuning"><div class="section-heading"><div class="tuning-actions"><button id="reset" class="text-button">Reset</button><button id="apply" class="text-button">Apply</button></div></div><div id="sliders"></div></section>
+<p id="apply-message" role="status"></p>
 </aside></div>
-<footer><span>Grass Lab · first dev iteration</span><span>0–5 intensity · recorded weather, no future prediction</span></footer>
 <p id="error" role="alert" hidden></p>
-</main></body></html>
+</main>
+<dialog id="edit-observation" class="observation-dialog" aria-labelledby="edit-title">
+<form id="edit-form"><div class="section-heading"><h2 id="edit-title">Edit observation</h2><button type="button" id="edit-close" class="text-button" aria-label="Close edit observation">×</button></div>
+<fieldset><legend>Intensity</legend><div id="edit-grades" class="grades"></div></fieldset>
+<label class="field">Observation time<input type="datetime-local" id="edit-time" required></label>
+<label class="field">Note <span>optional</span><input id="edit-note" maxlength="500"></label>
+<p id="edit-message" role="status"></p>
+<div id="delete-confirm" hidden><p>Delete this observation?</p><div class="dialog-actions"><button type="button" id="keep-observation">Keep</button><button type="button" id="confirm-delete" class="danger">Delete observation</button></div></div>
+<div class="dialog-actions" id="edit-actions"><button type="button" id="delete-observation" class="text-button danger">Delete</button><button type="button" id="cancel-edit">Cancel</button><button type="submit" id="save-edit" class="primary">Save</button></div>
+</form></dialog></body></html>

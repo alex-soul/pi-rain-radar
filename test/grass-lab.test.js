@@ -27,7 +27,30 @@ test('replay reproduces baseline, responds across history and never mutates orig
 test('observation input keeps event time, allows zero, rejects invalid grades and notes',()=>{
  const input={intensity:0,observedAt:1000,note:' fog '};
  const result=validateLabObservation(input,2000);assert.equal(result.observedAt,1000);assert.equal(result.loggedAt,2000);assert.equal(result.note,'fog');
- for(const extra of [{intensity:1.2},{intensity:6},{note:'x'.repeat(501)},{observedAt:500000}])assert.equal(validateLabObservation({...input,...extra},2000),null);
+ for(const extra of [{intensity:1.2},{intensity:6},{note:'x'.repeat(501)},{observedAt:2001},{observedAt:500000}])assert.equal(validateLabObservation({...input,...extra},2000),null);
+});
+test('DEV editing, deletion and Apply are PIN protected, durable and do not alter recorded inputs',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'grass-edit-test-'));let handler=await createGrassLab(dir,{requirePin:true});
+ const server=createServer((req,res)=>handler(req,res,new URL(req.url,'http://localhost')));server.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(async()=>{await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true});});
+ const base=`http://127.0.0.1:${server.address().port}`,read=async()=> (await fetch(base+'/__grass-lab/data')).json();
+ let token='';const send=(path,value={},method='POST',origin=base)=>fetch(base+'/__grass-lab/'+path,{method,headers:{'Content-Type':'application/json',origin,Authorization:'Bearer '+token},body:JSON.stringify(value)});
+ const original=await read(),o=original.observations[0],path='observations/'+o.id,input={intensity:0,observedAt:o.observedAt,note:'edited'};
+ assert.equal((await send(path,input,'PATCH')).status,401);
+ assert.equal((await send('unlock',{pin:'000000'})).status,401);
+ token=(await (await send('unlock',{pin:'123456'})).json()).token;
+ assert.equal((await send(path,input,'PATCH','https://example.com')).status,403);
+ assert.equal((await send(path,input,'PATCH','not-a-url')).status,403);
+ assert.equal((await send('parameters',null)).status,400);
+ assert.equal((await send(path,{...input,observedAt:Date.now()+60000},'PATCH')).status,400);
+ const edited=await (await send(path,input,'PATCH')).json();assert.equal(edited.id,o.id);assert.equal(edited.loggedAt,o.loggedAt);assert.equal(edited.intensity,0);assert.equal(edited.note,'edited');
+ const values={...original.parameters,dew:1};delete values.enabled;assert.equal((await send('parameters',values)).status,200);
+ const newEntry={id:'retry-same-id',intensity:2,observedAt:Date.now(),note:'retry'};await send('observations',newEntry);await send('observations',newEntry);
+ assert.equal((await read()).observations.filter(o=>o.id===newEntry.id).length,1);
+ assert.equal((await send(path,{},'DELETE')).status,200);assert.equal((await send(path,{},'DELETE')).status,404);
+ handler=await createGrassLab(dir,{requirePin:true});const stored=await read();
+ assert.equal(stored.parameters.dew,1);assert.ok(!stored.observations.some(x=>x.id===o.id));assert.deepEqual(stored.samples,original.samples);assert.deepEqual(stored.recorded,original.recorded);
+ assert.deepEqual(stored.observations.filter(x=>x.id!==newEntry.id),original.observations.slice(1));
 });
 test('local lab persists concurrent observations and rejects cross-origin writes',async t=>{
  const dir=await mkdtemp(join(tmpdir(),'grass-lab-test-'));let handler=await createGrassLab(dir);
