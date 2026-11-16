@@ -58,3 +58,5 @@ The full Grass widget has short help with an inline Lab link, including the exis
 New installations and Reset to defaults use my observed tuning: rain 3×, dew 2×, sun 1×, wind 0.5×, air 0.5×, drainage 0.1× and sensitivity 1×. Existing saved settings and historical model fallbacks are preserved. There is no model arithmetic or schema change.
 
 References: [RainViewer Universal Blue table](https://www.rainviewer.com/files/rainviewer_api_colors_table.csv), [Rainbow palette identification](https://doc.rainbow.ai/tile_colors/), [KNMI rainfall conversion reference](https://cdn.knmi.nl/knmi/pdf/bibliotheek/knmipubWR/WR2009-06.pdf).
+
+RC7 validation: 508 automated tests, AMD64/ARM64 startup and persistent restart checks, and 49 isolated native ARM64 tests. Light/dark, Live/Archive, missing minutes, actual-rain overlays and kiosk-link cancellation were checked locally. The Pi host packages were updated and verified before the candidate switch. Deployment preserved all 24 observations, settings and retained history; replay reproduced 8,921 recorded estimates exactly. Physical feature acceptance and further normal use remain part of this RC trial.
