@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {advanceGrassWetness} from '../src/grass-wetness.js';
@@ -111,4 +111,20 @@ test('Grass distinguishes missing setup from failed sensors, warm-up and valid n
  off.presentation.policy.grassWetness.enabled=false;assert.equal(read(off).status,'disabled');
  const warming=structuredClone(state);warming.presentation.grassWetness={eligible:false,calculatedAt:start,reason:'Warming up · needs 30 minutes of continuous readings.'};assert.equal(read(warming).status,'warming');
  const before=JSON.stringify(state);assert.equal(weatherReadings(state,start,{historical:true}).grassWetness.status,'ready');assert.equal(JSON.stringify(state),before,'historical samples remain immutable');
+});
+
+
+test('new installations receive the tuned profile while existing saved profiles survive reopening unchanged',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'grass-defaults-')),settingsFile=join(dir,'settings','weather.json');
+ const store=await createHistoryStore(dir);t.after(async()=>{await store.close();await rm(dir,{recursive:true,force:true});});
+ const settings=await createWeatherSettings(store,{settingsFile});
+ assert.deepEqual(settings.current().grassWetness,{enabled:false,rain:3,dew:2,solar:1,wind:.5,air:.5,drainage:.1,sensitivity:1});
+ for(const saved of [{...grassDefaults,enabled:true},{enabled:false,rain:.35,dew:1.4,solar:2.2,wind:0,air:.7,drainage:.9,sensitivity:1.2}]){
+  assert.equal((await settings.configure({confirmUnits:true,grassWetness:saved})).status,200);
+  const before=await readFile(settingsFile,'utf8'),revision=settings.current().revision;
+  const reopened=await createWeatherSettings(store,{settingsFile});
+  assert.deepEqual(reopened.current().grassWetness,saved);
+  assert.equal(reopened.current().revision,revision);
+  assert.equal(await readFile(settingsFile,'utf8'),before,'loading does not migrate or overwrite the saved profile');
+ }
 });
