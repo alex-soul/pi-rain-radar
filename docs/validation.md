@@ -1,5 +1,15 @@
 # Validation and remaining work
 
+## 0.15.0 published-image handover — 16 November 2026
+
+I accepted RC7 on my Pi 4 / 2 GB and authorized publication. The published source differs from RC7 only in version metadata, documentation and a regression test proving that new-install Grass defaults preserve existing saved profiles.
+
+[Release CI 43965357927](https://github.com/alex-soul/pi-rain-radar/actions/runs/43965357927) passed **509 tests**, AMD64/ARM64 builds and fresh startup/restart persistence. Source/tag: `4a37321e0e7f7db467ee8d426fdbd393ec7a8cd9` / `v0.15.0`. Published and verified latest index: `sha256:258ce0feed5a809fffe3bc13c9ce4a9ba264967576f32ad3c0e72cd35970e668`. Fifty focused tests passed in this exact image on native ARM64, without provider networking or live data mounts.
+
+The reference Pi now runs the published image. Automated handover preserved all 24 observations, 12,783 retained Grass snapshots, 200 sampled archive rows, settings/PIN, archive generation and Compose environment/mounts. Existing live tuning stayed unchanged. Frame readiness and served version passed; final visible-display acceptance remains separate from these automated checks. The earlier host camera/audio transition and reboot were verified before RC7 and were not repeated for this handover.
+
+The compatible installer pin selects this exact tag/source/index; all four published-source file hashes match. Installer logic, Compose and host helpers are unchanged. Saved installer snapshots retain their original runner/application; ordinary reruns remain checks, not upgrades. Installer CI validation follows the pin commit. Fresh-card/native-touch and longer resilience checks remain explicitly deferred; no new hardware walkthrough is claimed.
+
 ## 0.14.0 published-image acceptance — 27 October 2026
 
 [Release CI 40432294004](https://github.com/alex-soul/pi-rain-radar/actions/runs/40432294004) passed **474 tests**, AMD64/ARM64 builds and fresh startup/restart on both architectures. Tag/source: `v0.14.0` / `5a97ab441122a7c06f604edd98edd06a55e0f33d`. Published index and verified latest: `sha256:0be8467710a4cd333ab4bbe0cca4ceb43383a9732f653040bf5c68dad1afaf7a`. The final commit differs from accepted RC2 only in version metadata, documentation and gallery stills.

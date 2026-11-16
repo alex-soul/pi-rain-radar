@@ -1,16 +1,16 @@
 # Release follow-ups
 
-## 0.15.0 RC1 — awaiting appliance acceptance
+## 0.15.0 — accepted candidate and prerelease
 
-The GIF playback track fix, Aviation/Grass integration status, official Aviation provider status link and concise current-only Stats are implemented in RC1. [Grass Lab](grass-lab.md) adds direct observations and 30-day experimental replay; calibration remains unvalidated. The earlier deferred descriptions below are historical context, superseded for these selected items. Other follow-ups remain separate. See [candidate notes](release-0.15.0.md).
+I accepted RC7 and authorized the 0.15.0 prerelease. The GIF playback track fix, Aviation/Grass integration status, official Aviation provider status link and concise current-only Stats are delivered. [Grass Lab](grass-lab.md) adds direct observations, editing, 30-day experimental replay, heatmaps and chart navigation. Forecast gradients show absolute rain intensity while retaining automatic axes. The earlier deferred descriptions below are historical context, superseded for these selected items. See [release notes](release-0.15.0.md) and [published-image validation](validation.md).
 
 ## After 0.14.0
 
-- **GIF playback slider track:** the exported thumb can appear without its background line. Accepted as cosmetic for 0.14.0; review for 0.15.0 rather than delaying this release.
-- **Grass observation and tuning:** start all factors at 1× and compare the 0–5 estimate with conditions outside. The model is uncalibrated; follow the [tuning guide](grass-wetness.md#how-to-tune-it). Spreadsheet fitting remains deferred.
+- **GIF playback slider track:** resolved in 0.15.0.
+- **Grass observation and tuning:** continue comparing the 0–5 estimate with conditions outside using the Lab. New installations use my tuned starting profile; upgrades preserve saved factors. Follow the [tuning guide](grass-wetness.md#how-to-tune-it). General accuracy across locations and automatic fitting remain unverified/deferred.
 - **Native-touch fresh installation:** the default-Yes/No installer choice has automated coverage, but its fresh-card physical walkthrough is explicitly deferred. Verify both choices, touch alignment, reboot/resume and preservation on supported hardware before calling that path accepted. Existing-appliance native touch acceptance is separate evidence.
 
-## Future release — Aviation status and diagnostics
+## Aviation status and diagnostics — original proposal, delivered in 0.15.0
 
 Cloud layers and shared Aviation Panels are delivered and accepted in [0.13.0](release-0.13.0.md). The following additions remain deferred after 0.14.0; they were not selected for its four implementation batches.
 

@@ -39,7 +39,7 @@ The bootstrap resolves one public `main` commit, downloads all runner/MQTT files
 from that exact snapshot, and caches the complete bundle. The selected commit and
 application manifest are saved in `~/.local/state/pi-rain-radar/install.json`.
 Reboots/retries reuse that snapshot. `release.json` explicitly pairs this runner
-with published v0.14.0, its immutable image digest, and checksummed Compose/Power
+with published v0.15.0, its immutable image digest, and checksummed Compose/Power
 files from the release source commit. No `latest` app image or unrelated main
 helper is used. This supports prereleases without relying on GitHub's stable-only
 latest-release endpoint.
@@ -155,3 +155,10 @@ The new native-touch choice defaults Yes; No preserves the existing mode. Automa
 The fresh-card native-touch walkthrough is explicitly deferred. This remains an experimental installer path: later physical checks must cover Yes/No, alignment, reboot/resume and preservation on the applicable hardware. Existing-appliance touch acceptance and automated tests do not replace that walkthrough. Other older fresh-install hardware/resilience gaps remain open.
 
 [Installer CI 40433129024](https://github.com/alex-soul/pi-rain-radar/actions/runs/40433129024) passed against the final 0.14.0 pin commit `350f927`.
+
+
+## 0.15.0 pin — 16 November 2026
+
+The manifest selects `v0.15.0`, source `4a37321e0e7f7db467ee8d426fdbd393ec7a8cd9`, index `sha256:258ce0feed5a809fffe3bc13c9ce4a9ba264967576f32ad3c0e72cd35970e668`. All four published-source checksums match. [Release CI](https://github.com/alex-soul/pi-rain-radar/actions/runs/43965357927) passed 509 application tests and both-architecture fresh startup/restart persistence. Fifty focused native ARM64 tests passed on the exact image, followed by automated published-image handover preserving the existing Pi's data and configuration.
+
+This is an app-pin update: installer logic, bootstrap snapshot/resume contract, Compose and host helpers are unchanged. Existing saved snapshots retain their selected release; this does not turn a rerun into an app upgrade. Installer version remains `0.1.0-test.2`. Fresh-card/native-touch and other deferred hardware checks remain unclaimed. Installer CI must pass the selected pin's Linux tests, shell checks, isolated Screen bridge and published-file verification.
