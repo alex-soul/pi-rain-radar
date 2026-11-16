@@ -10,13 +10,20 @@ Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-buil
 
 ## Status
 
-**[v0.15.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.15.0) is the current pre-release.** It adds Grass Lab for observations and historical tuning, clearer rainfall-intensity colours, and Grass/Aviation refinements. I accepted RC7 on my Pi 4 / 2 GB. See [release notes](docs/release-0.15.0.md) and [validation](docs/validation.md) for release-image and installer checks. The guided installer remains experimental; the native-touch choice still needs a fresh-card hardware walkthrough.
+**[v0.15.0](https://github.com/alex-soul/pi-rain-radar/releases/tag/v0.15.0) is the current pre-release.** It adds Grass Lab for observations and historical tuning, clearer rainfall-intensity colours, and Grass/Aviation refinements. I accepted the published release on my Pi 4 / 2 GB, including Grass Lab and the rain forecast widget. See [release notes](docs/release-0.15.0.md) and [validation](docs/validation.md) for release-image and installer checks. The guided installer remains experimental; the native-touch choice still needs a fresh-card hardware walkthrough.
 
 **Upgrading from 0.6.0 or earlier starts a fresh archive and removes the old rolling history (up to seven days).** [Back up first](docs/archive-backup.md) if you want to preserve it. Keys, PIN, map and browser preferences remain; Live rebuilds from available radar. Existing 0.7.0 candidate archives are preserved. See [upgrade details](docs/upgrading.md#070-new-archive-and-shared-integrations).
 
-## New in 0.14.0
+## New in 0.15.0
 
-- **Will I need wellies?** A tunable 0–5 [Grass wetness estimate](docs/grass-wetness.md), with a five-blade indicator, full or minimal widget, dock and trends. Start at 1× and tune against what you see outside.
+- **Observe and tune your grass estimate.** [Grass Lab](docs/grass-lab.md) compares your observations with recorded estimates and alternative settings across up to 30 days. Pan and resize the chart window, inspect contribution heatmaps, and save a chosen profile with Apply.
+- **Log observations on your phone.** The lightweight `/grass-obs` page records intensity, time and notes without loading history or running replay. Correct or delete entries in the Lab.
+- **See rainfall intensity at a glance.** Forecast bars change from blue towards yellow, orange and red as absolute rain rate increases, while the Y-axis remains automatic.
+- **Clearer readings and recovery.** Decimal Grass scores, concise help/status, short-gap recovery, a METAR parsing correction and the GIF playback-track fix. New installations use my tuned Grass profile; upgrades preserve saved settings.
+
+## Also included from 0.14.0
+
+- **Will I need wellies?** A tunable 0–5 [Grass wetness estimate](docs/grass-wetness.md), with a five-blade indicator, full or minimal widget, dock and trends. Tune it against what you see outside using the [Grass guide](docs/grass-wetness.md).
 - **Keep a weather moment.** [Export Archive playback as a GIF](docs/archive-gif.md) from your laptop browser: the current layout, a clean main map or a clean overview. Full 24-hour windows at 1280 × 720 are supported without discarding frames.
 - **Compare rain in the same units.** Overlay observed rainfall as a smooth line on the original forecast bars, with a labelled mm/h axis in Live and Archive. [How the comparison works](docs/observed-rain.md).
 - **A tidier screen and setup.** HA solar irradiance, optional native touch in the guided installer, and side buttons that flow into an extra column when space is tight.

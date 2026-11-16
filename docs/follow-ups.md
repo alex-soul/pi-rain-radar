@@ -1,8 +1,8 @@
 # Release follow-ups
 
-## 0.15.0 — accepted candidate and prerelease
+## 0.15.0 — published and accepted
 
-I accepted RC7 and authorized the 0.15.0 prerelease. The GIF playback track fix, Aviation/Grass integration status, official Aviation provider status link and concise current-only Stats are delivered. [Grass Lab](grass-lab.md) adds direct observations, editing, 30-day experimental replay, heatmaps and chart navigation. Forecast gradients show absolute rain intensity while retaining automatic axes. The earlier deferred descriptions below are historical context, superseded for these selected items. See [release notes](release-0.15.0.md) and [published-image validation](validation.md).
+I accepted the published 0.15.0 image on 16 November 2026. There are no outstanding implementation or acceptance items in this release; the validation and exploratory work below belongs to future work. The GIF playback track fix, Aviation/Grass integration status, official Aviation provider status link and concise current-only Stats are delivered. [Grass Lab](grass-lab.md) adds direct observations, editing, 30-day experimental replay, heatmaps and chart navigation. Forecast gradients show absolute rain intensity while retaining automatic axes. The earlier deferred descriptions below are historical context, superseded for these selected items. See [release notes](release-0.15.0.md) and [published-image validation](validation.md).
 
 ## After 0.14.0
 
@@ -10,28 +10,22 @@ I accepted RC7 and authorized the 0.15.0 prerelease. The GIF playback track fix,
 - **Grass observation and tuning:** continue comparing the 0–5 estimate with conditions outside using the Lab. New installations use my tuned starting profile; upgrades preserve saved factors. Follow the [tuning guide](grass-wetness.md#how-to-tune-it). General accuracy across locations and automatic fitting remain unverified/deferred.
 - **Native-touch fresh installation:** the default-Yes/No installer choice has automated coverage, but its fresh-card physical walkthrough is explicitly deferred. Verify both choices, touch alignment, reboot/resume and preservation on supported hardware before calling that path accepted. Existing-appliance native touch acceptance is separate evidence.
 
-## Aviation status and diagnostics — original proposal, delivered in 0.15.0
+## Aviation status and diagnostics — delivered in 0.15.0
 
-Cloud layers and shared Aviation Panels are delivered and accepted in [0.13.0](release-0.13.0.md). The following additions remain deferred after 0.14.0; they were not selected for its four implementation batches.
-
-- **Aviation status in the main menu:** add a small status LED using the established provider-status presentation. Reuse the existing shared METAR/TAF collection state; settle the combined indicator's handling of disabled, waiting, partial, stale and failed products during UI review. Keep collection health separate from which widgets are open, and provide hover/tap detail.
-- **Provider status link:** add the official [Aviation Weather Center status page](https://aviationweather.gov/tools/status/) alongside the existing Rainbow/OpenWeather status links, following the same external-link and kiosk behaviour. The [AWC API documentation](https://aviationweather.gov/data/api/) directs users there for updates (verified 13 October 2026). This is a provider-wide information page, not proof of this installation's connectivity or the selected station's report freshness; no machine-readable health API or extra status polling is assumed.
-- **Possible Stats for nerds additions:** review a compact Aviation section using existing telemetry. Candidate fields are station, separate METAR/TAF report ages and last successful checks, acquisition duration, failures/retry state and request counts where available. Exact fields and layout remain to agree; avoid extra provider calls merely to populate diagnostics.
-
-Review the UI first, then implement through the normal RC/Pi acceptance flow. These additions remain outside the accepted 0.14.0 release. Existing longer-term follow-ups below remain separately scoped.
+The original proposal is complete: current Aviation status in the menu, the official provider status link, and compact current-only METAR/TAF diagnostics. Grass status and numerical stats are also delivered. See [Stats for nerds](stats-for-nerds.md) and [release details](release-0.15.0.md). No extra diagnostics subsystem is committed.
 
 ## After 0.12.0 (historical)
 
-I accepted RC2 on my Pi. Aviation, per-screen unit inheritance, one-hour dock trends, compact chart legends, cloud 40/60-minute freshness and cloud-only borrowing below 40 minutes are delivered. See [release notes](release-0.12.0.md). Observed-rain/forecast comparison remains postponed until there is enough useful rainfall data. Retain the dock and chart-value playgrounds for later reuse.
+I accepted RC2 on my Pi. Aviation, per-screen unit inheritance, one-hour dock trends, compact chart legends, cloud 40/60-minute freshness and cloud-only borrowing below 40 minutes are delivered. See [release notes](release-0.12.0.md). The observed-rain/forecast comparison was subsequently delivered and accepted in 0.14.0; real rainy-interval source validation remains separate. Retain the dock and chart-value playgrounds for later reuse.
 
 ## After 0.11.0 (historical)
 
 I accepted the published 0.11.0 image on my Pi and phone. Consolidated screen settings, consistent dock spacing, optional rain readings/units, compact trend min/max legends and the transient connection-warning recovery fix are delivered. See [release notes](release-0.11.0.md).
 
-These follow-ups are the starting point for future release planning; no next version or implementation is assigned. Pick them up when relevant, with comparison UI requirements still to discuss.
+These follow-ups inform future release planning; no next version or implementation is assigned. The comparison UI is delivered; source validation and reusable development tooling remain separate.
 
 - **Observed-rain validation during rainfall:** verify the corrected daily accumulation helper against consecutive source rainfall amounts over a real rainy interval. Acquisition and restart persistence passed; wet-weather accuracy remains unproven. A manual-reset day is partial, and inherited totals from the earlier helper are unsuitable for evaluation. See [observed rain](observed-rain.md) for the source and reset requirements.
-- **Archive forecast reliability:** 0.14.0 DEV replaces forecast-versus-forecast comparison with a stable forward-forecast view and an observed interval-average overlay. Original snapshots, raw totals, acquisition/report times and unknown boundaries remain intact. See [observed rain](observed-rain.md). Laptop review and real rainy-interval helper validation remain pending; no accuracy score, calibration or automated source selection is implemented. The old advanced lead-time comparison is not retained.
+- **Archive forecast reliability:** The accepted 0.14.0 release replaced forecast-versus-forecast comparison with a stable forward-forecast view and an observed interval-average overlay. Original snapshots, raw totals, acquisition/report times and unknown boundaries remain intact. See [observed rain](observed-rain.md). The comparison UI is accepted; real rainy-interval helper validation remains pending; no accuracy score, calibration or automated source selection is implemented. The old advanced lead-time comparison is not retained.
 - **Development studio review:** retain the dock tuning tool for specific future needs. Keep the studio lean; no routine playground build/deployment or ongoing expansion is required. Review the accumulated reusable material separately when needed.
 - Fresh portable installer/reboot validation and longer soak/cloud/storage/hardware observations remain open below. This app release does not close those gaps.
 

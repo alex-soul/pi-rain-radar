@@ -78,7 +78,7 @@ The six process factors range from **0–3×**; zero removes that contribution. 
 
 ## The actual calculation
 
-Model version 1 keeps an internal reservoir `M` between 0 and 5. These are model units, **not millimetres of water on the grass**. Each new eligible rain acquisition supplies the elapsed time and the increase in the cumulative rain counter. Other readings supply the drying/dew conditions for that step.
+Both model versions keep an internal reservoir `M` between 0 and 5. These are model units, **not millimetres of water on the grass**. Each new eligible rain acquisition supplies the elapsed time and the increase in the cumulative rain counter. Other readings supply the drying/dew conditions for that step.
 
 | Symbol | Input or meaning |
 | --- | --- |
@@ -102,12 +102,13 @@ drying  = h × (S/400 × s
             + M × 0.12 × g)
 
 M_next  = clamp(M + wetting − drying, 0, 5)
-score   = round(clamp(M_next × q, 0, 5))
+score   = clamp(M_next × q, 0, 5)
+grade   = round(score)
 ```
 
-At defaults, one new mm of rain adds **1.5 model units** before drying. Dew adds up to **0.4 units per hour**, reaching zero when temperature is at least 2°C above dew point. Sun at 400 W/m² contributes **1 unit per hour** of drying; wind at 10 mph contributes up to **1 unit per hour**, depending on air dryness. Drainage removes **12% of the current reservoir per hour before step integration**. Applied in short steps, that is gradual decay, not a fixed number of points removed each hour.
+At neutral 1× multipliers, one new mm of rain adds **1.5 model units** before drying. Dew adds up to **0.4 units per hour**, reaching zero when temperature is at least 2°C above dew point. Sun at 400 W/m² contributes **1 unit per hour** of drying; wind at 10 mph contributes up to **1 unit per hour**, depending on air dryness. Drainage removes **12% of the current reservoir per hour before step integration**. Applied in short steps, that is gradual decay, not a fixed number of points removed each hour.
 
-For example, start at `M = 3` with a five-minute interval, 0.2 mm new rain, 200 W/m² sunlight, 10 mph wind and a 2°C dew-point depression. At 1×, wetting is 0.30 and drying is about 0.122. The reservoir becomes about 3.178 and the displayed score remains **3**. Small changes accumulate before crossing a whole-number boundary.
+For example, start at `M = 3` with a five-minute interval, 0.2 mm new rain, 200 W/m² sunlight, 10 mph wind and a 2°C dew-point depression. At 1×, wetting is 0.30 and drying is about 0.122. The reservoir becomes about 3.178 and the decimal display reads **3.2**, while the icon and bars retain grade **3**. Small changes accumulate before crossing a whole-number boundary. This example uses neutral factors, not the tuned new-install profile.
 
 These coefficients are deliberately simple heuristics. Temperature near dew point suggests possible dew; it does not measure leaf condensation. The model does not know grass length, shade, mowing, irrigation, soil type, frost/snow or whether the sensor represents the patch you walk on. Weather inputs and personal observation remain essential.
 
@@ -121,4 +122,4 @@ HA inputs need a usable acquisition no older than ten minutes; eligible OpenWeat
 
 The reservoir and output are persisted together in SQLite, with model version, parameters and input provenance. **Tuning affects new estimates, not archived scores.** An old reading remains the result produced with the settings and data available at that time. Lab replay selects the recorded model version for each input, including the original version 1 rules (2.5 seed and ten-minute reset threshold). Upgrading keeps a valid existing reservoir; it does not rewrite old scores. Existing history without a grass estimate remains unavailable; it is not filled with invented values.
 
-[User manual](manual.md) · [Observed rainfall](observed-rain.md) · [Release notes](release-0.14.0.md)
+[User manual](manual.md) · [Observed rainfall](observed-rain.md) · [Release notes](release-0.15.0.md)
