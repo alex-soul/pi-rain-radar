@@ -1498,3 +1498,7 @@ footer .playback #frame-count{font:18px Arial,sans-serif;font-variant-numeric:ta
 
 #archive-dialog .settings-label-title{display:inline-flex;align-items:center;gap:.25em;}
 #archive-dialog button.settings-info{min-height:0;min-width:0;padding:0;border-radius:50%;font:italic 10px Georgia,serif;width:14px;height:14px;}
+
+/* Keep inline help links consistent in both themes, including visited links. */
+.settings-help-bubble a,.settings-help-bubble a:visited{color:inherit;text-underline-offset:3px;}
+.settings-help-bubble a:hover{color:var(--accent);}

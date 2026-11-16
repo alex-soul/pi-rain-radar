@@ -1,4 +1,4 @@
-import {grassDefaults} from './grass-wetness-settings.js';
+import {grassModelDefaults as grassDefaults} from './grass-wetness-settings.js';
 import {readingValues} from './reading-units.js';
 
 export const grassModelVersion=2;

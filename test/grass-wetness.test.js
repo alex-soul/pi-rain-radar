@@ -4,7 +4,7 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {advanceGrassWetness} from '../src/grass-wetness.js';
-import {grassDefaults} from '../public/grass-wetness-settings.js';
+import {grassModelDefaults as grassDefaults} from '../public/grass-wetness-settings.js';
 import {weatherReadings} from '../public/weather-readings.js';
 import {createHistoryStore} from '../src/history-store.js';
 import {createWeatherSettings} from '../src/weather-settings.js';

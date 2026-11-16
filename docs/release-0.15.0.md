@@ -1,11 +1,11 @@
 # 0.15.0 release candidate
 
-`0.15.0-rc.6` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
+`0.15.0-rc.7` is for appliance observation and feedback. It does not promote the public `latest` image or change the guided installer's accepted 0.14.0 pin.
 
 - Grass scores show one decimal in the dock, trends and full widget. The full widget uses five bars, a smaller number and the descriptive heading, without the denominator or footwear helper text.
 - Archive GIF export preserves the playback slider track and thumb.
 - Aviation and Grass have current integration status, with the official aviation provider status link and concise current-only Stats for nerds.
-- [Grass Lab](grass-lab.md) and the separate mobile observation page are maintained routes, with persistent observations, 30-day compact history and experimental replay. The Grass settings menu includes a Lab link with a kiosk advisory. Slider changes preview alternatives; Apply deliberately saves live calibration with the installation PIN.
+- [Grass Lab](grass-lab.md) and the separate mobile observation page are maintained routes, with persistent observations, 30-day compact history and experimental replay. The expanded Grass widget info bubble includes a Lab link with a kiosk advisory. Slider changes preview alternatives; Apply deliberately saves live calibration with the installation PIN.
 - The local `__dev` scenario playground remains available for development.
 
 The Grass model remains an uncalibrated estimate. This candidate improves observation and comparison; it does not claim to solve dew behaviour or introduce a new predictive model. See [Grass setup and tuning](grass-wetness.md).
@@ -48,3 +48,13 @@ RC5 validation: 502 automated tests; AMD64/ARM64 startup and persistence across 
 The reviewed compact layout, whole-chart panning, resizable history navigator, latest-seven-day default and 24h/3-day/7-day presets are integrated. Click-toggle marker popups stay open for text selection; observation popups and the table open the PIN-protected editor with confirmed deletion. Phone time entry, current-setting Reset, centred Reset/Apply buttons, heatmap actions and the guarded menu link are included. See [RC6 details](release-0.15.0-rc6.md).
 
 RC6 validation: 506 automated tests; AMD64/ARM64 startup and edit persistence across restart; 36 focused native ARM64 tests. Isolated production browser checks covered editing, PIN, both themes, phone entry and kiosk advice. Live verification preserved all 18 observations, settings and retained Grass snapshots; 6,271 retained estimates reproduced exactly. Physical touch and ordinary-use acceptance remain part of the RC trial.
+
+## RC7 — clearer intensity colours and Grass information
+
+Forecast bars now use a vertical Universal Blue gradient tied to absolute rain rate in Live and Archive. The existing automatic axes, bar heights, dry/missing markers and actual-rain overlay are unchanged. Light rain stays blue even when its bars fill the chart. Yellow begins around 5.6 mm/h, orange 11.5, orange-red 23.7 and deep red 48.6. These are approximate display conversions of the radar palette, using Z = 200 R^1.6, not exact equivalence between forecast rates and measured radar reflectivity. The palette follows the dock legend; no extra settings are added.
+
+The full Grass widget has short help with an inline Lab link, including the existing kiosk warning. The settings-menu link and ready-state uncalibrated wording are removed. Grass Stats for nerds now shows only the current estimate and calculation age; Status retains setup, warm-up and failure information.
+
+New installations and Reset to defaults use my observed tuning: rain 3×, dew 2×, sun 1×, wind 0.5×, air 0.5×, drainage 0.1× and sensitivity 1×. Existing saved settings and historical model fallbacks are preserved. There is no model arithmetic or schema change.
+
+References: [RainViewer Universal Blue table](https://www.rainviewer.com/files/rainviewer_api_colors_table.csv), [Rainbow palette identification](https://doc.rainbow.ai/tile_colors/), [KNMI rainfall conversion reference](https://cdn.knmi.nl/knmi/pdf/bibliotheek/knmipubWR/WR2009-06.pdf).

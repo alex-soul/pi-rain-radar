@@ -1,3 +1,4 @@
+import {createRainGradient} from '../public/rain-intensity.js';
 import {dockText} from '../public/dock-format.js';
 import * as format from '../public/weather-format.js';
 import * as readings from '../public/weather-readings.js';
@@ -14,13 +15,13 @@ function fixture(zone='Europe/London') {
   const nodes=new Map();let writes=0,minutes=60;
   const prefs={temperatureUnit:'C',windUnit:'mph',visibilityUnit:'km',pressureUnit:'hPa',directionFormat:'compass',directionConvention:'flow'};
   function node(){return {dataset:{},attributes:{},children:[],style:{},setAttribute(k,v){writes++;this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},getAttribute(){return 'true';},closest(){return this;},append(n){this.children.push(n);},replaceChildren(...children){writes++;this.children=children;}};}
-  const document={querySelectorAll:()=>[],querySelector:()=>({content:zone}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:node};
-  const c=vm.createContext({dockText,...format,...readings,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
+  const document={querySelectorAll:()=>[],querySelector:()=>({content:zone}),getElementById(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);},createElementNS:(ns,tag)=>({...node(),tag})};
+  const c=vm.createContext({createRainGradient,dockText,...format,...readings,document,formatTime,weatherPreferences:()=>prefs,gustCacheMinutes:()=>minutes});vm.runInContext(code,c);
   return {nodes,prefs,paint:c.paintWeather,writes:()=>writes,setMinutes:v=>minutes=v};
 }
 test('Rain forecast uses baselines for zero and missing minutes, and replaces failed or expired charts with a red baseline',()=>{
   const f=fixture(),s=state();f.paint(s,now);
-  const bars=()=>f.nodes.get('minute-bars').children;
+  const bars=()=>f.nodes.get('minute-bars').children.filter(n=>n.tag!=='defs');
   assert.equal(bars().length,60);assert.ok(bars().every(b=>b.attributes.height===1&&b.attributes.width===6&&b.attributes.fill==='#75c8bd'));
   assert.equal(f.nodes.get('weather-dock').attributes['data-health'],'ready');
   assert.equal(f.nodes.get('settings-api-status').textContent,'Weather readings available');
@@ -87,7 +88,7 @@ test('gust cache Off keeps current gusts but never retained fallback',()=>{
 test('weather severity preserves one-poll grace, independent forecast failure, startup and recovery',()=>{
   const f=fixture(),s=state(),health=()=>f.nodes.get('weather-dock').attributes['data-health'];
   f.paint({configured:true,fetching:true},now);assert.equal(health(),'warning');
-  assert.equal(f.nodes.get('minute-bars').children[0].attributes.fill,'#c49343');
+  assert.equal(f.nodes.get('minute-bars').children.find(n=>n.tag!=='defs').attributes.fill,'#c49343');
   f.paint({...s,error:'Current failed',failures:1},now);assert.equal(health(),'warning');
   f.paint({...s,error:'Current failed',failures:2},now);assert.equal(health(),'error');
   assert.equal(f.nodes.get('weather-temperature').textContent,'—');
@@ -120,6 +121,6 @@ test('Live rainfall Y labels match the bar scale for dry, fractional and heavy f
  for(const [rain,ceiling] of [[0,1],[.2,1],[3.7,4],[42.3,43]]){
   const f=fixture(),s=state();s.data.minutely[0].precipitation=rain;f.paint(s,now);
   assert.equal(f.nodes.get('minute-y-top').textContent,String(ceiling));assert.equal(f.nodes.get('minute-y-middle').textContent,String(ceiling/2));
-  assert.equal(f.nodes.get('minute-bars').children[0].attributes.height,rain?Math.max(2,rain/ceiling*85):1);
+  assert.equal(f.nodes.get('minute-bars').children.find(n=>n.tag!=='defs').attributes.height,rain?Math.max(2,rain/ceiling*85):1);
  }
 });

@@ -1,4 +1,5 @@
 import {formatTime} from './time.js';
+import {createRainGradient} from './rain-intensity.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 let signature='';
 export function paintHistoricalForecast(replay,time,showActual,timeZone){
@@ -10,9 +11,10 @@ export function paintHistoricalForecast(replay,time,showActual,timeZone){
   const points=Array.from({length:Math.floor((end-start)/60)+1},(_,i)=>({time:start+i*60,value:snapshot?.pointMap.get(start+i*60)??null}));
   // Always include retained observations in the scale, including when hidden.
   const scale=Math.max(5,Math.ceil(Math.max(0,...points.map(p=>p.value??0),...observed.intervals.map(p=>p.rate))/5)*5),width=360/points.length;
+  if(points.some(p=>p.value>0))nodes.push(createRainGradient(scale,document));
   points.forEach((p,i)=>{
     const missing=p.value===null,height=missing||p.value===0?1:Math.max(2,p.value/scale*85);
-    add('rect',{x:i*width+1,y:85-height,width:Math.max(1,width-2),height,fill:missing?'#c49343':p.value<.5?'#75c8bd':'#329db3'},`${stamp(p.time)} · Forecast: ${missing?'Missing':`${p.value} mm/h`}`);
+    add('rect',{x:i*width+1,y:85-height,width:Math.max(1,width-2),height,fill:missing?'#c49343':p.value===0?'#75c8bd':'url(#minute-rain-gradient)'},`${stamp(p.time)} · Forecast: ${missing?'Missing':`${p.value} mm/h`}`);
   });
   if(showActual&&snapshot){
     const dots=observed.intervals.map(p=>({...p,x:(((p.start+p.end)/2-start)/60+.5)*width,y:85-p.rate/scale*85}));

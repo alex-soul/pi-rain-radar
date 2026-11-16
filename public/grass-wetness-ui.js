@@ -2,7 +2,7 @@ import {setupFloatingWidget} from './floating-widget.js';
 import {editor,attachCog,opacityControl,fontControl,canEditLocal} from './local-ui.js';
 import {localPreferences,saveLocalPreferences} from './local-preferences.js';
 import {weatherReadings} from './weather-readings.js';
-import {setupSettingsHelp,helpText} from './settings-help.js';
+import {setupSettingsHelp} from './settings-help.js';
 import {grassLabels} from './grass-wetness-settings.js';
 
 const button=document.getElementById('grass-wetness-toggle');
@@ -20,7 +20,7 @@ setupFloatingWidget({id:'grass-wetness',storageKey:'radar-grass-wetness',width:2
 const blades=["M5 24C5 18 4 14 2 11c4 2 6 7 6 13Z", "M9 24C9 16 7 10 6 7c4 4 5 10 5 17Z", "M13 24C11 14 12 6 14 3c2 8 1 14 1 21Z", "M17 24C17 16 19 10 22 7c-2 6-3 11-3 17Z", "M22 24C22 17 24 13 27 11c-2 4-3 8-3 13Z"];
 button.innerHTML='<svg viewBox="0 0 28 28" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+blades.map(d=>'<path class="grass-icon-blade" d="'+d+'"/>').join('')+'<path id="grass-icon-ground" d="M2 25h24"/><path id="grass-icon-unknown" d="M10 26h8" stroke-width="2.5"/></svg>';
 let latest=null;
-setupSettingsHelp(panel,{viewport:true,text:()=>[latest?.reason,latest?.status==='disabled'&&latest.setupMissing?.length?'Setup needed: '+latest.setupMissing.join('; '):'',helpText.grassReadiness].filter(Boolean).join('. ')});
+setupSettingsHelp(panel,{viewport:true});
 function paint(){
  const row=latest,ready=Number.isInteger(row?.value),level=ready?row.value:null;
  const title=ready?`${level} of 5 · ${grassLabels[level]}`:row?.reason??'Waiting for weather readings';

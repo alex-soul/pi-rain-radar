@@ -1,4 +1,5 @@
 import {dockText} from './dock-format.js';
+import {createRainGradient} from './rain-intensity.js';
 import { gustCacheMinutes, weatherPreferences } from './display.js';
 import { temperatureText, windText, windBearing, windDirectionText, visibilityText, pressureText, readingNames } from './weather-format.js';
 import { formatTime } from './time.js';
@@ -69,13 +70,14 @@ export function paintWeather(state, now = Date.now(), {historical=false,operatio
   $('minute-chart').setAttribute('aria-label',forecastLabel);
   $('rain-forecast').title = state?.forecastError || forecastLabel;
   const bars = [], scale = Math.max(1,Math.ceil(Math.max(0,...available.values())));
+  if(forecastUsable&&[...available.values()].some(rain=>rain>0))bars.push(createRainGradient(scale,document));
   $('minute-y-top').textContent=String(scale);$('minute-y-middle').textContent=String(scale/2);
   $('minute-chart').setAttribute('aria-label',`${forecastLabel} Y axis: 0, ${scale/2}, ${scale} mm/h.`);
   if (forecastUsable) for (let minute=0;minute<60;minute++) {
     const rain=available.get(minute), missing=rain===undefined, baseline=missing||rain===0;
     const height=baseline?1:Math.max(2,rain/scale*85);
     const bar=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    for (const [key,value] of Object.entries({x:minute*6,y:85-height,width:baseline?6:4,height,rx:baseline?0:1.5,fill:missing?'#c49343':rain<0.5?'#75c8bd':'#329db3'})) bar.setAttribute(key,value);
+    for (const [key,value] of Object.entries({x:minute*6,y:85-height,width:baseline?6:4,height,rx:baseline?0:1.5,fill:missing?'#c49343':rain===0?'#75c8bd':'url(#minute-rain-gradient)'})) bar.setAttribute(key,value);
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
     title.textContent=`${stamp(minuteNow+minute*60)} · ${missing?'Missing forecast minute':rain+' mm/h'}`;
     bar.append(title); bars.push(bar);

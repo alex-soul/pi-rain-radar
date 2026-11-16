@@ -1,3 +1,4 @@
+import {createRainGradient} from '../public/rain-intensity.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -5,13 +6,13 @@ import {readFile} from 'node:fs/promises';
 import {applyForecastRecording} from '../scripts/dev-forecast-recording.mjs';
 import {createWeatherReplay} from '../public/history-weather-model.js';
 import {rainComparisonFixture} from '../scripts/dev-rain-comparison.mjs';
-const source=(await readFile(new URL('../public/history-weather-ui.js',import.meta.url),'utf8')).replace(/^import [^\n]*\n/,'').replaceAll('export function','function');
+const source=(await readFile(new URL('../public/history-weather-ui.js',import.meta.url),'utf8')).replace(/^import [^\n]*\n/gm,'').replaceAll('export function','function');
 function harness(replay,time){
  const make=()=>({attributes:{},children:[],style:{},classList:{toggle(){}},setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},append(...n){this.children.push(...n);},replaceChildren(...n){this.children=n;}});
  const nodes=new Map(),axes=Array.from({length:5},make);
  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,make());return nodes.get(id);},createElement(tag){return {...make(),tag};},createElementNS(ns,tag){return {...make(),tag};},querySelectorAll(){return axes;}};
- const context=vm.createContext({document,formatTime:t=>String(t),replay,time});vm.runInContext(source,context);
- return {nodes,axes,paint(on){vm.runInContext(`paintHistoricalForecast(replay,time,${on},"UTC")`,context);return nodes.get('minute-bars').children;}};
+ const context=vm.createContext({createRainGradient,document,formatTime:t=>String(t),replay,time});vm.runInContext(source,context);
+ return {nodes,axes,paint(on){vm.runInContext(`paintHistoricalForecast(replay,time,${on},"UTC")`,context);return nodes.get('minute-bars').children.filter(n=>n.tag!=='defs');}};
 }
 const end=1800000000,start=end-3600;
 const forecasts=[{time:start,receivedAt:start*1000+90000,points:Array.from({length:61},(_,i)=>({time:start+i*60,precipitation:i%10/10}))}];

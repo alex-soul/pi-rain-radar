@@ -335,6 +335,7 @@ const server=http(async(req,res)=>{
         }
         if(scenario==='weather-first'||scenario==='weather-second') Object.assign(data.weather,{failures:scenario==='weather-first'?1:2,error:'Synthetic current weather failure'});
         if(scenario==='forecast-failed')data.weather.forecastError='Synthetic forecast failure';
+        if(scenario==='forecast-gradient')data.weather.data.minutely.forEach((p,i)=>p.precipitation=Math.max(0,Math.round(50*Math.sin(Math.PI*i/59))));
         if(scenario==='forecast-partial')data.weather.data.minutely.splice(20,5);
         if(scenario==='weather-expired'){data.weather.data.current.time=minute-1800;data.weather.forecastFetchedAt=now-1800000;}
         if(scenario==='current-expired')data.weather.data.current.time=minute-1800;

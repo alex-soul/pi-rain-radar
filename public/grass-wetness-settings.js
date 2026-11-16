@@ -1,4 +1,7 @@
-export const grassDefaults=Object.freeze({enabled:false,rain:1,dew:1,solar:1,wind:1,air:1,drainage:1,sensitivity:1});
+// Keep historical model fallbacks independent of the starting profile offered
+// to new installations and Reset to defaults. Saved profiles always win.
+export const grassModelDefaults=Object.freeze({enabled:false,rain:1,dew:1,solar:1,wind:1,air:1,drainage:1,sensitivity:1});
+export const grassDefaults=Object.freeze({...grassModelDefaults,rain:3,dew:2,wind:0.5,air:0.5,drainage:0.1});
 export const grassControls=[
  ['rain','Rain wetting','Higher values make fresh rainfall wet the grass faster.',0,3],
  ['dew','Dew wetting','Higher values add more wetness when temperature approaches dew point.',0,3],

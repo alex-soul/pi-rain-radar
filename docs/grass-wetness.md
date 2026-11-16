@@ -4,7 +4,7 @@ For direct observation entry and historical tuning experiments, see [Grass Lab](
 
 Grass wetness estimates how wet the grass might feel underfoot, from **0 (dry) to 5 (soaked)**. I built it to help with a familiar question before going outside: do I need wellies? Rain and dew add wetness; sunlight, wind, dry air and drainage gradually remove it. The estimate remembers recent conditions instead of treating a moment without rain as dry grass.
 
-This is an **uncalibrated weather-based estimate**, not a grass sensor or a soil-moisture measurement. The coefficients have not been fitted to my observation spreadsheet. I am leaving everything at **1×** initially and comparing it with what I see outside. That is the recommended starting point, not a claim that the defaults are optimal for every garden.
+This is a **weather-based estimate**, not a grass sensor or soil-moisture measurement. I have tuned the starting profile against observations in my garden: rain 3×, dew 2×, sun 1×, wind 0.5×, air 0.5×, drainage 0.1× and sensitivity 1×. Other gardens may need different settings. Existing saved profiles are preserved when upgrading.
 
 ## What the scale means
 
@@ -23,7 +23,7 @@ The icon and five-bar indicators use six integer grades. The full widget, top do
 
 1. Configure Home Assistant in the installation settings. In **Interface → Weather → Readings**, select temperature, dew point and wind sources. These can use supported HA readings or OpenWeather.
 2. Select an HA sensor for **Observed rain (accumulated)** and one for **Solar irradiance**. Both are required. Enable the relevant weather collection. Irradiance starts disabled and is not inferred from daylight, UV or cloud cover.
-3. Under **Interface → Weather → Grass**, enable the calculation, leave all factors at **1×**, and press **Apply**.
+3. Under **Interface → Weather → Grass**, enable the calculation, start with the default profile, and press **Apply**.
 4. Under **Screen settings → Side buttons**, enable **Grass**. Tap its grass icon to open the widget. The icon remains an indicator when the widget is closed.
 5. Allow **30 minutes of continuous valid readings** for warm-up. Compare it with the same patch of grass over several days, including rain, drying afternoons and damp mornings.
 
@@ -74,7 +74,7 @@ For the opposite pattern, reduce the relevant factor. For example, lower **Drain
 
 The six process factors range from **0–3×**; zero removes that contribution. Overall sensitivity ranges from **0.25–2×**. It changes the displayed scale without changing the stored reservoir, so it cannot correct wrong drying timing. These factors interact: diagnose the conditions before changing several controls together.
 
-**Reset to defaults**, then **Apply**, restores the factors to 1×. It preserves the enable switch, accumulated model state and recorded history. It is not a fresh-start button. Disabling and re-enabling calculation restarts warm-up.
+**Reset to defaults**, then **Apply**, restores the starting profile above. It preserves the enable switch, accumulated model state and recorded history. It is not a fresh-start button. Disabling and re-enabling calculation restarts warm-up.
 
 ## The actual calculation
 

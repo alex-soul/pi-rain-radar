@@ -1,5 +1,5 @@
 // Frozen historical model: replay archived version 1 estimates exactly.
-import {grassDefaults} from './grass-wetness-settings.js';
+import {grassModelDefaults as grassDefaults} from './grass-wetness-settings.js';
 import {readingValues} from './reading-units.js';
 
 export const grassModelVersion=1;

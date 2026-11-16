@@ -1,7 +1,7 @@
 import {readFile,writeFile,rename} from 'node:fs/promises';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {grassDefaults,grassControls,validateGrassSettings} from '../public/grass-wetness-settings.js';
+import {grassModelDefaults as grassDefaults,grassControls,validateGrassSettings} from '../public/grass-wetness-settings.js';
 import {replayGrass,alignedGrass} from '../public/grass-replay.js';
 
 export function grassLabFixture(end=Date.now(),days=7){

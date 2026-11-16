@@ -1,6 +1,6 @@
 # Grass Lab
 
-From 0.15.0, open `/grass-lab` on your installation from a laptop to compare recorded Grass estimates with your observations and experiment with the calculation. Open `/grass-obs` directly on your phone to record an observation. The Grass Lab link sits beside Calculate grass wetness in Settings → Interface → Weather → Grass. Kiosk URLs show a warning before leaving the radar. You can also bookmark either page over your own LAN or private remote access.
+From 0.15.0, open `/grass-lab` on your installation from a laptop to compare recorded Grass estimates with your observations and experiment with the calculation. Open `/grass-obs` directly on your phone to record an observation. Open the info bubble on the expanded Grass widget for the Grass Lab link. Kiosk URLs show a warning before leaving the radar. You can also bookmark either page over your own LAN or private remote access.
 
 ## Observe outside, compare at home
 

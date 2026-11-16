@@ -60,14 +60,14 @@ function render() {
   for(const [key,title] of [['aviation','Aviation'],['grass','Grass wetness']]){
     const column=element('div',''),list=element('dl',''),item=health[key];
     column.append(element('strong',title));
-    row(list,'Status',s.stale?'Last received · '+item.label:item.label);
     if(key==='aviation'){
+      row(list,'Status',s.stale?'Last received · '+item.label:item.label);
       row(list,'Station',input.status?.aviation?.station??'Unavailable');
       for(const product of item.products){row(list,product.label,product.description);row(list,product.label+' last check',clock(product.lastSuccess));}
     }else{
-      row(list,'Estimate',item.reading?.text??'—');
-      row(list,'Calculated',clock(item.reading?.time));
-      row(list,'Detail',item.detail);
+      row(list,'Estimate',s.stale?'—':item.reading?.text??'—');
+      const at=item.reading?.time;
+      row(list,'Calculation age',Number.isFinite(at)&&at<=s.now?Math.floor((s.now-at)/1000)+' s':'—');
     }
     column.append(list);grid.append(column);
   }
