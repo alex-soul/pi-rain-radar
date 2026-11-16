@@ -11,7 +11,7 @@ Grass Lab is now part of Pi Rain Radar: record what the grass feels like, compar
 
 New installations start with my tuned Grass profile: rain 3×, dew 2×, sun 1×, wind 0.5×, air 0.5×, drainage 0.1× and sensitivity 1×. Calculation remains disabled until configured. **Upgrading preserves existing saved settings, history and observations.** Other gardens can be tuned from their own observations.
 
-I accepted RC7 on my Pi 4 / 2 GB after using the candidates for observation and tuning. RC7 passed 508 automated tests and 49 focused native ARM64 checks; this release adds a regression test proving new-install defaults do not overwrite saved profiles. Published-image CI builds and checks both architectures before promoting `latest`.
+I accepted RC7 on my Pi 4 / 2 GB after using the candidates for observation and tuning. Release validation passed **509 automated tests**, AMD64/ARM64 startup and persistent restart checks, and **50 focused native ARM64 tests** on the published image. The Pi handover preserved existing settings and data. Installer validation passed 28 installer and 25 display-control tests plus shell, Screen bridge and published-file checks. The installer pins the exact release, and Docker `latest` points to 0.15.0.
 
 See the [Grass Lab guide](https://github.com/alex-soul/pi-rain-radar/blob/main/docs/grass-lab.md), [release details](https://github.com/alex-soul/pi-rain-radar/blob/main/docs/release-0.15.0.md), [validation](https://github.com/alex-soul/pi-rain-radar/blob/main/docs/validation.md), and [upgrade instructions](https://github.com/alex-soul/pi-rain-radar/blob/main/docs/upgrading.md).
 
