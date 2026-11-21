@@ -1,8 +1,9 @@
 # Release follow-ups
 
-## Next release — pending bug
+## Next release — weather status
 
 - **OpenWeather reports “Some readings unavailable” when solar irradiance comes from Home Assistant.** I saw this on 0.15.0 while the weather dock LED was green and my Tempest station was supplying irradiance through Home Assistant. The OpenWeather status check incorrectly counts the Home Assistant reading as an expected OpenWeather field. Scope provider health to the readings assigned to that provider. Verify that the warning clears when OpenWeather supplies all its required readings, and still appears when a required OpenWeather reading is missing.
+- **Show which weather readings need attention.** Add a tappable information icon next to weather status warnings. Open a bubble that names each affected reading and explains why it is unavailable or degraded, such as a reading the source did not report, stale data or a retained value after a failed refresh. Include affected readings hidden from the top dock. Use the same reading health results for the summary and the bubble so they agree, and verify that provider-specific details reflect the corrected provider scope.
 
 ## 0.15.0 — published and accepted
 
