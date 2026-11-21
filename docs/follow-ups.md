@@ -1,5 +1,9 @@
 # Release follow-ups
 
+## Next release — pending bug
+
+- **OpenWeather reports “Some readings unavailable” when solar irradiance comes from Home Assistant.** I saw this on 0.15.0 while the weather dock LED was green and my Tempest station was supplying irradiance through Home Assistant. The OpenWeather status check incorrectly counts the Home Assistant reading as an expected OpenWeather field. Scope provider health to the readings assigned to that provider. Verify that the warning clears when OpenWeather supplies all its required readings, and still appears when a required OpenWeather reading is missing.
+
 ## 0.15.0 — published and accepted
 
 I accepted the published 0.15.0 image on 16 November 2026. There are no outstanding implementation or acceptance items in this release; the validation and exploratory work below belongs to future work. The GIF playback track fix, Aviation/Grass integration status, official Aviation provider status link and concise current-only Stats are delivered. [Grass Lab](grass-lab.md) adds direct observations, editing, 30-day experimental replay, heatmaps and chart navigation. Forecast gradients show absolute rain intensity while retaining automatic axes. The earlier deferred descriptions below are historical context, superseded for these selected items. See [release notes](release-0.15.0.md) and [published-image validation](validation.md).
