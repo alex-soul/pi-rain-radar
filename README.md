@@ -2,8 +2,6 @@
 
 A dedicated weather screen for your home, with rain radar at its heart. Watch rain and clouds move, follow local weather trends, explore aviation reports and replay the weather your Pi has collected. Build a quiet, glanceable display with just the widgets you want.
 
-Curious how it came about? Read [the story behind Pi Rain Radar](docs/why-i-built-pi-rain-radar.md).
-
 ![Rain and cloud playback centred on Coventry](docs/images/radar-preview-20260927.gif)
 
 *Recorded on 27 September 2026 in v0.8.0: 13 frames spanning 09:00–11:00 BST, with rain and clouds on both maps, weather charts, Rain forecast, Sun/Moon and Camera open. A recording of Live playback, not current conditions; weather readings, Rain forecast and Camera reflect capture time. Radar by [RainViewer](https://www.rainviewer.com/) and [Rainbow](https://rainbow.ai/), clouds by Rainbow, basemap by [Natural Earth](https://www.naturalearthdata.com/), weather by [OpenWeather](https://openweathermap.org/). [Static preview](docs/images/pi-rain-radar.jpg) · [Gallery](docs/gallery.md).*
@@ -161,3 +159,7 @@ Radar data may be delayed or incomplete. Areas without rain colouring may have n
 ## Inspiration
 
 Inspired by [Eric Lewin's Pi Weather Station](https://github.com/elewin/pi-weather-station). Pi Rain Radar is a new application, not a fork.
+
+## Curious how it came about?
+
+Read [the story behind Pi Rain Radar](docs/why-i-built-pi-rain-radar.md).
